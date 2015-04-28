@@ -8,8 +8,8 @@ To be written ...
 
 For now all we have is a single dummy function and test:
 
-.. code-block:: python
+.. doctest-skip::
 
     >>> import astroplan
-    >>> astroplan.observe()
+    >>> time, pos = astroplan.observe()
     >>> astroplan.test()
