@@ -100,8 +100,11 @@ setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
-      requires=['astropy'],
-      install_requires=['astropy'],
+      install_requires=['numpy>=1.6', 'astropy>=1.0'],
+      extras_require=dict(
+          plotting=['matplotlib>=1.4'],
+          docs=['sphinx_rtd_theme']
+      ),
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
