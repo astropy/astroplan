@@ -52,6 +52,9 @@ setup_cfg = dict(conf.items('metadata'))
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.2'
 
+del intersphinx_mapping['h5py']
+intersphinx_mapping['astroquery'] = ('http://astroquery.readthedocs.org/en/latest/', None)
+
 # To perform a Sphinx version check that needs to be more specific than
 # major.minor, call `check_sphinx_version("x.y.z")` here.
 # check_sphinx_version("1.2.1")
@@ -143,7 +146,7 @@ man_pages = [('index', project.lower(), project + u' Documentation',
 ## -- Options for the edit_on_github extension ----------------------------------------
 
 if eval(setup_cfg.get('edit_on_github')):
-    extensions += ['astropy.sphinx.ext.edit_on_github']
+    extensions += ['astropy_helpers.sphinx.ext.edit_on_github']
 
     versionmod = __import__(setup_cfg['package_name'] + '.version')
     edit_on_github_project = setup_cfg['github_project']
