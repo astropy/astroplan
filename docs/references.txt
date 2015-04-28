@@ -1,0 +1,3 @@
+.. _Astropy: http://astropy.org
+.. _skyfield: http://rhodesmill.org/skyfield/
+.. _pyephem: http://rhodesmill.org/pyephem/
