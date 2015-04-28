@@ -43,4 +43,5 @@ Reference/API
 =============
 
 .. automodapi:: astroplan
+    :no-heading:
     :no-inheritance-diagram:
