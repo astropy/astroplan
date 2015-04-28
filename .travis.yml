@@ -28,6 +28,8 @@ matrix:
         # may run for a long time
         - python: 2.7
           env: SETUP_CMD='build_sphinx -w'
+        - python: 3.4
+          env: SETUP_CMD='build_sphinx -w'
 
         # Try Astropy development version
         - python: 2.7
@@ -103,7 +105,4 @@ script:
    - python setup.py $SETUP_CMD
 
 after_success:
-    # If coveralls.io is set up for this package, uncomment the line
-    # below and replace "packagename" with the name of your package.
-    # The coveragerc file may be customized as needed for your package.
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='packagename/tests/coveragerc'; fi
+    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='astroplan/tests/coveragerc'; fi

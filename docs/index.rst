@@ -21,6 +21,7 @@ A more detailed description of the scope and API proposal for ``astroplan`` will
 * Questions: http://groups.google.com/group/astropy
 * Docs: https://astroplan.readthedocs.org/
 * License: BSD-3
+* We support Python 2.7 and 3.3+. (Python 2.6 and 3.2 or earlier are not supported.)
 
 .. _astroplan_news:
 

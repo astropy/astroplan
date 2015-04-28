@@ -22,7 +22,3 @@ Status shields
 * .. image:: https://img.shields.io/coveralls/astroplanners/astroplan.svg
     :target: https://coveralls.io/r/astroplanners/astroplan
     :alt: Code Coverage
-
-* .. image:: https://readthedocs.org/projects/astroplan/badge/?version=latest
-    :target: https://readthedocs.org/projects/astroplan/?badge=latest
-    :alt: Documentation Status
