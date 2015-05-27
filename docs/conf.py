@@ -168,8 +168,8 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
     except ImportError:
         raise ImportError("It looks like you don't have the sphinx_rtd_theme "
                           "package installed. The astroplan documentation "
-                          "uses Read The Docs, so you must install this first."
-                          "For example, pip install sphinx_rtd_theme")
+                          "uses the Read The Docs theme, so you must install this "
+                          "first. For example, pip install sphinx_rtd_theme")
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
