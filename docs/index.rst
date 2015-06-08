@@ -15,6 +15,13 @@ for individual astronomers (professional or amateur) planning an observing night
 as observatories preparing long-term or nightly schedules, taking constraints (moon, slew
 speeds, ...) into account.
 
+We anticipate that astroplan will have the following required dependencies: 
+* Numpy
+* Astropy
+* pytz
+
+with potential optional dependencies including matplotlib and PyEphem or Skyfield.
+
 A more detailed description of the scope and API proposal for ``astroplan`` will be posted in May 2015.
 
 * Code, feature requests, bug reports, pull requests: https://github.com/astroplanners/astroplan
