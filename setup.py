@@ -100,7 +100,7 @@ setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
-      install_requires=['numpy>=1.6', 'astropy>=1.0'],
+      install_requires=['numpy>=1.6', 'astropy>=1.0', 'pytz'],
       extras_require=dict(
           plotting=['matplotlib>=1.4'],
           docs=['sphinx_rtd_theme']
