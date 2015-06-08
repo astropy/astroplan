@@ -4,17 +4,18 @@ from __future__ import (absolute_import, division, print_function,
 
 #from ..extern import six
 
-import sys
+#import sys
 #from math import sqrt, pi, exp, log, floor
-#from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 
-import numpy as np
+#import numpy as np
 
 # Originally authored by Jazmin Berlanga Medina (jazmin.berlanga@gmail.com),
 # and modified by Adrian Price-Whelan (email) and Erik Tollerud (email).
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
-           "Constraints", "Observation"]
+           "Constraint", "TimeWindow", "AltitudeRange",
+           "AboveAirmass", "Observation"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
@@ -25,157 +26,289 @@ class Observer(object):
     """
 
     def __init__(self, name, longitude, latitude, elevation, pressure,
-                 rel_humidity, temp, timezone, description=None):
+                 relative_humidity, temperature, timezone, description=None):
         """
-        Comments.
+        Initializes an Observer object.
+
+        <longer description>
+
+        Parameters
+        ----------
+        name : str
+            A short name for the telescope, observatory or location.
+
+        longitude : str or `~astropy.units.quantity`?
+            The longitude of the observing location.
+
+        latitude : str or `~astropy.units.quantity`?
+            The latitude of the observing location.
+
+        elevation : `~astropy.units.Quantity`
+            The elevation of the observing location, with respect to sea
+            level.
+
+        pressure : `~astropy.units.Quantity`
+            The ambient pressure.
+
+        relative_humidity : float
+            The ambient relative humidity.
+
+        temperature : `~astropy.units.Quantity`
+            The ambient temperature.
+
+        timezone : WHAT TYPE IS pytz.timezone ?
+            The local timezone.
+
+        description : str
+            A short description of the telescope, observatory or observing
+            location.
         """
         raise NotImplementedError()
 
-    def set_environment():
+    def set_environment(self, pressure, relative_humidity, temperature):
         """
-        Comments.
+        Updates the Observer object with environmental conditions.
+
+        <longer description>
+
+        Parameters
+        ----------
+        pressure : `~astropy.units.Quantity`
+            The ambient pressure.
+
+        relative_humidity : `~astropy.units.Quantity`
+            The ambient relative humidity.
+
+        temperature :
+            The ambient temperature.
         """
         raise NotImplementedError()
 
-    # Methods to 
-
-    def get_date(self):
+    def get_date(self, input_date_time, timezone=None):
         """
-        Compatible with astropy.time.Time.
+        Builds an object containing date and time information.
 
-        Must first create date object with get_date() to then feed to all other methods below.
+        Default time zone is UTC.
+        If time zone (local or otherwise) requested, then uses `datetime.datetime`
+        and pytz.timezone to convert from UTC.
+
+        Must first create date_time object with get_date() before using any other 
+        Observer methods, all of which require one as an argument.
+
+        Parameters
+        ----------
+        input_date_time : WHAT TYPE IS astropy.time OBJECT?
+
         """
         raise NotImplementedError()
 
     # Sun-related methods.
 
-    def noon(Date):
+    def noon(date_time):
         """
-        Comments.
+        Returns the local, solar noon time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def midnight(Date):
+    def midnight(date_time):
         """
-        Comments.
+        Returns the local, solar midnight time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def sunset(Date, **kwargs):
+    def sunset(date_time, **kwargs):
         """
-        Comments.
+        Returns the local sunset time.
 
-        Keywords: 
+        The default sunset returned is the next one to occur.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
+
+        Keywords: str, optional
             previous
             next
-
-        Default: 
-            ?
         """
         raise NotImplementedError()
 
-    def sunrise(Date, **kwargs):
+    def sunrise(date_time, **kwargs):
         """
-        Comments.
-        
-        Keywords: 
+        Returns the local sunrise time.
+
+        The default sunrise returned is the next one to occur.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
+
+        Keywords: str, optional
             previous
             next
-
-        Default: 
-            ?
         """
         raise NotImplementedError()
 
     # Moon-related methods.
 
-    def moonrise(Date, **kwargs):
+    def moonrise(date_time, **kwargs):
         """
-        Comments.
-        
-        Keywords: 
+        Returns the local moonrise time.
+
+        The default moonrise returned is the next one to occur.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
+
+        Keywords: str, optional
             previous
             next
-
-        Default: 
-            ?
         """
         raise NotImplementedError()
 
-    def moonset(Date, **kwargs):
+    def moonset(date_time, **kwargs):
         """
-        Comments.
+        Returns the local moonset time.
 
-        Keywords: 
+        The default moonset returned is the next one to occur.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
+
+        Keywords: str, optional
             previous
             next
-
-        Default: 
-            ?
         """
         raise NotImplementedError()
 
-    def moon_illumination(Date):
+    def moon_illumination(date_time):
         """
-        Comments.
+        Returns a float giving the percent illumation.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def moon_position(Date):
+    def moon_position(date_time):
         """
-        Comments.
+        Returns the position of the moon in alt/az.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
     # Other time-related methods.
 
-    def evening_nautical(Date):
+    def evening_nautical(date_time):
         """
-        Comments.
+        Returns the local evening (nautical) twilight time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def evening_civil(Date):
+    def evening_civil(date_time):
         """
-        Comments.
+        Returns the local evening (civil) twilight time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def morning_astronomical(Date):
+    def morning_astronomical(date_time):
         """
-        Comments.
+        Returns the local morning (astronomical) twilight time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def morning_nautical(Date):
+    def morning_nautical(date_time):
         """
-        Comments.
+        Returns the local morning (nautical) twilight time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
-    def morning_civil(Date):
+    def morning_civil(date_time):
         """
-        Comments.
+        Returns the local morning (civil) twilight time.
+
+        Parameters
+        ----------
+        date_time : WHAT TYPE IS date_time OBJECT?
         """
         raise NotImplementedError()
 
 
-#@six.add_metaclass(ABCMeta)
 class Target(object):
-    """ 
+    """
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as `FixedTarget` or `NonFixedTarget` 
+    subclasses such as `FixedTarget` or `NonFixedTarget`.
 
     Would need to import six, abc to make this a metaclass?
     """
+    __metaclass__ = ABCMeta
+
     def __init__(self, name, ra, dec, marker=None):
+        """
+        Defines a single observation target.
+
+        Parameters
+        ----------
+        name : str, optional
+
+        ra : WHAT TYPE IS ra ?
+
+        dec : WHAT TYPE IS dec ?
+
+        marker : str, optional
+            User-defined markers to differentiate between different types
+            of targets (e.g., guides, high-priority, etc.).
+        """
         raise NotImplementedError()
+
+    @property
+    def ra(self):
+        """
+        Right ascension.
+        """
+        raise NotImplementedError
+
+    @property
+    def dec(self):
+        """
+        Declination.
+        """
+        raise NotImplementedError
 
 
 class FixedTarget(Target):
     """
-    Comments.
+    An object that is "fixed" with respect to the celestial sphere.
     """
 
 
@@ -185,18 +318,101 @@ class NonFixedTarget(Target):
     """
 
 
-class Constraints(object):
+class Constraint(object):
     """
-    object/methods need clarification
+    An object containing observational constraints.
+
+    A Constraints object is used in conjunction with a Target
+    and an Observer object (via the apply_constraints method) to find out
+    if a particular target is visible to the observer.
     """
-    
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def apply_constraints(self, target, observer, constraint_list):
+        """
+        Returns information on a target's visibility.
+
+        Finds out if a Target is observable by an Observer given a list
+        of Constraint objects.  The list must contain at least one
+        Constraint object.
+
+        Parameters
+        ----------
+        target : WHAT TYPE IS Target OBJECT ?
+
+        constraint_list : WHAT TYPE IS constraint_list ? `numpy.array` ??
+        """
+        raise NotImplementedError
+
+
+class TimeWindow(Constraint):
+    """
+    An object containing start and end times for an observation.
+    """
+
+    def __init__(self, start, end):
+        """
+        Initializes a TimeWindow object.
+
+        Parameters
+        ----------
+        start : STRING OR astropy.time OBJECT ?
+
+        end : STRING OR astropy.time OBJECT ?
+        """
+        raise NotImplementedError
+
+
+class AltitudeRange(Constraint):
+    """
+    An object containing upper and lower altitude limits.
+    """
+
+    def __init__(self, low, high):
+        """
+        Initializes an AltitudeRange object.
+
+        Parameters
+        ----------
+        low : `~astropy.units.Quantity`
+
+        high : `~astropy.units.Quantity`
+        """
+        raise NotImplementedError
+
+
+class AboveAirmass(Constraint):
+    """
+    An object containing an airmass lower limit.
+    """
+
+    def __init__(self, low):
+        """
+        Initializes an AboveAirmass object.
+
+        Parameters
+        ----------
+        low : float
+        """
+        raise NotImplementedError
+
 
 class Observation(object):
     """
-    Comments.    
+    Comments.
     """
 
-    def __init__(self, target, date):
+    def __init__(self, target, date_time):
+        """
+        Initializes an Observation object.
+
+        Parameters
+        ----------
+        target : WHAT TYPE IS Target OBJECT ?
+
+        date : WHAT TYPE IS date OBJECT ?
+        """
         raise NotImplementedError()
 
     # Observability properties.
@@ -225,7 +441,7 @@ class Observation(object):
     @property
     def pang(self):
         """
-        Parallactic angle. 
+        Parallactic angle.
         """
         raise NotImplementedError()
 
@@ -272,4 +488,3 @@ class Observation(object):
         Time of observation in local mean sidereal time.
         """
         raise NotImplementedError()
-
