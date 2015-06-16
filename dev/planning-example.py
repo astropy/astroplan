@@ -53,7 +53,8 @@ obs = Observer(name='Subaru Telescope',
                timezone=pytz.timezone('US/Hawaii'),
                description="Subaru Telescope on Mauna Kea, Hawaii")
 
-# Define the same observer with an instance of astropy.coordinates.EarthLocation
+# Define the same observer with an instance of astropy.coordinates.EarthLocation,
+# also use pytz.timezone() argument directly as `timezone` keyword's input
 from astropy.coordinates import EarthLocation
 obs = Observer(name='Subaru',
                location=EarthLocation(lon='-155:28:48.900',
@@ -62,16 +63,16 @@ obs = Observer(name='Subaru',
                pressure=0.615 * u.bar,
                relative_humidity=0.11,
                temperature=0 * u.deg_C,
-               timezone=pytz.timezone('US/Hawaii'),
+               timezone='US/Hawaii',
                description="Subaru Telescope on Mauna Kea, Hawaii")
 
 # longitude and latitude would be represented internally by astropy
-# angles.Longitude/Latitude.  So any value that can naturally initialize
-# one of those objects could be passed as the parameter to Observer
+# coordinates.angles.Longitude/Latitude.  So any value that can naturally 
+# initialize one of those objects could be passed as the parameter to Observer
 
 # It's also possible to initialize using astropy objects and other
 # direct entities
-from astropy.coordinates.angles import Longitude, Latitude
+from astropy.coordinates import Longitude, Latitude
 
 obs = Observer(name='Keck 1',
                longitude=Longitude(155.4750 * u.degree),
@@ -96,23 +97,7 @@ obs = sites.Keck1
 obs.set_environment(pressure=0.600 * u.bar, relative_humidity=0.2,
                     temperature=10 * u.deg_C)
 
-# It's easy to construct date/times from the observer, since it knows about
-# its timezone.  These dates can be passed directly to target check methods.
-
-# dates default to midnight if not otherwise specified
-# Date can be anything that astropy.time.Time will accept
-day = obs.get_date("2015-05-01")
-
-# Can get more and more specific
-t1 = obs.get_date("2015-05-01 21:00")
-t1 = obs.get_date("2015-05-01 21:33:41")
-
-# default is current time
-cur_time = obs.get_date()
-
-# Dates are assumed to be in the observer's time zone unless a time zone
-# specifier is given
-t2_utc = obs.get_date("2015-05-01 21:33:41 UTC")
+# Dates are assumed to be UTC by default
 
 """
 We can ask about typical times of interest at this observing position
@@ -121,57 +106,60 @@ The date parameter, if given, can be an astropy Time or a datetime instance.
 If no parameter is given, the current date/time is assumed.
 """
 
+# Define a time
+from astropy.time import Time
+time_obs = Time(2457189.500000, format='jd')
+
 # sunset
-obs.next_sunset(date=day)
-obs.previous_sunset(date=day)
+obs.sunset(date=time_obs, which='nearest') # Default
+obs.sunset(date=time_obs, which='next')
+obs.sunset(date=time_obs, which='previous')
 
 # sunrise
-obs.next_sunrise(date=day)
-obs.previous_sunrise(date=day)
+obs.sunrise(date=time_obs, which='nearest') # Default
+obs.sunrise(date=time_obs, which='next')
+obs.sunrise(date=time_obs, which='previous')
 
 # moon rise
-obs.next_moon_rise(date=day)
-obs.previous_moon_rise(date=day)
+obs.moon_rise(date=time_obs, which='nearest')
 
 # moon set
-obs.next_moon_set(date=day)
-obs.previous_moon_set(date=day)
+obs.moon_set(date=time_obs, which='nearest')
 
 # The above functions can be called with an `angle` keyword argument to specify
 # a particular horizon angle for rising or setting, or can be called with
-# convenience functions for particular morning/evening twilight:
-
-obs.next_sunset(date=day, angle=18*u.degree) # (i.e., astronomical twilight)
+# convenience functions for particular morning/evening twilight.
+# For example, to compute astronomical twilight by specifying the `angle`:
+obs.sunset(date=time_obs, which='next', angle=18*u.degree) 
 
 # evening (astronomical) twilight
-obs.evening_astronomical(date=day)
+obs.evening_astronomical(date=time_obs)
 
 # evening (nautical) twilight
-obs.evening_nautical(date=day)
+obs.evening_nautical(date=time_obs)
 
 # evening (civil) twilight
-obs.evening_civil(date=day)
+obs.evening_civil(date=time_obs)
 
 # morning (nautical) twilight
-obs.morning_nautical(date=day)
+obs.morning_nautical(date=time_obs)
 
 # morning (civil) twilight
-obs.morning_civil(date=day)
+obs.morning_civil(date=time_obs)
 
 # morning (astronomical) twilight
-obs.morning_astronomical(date=day)
+obs.morning_astronomical(date=time_obs)
 
 # what is the moon illumination?
 # returns a float, which is percentage of the moon illuminated
-obs.moon_illumination(date=t1)
+obs.moon_illumination(date=time_obs)
 
 # what is the moon altitude and azimuth?
-# returns an altaz coordinate
-obs.moon_position(date=t1)
+obs.moon_altaz(date=time_obs)
 
 # Other sun-related convenience functions:
-obs.noon(date=day)
-obs.midnight(date=day)
+obs.noon(date=time_obs, which='nearest')
+obs.midnight(date=time_obs, which='nearest')
 
 # ==============
 # Target objects
@@ -194,10 +182,8 @@ t1 = FixedTarget(name='Polaris',
 # Leaves scope for NonSiderealTarget, etc.
 
 # Convenience methods for looking up/constructing targets by name via
-# astroquery?
-
-# Plot the airmass for the specified target:
-airmass_plot(t1, observer=obs, datetime=day)
+# astroquery:
+t1 = FixedTarget.from_name('Polaris')
 
 # ================================
 # Condition objects, observability
@@ -205,44 +191,35 @@ airmass_plot(t1, observer=obs, datetime=day)
 
 """
 Q: Can I observe this target on the night of May 1, 2015 between 18:30
-and 05:30 HST for 30 minutes somewhere between 15 degrees and 89 degrees
-altitude?
+and 05:30 HST, above airmass 1.2, on a telescope that can observe between 
+15 degrees and 89 degrees altitude?
 """
 
 # first we define the conditions
-from astroplan import Constraints, TimeWindow, AltitudeRange, AboveAirmass
+from astroplan import TimeWindow, AltitudeWindow, AboveAirmass, is_observable
 
 # times can be passed in as strings (interpreted as for get_date()) or
 # as astropy Time or datetime objects
-cons = [TimeWindow("2015-05-01 18:30", "2015-05-02 05:30"),
-        AltitudeRange(15.0*u.deg, 89.0*u.deg), AboveAirmass(1.2)]
-# define a target
+constraint_list = [TimeWindow("2015-05-01 18:30", "2015-05-02 05:30"),
+                   AltitudeWindow(15.0*u.deg, 89.0*u.deg), AboveAirmass(1.2)]
+# (AboveAirmass will be a subclass of AltitudeWindow)
+
+# Define a target
 tgt = FixedTarget(name='S5', ra='14:20:00.00', dec='48:00:00.00')
 
-# returns an object with information about the observability with these
-# constraints
-info = obs.Constraints(tgt, cons)
+# Combine a list of constraints to run on Observer, FixedTarget, and time to 
+# determine the observability of target
+constraints = is_observable(constraint_list, obs, tgt, time_obs)
 
-'''
-attributes of return object:
-  observable: a boolean -- whether target is observable at desired constraints
-  rise_time: a datetime -- first time target is visible in at these conditions
-  set_time: a datetime -- time target is no longer visible at these conditions
+# Test only a single constraint:
+constraints = is_observable(AboveAirmass(1.2), obs, tgt, time_obs)
 
-Use of a return object means that additional items can be added in the
-future without breaking the API (e.g. subclasses are free to attach
-additional items).  It can be also useful to attach an "explanation" for why
-something cannot be observed.
-'''
+# `constraints` will be a boolean where True=observable. For a list of 
+# targets, observatories, or times, `constraints` may be a booleans array
 
-'''
-Suggest that Constraints implement a time range, an altitude range and an
-airmass limit at beginning.  Other things that could be added later:
- - azimuth range
- - airmass range
-
-Idea is that Constraints can be subclassed to add additional constraints.
-'''
+# We will eventually need a more complicated method that minimizes a cost 
+# function when optimizing an observing schedule given the results of 
+# `is_observable`.
 
 # ======================================================
 # Other useful calculations wrt an observer and a target
@@ -252,41 +229,8 @@ Idea is that Constraints can be subclassed to add additional constraints.
 # the given time (e.g. to calculate slew time)
 sf = FixedTarget(name='Sf', ra='09:40:00.00', dec='43:00:00.00')
 sm = FixedTarget(name='Sm', ra='10:30:00.00', dec='36:00:00.00')
-t = obs.get_date("2015-05-01 23:00")
 
 # Coordinate arithmetic gives separations in RA, Dec, alt, az
 dra, ddec = sf.ra - sm.ra, sf.dec - sm.dec
-dalt = obs.altaz(sf, t).alt - obs.altaz(sm, t).alt
-dazt = obs.altaz(sf, t).az - obs.altaz(sm, t).az
-
-# tell me about object sm in relation to observer obs at time t
-# returns an Observation object
-cr = obs.calc(sm, t)
-
-"""
-Note use of Observation object--most computations are lazily delayed
-until they are requested from the object.  This saves a lot of time if many
-objects are evaluated wrt a given time and observation position and we only
-need some of the calculation results (e.g. for scheduling).  For example, we
-might evaluate 400 targets against a given time slot and we are only
-interested in their altitude and airmass--calculation time dominates when
-scheduling from a large number of potential targets.
-
-Observation objects contain a number of properties, most of which
-represent inter-related calculations that are not computed until necessary.
-These are exposed via @property attributes:
-
-cr.airmass -- airmass at observed position
-cr.pang -- parallactic angle
-cr.ha -- hour angle
-cr.ut -- time of calculation result in ust
-cr.lt -- time of calculation result in local time
-cr.gmst -- time of calculation result in gmst
-cr.lmst -- ditto local mean sidereal time
-cr.moon_sep -- moon separation from the target
-cr.altitude -- altitude of the object
-cr.azimuth -- azimuth of the object
-"""
-
-# we can also ask for a calculation via the target (same result)
-cr = sm.calc(obs, t)
+dalt = obs.altaz(sf, time_obs).alt - obs.altaz(sm, time_obs).alt
+dazt = obs.altaz(sf, time_obs).az - obs.altaz(sm, time_obs).az
