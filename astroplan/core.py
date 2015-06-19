@@ -128,6 +128,14 @@ class Observer(object):
         """
         Returns an instance of `~astropy.coordinates.SkyCoord` with altitude and
         azimuth of the `FixedTarget` called `target` at time `time`.
+
+        Parameters
+        ----------
+        target : `~astroplan.FixedObject`
+            Celestial object of interest.
+
+        time : `~astropy.time.Time`
+            Object
         """
         if not isinstance(target, FixedTarget):
             raise TypeError, ('The target must be an instance of FixedTarget')
@@ -329,6 +337,8 @@ class Target(object):
         """
         Right ascension.
         """
+        if isinstance(self, FixedTarget):
+            return self.coord.ra
         raise NotImplementedError
 
     @property
@@ -336,6 +346,8 @@ class Target(object):
         """
         Declination.
         """
+        if isinstance(self, FixedTarget):
+            return self.coord.dec
         raise NotImplementedError
 
 
