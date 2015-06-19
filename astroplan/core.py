@@ -5,12 +5,12 @@ from __future__ import (absolute_import, division, print_function,
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz)
 import astropy.units as u
-from astropy.units.quantity import Quantity
+from astropy.units.Quantity import Quantity
 
 import pytz
 
 ################################################################################
-# Temporary solution to IERS tables problems
+# TODO: Temporary solution to IERS tables problems
 from astropy.utils.data import download_file
 from astropy.utils import iers
 import datetime
@@ -47,7 +47,7 @@ class Observer(object):
         """
         Initializes an Observer object.
 
-        <longer description>
+        TODO: <longer description>
 
         Parameters
         ----------
@@ -60,12 +60,12 @@ class Observer(object):
         location : `~astropy.coordinates.EarthLocation`
             The location (latitude, longitude, elevation) of the observatory.
 
-        longitude : str or `~astropy.units.quantity`
+        longitude : str or `~astropy.units.Quantity`
             The longitude of the observing location. If str, should be a string
             that initializes a `~astropy.coordinates.Longitude` object with
             units in degrees.
 
-        latitude : str or `~astropy.units.quantity`
+        latitude : str or `~astropy.units.Quantity`
             The latitude of the observing location. If str, should be a string
             that initializes a `~astropy.coordinates.Latitude` object with
             units in degrees.
