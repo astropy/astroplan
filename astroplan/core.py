@@ -2,6 +2,21 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
+                                 AltAz)
+import astropy.units as u
+from astropy.units.quantity import Quantity
+
+import pytz
+
+################################################################################
+# Temporary solution to IERS tables problems
+from astropy.utils.data import download_file
+from astropy.utils import iers
+import datetime
+iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL, cache=True))
+################################################################################
+
 #from ..extern import six
 
 #import sys
@@ -25,8 +40,10 @@ class Observer(object):
     Some comments.
     """
 
-    def __init__(self, name, longitude, latitude, elevation, pressure,
-                 relative_humidity, temperature, timezone, description=None):
+    def __init__(self, name=None, location=None, latitude=None, longitude=None,
+                 elevation=None, pressure=None, relative_humidity=None,
+                 temperature=None, timezone=pytz.timezone('UTC'),
+                 description=None):
         """
         Initializes an Observer object.
 
@@ -37,18 +54,25 @@ class Observer(object):
         name : str
             A short name for the telescope, observatory or location.
 
-        longitude : str or `~astropy.units.quantity`?
-            The longitude of the observing location.
+        pressure : `~astropy.units.Quantity`
+            The ambient pressure.
 
-        latitude : str or `~astropy.units.quantity`?
-            The latitude of the observing location.
+        location : `~astropy.coordinates.EarthLocation`
+            The location (latitude, longitude, elevation) of the observatory.
+
+        longitude : str or `~astropy.units.quantity`
+            The longitude of the observing location. If str, should be a string
+            that initializes a `~astropy.coordinates.Longitude` object with
+            units in degrees.
+
+        latitude : str or `~astropy.units.quantity`
+            The latitude of the observing location. If str, should be a string
+            that initializes a `~astropy.coordinates.Latitude` object with
+            units in degrees.
 
         elevation : `~astropy.units.Quantity`
             The elevation of the observing location, with respect to sea
             level.
-
-        pressure : `~astropy.units.Quantity`
-            The ambient pressure.
 
         relative_humidity : float
             The ambient relative humidity.
@@ -56,51 +80,60 @@ class Observer(object):
         temperature : `~astropy.units.Quantity`
             The ambient temperature.
 
-        timezone : WHAT TYPE IS pytz.timezone ?
-            The local timezone.
+        timezone : str or `datetime.tzinfo`
+            The local timezone, as either an instance of `pytz.timezone()` or
+            the string accepted by `pytz.timezone()`.
 
         description : str
             A short description of the telescope, observatory or observing
             location.
         """
-        raise NotImplementedError()
 
-    def set_environment(self, pressure, relative_humidity, temperature):
+        if name is not None:
+            self.name = name
+
+        # If lat/long given instead of EarthLocation, convert them
+        # to EarthLocation
+        if location is None and (latitude is not None and longitude is not None):
+            accepted_latlon_types = [str, Quantity]
+            if (type(latitude) in accepted_latlon_types and
+                type(longitude) in accepted_latlon_types):
+                latitude = Latitude(latitude, unit=u.degree)
+                longitude = Longitude(longitude, unit=u.degree)
+
+            self.location = EarthLocation.from_geodetic(longitude, latitude,
+                                                        elevation)
+
+        elif isinstance(location, EarthLocation):
+            self.location = location
+
+        else:
+            raise ValueError, ('Observatory location must be specified with '
+                    'either (1) latitude and longitude in degrees as '
+                    'accepted by astropy.coordinates.Latitude and '
+                    'astropy.coordinates.Latitude, or (2) as an instance of '
+                    'astropy.coordinates.EarthLocation.')
+
+        # Accept various timezone inputs, default to UTC
+        if isinstance(timezone, datetime.tzinfo):
+            self.timezone = timezone
+        elif type(timezone) == str:
+            self.timezone = pytz.timezone(timezone)
+        else:
+            raise ValueError, ('timezone keyword should be a string, or an '
+                               'instance of datetime.tzinfo')
+
+
+    def altaz(self, target, time):
         """
-        Updates the Observer object with environmental conditions.
-
-        <longer description>
-
-        Parameters
-        ----------
-        pressure : `~astropy.units.Quantity`
-            The ambient pressure.
-
-        relative_humidity : `~astropy.units.Quantity`
-            The ambient relative humidity.
-
-        temperature :
-            The ambient temperature.
+        Returns an instance of `~astropy.coordinates.SkyCoord` with altitude and
+        azimuth of the `FixedTarget` called `target` at time `time`.
         """
-        raise NotImplementedError()
+        if not isinstance(target, FixedTarget):
+            raise TypeError, ('The target must be an instance of FixedTarget')
 
-    def get_date(self, input_date_time, timezone=None):
-        """
-        Builds an object containing date and time information.
-
-        Default time zone is UTC.
-        If time zone (local or otherwise) requested, then uses `datetime.datetime`
-        and pytz.timezone to convert from UTC.
-
-        Must first create date_time object with get_date() before using any other 
-        Observer methods, all of which require one as an argument.
-
-        Parameters
-        ----------
-        input_date_time : WHAT TYPE IS astropy.time OBJECT?
-
-        """
-        raise NotImplementedError()
+        return target.coord.transform_to(AltAz(target.coord.ra, target.coord.dec,
+                                         location=self.location, obstime=time))
 
     # Sun-related methods.
 
@@ -310,7 +343,20 @@ class FixedTarget(Target):
     """
     An object that is "fixed" with respect to the celestial sphere.
     """
+    def __init__(self, coord, name=None, **kwargs):
+        '''
+        Docstring from Jazmin
+        '''
+        if not isinstance(coord, SkyCoord):
+            raise TypeError, ('Coordinate must be a SkyCoord.')
 
+        self.name = name
+        self.coord = coord
+
+    @classmethod
+    def from_name(cls, name, **kwargs):
+        kwargs['name'] = name
+        return cls(SkyCoord.from_name(name), **kwargs)
 
 class NonFixedTarget(Target):
     """
