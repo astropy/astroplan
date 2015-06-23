@@ -6,32 +6,57 @@
 
 # This is a strawman API for plotting with Astroplan.
 
-# Must first construct an Observer object...
+# Must first construct an Observer object using astropy.coordinates.
 
 from astroplan import Observer
+from astropy.coordinates import EarthLocation
 import astropy.units as u
-import pytz
+from pytz import timezone
 
-obs = Observer(name='Subaru Telescope',
-               longitude='-155:28:48.900',
-               latitude='+19:49:42.600',
-               elevation=4163 * u.meter,
-               pressure=0.615 * u.bar,
-               relative_humidity=0.11,
-               temperature=0 * u.deg_C,
-               timezone=pytz.timezone('US/Hawaii'),
-               description="Subaru Telescope on Mauna Kea, Hawaii")
+my_location = EarthLocation.from_geodetic(
+    '-155d28m48.900s',
+    '+19d49m42.600s',
+    4163 * u.m,
+    )
 
-day = obs.get_date("2015-05-01")
+obs = Observer(
+    name='Subaru Telescope',
+    location=my_location,
+    pressure=0.615 * u.bar,
+    relative_humidity=0.11,
+    temperature=0 * u.deg_C,
+    timezone=timezone('US/Hawaii'),
+    description="Subaru Telescope on Mauna Kea, Hawaii"
+    )
 
-# ...then define your target... 
+# Or call up one of of the sites in Astroplan's database.
+
+from astroplan import sites
+
+obs = sites.Keck1
+
+# Then, define your target.
 
 from astroplan import FixedTarget
+from astroplan.coordinates import SkyCoord
 
-t1 = FixedTarget(name='Polaris', ra='02:31:49.09', dec='+89:15:50.8')
+my_target = FixedTarget(
+    name='Polaris',
+    coord=SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+    )
+
+# You can also define an array with multiple targets.
+targets = [
+    FixedTarget(name='Polaris',
+                coord=SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')),
+    FixedTarget(name='Sirius',
+                coord=SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')),
+    FixedTarget(name='Other Target',
+                coord=SkyCoord('01h30m0s', '+10d15m20s', frame='icrs')),
+    ]
 
 # ...once you've constructed your Observer and Target objects, you can plot any
-#   any number of quantities.
+#   any number of quantities using the plotting functions and Time objects.
 
 
 # ===============
@@ -39,28 +64,56 @@ t1 = FixedTarget(name='Polaris', ra='02:31:49.09', dec='+89:15:50.8')
 # ===============
 
 from astroplan import plot_airmass
+from astropy.time import Time
+import numpy as np
 
-# The default airmass plot takes a Target, an Observer, and a datetime object
-#   as arguments. 
-# The default time range is six hours before to six hours after the datetime
-#   specified, and a light background.
-plot_airmasss(t1, observer=obs, datetime=day)
+# plot_airmass takes an individual Target, an individual Observer,
+#   and a Time object as arguments.
 
-# You can also pass several targets to plot_airmass once you create them.
+# Construct the Time object with as many individual times as you want data
+#   points in the resulting airmass plot.
 
-target_list = [t1, t2, t3]
+# One way to do this is with a TimeDelta object and numpy.linspace().
 
-plot_airmass(target_list, observer=obs, datetime=day)
+start_time = Time('2015-01-15T21:00:00')
+end_time = Time('2015-01-16T04:00:00')
+delta_t_airmass = end_time - start_time
+times_airmass = start_time + delta_t_airmass*np.linspace(0.0, 1.0, 100)
 
-# You can set several options, such as change the time start/end (relative
-#   to the datetime object), set a dark background, etc., with optional keywords.
+plot_airmass(my_target, observer=obs, time=times_airmass)
 
-plot_airmass(target_list, observer=obs, datetime=day, time_window=(-8, +8), dark)
+# If you want to populate a Time object starting with just one time,
+# you can use astropy.units.
 
-# You can leave the start or end time to the default simply by leaving that 
-#   option blank.
+times_airmass = start_time + np.linspace(-8, 8, 100)*u.hour
 
-plot_airmass(target_list, observer=obs, datetime=day, time_window=(-8,), dark)
+# If you want to plot airmass for multiple targets on the same plot,
+#   use the new_plot=False option for each target after the first
+#   (the default is True).
+
+plot_airmass(targets[0], observer=obs, time=times_airmass)
+plot_airmass(targets[1], observer=obs, time=times_airmass, new_plot=False)
+plot_airmass(targets[2], observer=obs, time=times_airmass, new_plot=False)
+
+# If you want to plot airmass for multiple targets on different plots,
+#   simply issue the command as normal.
+
+for i in range(0, len(targets)):
+    plot_airmass(targets[i], observer=obs, time=times_airmass)
+
+# You can also set a dark background with the dark_plot=True option.
+
+plot_airmass(my_target, observer=obs, time=times_airmass, dark_plot=True)
+
+# For custom line styles/colors, use the style_kwargs option in the following
+#   manner.
+
+plot_airmass(
+    my_target,
+    observer=obs,
+    time=times_airmass,
+    style_kwarg={'linestyle': '--', 'color': 'r'},
+    )
 
 
 # =========================
@@ -69,13 +122,46 @@ plot_airmass(target_list, observer=obs, datetime=day, time_window=(-8,), dark)
 
 from astroplan import plot_pang
 
-# The default parallactic angle plot takes one or more Target objects, 
-#   an Observer, and a datetime object.
-# The defaults are: time range is six hours before to six hours after the datetime 
-#   specified, a light background.
-# You can set options the same way you set them for plot_airmass.
+# The plot_pang takes an individual Target, an individual Observer,
+#   and a Time datetime object.
 
-plot_pang(target_list, observer=obs, datetime=day)
+# Just as with plot_airmass, construct the Time object with as many
+#   individual times as you want data points in the resulting plot.
+
+start_time = Time('2015-01-15T21:00:00')
+end_time = Time('2015-01-16T04:00:00')
+delta_t_pang = end_time - start_time
+times_pang = start_time + delta_t_pang*np.linspace(0.0, 1.0, 50)
+
+plot_pang(my_target, observer=obs, time=times_pang)
+
+# If you want to plot airmass for multiple targets on the same plot,
+#   use the new_plot=False option for each target after the first
+#   (the default is True).
+
+plot_pang(targets[0], observer=obs, time=times_pang)
+plot_pang(targets[1], observer=obs, time=times_pang, new_plot=False)
+plot_pang(targets[2], observer=obs, time=times_pang, new_plot=False)
+
+# If you want to plot airmass for multiple targets on different plots,
+#   simply issue the command as normal.
+
+for i in range(0, len(targets)):
+    plot_pang(targets[i], observer=obs, time=times_pang)
+
+# You can also set a dark background with the dark_plot=True option.
+
+plot_pang(my_target, observer=obs, time=times_pang, dark_plot=True)
+
+# For custom line styles/colors, use the style_kwargs option in the following
+#   manner.
+
+plot_pang(
+    my_target,
+    observer=obs,
+    time=times_pang,
+    style_kwarg={'linestyle': '--', 'color': 'r'},
+    )
 
 
 # =========
@@ -84,33 +170,69 @@ plot_pang(target_list, observer=obs, datetime=day)
 
 from astroplan import plot_sky
 
-# The default sky chart plot takes one or more Target objects, an Observer, 
-#   and a datetime object. 
-# The default uses alt/az coordinates, is centered on the zenith 
+# plot_sky produces a sky chart relative to the observer, showing the
+#   locations of Targets at user-specified times.
+
+# plot_sky takes a Target, an Observer and a Time object.
+# The default uses alt/az coordinates, is centered on the zenith
 #   of the Observer at the datetime given, and has a light background.
 
-plot_sky(target_list, observer=obs, datetime=day)
+# Most users will want to see the location of multiple Targets at a
+#   given time.
 
-# You can set several options, including the use of RA/Dec coordinates, 
-#   a dark background, turn markers on, etc.
-# Markers are pulled from the targets provided. 
+some_time = Time('2015-01-15T22:00:00')
 
-plot_sky(target_list, observer=obs, datetime=day, radec, dark, markers)
+plot_sky(targets[0], observer=obs, time=some_time)
+plot_sky(targets[1], observer=obs, time=some_time)
+plot_sky(targets[2], observer=obs, time=some_time)
 
-# You can show how your target objects move over time (with respect to your 
-#   zenith) in one of two ways:
+# But you can also plot guide objects as well, and set them apart by
+#   specifying a a different plotting style.
 
-# 1) Provide multiple datetime objects after creating them:
+guides = [
+    FixedTarget(name='Guide 1',
+                coord=SkyCoord('09h10m11.12s', '-50d40m30.20s', frame='icrs')),
+    FixedTarget(name='Guide 2',
+                coord=SkyCoord('06h45m00.0s', '-16d45m60.0s', frame='icrs')),
+    FixedTarget(name='Guide 3',
+                coord=SkyCoord('01h30m0s', '+10d15m20s', frame='icrs')),
+    ]
 
-datetime_list = [time1, time2, time3, time4]
-plot_sky(target_list, observer=obs, datetime=datetime_list)
+for i in range(0, len(guides)):
+    plot_sky(
+        guides[i],
+        observer=obs,
+        time=some_time,
+        style_kwargs={'marker': '*', 'color': 'k'},
+        )
 
-# 2) Provide a time window and number of "snapshots" you want displayed. 
-#   Here, 8 hours before to 8 hours after the datetime object, 
-#   and 5 snapshots evenly spaced throughout the time window (in addition to 
-#   the datetime specified).
+# You can also plot any number of objects on the same plot over a period
+#   of time to see how they move over the course of a night.
 
-plot_sky(target_list, observer=obs, datetime=day, time_window=(-8, +8, 5)
+# Just as with plot_airmass and plot_pang, construct the Time object
+#   with as many individual times as you want data points in the resulting
+#   plot.
+
+start_time = Time('2015-01-15T21:00:00')
+times_sky = start_time + np.linspace(-4.0, 4.0, 9)
+
+for i in range(0, len(targets)):
+    plot_sky(targets[i], observer=obs, time=times_sky)
+
+# If you want to plot your objects on separate plots for each time,
+#   (e.g., for making an animation) set new_plot=True
+#   (the default is false).
+
+for i in range(0, len(times_sky)):
+    plot_sky(targets[0], observer=obs, time=times_sky[i], new_plot=True)
+    for j in range(1, len(targets)):
+        plot_sky(targets[j], observer=obs, time=times_sky[i])
+    for k in range(0, len(guides)):
+        plot_sky(guides[k], observer=obs, time=times_sky[i])
+
+# You can also set a dark background with the dark_plot=True option.
+
+plot_sky(targets[0], observer=obs, time=start_time, dark_plot=True)
 
 
 # ===========
@@ -118,4 +240,3 @@ plot_sky(target_list, observer=obs, datetime=day, time_window=(-8, +8, 5)
 # ===========
 
 # Will be added as come up in discussion.
-
