@@ -143,7 +143,7 @@ obs.midnight(time=time_obs, which='nearest')
 A target object defines a single observation target, with coordinates
 and an optional name.
 '''
-from astroplan import FixedTarget, airmass_plot
+from astroplan import FixedTarget
 
 # Define a target.
 
@@ -168,13 +168,15 @@ and 05:30 HST, above airmass 1.2, on a telescope that can observe between
 """
 
 # first we define the conditions
-from astroplan import TimeWindow, AltitudeWindow, AboveAirmass, is_observable
+from astroplan import TimeRange, AltitudeRange, AirmassRange, is_observable
+# `is_observable` is a temporary function which will eventually be a method of
+# something to support caching
 
-# times can be passed in as strings (interpreted as for get_date()) or
-# as astropy Time or datetime objects
-time1, time2 = Time("2015-05-01 18:30"), Time("2015-05-02 05:30")
-constraint_list = [TimeWindow(time1, time2), AboveAirmass(1.2),
-                   AltitudeWindow(15.0*u.deg, 89.0*u.deg)]
+# Times in TimeRange can be passed in as strings, will be passed to the
+# Time constructor.
+constraint_list = [TimeRange("2015-05-01 18:30", "2015-05-02 05:30"),
+                   AirmassRange(1.2), AltitudeRange(15.0*u.deg, 89.0*u.deg)]
+
 # (AboveAirmass will be a subclass of AltitudeWindow)
 
 # Combine a list of constraints to run on Observer, FixedTarget, and time to 
@@ -182,7 +184,10 @@ constraint_list = [TimeWindow(time1, time2), AboveAirmass(1.2),
 constraints = is_observable(constraint_list, obs, t1, time_obs)
 
 # Test only a single constraint:
-constraints = is_observable(AboveAirmass(1.2), obs, t1, time_obs)
+constraints = is_observable(AirmassRange(1.2), obs, t1, time_obs)
+
+# AirmassRange can accept two bounding airmasses, assumes single argument is
+# an upper limit, lower limit = 1.
 
 # `constraints` will be a boolean where True=observable. For a list of 
 # targets, observatories, or times, `constraints` may be a booleans array
