@@ -5,7 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz)
 import astropy.units as u
-from astropy.units.Quantity import Quantity
+from astropy.units import Quantity
 
 import pytz
 
@@ -108,7 +108,7 @@ class Observer(object):
             self.location = location
 
         else:
-            raise ValueError, ('Observatory location must be specified with '
+            raise ValueError('Observatory location must be specified with '
                     'either (1) latitude and longitude in degrees as '
                     'accepted by astropy.coordinates.Latitude and '
                     'astropy.coordinates.Latitude, or (2) as an instance of '
@@ -120,7 +120,7 @@ class Observer(object):
         elif type(timezone) == str:
             self.timezone = pytz.timezone(timezone)
         else:
-            raise ValueError, ('timezone keyword should be a string, or an '
+            raise ValueError('timezone keyword should be a string, or an '
                                'instance of datetime.tzinfo')
 
 
@@ -138,7 +138,7 @@ class Observer(object):
             Object
         """
         if not isinstance(target, FixedTarget):
-            raise TypeError, ('The target must be an instance of FixedTarget')
+            raise TypeError('The target must be an instance of FixedTarget')
 
         return target.coord.transform_to(AltAz(target.coord.ra, target.coord.dec,
                                          location=self.location, obstime=time))
@@ -314,7 +314,7 @@ class Target(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, ra, dec, marker=None):
+    def __init__(self, name=None, ra=None, dec=None, marker=None):
         """
         Defines a single observation target.
 
@@ -339,7 +339,7 @@ class Target(object):
         """
         if isinstance(self, FixedTarget):
             return self.coord.ra
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def dec(self):
@@ -348,21 +348,21 @@ class Target(object):
         """
         if isinstance(self, FixedTarget):
             return self.coord.dec
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class FixedTarget(Target):
     """
     An object that is "fixed" with respect to the celestial sphere.
     """
-    def __init__(self, coord, name=None, **kwargs):
+    def __init__(self, coord, **kwargs):
         '''
-        Docstring from Jazmin
+        TODO: Docstring.
         '''
         if not isinstance(coord, SkyCoord):
-            raise TypeError, ('Coordinate must be a SkyCoord.')
+            raise TypeError('Coordinate must be a SkyCoord.')
 
-        self.name = name
+        self.name = kwargs.get('name', None)
         self.coord = coord
 
     @classmethod
