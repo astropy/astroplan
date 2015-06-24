@@ -41,9 +41,8 @@ class Observer(object):
     """
 
     def __init__(self, name=None, location=None, latitude=None, longitude=None,
-                 elevation=None, pressure=None, relative_humidity=None,
-                 temperature=None, timezone=pytz.timezone('UTC'),
-                 description=None):
+                 elevation=None, timezone='UTC', pressure=None,
+                 relative_humidity=None, temperature=None, description=None):
         """
         Initializes an Observer object.
 
@@ -117,12 +116,11 @@ class Observer(object):
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
-        elif type(timezone) == str:
+        elif isinstance(timezone, str) or isinstance(timezone, unicode):
             self.timezone = pytz.timezone(timezone)
         else:
             raise ValueError('timezone keyword should be a string, or an '
                                'instance of datetime.tzinfo')
-
 
     def altaz(self, target, time):
         """
