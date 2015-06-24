@@ -6,7 +6,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.tests.helper import remote_data
 import numpy as np
-import ephem
+from numpy.testing import assert_allclose
 import pytz
 
 from ..core import FixedTarget, Observer
@@ -72,30 +72,54 @@ def test_Observer_altaz():
     astroplan_obs = Observer(name='Observatory', location=location,
                              pressure=pressure*u.bar)
     astroplan_vega = FixedTarget(vega_coords)
-    altaz = astroplan_obs.altaz(astroplan_vega, time)
+    altaz = astroplan_obs.altaz(time, astroplan_vega)
     astroplan_altitude = altaz.alt
     astroplan_azimuth = altaz.az
 
-    # Calculate altitude/azimuth with PyEphem
+    # Calculate altitude/azimuth with PyEphem, like so with get_pyephem_altaz
+    '''
+    >>> pyephem_altitude, pyephem_azimuth = get_pyephem_altaz(latitude,
+                                                              longitude,
+                                                              elevation,
+                                                              time,
+                                                              pressure,
+                                                              vega_coords)
+    >>> pyephem_altitude, pyephem_azimuth
+    (<Latitude 51.198848716510874 deg>, <Longitude 358.4676707379987 deg>)
+    '''
+    pyephem_altitude = Latitude('51.198848716510874 deg')
+    pyephem_azimuth = Longitude('358.4676707379987 deg')
+
+    # Assert that altitudes/azimuths are within 30 arcsec - this is a wide
+    # tolerance because the IERS tables used by astroplan may offset astroplan's
+    # positions due to leap seconds.
+    tolerance = (30*u.arcsec).to('deg').value
+    assert_allclose(pyephem_altitude.value, astroplan_altitude.value,
+                    atol=tolerance)
+    assert_allclose(pyephem_azimuth.value, astroplan_azimuth.value,
+                    atol=tolerance)
+
+def get_pyephem_altaz(latitude, longitude, elevation, time, pressure,
+                      target_coords):
+    '''
+    Run PyEphem to compute the altitude/azimuth of a target at specified time
+    and observatory, for comparison with astroplan calucation tested in
+    `test_Observer_altaz`.
+    '''
+    import ephem
     pyephem_obs = ephem.Observer()
     pyephem_obs.lat = latitude
     pyephem_obs.lon = longitude
     pyephem_obs.elevation = elevation
     pyephem_obs.date = time.datetime
     pyephem_obs.pressure = pressure
-    pyephem_vega = ephem.FixedBody()
-    pyephem_vega._ra = ephem.degrees(np.radians(vega_coords.ra.value))
-    pyephem_vega._dec = ephem.degrees(np.radians(vega_coords.dec.value))
-    pyephem_vega.compute(pyephem_obs)
-    pyephem_altitude = Latitude(np.degrees(pyephem_vega.alt)*u.degree)
-    pyephem_azimuth = Longitude(np.degrees(pyephem_vega.az)*u.degree)
-
-    # Assert that altitudes/azimuths are within 30 arcsec - this is a wide
-    # tolerance because the IERS tables used by astroplan may offset astroplan's
-    # positions due to leap seconds.
-    tolerance = 30*u.arcsec
-    assert (abs(pyephem_altitude - astroplan_altitude) < tolerance and
-            abs(pyephem_azimuth - astroplan_azimuth) < tolerance)
+    pyephem_target = ephem.FixedBody()
+    pyephem_target._ra = ephem.degrees(np.radians(target_coords.ra.value))
+    pyephem_target._dec = ephem.degrees(np.radians(target_coords.dec.value))
+    pyephem_target.compute(pyephem_obs)
+    pyephem_altitude = Latitude(np.degrees(pyephem_target.alt)*u.degree)
+    pyephem_azimuth = Longitude(np.degrees(pyephem_target.az)*u.degree)
+    return pyephem_altitude, pyephem_azimuth
 
 def test_Observer_timezone_parser():
     lat = '+19:00:00'

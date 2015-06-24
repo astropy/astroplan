@@ -91,6 +91,19 @@ class Observer(object):
         if name is not None:
             self.name = name
 
+        if pressure is None:
+            pressure = 0
+
+        if temperature is None:
+            temperature = 0 * u.deg_C
+
+        if relative_humidity is None:
+            relative_humidity = 0
+
+        self.pressure = pressure
+        self.temperature = temperature
+        self.relative_humidity = relative_humidity
+
         # If lat/long given instead of EarthLocation, convert them
         # to EarthLocation
         if location is None and (latitude is not None and longitude is not None):
@@ -107,11 +120,11 @@ class Observer(object):
             self.location = location
 
         else:
-            raise ValueError('Observatory location must be specified with '
-                    'either (1) latitude and longitude in degrees as '
-                    'accepted by astropy.coordinates.Latitude and '
-                    'astropy.coordinates.Latitude, or (2) as an instance of '
-                    'astropy.coordinates.EarthLocation.')
+            raise TypeError('Observatory location must be specified with '
+                            'either (1) latitude and longitude in degrees as '
+                            'accepted by astropy.coordinates.Latitude and '
+                            'astropy.coordinates.Latitude, or (2) as an '
+                            'instance of astropy.coordinates.EarthLocation.')
 
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
@@ -119,27 +132,45 @@ class Observer(object):
         elif isinstance(timezone, str) or isinstance(timezone, unicode):
             self.timezone = pytz.timezone(timezone)
         else:
-            raise ValueError('timezone keyword should be a string, or an '
-                               'instance of datetime.tzinfo')
+            raise TypeError('timezone keyword should be a string, or an '
+                            'instance of datetime.tzinfo')
 
-    def altaz(self, target, time):
+    def altaz(self, time, target=None, obswl=None):
         """
         Returns an instance of `~astropy.coordinates.SkyCoord` with altitude and
         azimuth of the `FixedTarget` called `target` at time `time`.
 
         Parameters
         ----------
-        target : `~astroplan.FixedObject`
-            Celestial object of interest.
-
         time : `~astropy.time.Time`
-            Object
-        """
-        if not isinstance(target, FixedTarget):
-            raise TypeError('The target must be an instance of FixedTarget')
+            Astropy time object.
 
-        return target.coord.transform_to(AltAz(target.coord.ra, target.coord.dec,
-                                         location=self.location, obstime=time))
+        target : None (default) or `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord`
+            Celestial object of interest. If `target`=None, return just the
+            `~astropy.coordinates.AltAz` frame without coordinates.
+
+        """
+        if obswl is None:
+            obswl = 1*u.micron
+
+        altaz_frame = AltAz(location=self.location, obstime=time,
+                            pressure=self.pressure, obswl=obswl,
+                            temperature=self.temperature,
+                            relative_humidity=self.relative_humidity)
+
+        if target is None:
+            return altaz_frame
+        else:
+            if not (isinstance(target, FixedTarget) or
+                        isinstance(target, SkyCoord)):
+                raise TypeError('The target must be an instance of FixedTarget '
+                                'or SkyCoord.')
+
+            if hasattr(target, 'coord'):
+                coordinate = target.coord
+            else:
+                coordinate = target
+            return coordinate.transform_to(altaz_frame)
 
     # Sun-related methods.
 
@@ -365,6 +396,8 @@ class FixedTarget(Target):
 
     @classmethod
     def from_name(cls, query_name, **kwargs):
+        # Allow manual override for name keyword so that the target name can
+        # be different from the query name, otherwise assume name=queryname.
         name = kwargs.pop('name', query_name)
         return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
 
