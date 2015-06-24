@@ -364,9 +364,9 @@ class FixedTarget(Target):
         self.coord = coord
 
     @classmethod
-    def from_name(cls, name, **kwargs):
-        kwargs['name'] = name
-        return cls(SkyCoord.from_name(name), **kwargs)
+    def from_name(cls, query_name, **kwargs):
+        name = kwargs.pop('name', query_name)
+        return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
 
 class NonFixedTarget(Target):
     """

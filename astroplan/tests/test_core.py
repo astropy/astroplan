@@ -113,3 +113,18 @@ def test_Observer_timezone_parser():
                                             'and instances of pytz.timezone')
 
     assert obs2.timezone == obs3.timezone, ('Default timezone should be UTC')
+
+def test_FixedTarget_ra_dec():
+    '''
+    Confirm that FixedTarget.ra and FixedTarget.dec are the same as the
+    right ascension and declination stored in the FixedTarget.coord variable -
+    which is a SkyCoord
+    '''
+
+    vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
+    vega = FixedTarget(vega_coords, name='Vega')
+    assert vega.coord == vega_coords, 'Store coordinates directly'
+    assert vega.coord.ra == vega_coords.ra == vega.ra, ('Retrieve RA from '
+                                                        'SkyCoord')
+    assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
+                                                           'SkyCoord')
