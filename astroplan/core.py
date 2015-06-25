@@ -128,9 +128,8 @@ class Observer(object):
         time : `~astropy.time.Time`
             Astropy time object.
 
-        target : None (default) or `~astroplan.FixedTarget` or
-        `~astropy.coordinates.sky_coordinate.SkyCoord`
-            Celestial object of interest. If `target`=None, return just the
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
+            Celestial object of interest. If `target` is `None`, return the
             `~astropy.coordinates.AltAz` frame without coordinates.
 
         obswl : `~astropy.units.Quantity` (optional)
