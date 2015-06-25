@@ -36,7 +36,10 @@ def test_Observer_constructor_location():
                     location=location,
                     **environment_kwargs)
 
-    assert obs1.location == obs2.location, ('Locations not parsed equivalently')
+    assert obs1.location == obs2.location, ('using latitude/longitude/'
+                                            'elevation keywords gave a '
+                                            'different answer from passing in '
+                                            'an EarthLocation directly')
 
 @remote_data
 def test_FixedTarget_from_name():

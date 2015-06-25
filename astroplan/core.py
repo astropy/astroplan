@@ -38,17 +38,13 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 
 class Observer(object):
     """
-    Some comments.
+    A container for information about an observatory's location and environment.
     """
 
     def __init__(self, name=None, location=None, latitude=None, longitude=None,
                  elevation=None, timezone='UTC', pressure=None,
                  relative_humidity=None, temperature=None, description=None):
         """
-        Initializes an Observer object.
-
-        TODO: <longer description>
-
         Parameters
         ----------
         name : str
@@ -124,10 +120,8 @@ class Observer(object):
 
     def altaz(self, time, target=None, obswl=None):
         """
-        Returns an instance of `~astropy.coordinates.SkyCoord` with altitude and
-        azimuth of the `FixedTarget` called `target` at time `time`. All
-        observatory environment variables set elsewhere (pressure, temperature,
-        relative humidity) will be used in the `AltAz` frame.
+        Calculates an altitude/azimuth frame (if `target` not specified)
+        or coordinate (otherwise).
 
         Parameters
         ----------
@@ -135,12 +129,17 @@ class Observer(object):
             Astropy time object.
 
         target : None (default) or `~astroplan.FixedTarget` or
-        `~astropy.coordinates.SkyCoord`
+        `~astropy.coordinates.sky_coordinate.SkyCoord`
             Celestial object of interest. If `target`=None, return just the
             `~astropy.coordinates.AltAz` frame without coordinates.
 
         obswl : `~astropy.units.Quantity` (optional)
             Wavelength of the observation used in the calculation.
+
+        Returns
+        -------
+        `~astropy.coordinates.AltAz`
+            Frame or coordinate.
 
         """
 
@@ -165,27 +164,27 @@ class Observer(object):
 
     # Sun-related methods.
 
-    def noon(date_time):
+    def noon(self, time):
         """
         Returns the local, solar noon time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def midnight(date_time):
+    def midnight(self, time):
         """
         Returns the local, solar midnight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def sunset(date_time, **kwargs):
+    def sunset(self, time, **kwargs):
         """
         Returns the local sunset time.
 
@@ -193,7 +192,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -201,7 +200,7 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def sunrise(date_time, **kwargs):
+    def sunrise(self, time, **kwargs):
         """
         Returns the local sunrise time.
 
@@ -209,7 +208,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -219,7 +218,7 @@ class Observer(object):
 
     # Moon-related methods.
 
-    def moonrise(date_time, **kwargs):
+    def moonrise(self, time, **kwargs):
         """
         Returns the local moonrise time.
 
@@ -227,7 +226,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -235,7 +234,7 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def moonset(date_time, **kwargs):
+    def moonset(self, time, **kwargs):
         """
         Returns the local moonset time.
 
@@ -243,7 +242,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -251,75 +250,75 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def moon_illumination(date_time):
+    def moon_illumination(self, time):
         """
         Returns a float giving the percent illumation.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def moon_position(date_time):
+    def moon_position(self, time):
         """
         Returns the position of the moon in alt/az.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
     # Other time-related methods.
 
-    def evening_nautical(date_time):
+    def evening_nautical(self, time):
         """
         Returns the local evening (nautical) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def evening_civil(date_time):
+    def evening_civil(self, time):
         """
         Returns the local evening (civil) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def morning_astronomical(date_time):
+    def morning_astronomical(self, time):
         """
         Returns the local morning (astronomical) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def morning_nautical(date_time):
+    def morning_nautical(self, time):
         """
         Returns the local morning (nautical) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def morning_civil(date_time):
+    def morning_civil(self, time):
         """
         Returns the local morning (civil) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
@@ -387,6 +386,10 @@ class FixedTarget(Target):
 
     @classmethod
     def from_name(cls, query_name, name=None, **kwargs):
+        '''
+        Initialize a `FixedTarget` by querying for a name, using the machinery
+        in `~astropy.coordinates.SkyCoord.from_name`.
+        '''
         # Allow manual override for name keyword so that the target name can
         # be different from the query name, otherwise assume name=queryname.
         if name is None:
@@ -484,7 +487,7 @@ class Observation(object):
     Comments.
     """
 
-    def __init__(self, target, date_time):
+    def __init__(self, target, time):
         """
         Initializes an Observation object.
 
