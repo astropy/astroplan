@@ -14,7 +14,8 @@ import pytz
 from astropy.utils.data import download_file
 from astropy.utils import iers
 import datetime
-iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL, cache=True))
+iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
+                                                      cache=True))
 ################################################################################
 
 #from ..extern import six
@@ -53,66 +54,51 @@ class Observer(object):
         name : str
             A short name for the telescope, observatory or location.
 
-        pressure : `~astropy.units.Quantity`
-            The ambient pressure.
-
         location : `~astropy.coordinates.EarthLocation`
             The location (latitude, longitude, elevation) of the observatory.
 
-        longitude : str or `~astropy.units.Quantity`
-            The longitude of the observing location. If str, should be a string
-            that initializes a `~astropy.coordinates.Longitude` object with
-            units in degrees.
+        longitude : float, str, `~astropy.units.Quantity` (optional)
+            The longitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Longitude` object.
 
-        latitude : str or `~astropy.units.Quantity`
-            The latitude of the observing location. If str, should be a string
-            that initializes a `~astropy.coordinates.Latitude` object with
-            units in degrees.
+        latitude : float, str, `~astropy.units.Quantity` (optional)
+            The latitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Latitude` object.
 
-        elevation : `~astropy.units.Quantity`
+        elevation : `~astropy.units.Quantity` (optional)
             The elevation of the observing location, with respect to sea
-            level.
+            level. Defaults to zero meters.
 
-        relative_humidity : float
+        pressure : `~astropy.units.Quantity` (optional)
+            The ambient pressure. Defaults to zero (i.e. no atmosphere).
+
+        relative_humidity : float (optional)
             The ambient relative humidity.
 
-        temperature : `~astropy.units.Quantity`
+        temperature : `~astropy.units.Quantity` (optional)
             The ambient temperature.
 
-        timezone : str or `datetime.tzinfo`
+        timezone : str or `datetime.tzinfo` (optional)
             The local timezone, as either an instance of `pytz.timezone()` or
             the string accepted by `pytz.timezone()`.
 
-        description : str
+        description : str (optional)
             A short description of the telescope, observatory or observing
             location.
         """
 
-        if name is not None:
-            self.name = name
+        if elevation is None:
+            elevation = 0*u.m
 
-        if pressure is None:
-            pressure = 0
-
-        if temperature is None:
-            temperature = 0 * u.deg_C
-
-        if relative_humidity is None:
-            relative_humidity = 0
-
+        self.name = name
         self.pressure = pressure
         self.temperature = temperature
         self.relative_humidity = relative_humidity
 
         # If lat/long given instead of EarthLocation, convert them
         # to EarthLocation
-        if location is None and (latitude is not None and longitude is not None):
-            accepted_latlon_types = [str, Quantity]
-            if (type(latitude) in accepted_latlon_types and
-                type(longitude) in accepted_latlon_types):
-                latitude = Latitude(latitude, unit=u.degree)
-                longitude = Longitude(longitude, unit=u.degree)
-
+        if location is None and (latitude is not None and
+                                 longitude is not None):
             self.location = EarthLocation.from_geodetic(longitude, latitude,
                                                         elevation)
 
@@ -121,10 +107,11 @@ class Observer(object):
 
         else:
             raise TypeError('Observatory location must be specified with '
-                            'either (1) latitude and longitude in degrees as '
+                            'either (1) an instance of '
+                            'astropy.coordinates.EarthLocation or (2) '
+                            'latitude and longitude in degrees as '
                             'accepted by astropy.coordinates.Latitude and '
-                            'astropy.coordinates.Latitude, or (2) as an '
-                            'instance of astropy.coordinates.EarthLocation.')
+                            'astropy.coordinates.Latitude.')
 
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
@@ -138,20 +125,24 @@ class Observer(object):
     def altaz(self, time, target=None, obswl=None):
         """
         Returns an instance of `~astropy.coordinates.SkyCoord` with altitude and
-        azimuth of the `FixedTarget` called `target` at time `time`.
+        azimuth of the `FixedTarget` called `target` at time `time`. All
+        observatory environment variables set elsewhere (pressure, temperature,
+        relative humidity) will be used in the `AltAz` frame.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
             Astropy time object.
 
-        target : None (default) or `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord`
+        target : None (default) or `~astroplan.FixedTarget` or
+        `~astropy.coordinates.SkyCoord`
             Celestial object of interest. If `target`=None, return just the
             `~astropy.coordinates.AltAz` frame without coordinates.
 
+        obswl : `~astropy.units.Quantity` (optional)
+            Wavelength of the observation used in the calculation.
+
         """
-        if obswl is None:
-            obswl = 1*u.micron
 
         altaz_frame = AltAz(location=self.location, obstime=time,
                             pressure=self.pressure, obswl=obswl,
@@ -162,7 +153,7 @@ class Observer(object):
             return altaz_frame
         else:
             if not (isinstance(target, FixedTarget) or
-                        isinstance(target, SkyCoord)):
+                    isinstance(target, SkyCoord)):
                 raise TypeError('The target must be an instance of FixedTarget '
                                 'or SkyCoord.')
 
@@ -384,21 +375,22 @@ class FixedTarget(Target):
     """
     An object that is "fixed" with respect to the celestial sphere.
     """
-    def __init__(self, coord, **kwargs):
+    def __init__(self, coord, name=None, **kwargs):
         '''
         TODO: Docstring.
         '''
         if not isinstance(coord, SkyCoord):
             raise TypeError('Coordinate must be a SkyCoord.')
 
-        self.name = kwargs.get('name', None)
+        self.name = name
         self.coord = coord
 
     @classmethod
-    def from_name(cls, query_name, **kwargs):
+    def from_name(cls, query_name, name=None, **kwargs):
         # Allow manual override for name keyword so that the target name can
         # be different from the query name, otherwise assume name=queryname.
-        name = kwargs.pop('name', query_name)
+        if name is None:
+            name = query_name
         return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
 
 class NonFixedTarget(Target):
