@@ -2,6 +2,22 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
+                                 AltAz)
+import astropy.units as u
+from astropy.units import Quantity
+
+import pytz
+
+################################################################################
+# TODO: Temporary solution to IERS tables problems
+from astropy.utils.data import download_file
+from astropy.utils import iers
+import datetime
+iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
+                                                      cache=True))
+################################################################################
+
 #from ..extern import six
 
 #import sys
@@ -22,109 +38,152 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 
 class Observer(object):
     """
-    Some comments.
+    A container class for information about an observer's location and
+    environment.
     """
 
-    def __init__(self, name, longitude, latitude, elevation, pressure,
-                 relative_humidity, temperature, timezone, description=None):
+    def __init__(self, name=None, location=None, latitude=None, longitude=None,
+                 elevation=0*u.m, timezone='UTC', pressure=None,
+                 relative_humidity=None, temperature=None, description=None):
         """
-        Initializes an Observer object.
-
-        <longer description>
-
         Parameters
         ----------
         name : str
             A short name for the telescope, observatory or location.
 
-        longitude : str or `~astropy.units.quantity`?
-            The longitude of the observing location.
+        location : `~astropy.coordinates.EarthLocation`
+            The location (latitude, longitude, elevation) of the observatory.
 
-        latitude : str or `~astropy.units.quantity`?
-            The latitude of the observing location.
+        longitude : float, str, `~astropy.units.Quantity` (optional)
+            The longitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Longitude` object.
 
-        elevation : `~astropy.units.Quantity`
+        latitude : float, str, `~astropy.units.Quantity` (optional)
+            The latitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Latitude` object.
+
+        elevation : `~astropy.units.Quantity` (optional), default = 0 meters
             The elevation of the observing location, with respect to sea
-            level.
+            level. Defaults to sea level.
 
-        pressure : `~astropy.units.Quantity`
-            The ambient pressure.
+        pressure : `~astropy.units.Quantity` (optional)
+            The ambient pressure. Defaults to zero (i.e. no atmosphere).
 
-        relative_humidity : float
+        relative_humidity : float (optional)
             The ambient relative humidity.
 
-        temperature : `~astropy.units.Quantity`
+        temperature : `~astropy.units.Quantity` (optional)
             The ambient temperature.
 
-        timezone : WHAT TYPE IS pytz.timezone ?
-            The local timezone.
+        timezone : str or `datetime.tzinfo` (optional)
+            The local timezone to assume. If a string, it will be passed through
+            `pytz.timezone()` to produce the timezone object.
 
-        description : str
+        description : str (optional)
             A short description of the telescope, observatory or observing
             location.
         """
-        raise NotImplementedError()
 
-    def set_environment(self, pressure, relative_humidity, temperature):
+        self.name = name
+        self.pressure = pressure
+        self.temperature = temperature
+        self.relative_humidity = relative_humidity
+
+        # If lat/long given instead of EarthLocation, convert them
+        # to EarthLocation
+        if location is None and (latitude is not None and
+                                 longitude is not None):
+            self.location = EarthLocation.from_geodetic(longitude, latitude,
+                                                        elevation)
+
+        elif isinstance(location, EarthLocation):
+            self.location = location
+
+        else:
+            raise TypeError('Observatory location must be specified with '
+                            'either (1) an instance of '
+                            'astropy.coordinates.EarthLocation or (2) '
+                            'latitude and longitude in degrees as '
+                            'accepted by astropy.coordinates.Latitude and '
+                            'astropy.coordinates.Latitude.')
+
+        # Accept various timezone inputs, default to UTC
+        if isinstance(timezone, datetime.tzinfo):
+            self.timezone = timezone
+        elif isinstance(timezone, str) or isinstance(timezone, unicode):
+            self.timezone = pytz.timezone(timezone)
+        else:
+            raise TypeError('timezone keyword should be a string, or an '
+                            'instance of datetime.tzinfo')
+
+    def altaz(self, time, target=None, obswl=None):
         """
-        Updates the Observer object with environmental conditions.
-
-        <longer description>
+        If `target` is None, generates an altitude/azimuth frame. Otherwise,
+        calculates the transformation to that frame for the requested `target`.
 
         Parameters
         ----------
-        pressure : `~astropy.units.Quantity`
-            The ambient pressure.
+        time : `~astropy.time.Time`
+            The time at which the observation is taking place. Will be used as
+            the `obstime` attribute in the resulting frame or coordinate.
 
-        relative_humidity : `~astropy.units.Quantity`
-            The ambient relative humidity.
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
+            Celestial object of interest. If `target` is `None`, return the
+            `~astropy.coordinates.AltAz` frame without coordinates.
 
-        temperature :
-            The ambient temperature.
-        """
-        raise NotImplementedError()
+        obswl : `~astropy.units.Quantity` (optional)
+            Wavelength of the observation used in the calculation.
 
-    def get_date(self, input_date_time, timezone=None):
-        """
-        Builds an object containing date and time information.
-
-        Default time zone is UTC.
-        If time zone (local or otherwise) requested, then uses `datetime.datetime`
-        and pytz.timezone to convert from UTC.
-
-        Must first create date_time object with get_date() before using any other 
-        Observer methods, all of which require one as an argument.
-
-        Parameters
-        ----------
-        input_date_time : WHAT TYPE IS astropy.time OBJECT?
+        Returns
+        -------
+        If `target` is `None`, returns `~astropy.coordinates.AltAz` frame. If
+        `target` is not `None`, returns the `target` transformed to the
+        `~astropy.coordinates.AltAz` frame.
 
         """
-        raise NotImplementedError()
+
+        altaz_frame = AltAz(location=self.location, obstime=time,
+                            pressure=self.pressure, obswl=obswl,
+                            temperature=self.temperature,
+                            relative_humidity=self.relative_humidity)
+
+        if target is None:
+            return altaz_frame
+        else:
+            if not (isinstance(target, FixedTarget) or
+                    isinstance(target, SkyCoord)):
+                raise TypeError('The target must be an instance of FixedTarget '
+                                'or SkyCoord.')
+
+            if hasattr(target, 'coord'):
+                coordinate = target.coord
+            else:
+                coordinate = target
+            return coordinate.transform_to(altaz_frame)
 
     # Sun-related methods.
 
-    def noon(date_time):
+    def noon(self, time):
         """
         Returns the local, solar noon time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def midnight(date_time):
+    def midnight(self, time):
         """
         Returns the local, solar midnight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def sunset(date_time, **kwargs):
+    def sunset(self, time, **kwargs):
         """
         Returns the local sunset time.
 
@@ -132,7 +191,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -140,7 +199,7 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def sunrise(date_time, **kwargs):
+    def sunrise(self, time, **kwargs):
         """
         Returns the local sunrise time.
 
@@ -148,7 +207,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -158,7 +217,7 @@ class Observer(object):
 
     # Moon-related methods.
 
-    def moonrise(date_time, **kwargs):
+    def moonrise(self, time, **kwargs):
         """
         Returns the local moonrise time.
 
@@ -166,7 +225,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -174,7 +233,7 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def moonset(date_time, **kwargs):
+    def moonset(self, time, **kwargs):
         """
         Returns the local moonset time.
 
@@ -182,7 +241,7 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -190,75 +249,75 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def moon_illumination(date_time):
+    def moon_illumination(self, time):
         """
         Returns a float giving the percent illumation.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def moon_position(date_time):
+    def moon_position(self, time):
         """
         Returns the position of the moon in alt/az.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
     # Other time-related methods.
 
-    def evening_nautical(date_time):
+    def evening_nautical(self, time):
         """
         Returns the local evening (nautical) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def evening_civil(date_time):
+    def evening_civil(self, time):
         """
         Returns the local evening (civil) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def morning_astronomical(date_time):
+    def morning_astronomical(self, time):
         """
         Returns the local morning (astronomical) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def morning_nautical(date_time):
+    def morning_nautical(self, time):
         """
         Returns the local morning (nautical) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
-    def morning_civil(date_time):
+    def morning_civil(self, time):
         """
         Returns the local morning (civil) twilight time.
 
         Parameters
         ----------
-        date_time : WHAT TYPE IS date_time OBJECT?
+        time : `~astropy.time.Time`
         """
         raise NotImplementedError()
 
@@ -273,7 +332,7 @@ class Target(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, name, ra, dec, marker=None):
+    def __init__(self, name=None, ra=None, dec=None, marker=None):
         """
         Defines a single observation target.
 
@@ -296,21 +355,46 @@ class Target(object):
         """
         Right ascension.
         """
-        raise NotImplementedError
+        if isinstance(self, FixedTarget):
+            return self.coord.ra
+        raise NotImplementedError()
 
     @property
     def dec(self):
         """
         Declination.
         """
-        raise NotImplementedError
+        if isinstance(self, FixedTarget):
+            return self.coord.dec
+        raise NotImplementedError()
 
 
 class FixedTarget(Target):
     """
     An object that is "fixed" with respect to the celestial sphere.
     """
+    def __init__(self, coord, name=None, **kwargs):
+        '''
+        TODO: Docstring.
+        '''
+        if not (hasattr(coord, 'transform_to') and
+                hasattr(coord, 'represent_as')):
+            raise TypeError('`coord` must be a coordinate object.')
 
+        self.name = name
+        self.coord = coord
+
+    @classmethod
+    def from_name(cls, query_name, name=None, **kwargs):
+        '''
+        Initialize a `FixedTarget` by querying for a name, using the machinery
+        in `~astropy.coordinates.SkyCoord.from_name`.
+        '''
+        # Allow manual override for name keyword so that the target name can
+        # be different from the query name, otherwise assume name=queryname.
+        if name is None:
+            name = query_name
+        return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
 
 class NonFixedTarget(Target):
     """
@@ -403,7 +487,7 @@ class Observation(object):
     Comments.
     """
 
-    def __init__(self, target, date_time):
+    def __init__(self, target, time):
         """
         Initializes an Observation object.
 
