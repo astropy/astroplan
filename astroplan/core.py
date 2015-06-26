@@ -38,11 +38,12 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 
 class Observer(object):
     """
-    A container for information about an observatory's location and environment.
+    A container class for information about an observer's location and
+    environment.
     """
 
     def __init__(self, name=None, location=None, latitude=None, longitude=None,
-                 elevation=None, timezone='UTC', pressure=None,
+                 elevation=0*u.m, timezone='UTC', pressure=None,
                  relative_humidity=None, temperature=None, description=None):
         """
         Parameters
@@ -61,9 +62,9 @@ class Observer(object):
             The latitude of the observing location. Should be valid input for
             initializing a `~astropy.coordinates.Latitude` object.
 
-        elevation : `~astropy.units.Quantity` (optional)
+        elevation : `~astropy.units.Quantity` (optional), default = 0 meters
             The elevation of the observing location, with respect to sea
-            level. Defaults to zero meters.
+            level. Defaults to sea level.
 
         pressure : `~astropy.units.Quantity` (optional)
             The ambient pressure. Defaults to zero (i.e. no atmosphere).
@@ -75,16 +76,13 @@ class Observer(object):
             The ambient temperature.
 
         timezone : str or `datetime.tzinfo` (optional)
-            The local timezone, as either an instance of `pytz.timezone()` or
-            the string accepted by `pytz.timezone()`.
+            The local timezone to assume. If a string, it will be passed through
+            `pytz.timezone()` to produce the timezone object.
 
         description : str (optional)
             A short description of the telescope, observatory or observing
             location.
         """
-
-        if elevation is None:
-            elevation = 0*u.m
 
         self.name = name
         self.pressure = pressure
@@ -120,13 +118,14 @@ class Observer(object):
 
     def altaz(self, time, target=None, obswl=None):
         """
-        Calculates an altitude/azimuth frame (if `target` not specified)
-        or coordinate (otherwise).
+        If `target` is None, generates an altitude/azimuth frame. Otherwise,
+        calculates the transformation to that frame for the requested `target`.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
-            Astropy time object.
+            The time at which the observation is taking place. Will be used as
+            the `obstime` attribute in the resulting frame or coordinate.
 
         target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
             Celestial object of interest. If `target` is `None`, return the
@@ -137,8 +136,9 @@ class Observer(object):
 
         Returns
         -------
-        `~astropy.coordinates.AltAz`
-            Frame or coordinate.
+        If `target` is `None`, returns `~astropy.coordinates.AltAz` frame. If
+        `target` is not `None`, returns the `target` transformed to the
+        `~astropy.coordinates.AltAz` frame.
 
         """
 
@@ -377,8 +377,9 @@ class FixedTarget(Target):
         '''
         TODO: Docstring.
         '''
-        if not isinstance(coord, SkyCoord):
-            raise TypeError('Coordinate must be a SkyCoord.')
+        if not (hasattr(coord, 'transform_to') and
+                hasattr(coord, 'represent_as')):
+            raise TypeError('`coord` must be a coordinate object.')
 
         self.name = name
         self.coord = coord
