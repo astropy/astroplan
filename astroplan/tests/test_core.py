@@ -8,6 +8,7 @@ from astropy.tests.helper import remote_data
 import numpy as np
 from numpy.testing import assert_allclose
 import pytz
+import datetime
 
 from ..core import FixedTarget, Observer
 
@@ -155,3 +156,148 @@ def test_FixedTarget_ra_dec():
                                                         'SkyCoord')
     assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
                                                            'SkyCoord')
+
+def test_sunrise_sunset_equator():
+    '''
+    Check that time of sunrise/set on the equator is consistent with
+    PyEphem results (for no atmosphere/pressure=0)
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_next_sunrise = obs.sunrise(time, location, which='next').datetime
+    astroplan_next_sunset = obs.sunset(time, location, which='next').datetime
+
+    astroplan_prev_sunrise = obs.sunrise(time, location,
+                                         which='previous').datetime
+    astroplan_prev_sunset = obs.sunset(time, location,
+                                       which='previous').datetime
+
+    # Run get_pyephem_sunrise_sunset() to compute analogous
+    # result from PyEphem:
+    pyephem_next_sunrise = datetime.datetime(2000, 1, 2, 6, 3, 39, 150790)
+    pyephem_next_sunset = datetime.datetime(2000, 1, 1, 18, 3, 23, 676686)
+    pyephem_prev_sunrise = datetime.datetime(2000, 1, 1, 6, 3, 10, 720052)
+    pyephem_prev_sunset = datetime.datetime(1999, 12, 31, 18, 2, 55, 100786)
+
+    # Is there an equivalent to assert_allclose() for datetimes?
+    #assert_allclose(pyephem_next_sunrise, pyephem_next_sunset,
+    #                atol=datetime.timedelta(minutes=10))
+
+    # Typical difference in this example between PyEphem and astroplan is <2 min
+    threshold_minutes = 5
+    assert (abs(pyephem_next_sunrise - astroplan_next_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_sunset - astroplan_next_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_sunrise - astroplan_prev_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_sunset - astroplan_prev_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def get_pyephem_sunrise_sunset():
+    '''
+    Calculate next sunrise and sunset with PyEphem for an observer
+    on the equator.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    pyephem_obs = ephem.Observer()
+    pyephem_obs.lat = lat
+    pyephem_obs.lon = lon
+    pyephem_obs.elevation = elevation
+    pyephem_obs.date = time.datetime
+    pyephem_obs.pressure = pressure
+    pyephem_next_sunrise = pyephem_obs.next_rising(ephem.Sun(), use_center=True)
+    pyephem_next_sunset = pyephem_obs.next_setting(ephem.Sun(), use_center=True)
+    pyephem_prev_sunrise = pyephem_obs.previous_rising(ephem.Sun(), use_center=True)
+    pyephem_prev_sunset = pyephem_obs.previous_setting(ephem.Sun(), use_center=True)
+
+    return (repr(pyephem_next_sunrise.datetime()),
+            repr(pyephem_next_sunset.datetime()),
+            repr(pyephem_prev_sunrise.datetime()),
+            repr(pyephem_prev_sunset.datetime()))
+
+def test_vega_rise_set_equator():
+    '''
+    Check that time of sunrise/set on the equator is consistent with
+    PyEphem results (for no atmosphere/pressure=0)
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
+    vega = SkyCoord(vega_ra, vega_dec)
+
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_next_rise = obs.calc_rise(vega, time, location,
+                                        which='next').datetime
+    astroplan_next_set = obs.calc_set(vega, time, location,
+                                      which='next').datetime
+
+    astroplan_prev_rise = obs.calc_rise(vega, time, location,
+                                           which='previous').datetime
+    astroplan_prev_set = obs.calc_set(vega, time, location,
+                                         which='previous').datetime
+
+    # Run get_pyephem_sunrise_sunset() to compute analogous
+    # result from PyEphem:
+    pyephem_next_rise, pyephem_next_set, pyephem_prev_rise, pyephem_prev_set = (
+        datetime.datetime(2000, 1, 2, 5, 52, 8, 257401),
+        datetime.datetime(2000, 1, 1, 17, 54, 6, 211705),
+        datetime.datetime(2000, 1, 1, 5, 56, 4, 165852),
+        datetime.datetime(1999, 12, 31, 17, 58, 2, 120088))
+
+    # Typical difference in this example between PyEphem and astroplan is <2 min
+    threshold_minutes = 5
+    assert (abs(pyephem_next_rise - astroplan_next_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_set - astroplan_next_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_rise - astroplan_prev_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_set - astroplan_prev_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def get_pyephem_vega_rise_set():
+    '''
+    Calculate next rise and set of Vega with PyEphem for an observer
+    on the equator.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+    vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
+    vega = SkyCoord(vega_ra, vega_dec)
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    target = ephem.FixedBody()
+    target._ra = ephem.degrees(np.radians(vega.ra.value))
+    target._dec = ephem.degrees(np.radians(vega.dec.value))
+    target.compute(obs)
+    next_rising = obs.next_rising(target).datetime()
+    next_setting = obs.next_setting(target).datetime()
+    prev_rising = obs.previous_rising(target).datetime()
+    prev_setting = obs.previous_setting(target).datetime()
+
+    return next_rising, next_setting, prev_rising, prev_setting

@@ -3,8 +3,9 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz)
+                                 AltAz, get_sun)
 import astropy.units as u
+from astropy.time import Time
 from astropy.units import Quantity
 
 import pytz
@@ -24,7 +25,7 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 #from math import sqrt, pi, exp, log, floor
 from abc import ABCMeta, abstractmethod
 
-#import numpy as np
+import numpy as np
 
 # Originally authored by Jazmin Berlanga Medina (jazmin.berlanga@gmail.com),
 # and modified by Adrian Price-Whelan (email) and Erik Tollerud (email).
@@ -163,6 +164,308 @@ class Observer(object):
 
     # Sun-related methods.
 
+    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree,
+                     return_limits=False, return_alts=False):
+        '''
+        Find time `t` when values in array `a` go from
+        negative to positive or positive to negative (exclude endpoints)
+
+        `return_limits` will return nearest times to zero-crossing.
+
+        Parameters
+        ----------
+        t : `~astropy.time.Time`
+            Grid of times
+        alt : `~astropy.units.Quantity`
+            Grid of altitudes
+        rise_set : str, either "rising" or "setting"
+            Calculate either rising or setting across the horizon
+        horizon : float
+            Number of degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+        return_limits : bool
+            If `True`, return the lower and upper limits on the
+            horizon crossing time. If `False`, return closest time.
+        return_alts : bool
+            If `True`
+
+        Returns
+        -------
+        '''
+        if rise_set == 'rising':
+            condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
+        elif rise_set == 'setting':
+            condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
+        else:
+            raise ValueError('`rise_set` keyword may only be "rising" or '
+                             '"setting"')
+
+        if sum(condition) < 1:
+            raise ValueError('Target does not rise/set within 24 hours')
+
+        if return_limits:
+            nearest_index = np.argwhere(condition)[0][0]
+
+            if alt[nearest_index] > horizon:
+                lower_limit = t[nearest_index-1]
+                upper_limit = t[nearest_index]
+                lower_alt = alt[nearest_index-1].value
+                upper_alt = alt[nearest_index].value
+            else:
+                lower_limit = t[nearest_index]
+                upper_limit = t[nearest_index+1]
+                lower_alt = alt[nearest_index].value
+                upper_alt = alt[nearest_index+1].value
+
+            if return_alts:
+                return (lower_limit, upper_limit), (lower_alt, upper_alt)
+            else:
+                return lower_limit, upper_limit
+
+        return t[condition][0]
+
+    def _calc_altitude(self, time, target, location):
+        '''
+        Calculate altitude of `target` at `time` from `location`. (This
+        method will be replaced by the `altaz` method on Observer.)
+        '''
+        return target.transform_to(AltAz(location=location,
+                                         obstime=time)).alt
+
+    def _two_point_interp(self, times, altitudes):
+        '''
+        Do linear interpolation between two `altitudes` at
+        two `times` to determine the time where the altitude
+        goes through zero.
+
+        Parameters
+        ----------
+        times : `~astropy.time.Time`
+        altitudes : array of floats
+
+        Returns
+        -------
+        `~astropy.time.Time`
+        '''
+        slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
+        return Time(times[1].jd - altitudes[1]/slope, format='jd')
+
+    def _calc_riseset(self, time, target, prev_next, rise_set, location,
+                      horizon, N=150):
+        '''
+        Calculate the time at next rise/set of `target`.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        target : `~astropy.coordinates.SkyCoord`
+            Position of target or multiple positions of that target
+            at multiple times (if target moves, like the Sun)
+
+        prev_next : str - either 'previous' or 'next'
+            Test next rise/set or previous rise/set
+
+        rise_set : str - either 'rising' or 'setting'
+            Compute prev/next rise or prev/next set
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        horizon : `~astropy.units.Quantity`
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        N : int
+            Number of altitudes to compute when searching for
+            rise or set.
+
+        Returns
+        -------
+        ret1 : `~astropy.time.Time`
+            Time of rise/set
+        '''
+        if prev_next == 'next':
+            times = time + np.linspace(0, 1, N)*u.day
+        else:
+            times = time + np.linspace(-1, 0, N)*u.day
+
+        altitudes = self._calc_altitude(times, target, location)
+        horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
+                                                    horizon,
+                                                    return_limits=True,
+                                                    return_alts=True)
+        return self._two_point_interp(*horizon_crossing_limits)
+
+    def calc_rise(self, target, time, location, which='nearest',
+                  horizon=0*u.degree):
+        '''
+        Compute time of the next/previous/nearest rise of the `target`
+        object, where "rise" is defined as the time when the `target`
+        transitions from altitudes below the `horizon` to above the
+        `horizon`.
+
+        Parameters
+        ----------
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
+            Target celestial object
+
+        time : `~astropy.time.Time`
+            Time of observation
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
+            Choose which sunrise relative to the present `time` would you
+            like to calculate
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Rise time of target
+        '''
+        if which == 'next' or which == 'nearest':
+            next_rise = self._calc_riseset(time, target, 'next',
+                                           'rising', location, horizon)
+            if which == 'next':
+                return next_rise
+
+        if which == 'previous' or which == 'nearest':
+            previous_rise = self._calc_riseset(time, target, 'previous',
+                                               'rising', location, horizon)
+            if which == 'previous':
+                return previous_rise
+
+        if which == 'nearest':
+            if abs(time - previous_rise) < abs(time - next_rise):
+                return previous_rise
+            else:
+                return next_rise
+        raise ValueError('"which" kwarg must be "next", "previous" or '
+                         '"nearest".')
+
+    def calc_set(self, target, time, location, which='nearest',
+                 horizon=0*u.degree):
+        '''
+        Compute time of the next/previous/nearest set of `target`, where
+        "set" is defined as when the `target` transitions from altitudes
+        above `horizon` to below `horizon`.
+
+        Parameters
+        ----------
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
+            Target celestial object
+
+        time : `~astropy.time.Time`
+            Time of observation
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
+            Choose which sunset relative to the present `time` would you
+            like to calculate
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Set time of target.
+        '''
+        if which == 'next' or which == 'nearest':
+            next_set = self._calc_riseset(time, target, 'next',
+                                          'setting', location, horizon)
+            if which == 'next':
+                return next_set
+
+        if which == 'previous' or which == 'nearest':
+            previous_set = self._calc_riseset(time, target, 'previous',
+                                              'setting', location, horizon)
+            if which == 'previous':
+                return previous_set
+
+        if which == 'nearest':
+            if abs(time - previous_set) < abs(time - next_set):
+                return previous_set
+            else:
+                return next_set
+
+        raise ValueError('"which" kwarg must be "next", "previous" or '
+                         '"nearest".')
+
+    def sunrise(self, time, location, which='nearest', horizon=0*u.degree):
+        '''
+        Compute time of the next/previous/nearest sunrise, where
+        sunrise is defined as when the `target` transitions from altitudes
+        below `horizon` to above `horizon`.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
+            Choose which sunrise relative to the present `time` would you
+            like to calculate
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of sunrise
+        '''
+        return self.calc_rise(get_sun(time), time, location, which, horizon)
+
+    def sunset(self, time, location, which='nearest', horizon=0*u.degree):
+        '''
+        Compute time of the next/previous/nearest sunset, where
+        sunset is defined as when the `target` transitions from altitudes
+        below `horizon` to above `horizon`.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
+            Choose which sunset relative to the present `time` would you
+            like to calculate
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of sunset
+        '''
+        return self.calc_set(get_sun(time), time, location, which, horizon)
+
     def noon(self, time):
         """
         Returns the local, solar noon time.
@@ -180,38 +483,6 @@ class Observer(object):
         Parameters
         ----------
         time : `~astropy.time.Time`
-        """
-        raise NotImplementedError()
-
-    def sunset(self, time, **kwargs):
-        """
-        Returns the local sunset time.
-
-        The default sunset returned is the next one to occur.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time`
-
-        Keywords: str, optional
-            previous
-            next
-        """
-        raise NotImplementedError()
-
-    def sunrise(self, time, **kwargs):
-        """
-        Returns the local sunrise time.
-
-        The default sunrise returned is the next one to occur.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time`
-
-        Keywords: str, optional
-            previous
-            next
         """
         raise NotImplementedError()
 
