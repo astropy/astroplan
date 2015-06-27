@@ -170,13 +170,11 @@ def test_sunrise_sunset_equator():
     location = EarthLocation.from_geodetic(lon, lat, elevation)
     time = Time('2000-01-01 12:00:00')
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_sunrise = obs.sunrise(time, location, which='next').datetime
-    astroplan_next_sunset = obs.sunset(time, location, which='next').datetime
+    astroplan_next_sunrise = obs.sunrise(time, which='next').datetime
+    astroplan_next_sunset = obs.sunset(time, which='next').datetime
 
-    astroplan_prev_sunrise = obs.sunrise(time, location,
-                                         which='previous').datetime
-    astroplan_prev_sunset = obs.sunset(time, location,
-                                       which='previous').datetime
+    astroplan_prev_sunrise = obs.sunrise(time, which='previous').datetime
+    astroplan_prev_sunset = obs.sunset(time, which='previous').datetime
 
     # Run get_pyephem_sunrise_sunset() to compute analogous
     # result from PyEphem:
@@ -243,15 +241,11 @@ def test_vega_rise_set_equator():
     vega = SkyCoord(vega_ra, vega_dec)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_rise = obs.calc_rise(vega, time, location,
-                                        which='next').datetime
-    astroplan_next_set = obs.calc_set(vega, time, location,
-                                      which='next').datetime
+    astroplan_next_rise = obs.calc_rise(vega, time, which='next').datetime
+    astroplan_next_set = obs.calc_set(vega, time, which='next').datetime
 
-    astroplan_prev_rise = obs.calc_rise(vega, time, location,
-                                           which='previous').datetime
-    astroplan_prev_set = obs.calc_set(vega, time, location,
-                                         which='previous').datetime
+    astroplan_prev_rise = obs.calc_rise(vega, time, which='previous').datetime
+    astroplan_prev_set = obs.calc_set(vega, time, which='previous').datetime
 
     # Run get_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
@@ -314,5 +308,5 @@ class TestRisingSetting(unittest.TestCase):
             polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
             obs = Observer(location=location)
-            astroplan_next_rise = obs.calc_rise(polaris, time, location,
+            astroplan_next_rise = obs.calc_rise(polaris, time,
                                                 which='next').datetime

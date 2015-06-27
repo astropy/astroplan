@@ -41,7 +41,7 @@ class Observer(object):
     A container class for information about an observer's location and
     environment.
     """
-
+    @u.quantity_input(elevation=u.m)
     def __init__(self, name=None, location=None, latitude=None, longitude=None,
                  elevation=0*u.m, timezone='UTC', pressure=None,
                  relative_humidity=None, temperature=None, description=None):
@@ -162,7 +162,7 @@ class Observer(object):
             return coordinate.transform_to(altaz_frame)
 
     # Sun-related methods.
-
+    @u.quantity_input(horizon=u.deg)
     def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree,
                      return_limits=False, return_alts=False):
         '''
@@ -187,10 +187,19 @@ class Observer(object):
             If `True`, return the lower and upper limits on the
             horizon crossing time. If `False`, return closest time.
         return_alts : bool
-            If `True`
+            If `True`, return the altitudes at the times corresponding
+            to the lower and upper limits on the horizon crossing time.
 
         Returns
         -------
+        If `return_limits` is True, returns the lower and upper limits
+        on the time of the horizon crossing. If `return_alts` is also
+        True, returns a tuple of the lower and upper limits on the
+        horizon crossing time and a tuple of the corresponding altitudes
+        at those times.
+
+        If `return_limits` is False, returns the time nearest to the
+        horizon crossing.
         '''
         if rise_set == 'rising':
             condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
@@ -209,13 +218,13 @@ class Observer(object):
             if alt[nearest_index] > horizon:
                 lower_limit = t[nearest_index-1]
                 upper_limit = t[nearest_index]
-                lower_alt = alt[nearest_index-1].value
-                upper_alt = alt[nearest_index].value
+                lower_alt = alt[nearest_index-1]#.value
+                upper_alt = alt[nearest_index]#.value
             else:
                 lower_limit = t[nearest_index]
                 upper_limit = t[nearest_index+1]
-                lower_alt = alt[nearest_index].value
-                upper_alt = alt[nearest_index+1].value
+                lower_alt = alt[nearest_index]#.value
+                upper_alt = alt[nearest_index+1]#.value
 
             if return_alts:
                 return (lower_limit, upper_limit), (lower_alt, upper_alt)
@@ -224,7 +233,8 @@ class Observer(object):
 
         return t[condition][0]
 
-    def _two_point_interp(self, times, altitudes):
+    @u.quantity_input(horizon=u.deg)
+    def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
         '''
         Do linear interpolation between two `altitudes` at
         two `times` to determine the time where the altitude
@@ -233,16 +243,26 @@ class Observer(object):
         Parameters
         ----------
         times : `~astropy.time.Time`
-        altitudes : array of floats
+            Two times for linear interpolation between
+
+        altitudes : array of `~astropy.units.Quantity`
+            Two altitudes for linear interpolation between
+
+        horizon : `~astropy.units.Quantity`
+            Solve for the time when the altitude is equal to
+            reference_alt.
 
         Returns
         -------
-        `~astropy.time.Time`
+        t : `~astropy.time.Time`
+            Time when target crosses the horizon
+
         '''
         slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
-        return Time(times[1].jd - altitudes[1]/slope, format='jd')
+        return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
+                    format='jd')
 
-    def _calc_riseset(self, time, target, prev_next, rise_set, location,
+    def _calc_riseset(self, time, target, prev_next, rise_set,
                       horizon, N=150):
         '''
         Calculate the time at next rise/set of `target`.
@@ -291,8 +311,8 @@ class Observer(object):
                                                     return_alts=True)
         return self._two_point_interp(*horizon_crossing_limits)
 
-    def calc_rise(self, target, time, location, which='nearest',
-                  horizon=0*u.degree):
+    @u.quantity_input(horizon=u.deg)
+    def calc_rise(self, target, time, which='nearest', horizon=0*u.degree):
         '''
         Compute time of the next/previous/nearest rise of the `target`
         object, where "rise" is defined as the time when the `target`
@@ -306,9 +326,6 @@ class Observer(object):
 
         time : `~astropy.time.Time`
             Time of observation
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
 
         which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
             Choose which sunrise relative to the present `time` would you
@@ -326,13 +343,13 @@ class Observer(object):
         '''
         if which == 'next' or which == 'nearest':
             next_rise = self._calc_riseset(time, target, 'next',
-                                           'rising', location, horizon)
+                                           'rising', horizon)
             if which == 'next':
                 return next_rise
 
         if which == 'previous' or which == 'nearest':
             previous_rise = self._calc_riseset(time, target, 'previous',
-                                               'rising', location, horizon)
+                                               'rising', horizon)
             if which == 'previous':
                 return previous_rise
 
@@ -344,8 +361,8 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
-    def calc_set(self, target, time, location, which='nearest',
-                 horizon=0*u.degree):
+    @u.quantity_input(horizon=u.deg)
+    def calc_set(self, target, time, which='nearest', horizon=0*u.degree):
         '''
         Compute time of the next/previous/nearest set of `target`, where
         "set" is defined as when the `target` transitions from altitudes
@@ -358,9 +375,6 @@ class Observer(object):
 
         time : `~astropy.time.Time`
             Time of observation
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
 
         which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
             Choose which sunset relative to the present `time` would you
@@ -378,13 +392,13 @@ class Observer(object):
         '''
         if which == 'next' or which == 'nearest':
             next_set = self._calc_riseset(time, target, 'next',
-                                          'setting', location, horizon)
+                                          'setting', horizon)
             if which == 'next':
                 return next_set
 
         if which == 'previous' or which == 'nearest':
             previous_set = self._calc_riseset(time, target, 'previous',
-                                              'setting', location, horizon)
+                                              'setting', horizon)
             if which == 'previous':
                 return previous_set
 
@@ -397,7 +411,8 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
-    def sunrise(self, time, location, which='nearest', horizon=0*u.degree):
+    @u.quantity_input(horizon=u.deg)
+    def sunrise(self, time, which='nearest', horizon=0*u.degree):
         '''
         Compute time of the next/previous/nearest sunrise, where
         sunrise is defined as when the `target` transitions from altitudes
@@ -407,9 +422,6 @@ class Observer(object):
         ----------
         time : `~astropy.time.Time`
             Time of observation
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
 
         which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
             Choose which sunrise relative to the present `time` would you
@@ -425,9 +437,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunrise
         '''
-        return self.calc_rise(get_sun(time), time, location, which, horizon)
+        return self.calc_rise(get_sun(time), time, which, horizon)
 
-    def sunset(self, time, location, which='nearest', horizon=0*u.degree):
+    @u.quantity_input(horizon=u.deg)
+    def sunset(self, time, which='nearest', horizon=0*u.degree):
         '''
         Compute time of the next/previous/nearest sunset, where
         sunset is defined as when the `target` transitions from altitudes
@@ -437,9 +450,6 @@ class Observer(object):
         ----------
         time : `~astropy.time.Time`
             Time of observation
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
 
         which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
             Choose which sunset relative to the present `time` would you
@@ -455,7 +465,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunset
         '''
-        return self.calc_set(get_sun(time), time, location, which, horizon)
+        return self.calc_set(get_sun(time), time, which, horizon)
 
     def noon(self, time):
         """
