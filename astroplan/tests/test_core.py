@@ -9,6 +9,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 import datetime
+import unittest
 
 from ..core import FixedTarget, Observer
 
@@ -159,8 +160,8 @@ def test_FixedTarget_ra_dec():
 
 def test_sunrise_sunset_equator():
     '''
-    Check that time of sunrise/set on the equator is consistent with
-    PyEphem results (for no atmosphere/pressure=0)
+    Check that time of sunrise/set for an observer on the equator is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
     '''
     lat = '00:00:00'
     lon = '00:00:00'
@@ -211,26 +212,26 @@ def get_pyephem_sunrise_sunset():
     time = Time('2000-01-01 12:00:00')
 
     import ephem
-    pyephem_obs = ephem.Observer()
-    pyephem_obs.lat = lat
-    pyephem_obs.lon = lon
-    pyephem_obs.elevation = elevation
-    pyephem_obs.date = time.datetime
-    pyephem_obs.pressure = pressure
-    pyephem_next_sunrise = pyephem_obs.next_rising(ephem.Sun(), use_center=True)
-    pyephem_next_sunset = pyephem_obs.next_setting(ephem.Sun(), use_center=True)
-    pyephem_prev_sunrise = pyephem_obs.previous_rising(ephem.Sun(), use_center=True)
-    pyephem_prev_sunset = pyephem_obs.previous_setting(ephem.Sun(), use_center=True)
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    next_sunrise = obs.next_rising(ephem.Sun(), use_center=True)
+    next_sunset = obs.next_setting(ephem.Sun(), use_center=True)
+    prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
+    prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
 
-    return (repr(pyephem_next_sunrise.datetime()),
-            repr(pyephem_next_sunset.datetime()),
-            repr(pyephem_prev_sunrise.datetime()),
-            repr(pyephem_prev_sunset.datetime()))
+    return (repr(next_sunrise.datetime()),
+            repr(next_sunset.datetime()),
+            repr(prev_sunrise.datetime()),
+            repr(prev_sunset.datetime()))
 
 def test_vega_rise_set_equator():
     '''
-    Check that time of sunrise/set on the equator is consistent with
-    PyEphem results (for no atmosphere/pressure=0)
+    Check that time of rise/set of Vega for an observer on the equator is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
     '''
     lat = '00:00:00'
     lon = '00:00:00'
@@ -252,7 +253,7 @@ def test_vega_rise_set_equator():
     astroplan_prev_set = obs.calc_set(vega, time, location,
                                          which='previous').datetime
 
-    # Run get_pyephem_sunrise_sunset() to compute analogous
+    # Run get_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
     pyephem_next_rise, pyephem_next_set, pyephem_prev_rise, pyephem_prev_set = (
         datetime.datetime(2000, 1, 2, 5, 52, 8, 257401),
@@ -301,3 +302,17 @@ def get_pyephem_vega_rise_set():
     prev_setting = obs.previous_setting(target).datetime()
 
     return next_rising, next_setting, prev_rising, prev_setting
+
+class TestRisingSetting(unittest.TestCase):
+    def test_polaris_always_up_at_north_pole(self):
+        with self.assertRaises(ValueError):
+            lat = '90:00:00'
+            lon = '00:00:00'
+            elevation = 0.0 * u.m
+            location = EarthLocation.from_geodetic(lon, lat, elevation)
+            time = Time('2000-01-01 12:00:00')
+            polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+
+            obs = Observer(location=location)
+            astroplan_next_rise = obs.calc_rise(polaris, time, location,
+                                                which='next').datetime

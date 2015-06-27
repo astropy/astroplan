@@ -36,7 +36,6 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
-
 class Observer(object):
     """
     A container class for information about an observer's location and
@@ -225,14 +224,6 @@ class Observer(object):
 
         return t[condition][0]
 
-    def _calc_altitude(self, time, target, location):
-        '''
-        Calculate altitude of `target` at `time` from `location`. (This
-        method will be replaced by the `altaz` method on Observer.)
-        '''
-        return target.transform_to(AltAz(location=location,
-                                         obstime=time)).alt
-
     def _two_point_interp(self, times, altitudes):
         '''
         Do linear interpolation between two `altitudes` at
@@ -293,7 +284,7 @@ class Observer(object):
         else:
             times = time + np.linspace(-1, 0, N)*u.day
 
-        altitudes = self._calc_altitude(times, target, location)
+        altitudes = self.altaz(times, target).alt
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon,
                                                     return_limits=True,
