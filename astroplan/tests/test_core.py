@@ -241,11 +241,11 @@ def test_vega_rise_set_equator():
     vega = SkyCoord(vega_ra, vega_dec)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_rise = obs.calc_rise(vega, time, which='next').datetime
-    astroplan_next_set = obs.calc_set(vega, time, which='next').datetime
+    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
+    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
 
-    astroplan_prev_rise = obs.calc_rise(vega, time, which='previous').datetime
-    astroplan_prev_set = obs.calc_set(vega, time, which='previous').datetime
+    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
 
     # Run get_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
@@ -309,6 +309,7 @@ def test_sunrise_sunset_equator_civil_twilight():
     location = EarthLocation.from_geodetic(lon, lat, elevation)
     time = Time('2000-01-01 12:00:00')
     obs = Observer(location=location, pressure=pressure)
+    # Manually impose horizon equivalent to civil twilight
     horizon = -6*u.degree
     astroplan_next_sunrise = obs.sunrise(time, which='next',
                                          horizon=horizon).datetime
@@ -372,6 +373,99 @@ def get_pyephem_sunrise_sunset_equator_civil_twilight():
             repr(prev_sunrise.datetime()),
             repr(prev_sunset.datetime()))
 
+def test_twilight_convenience_funcs():
+    '''
+    Check that the convenience functions for evening
+    astronomical/nautical/civil twilight correspond to their
+    PyEphem equivalents
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    obs = Observer(location=location, pressure=pressure)
+    # Compute morning twilights with astroplan
+    astroplan_morning_civil = obs.morning_civil(time, which='previous').datetime
+    astroplan_morning_nautical = obs.morning_nautical(time,
+                                                      which='previous').datetime
+    astroplan_morning_astro = obs.morning_astronomical(time,
+                                                       which='previous').datetime
+    # Compute evening twilights with astroplan
+    astroplan_evening_civil = obs.evening_civil(time, which='next').datetime
+    astroplan_evening_nautical = obs.evening_nautical(time,
+                                                      which='next').datetime
+    astroplan_evening_astro = obs.evening_astronomical(time,
+                                                       which='next').datetime
+
+    # Compute morning and evening twilights with PyEphem from
+    # the function get_pyephem_twilight_convenience_funcs()
+    pyephem_morning_civil, pyephem_morning_nautical, pyephem_morning_astronomical, = (
+        datetime.datetime(2000, 1, 1, 5, 37, 4, 701708),
+        datetime.datetime(2000, 1, 1, 5, 10, 55, 450939),
+        datetime.datetime(2000, 1, 1, 4, 44, 39, 415865))
+
+    pyephem_evening_civil, pyephem_evening_nautical, pyephem_evening_astronomical = (
+        datetime.datetime(2000, 1, 1, 18, 29, 29, 195908),
+        datetime.datetime(2000, 1, 1, 18, 55, 37, 864882),
+        datetime.datetime(2000, 1, 1, 19, 21, 53, 213768))
+
+    threshold_minutes = 5
+    # Compare morning twilights
+    assert (abs(astroplan_morning_civil - pyephem_morning_civil) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_morning_nautical - pyephem_morning_nautical) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_morning_astro - pyephem_morning_astronomical) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Compare evening twilights
+    assert (abs(astroplan_evening_civil - pyephem_evening_civil) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_evening_nautical - pyephem_evening_nautical) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_evening_astro - pyephem_evening_astronomical) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def get_pyephem_twilight_convenience_funcs():
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+
+    # Morning twilights
+    obs.horizon = '-06:00:00'
+    morning_civil = obs.previous_rising(ephem.Sun(), use_center=True)
+    obs.horizon = '-12:00:00'
+    morning_nautical = obs.previous_rising(ephem.Sun(), use_center=True)
+    obs.horizon = '-18:00:00'
+    morning_astronomical = obs.previous_rising(ephem.Sun(), use_center=True)
+
+    # Evening twilights
+    obs.horizon = '-06:00:00'
+    evening_civil = obs.next_setting(ephem.Sun(), use_center=True)
+    obs.horizon = '-12:00:00'
+    evening_nautical = obs.next_setting(ephem.Sun(), use_center=True)
+    obs.horizon = '-18:00:00'
+    evening_astronomical = obs.next_setting(ephem.Sun(), use_center=True)
+
+    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
+    return map(pyephem_time_to_datetime_str, [morning_civil, morning_nautical,
+                                              morning_astronomical,
+                                              evening_civil, evening_nautical,
+                                              evening_astronomical])
+
+
 
 class TestRisingSetting(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):
@@ -384,5 +478,5 @@ class TestRisingSetting(unittest.TestCase):
             polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
             obs = Observer(location=location)
-            astroplan_next_rise = obs.calc_rise(polaris, time,
+            astroplan_next_rise = obs.calc_rise(time, polaris,
                                                 which='next').datetime
