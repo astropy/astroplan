@@ -210,7 +210,8 @@ class Observer(object):
                              '"setting"')
 
         if sum(condition) < 1:
-            raise ValueError('Target does not rise/set within 24 hours')
+            raise ValueError('Target does not rise/set with respect to '
+                             '`horizon` within 24 hours')
 
         if return_limits:
             nearest_index = np.argwhere(condition)[0][0]
@@ -218,13 +219,13 @@ class Observer(object):
             if alt[nearest_index] > horizon:
                 lower_limit = t[nearest_index-1]
                 upper_limit = t[nearest_index]
-                lower_alt = alt[nearest_index-1]#.value
-                upper_alt = alt[nearest_index]#.value
+                lower_alt = alt[nearest_index-1]
+                upper_alt = alt[nearest_index]
             else:
                 lower_limit = t[nearest_index]
                 upper_limit = t[nearest_index+1]
-                lower_alt = alt[nearest_index]#.value
-                upper_alt = alt[nearest_index+1]#.value
+                lower_alt = alt[nearest_index]
+                upper_alt = alt[nearest_index+1]
 
             if return_alts:
                 return (lower_limit, upper_limit), (lower_alt, upper_alt)
@@ -262,8 +263,7 @@ class Observer(object):
         return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
                     format='jd')
 
-    def _calc_riseset(self, time, target, prev_next, rise_set,
-                      horizon, N=150):
+    def _calc_riseset(self, time, target, prev_next, rise_set, horizon, N=150):
         '''
         Calculate the time at next rise/set of `target`.
 
@@ -305,11 +305,12 @@ class Observer(object):
             times = time + np.linspace(-1, 0, N)*u.day
 
         altitudes = self.altaz(times, target).alt
+        print('horizon = {}'.format(horizon))
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon,
                                                     return_limits=True,
                                                     return_alts=True)
-        return self._two_point_interp(*horizon_crossing_limits)
+        return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
 
     @u.quantity_input(horizon=u.deg)
     def calc_rise(self, target, time, which='nearest', horizon=0*u.degree):
@@ -342,8 +343,8 @@ class Observer(object):
             Rise time of target
         '''
         if which == 'next' or which == 'nearest':
-            next_rise = self._calc_riseset(time, target, 'next',
-                                           'rising', horizon)
+            next_rise = self._calc_riseset(time, target, 'next', 'rising',
+                                           horizon)
             if which == 'next':
                 return next_rise
 
@@ -391,8 +392,8 @@ class Observer(object):
             Set time of target.
         '''
         if which == 'next' or which == 'nearest':
-            next_set = self._calc_riseset(time, target, 'next',
-                                          'setting', horizon)
+            next_set = self._calc_riseset(time, target, 'next', 'setting',
+                                          horizon)
             if which == 'next':
                 return next_set
 

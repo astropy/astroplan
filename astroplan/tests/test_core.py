@@ -297,6 +297,82 @@ def get_pyephem_vega_rise_set():
 
     return next_rising, next_setting, prev_rising, prev_setting
 
+def test_sunrise_sunset_equator_civil_twilight():
+    '''
+    Check that time of sunrise/set for an observer on the equator is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    obs = Observer(location=location, pressure=pressure)
+    horizon = -6*u.degree
+    astroplan_next_sunrise = obs.sunrise(time, which='next',
+                                         horizon=horizon).datetime
+    astroplan_next_sunset = obs.sunset(time, which='next',
+                                       horizon=horizon).datetime
+
+    astroplan_prev_sunrise = obs.sunrise(time, which='previous',
+                                         horizon=horizon).datetime
+    astroplan_prev_sunset = obs.sunset(time, which='previous',
+                                       horizon=horizon).datetime
+
+    astroplan_next_real_sunrise = obs.sunrise(time, which='next',
+                                              horizon=0*u.degree).datetime
+
+    print(astroplan_next_sunrise, astroplan_next_real_sunrise)
+    # Run get_pyephem_sunrise_sunset_equator_civil_twilight() to compute
+    # analogous result from PyEphem:
+    pyephem_next_rise, pyephem_next_set, pyephem_prev_rise, pyephem_prev_set = (
+        datetime.datetime(2000, 1, 2, 5, 37, 34, 83328),
+        datetime.datetime(2000, 1, 1, 18, 29, 29, 195908),
+        datetime.datetime(2000, 1, 1, 5, 37, 4, 701708),
+        datetime.datetime(1999, 12, 31, 18, 29, 1, 530987))
+
+    # Typical difference in this example between PyEphem and astroplan is <2 min
+    threshold_minutes = 5
+    assert (abs(pyephem_next_rise - astroplan_next_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_set - astroplan_next_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_rise - astroplan_prev_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_set - astroplan_prev_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def get_pyephem_sunrise_sunset_equator_civil_twilight():
+    '''
+    Calculate next sunrise and sunset with PyEphem for an observer
+    on the equator.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    obs.horizon = '-06:00:00'
+    next_sunrise = obs.next_rising(ephem.Sun(), use_center=True)
+    next_sunset = obs.next_setting(ephem.Sun(), use_center=True)
+    prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
+    prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
+
+    return (repr(next_sunrise.datetime()),
+            repr(next_sunset.datetime()),
+            repr(prev_sunrise.datetime()),
+            repr(prev_sunset.datetime()))
+
+
 class TestRisingSetting(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):
         with self.assertRaises(ValueError):
