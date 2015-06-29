@@ -183,10 +183,6 @@ def test_sunrise_sunset_equator():
     pyephem_prev_sunrise = datetime.datetime(2000, 1, 1, 6, 3, 10, 720052)
     pyephem_prev_sunset = datetime.datetime(1999, 12, 31, 18, 2, 55, 100786)
 
-    # Is there an equivalent to assert_allclose() for datetimes?
-    #assert_allclose(pyephem_next_sunrise, pyephem_next_sunset,
-    #                atol=datetime.timedelta(minutes=10))
-
     # Typical difference in this example between PyEphem and astroplan is <2 min
     threshold_minutes = 5
     assert (abs(pyephem_next_sunrise - astroplan_next_sunrise) <
@@ -249,11 +245,10 @@ def test_vega_rise_set_equator():
 
     # Run get_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
-    pyephem_next_rise, pyephem_next_set, pyephem_prev_rise, pyephem_prev_set = (
-        datetime.datetime(2000, 1, 2, 5, 52, 8, 257401),
-        datetime.datetime(2000, 1, 1, 17, 54, 6, 211705),
-        datetime.datetime(2000, 1, 1, 5, 56, 4, 165852),
-        datetime.datetime(1999, 12, 31, 17, 58, 2, 120088))
+    pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 52, 8, 257401)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 17, 54, 6, 211705)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 5, 56, 4, 165852)
+    pyephem_prev_set = datetime.datetime(1999, 12, 31, 17, 58, 2, 120088)
 
     # Typical difference in this example between PyEphem and astroplan is <2 min
     threshold_minutes = 5
@@ -324,14 +319,12 @@ def test_sunrise_sunset_equator_civil_twilight():
     astroplan_next_real_sunrise = obs.sunrise(time, which='next',
                                               horizon=0*u.degree).datetime
 
-    print(astroplan_next_sunrise, astroplan_next_real_sunrise)
     # Run get_pyephem_sunrise_sunset_equator_civil_twilight() to compute
     # analogous result from PyEphem:
-    pyephem_next_rise, pyephem_next_set, pyephem_prev_rise, pyephem_prev_set = (
-        datetime.datetime(2000, 1, 2, 5, 37, 34, 83328),
-        datetime.datetime(2000, 1, 1, 18, 29, 29, 195908),
-        datetime.datetime(2000, 1, 1, 5, 37, 4, 701708),
-        datetime.datetime(1999, 12, 31, 18, 29, 1, 530987))
+    pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 37, 34, 83328)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 18, 29, 29, 195908)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 5, 37, 4, 701708)
+    pyephem_prev_set = datetime.datetime(1999, 12, 31, 18, 29, 1, 530987)
 
     # Typical difference in this example between PyEphem and astroplan is <2 min
     threshold_minutes = 5

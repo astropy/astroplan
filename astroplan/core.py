@@ -120,8 +120,8 @@ class Observer(object):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
-        If `target` is None, generates an altitude/azimuth frame. Otherwise,
-        calculates the transformation to that frame for the requested `target`.
+        If ``target`` is None, generates an altitude/azimuth frame. Otherwise,
+        calculates the transformation to that frame for the requested ``target``.
 
         Parameters
         ----------
@@ -138,8 +138,8 @@ class Observer(object):
 
         Returns
         -------
-        If `target` is `None`, returns `~astropy.coordinates.AltAz` frame. If
-        `target` is not `None`, returns the `target` transformed to the
+        If ``target`` is `None`, returns `~astropy.coordinates.AltAz` frame. If
+        ``target`` is not `None`, returns the ``target`` transformed to the
         `~astropy.coordinates.AltAz` frame.
 
         """
@@ -168,10 +168,10 @@ class Observer(object):
     def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree,
                      return_limits=False, return_alts=False):
         '''
-        Find time `t` when values in array `a` go from
+        Find time ``t`` when values in array ``a`` go from
         negative to positive or positive to negative (exclude endpoints)
 
-        `return_limits` will return nearest times to zero-crossing.
+        ``return_limits`` will return nearest times to zero-crossing.
 
         Parameters
         ----------
@@ -194,13 +194,13 @@ class Observer(object):
 
         Returns
         -------
-        If `return_limits` is True, returns the lower and upper limits
-        on the time of the horizon crossing. If `return_alts` is also
+        If ``return_limits`` is True, returns the lower and upper limits
+        on the time of the horizon crossing. If ``return_alts`` is also
         True, returns a tuple of the lower and upper limits on the
         horizon crossing time and a tuple of the corresponding altitudes
         at those times.
 
-        If `return_limits` is False, returns the time nearest to the
+        If ``return_limits`` is False, returns the time nearest to the
         horizon crossing.
         '''
         if rise_set == 'rising':
@@ -239,8 +239,8 @@ class Observer(object):
     @u.quantity_input(horizon=u.deg)
     def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
         '''
-        Do linear interpolation between two `altitudes` at
-        two `times` to determine the time where the altitude
+        Do linear interpolation between two ``altitudes`` at
+        two ``times`` to determine the time where the altitude
         goes through zero.
 
         Parameters
@@ -267,7 +267,7 @@ class Observer(object):
 
     def _calc_riseset(self, time, target, prev_next, rise_set, horizon, N=150):
         '''
-        Time at next rise/set of `target`.
+        Time at next rise/set of ``target``.
 
         Parameters
         ----------
@@ -318,10 +318,10 @@ class Observer(object):
         '''
         Calculate rise time.
 
-        Compute time of the next/previous/nearest rise of the `target`
-        object, where "rise" is defined as the time when the `target`
-        transitions from altitudes below the `horizon` to above the
-        `horizon`.
+        Compute time of the next/previous/nearest rise of the ``target``
+        object, where "rise" is defined as the time when the ``target``
+        transitions from altitudes below the ``horizon`` to above the
+        ``horizon``.
 
         Parameters
         ----------
@@ -331,8 +331,8 @@ class Observer(object):
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which sunrise relative to the present `time` would you
+        which : {'next', 'previous', 'nearest'}
+            Choose which sunrise relative to the present ``time`` would you
             like to calculate
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
@@ -370,9 +370,9 @@ class Observer(object):
         '''
         Calculate set time.
 
-        Compute time of the next/previous/nearest set of `target`, where
-        "set" is defined as when the `target` transitions from altitudes
-        above `horizon` to below `horizon`.
+        Compute time of the next/previous/nearest set of ``target``, where
+        "set" is defined as when the ``target`` transitions from altitudes
+        above ``horizon`` to below ``horizon``.
 
         Parameters
         ----------
@@ -382,8 +382,8 @@ class Observer(object):
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which sunset relative to the present `time` would you
+        which : {'next', 'previous', 'nearest'}
+            Choose which sunset relative to the present ``time`` would you
             like to calculate
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
@@ -424,16 +424,16 @@ class Observer(object):
 
         Compute time of the next/previous/nearest sunrise, where
         sunrise is defined as when the Sun transitions from altitudes
-        below `horizon` to above `horizon`.
+        below ``horizon`` to above ``horizon``.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
             Time of observation
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which sunrise relative to the present `time` would you
-            like to calculate
+        which : {'next', 'previous', 'nearest'}
+            Choose which sunrise relative to the present ``time`` would you
+            like to calculate. 
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
             Degrees above/below actual horizon to use
@@ -454,15 +454,15 @@ class Observer(object):
         
         Compute time of the next/previous/nearest sunset, where
         sunset is defined as when the Sun transitions from altitudes
-        below `horizon` to above `horizon`.
+        below ``horizon`` to above ``horizon``.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
             Time of observation
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which sunset relative to the present `time` would you
+        which : {'next', 'previous', 'nearest'}
+            Choose which sunset relative to the present ``time`` would you
             like to calculate
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
@@ -562,9 +562,9 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which twilight relative to the present `time` would you
-            like to calculate
+        which : {'next', 'previous', 'nearest'}
+            Choose which twilight relative to the present ``time`` would you
+            like to calculate. Default is nearest.
         """
         return self.sunset(time, which, horizon=-18*u.degree)
 
@@ -578,9 +578,9 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which twilight relative to the present `time` would you
-            like to calculate
+        which : {'next', 'previous', 'nearest'}
+            Choose which twilight relative to the present ``time`` would you
+            like to calculate. Default is nearest.
         """
         return self.sunset(time, which, horizon=-12*u.degree)
 
@@ -593,9 +593,9 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which twilight relative to the present `time` would you
-            like to calculate
+        which : {'next', 'previous', 'nearest'}
+            Choose which twilight relative to the present ``time`` would you
+            like to calculate. Default is nearest.
         """
         return self.sunset(time, which, horizon=-6*u.degree)
 
@@ -608,8 +608,8 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-         which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which twilight relative to the present `time` would you
+         which : {'next', 'previous', 'nearest'}
+            Choose which twilight relative to the present ``time`` would you
             like to calculate
         """
         return self.sunrise(time, which, horizon=-18*u.degree)
@@ -623,9 +623,9 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which twilight relative to the present `time` would you
-            like to calculate
+        which : {'next', 'previous', 'nearest'}
+            Choose which twilight relative to the present ``time`` would you
+            like to calculate. Default is nearest.
         """
         return self.sunrise(time, which, horizon=-12*u.degree)
 
@@ -638,9 +638,9 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-        which : str - can be "next", "previous", or "nearest"; defaults to "nearest"
-            Choose which twilight relative to the present `time` would you
-            like to calculate
+        which : {'next', 'previous', 'nearest'}
+            Choose which twilight relative to the present ``time`` would you
+            like to calculate. Default is nearest.
         """
         return self.sunrise(time, which, horizon=-6*u.degree)
 
@@ -649,7 +649,7 @@ class Target(object):
     """
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as `FixedTarget` or `NonFixedTarget`.
+    subclasses such as ``FixedTarget`` or ``NonFixedTarget``.
 
     Would need to import six, abc to make this a metaclass?
     """
