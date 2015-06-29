@@ -127,10 +127,10 @@ class Observer(object):
         ----------
         time : `~astropy.time.Time`
             The time at which the observation is taking place. Will be used as
-            the `obstime` attribute in the resulting frame or coordinate.
+            the ``obstime`` attribute in the resulting frame or coordinate.
 
         target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
-            Celestial object of interest. If `target` is `None`, return the
+            Celestial object of interest. If ``target`` is `None`, return the
             `~astropy.coordinates.AltAz` frame without coordinates.
 
         obswl : `~astropy.units.Quantity` (optional)
@@ -565,6 +565,11 @@ class Observer(object):
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of twilight
         """
         return self.sunset(time, which, horizon=-18*u.degree)
 
@@ -581,6 +586,11 @@ class Observer(object):
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of twilight
         """
         return self.sunset(time, which, horizon=-12*u.degree)
 
@@ -596,6 +606,11 @@ class Observer(object):
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of twilight
         """
         return self.sunset(time, which, horizon=-6*u.degree)
 
@@ -611,6 +626,11 @@ class Observer(object):
          which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of twilight
         """
         return self.sunrise(time, which, horizon=-18*u.degree)
 
@@ -626,6 +646,11 @@ class Observer(object):
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of twilight
         """
         return self.sunrise(time, which, horizon=-12*u.degree)
 
@@ -641,6 +666,11 @@ class Observer(object):
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of sunset
         """
         return self.sunrise(time, which, horizon=-6*u.degree)
 
