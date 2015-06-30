@@ -288,6 +288,33 @@ class Observer(object):
         return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
                     format='jd')
 
+    def _altitude_trig(self, LST, target):
+        '''
+        Calculate the altitude of ``target`` at local sidereal times ``LST``.
+
+        This method provides a factor of ~3 speed up over calling `altaz`, and
+        inherently does *not* take the atmosphere into account.
+
+        Parameters
+        ----------
+        LST : `~astropy.time.Time`
+            Local sidereal times (array)
+
+        target : {`~astropy.coordinates.SkyCoord`, `FixedTarget`} or similar
+            Target celestial object's coordinates.
+
+        Returns
+        -------
+        alt : `~astropy.unit.Quantity`
+            Array of altitudes
+        '''
+        alt = np.arcsin(np.sin(self.location.latitude.radian) *
+                        np.sin(target.dec) +
+                        np.cos(self.location.latitude.radian) *
+                        np.cos(target.dec) *
+                        np.cos(LST.radian - target.ra.radian))
+        return alt
+
     def _calc_riseset(self, time, target, prev_next, rise_set, horizon, N=150):
         '''
         Time at next rise/set of ``target``.
@@ -329,7 +356,13 @@ class Observer(object):
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altitudes = self.altaz(times, target).alt
+        # Use trigonometric altitude calculation when pressure = 0
+        if self.pressure is None or self.pressure == 0*u.bar:
+            LST = times.sidereal_time('mean', longitude=self.location.longitude)
+            altitudes = self._altitude_trig(LST, target)
+        else:
+            altitudes = self.altaz(times, target).alt
+
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon)
         return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)

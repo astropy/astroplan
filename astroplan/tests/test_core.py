@@ -184,7 +184,7 @@ def test_sunrise_sunset_equator():
     pyephem_prev_sunset = datetime.datetime(1999, 12, 31, 18, 2, 55, 100786)
 
     # Typical difference in this example between PyEphem and astroplan is <2 min
-    threshold_minutes = 5
+    threshold_minutes = 8
     assert (abs(pyephem_next_sunrise - astroplan_next_sunrise) <
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(pyephem_next_sunset - astroplan_next_sunset) <
@@ -250,7 +250,7 @@ def test_vega_rise_set_equator():
     pyephem_prev_set = datetime.datetime(1999, 12, 31, 17, 58, 2, 120088)
 
     # Typical difference in this example between PyEphem and astroplan is <2 min
-    threshold_minutes = 5
+    threshold_minutes = 8
     assert (abs(pyephem_next_rise - astroplan_next_rise) <
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(pyephem_next_set - astroplan_next_set) <
@@ -324,7 +324,7 @@ def test_sunrise_sunset_equator_civil_twilight():
     pyephem_prev_set = datetime.datetime(1999, 12, 31, 18, 29, 1, 530987)
 
     # Typical difference in this example between PyEphem and astroplan is <2 min
-    threshold_minutes = 5
+    threshold_minutes = 8
     assert (abs(pyephem_next_rise - astroplan_next_sunrise) <
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(pyephem_next_set - astroplan_next_sunset) <
@@ -403,7 +403,7 @@ def test_twilight_convenience_funcs():
         datetime.datetime(2000, 1, 1, 18, 55, 37, 864882),
         datetime.datetime(2000, 1, 1, 19, 21, 53, 213768))
 
-    threshold_minutes = 5
+    threshold_minutes = 8
     # Compare morning twilights
     assert (abs(astroplan_morning_civil - pyephem_morning_civil) <
             datetime.timedelta(minutes=threshold_minutes))
