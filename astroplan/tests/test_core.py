@@ -104,7 +104,7 @@ def test_Observer_altaz():
     assert_allclose(pyephem_azimuth.value, astroplan_azimuth.value,
                     atol=tolerance)
 
-def get_pyephem_altaz(latitude, longitude, elevation, time, pressure,
+def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
     '''
     Run PyEphem to compute the altitude/azimuth of a target at specified time
@@ -124,7 +124,7 @@ def get_pyephem_altaz(latitude, longitude, elevation, time, pressure,
     pyephem_target.compute(pyephem_obs)
     pyephem_altitude = Latitude(np.degrees(pyephem_target.alt)*u.degree)
     pyephem_azimuth = Longitude(np.degrees(pyephem_target.az)*u.degree)
-    return pyephem_altitude, pyephem_azimuth
+    print(pyephem_altitude, pyephem_azimuth)
 
 def test_Observer_timezone_parser():
     lat = '+19:00:00'
@@ -194,10 +194,11 @@ def test_sunrise_sunset_equator():
     assert (abs(pyephem_prev_sunset - astroplan_prev_sunset) <
             datetime.timedelta(minutes=threshold_minutes))
 
-def get_pyephem_sunrise_sunset():
+def print_pyephem_sunrise_sunset():
     '''
-    Calculate next sunrise and sunset with PyEphem for an observer
-    on the equator.
+    To run:
+
+    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset as f; f()'
     '''
     lat = '00:00:00'
     lon = '00:00:00'
@@ -217,10 +218,8 @@ def get_pyephem_sunrise_sunset():
     prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
     prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
 
-    return (repr(next_sunrise.datetime()),
-            repr(next_sunset.datetime()),
-            repr(prev_sunrise.datetime()),
-            repr(prev_sunset.datetime()))
+    print(map(repr, [next_sunrise.datetime(), next_sunset.datetime(),
+                     prev_sunrise.datetime(), prev_sunset.datetime()]))
 
 def test_vega_rise_set_equator():
     '''
@@ -261,10 +260,11 @@ def test_vega_rise_set_equator():
     assert (abs(pyephem_prev_set - astroplan_prev_set) <
             datetime.timedelta(minutes=threshold_minutes))
 
-def get_pyephem_vega_rise_set():
+def print_pyephem_vega_rise_set():
     '''
-    Calculate next rise and set of Vega with PyEphem for an observer
-    on the equator.
+    To run:
+
+    python -c 'from astroplan.tests.test_core import print_pyephem_vega_rise_set as f; f()'
     '''
     lat = '00:00:00'
     lon = '00:00:00'
@@ -290,7 +290,7 @@ def get_pyephem_vega_rise_set():
     prev_rising = obs.previous_rising(target).datetime()
     prev_setting = obs.previous_setting(target).datetime()
 
-    return next_rising, next_setting, prev_rising, prev_setting
+    print(map(repr, [next_rising, next_setting, prev_rising, prev_setting]))
 
 def test_sunrise_sunset_equator_civil_twilight():
     '''
@@ -316,14 +316,11 @@ def test_sunrise_sunset_equator_civil_twilight():
     astroplan_prev_sunset = obs.sunset(time, which='previous',
                                        horizon=horizon).datetime
 
-    astroplan_next_real_sunrise = obs.sunrise(time, which='next',
-                                              horizon=0*u.degree).datetime
-
     # Run get_pyephem_sunrise_sunset_equator_civil_twilight() to compute
     # analogous result from PyEphem:
     pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 37, 34, 83328)
-    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 18, 29, 29, 195908)
-    pyephem_next_set = datetime.datetime(2000, 1, 1, 5, 37, 4, 701708)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 18, 29, 29, 195908)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 5, 37, 4, 701708)
     pyephem_prev_set = datetime.datetime(1999, 12, 31, 18, 29, 1, 530987)
 
     # Typical difference in this example between PyEphem and astroplan is <2 min
@@ -337,10 +334,13 @@ def test_sunrise_sunset_equator_civil_twilight():
     assert (abs(pyephem_prev_set - astroplan_prev_sunset) <
             datetime.timedelta(minutes=threshold_minutes))
 
-def get_pyephem_sunrise_sunset_equator_civil_twilight():
+def print_pyephem_sunrise_sunset_equator_civil_twilight():
     '''
     Calculate next sunrise and sunset with PyEphem for an observer
     on the equator.
+
+    To run:
+    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
     '''
     lat = '00:00:00'
     lon = '00:00:00'
@@ -361,10 +361,9 @@ def get_pyephem_sunrise_sunset_equator_civil_twilight():
     prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
     prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
 
-    return (repr(next_sunrise.datetime()),
-            repr(next_sunset.datetime()),
-            repr(prev_sunrise.datetime()),
-            repr(prev_sunset.datetime()))
+    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
+    print(map(pyephem_time_to_datetime_str, [next_sunrise, next_sunset,
+                                             prev_sunrise, prev_sunset]))
 
 def test_twilight_convenience_funcs():
     '''
@@ -421,7 +420,11 @@ def test_twilight_convenience_funcs():
     assert (abs(astroplan_evening_astro - pyephem_evening_astronomical) <
             datetime.timedelta(minutes=threshold_minutes))
 
-def get_pyephem_twilight_convenience_funcs():
+def print_pyephem_twilight_convenience_funcs():
+    '''
+    To run:
+    python -c 'from astroplan.tests.test_core import print_pyephem_twilight_convenience_funcs as f; f()'
+    '''
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -453,12 +456,10 @@ def get_pyephem_twilight_convenience_funcs():
     evening_astronomical = obs.next_setting(ephem.Sun(), use_center=True)
 
     pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
-    return map(pyephem_time_to_datetime_str, [morning_civil, morning_nautical,
-                                              morning_astronomical,
-                                              evening_civil, evening_nautical,
-                                              evening_astronomical])
-
-
+    print(map(pyephem_time_to_datetime_str, [morning_civil, morning_nautical,
+                                             morning_astronomical,
+                                             evening_civil, evening_nautical,
+                                             evening_astronomical]))
 
 class TestRisingSetting(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):

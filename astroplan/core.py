@@ -6,18 +6,18 @@ from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, get_sun)
 import astropy.units as u
 from astropy.time import Time
-from astropy.units import Quantity
-
+import datetime
 import pytz
 
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
 from astropy.utils.data import download_file
 from astropy.utils import iers
-import datetime
+
 iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
                                                       cache=True))
 ################################################################################
+
 
 #from ..extern import six
 
@@ -35,6 +35,37 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "AboveAirmass", "Observation"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
+
+def _generate_24hr_grid(t0, start, end, N):
+    '''
+    Generate a nearly linearly spaced grid of time durations.
+
+    The midpoints of these grid points will span times from ``t0``+``start``
+    to ``t0``+``end``, including the end points, which is useful when taking
+    numerical derivatives.
+
+    Parameters
+    ----------
+    t0 : `~astropy.time.Time`
+        Time queried for, grid will be built from or up to this time.
+
+    start : float
+        Number of days before/after ``t0`` to start the grid.
+
+    end : float
+        Number of days before/after ``t0`` to end the grid.
+
+    N : int
+        Number of grid points to generate
+
+    Returns
+    -------
+    `~astropy.time.Time`
+    '''
+    time_grid = np.concatenate([[start - 1/(N-1)],
+                                np.linspace(start, end, N)[1:-1],
+                                [end + 1/(N-1)]])*u.day
+    return t0 + time_grid
 
 class Observer(object):
     """
@@ -302,9 +333,9 @@ class Observer(object):
             Time of rise/set
         '''
         if prev_next == 'next':
-            times = time + np.linspace(0, 1, N)*u.day
+            times = _generate_24hr_grid(time, 0, 1, N)
         else:
-            times = time + np.linspace(-1, 0, N)*u.day
+            times = _generate_24hr_grid(time, -1, 0, N)
 
         altitudes = self.altaz(times, target).alt
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
