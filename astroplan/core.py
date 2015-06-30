@@ -357,7 +357,7 @@ class Observer(object):
             times = _generate_24hr_grid(time, -1, 0, N)
 
         # Use trigonometric altitude calculation when pressure = 0
-        if self.pressure is None or self.pressure == 0*u.bar:
+        if self.pressure == 0*u.bar:
             LST = times.sidereal_time('mean', longitude=self.location.longitude)
             altitudes = self._altitude_trig(LST, target)
         else:
