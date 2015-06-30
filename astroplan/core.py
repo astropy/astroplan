@@ -196,8 +196,7 @@ class Observer(object):
 
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
-    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree,
-                     return_limits=False, return_alts=False):
+    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree):
         '''
         Find time ``t`` when values in array ``a`` go from
         negative to positive or positive to negative (exclude endpoints)
@@ -216,23 +215,10 @@ class Observer(object):
             Number of degrees above/below actual horizon to use
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
-        return_limits : bool
-            If `True`, return the lower and upper limits on the
-            horizon crossing time. If `False`, return closest time.
-        return_alts : bool
-            If `True`, return the altitudes at the times corresponding
-            to the lower and upper limits on the horizon crossing time.
-
         Returns
         -------
-        If ``return_limits`` is True, returns the lower and upper limits
-        on the time of the horizon crossing. If ``return_alts`` is also
-        True, returns a tuple of the lower and upper limits on the
-        horizon crossing time and a tuple of the corresponding altitudes
-        at those times.
-
-        If ``return_limits`` is False, returns the time nearest to the
-        horizon crossing.
+        Returns the lower and upper limits on the time and altitudes
+        of the horizon crossing.
         '''
         if rise_set == 'rising':
             condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
@@ -246,26 +232,32 @@ class Observer(object):
             raise ValueError('Target does not rise/set with respect to '
                              '`horizon` within 24 hours')
 
-        if return_limits:
-            nearest_index = np.argwhere(condition)[0][0]
+        nearest_index = np.argwhere(condition)[0][0]
 
-            if alt[nearest_index] > horizon:
-                lower_limit = t[nearest_index-1]
-                upper_limit = t[nearest_index]
-                lower_alt = alt[nearest_index-1]
-                upper_alt = alt[nearest_index]
-            else:
-                lower_limit = t[nearest_index]
-                upper_limit = t[nearest_index+1]
-                lower_alt = alt[nearest_index]
-                upper_alt = alt[nearest_index+1]
+        # Address special cases when nearest point is end point in array:
+        if nearest_index == 0:
+            lower_limit = t[0]
+            upper_limit = t[1]
+            lower_alt = alt[0]
+            upper_alt = alt[1]
+        elif nearest_index == len(alt):
+            lower_limit = t[-2]
+            upper_limit = t[-1]
+            lower_alt = alt[-2]
+            upper_alt = alt[-1]
+        # Normal cases:
+        elif alt[nearest_index] > horizon:
+            lower_limit = t[nearest_index-1]
+            upper_limit = t[nearest_index]
+            lower_alt = alt[nearest_index-1]
+            upper_alt = alt[nearest_index]
+        else:
+            lower_limit = t[nearest_index]
+            upper_limit = t[nearest_index+1]
+            lower_alt = alt[nearest_index]
+            upper_alt = alt[nearest_index+1]
 
-            if return_alts:
-                return (lower_limit, upper_limit), (lower_alt, upper_alt)
-            else:
-                return lower_limit, upper_limit
-
-        return t[condition][0]
+        return (lower_limit, upper_limit), (lower_alt, upper_alt)
 
     @u.quantity_input(horizon=u.deg)
     def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
@@ -339,9 +331,7 @@ class Observer(object):
 
         altitudes = self.altaz(times, target).alt
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
-                                                    horizon,
-                                                    return_limits=True,
-                                                    return_alts=True)
+                                                    horizon)
         return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
 
     @u.quantity_input(horizon=u.deg)
