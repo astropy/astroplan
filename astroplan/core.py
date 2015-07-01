@@ -19,7 +19,7 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 ################################################################################
 
 
-#from ..extern import six
+from astropy.extern.six import string_types
 
 #import sys
 #from math import sqrt, pi, exp, log, floor
@@ -150,7 +150,7 @@ class Observer(object):
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
-        elif isinstance(timezone, str) or isinstance(timezone, unicode):
+        elif isinstance(timezone, string_types):
             self.timezone = pytz.timezone(timezone)
         else:
             raise TypeError('timezone keyword should be a string, or an '
