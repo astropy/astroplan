@@ -498,7 +498,111 @@ def print_pyephem_twilight_convenience_funcs():
                                              evening_civil, evening_nautical,
                                              evening_astronomical]))
 
+def test_solar_transit():
+    '''
+    Test that astroplan's solar transit/antitransit (which are noon and
+    midnight) agree with PyEphem's
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    from astropy.coordinates import get_sun
+    obs = Observer(location=location, pressure=pressure)
 
+    # Compute next/previous noon/midnight using generic calc_transit methods
+    astroplan_next_transit = obs.calc_transit(time, get_sun(time),
+                                              which='next').datetime
+    astroplan_next_antitransit = obs.calc_antitransit(time, get_sun(time),
+                                                      which='next').datetime
+    astroplan_prev_transit = obs.calc_transit(time, get_sun(time),
+                                              which='previous').datetime
+    astroplan_prev_antitransit = obs.calc_antitransit(time, get_sun(time),
+                                                      which='previous').datetime
+    # Computed in print_pyephem_solar_transit_noon()
+    pyephem_next_transit = datetime.datetime(2000, 1, 1, 12, 3, 17, 207300)
+    pyephem_next_antitransit = datetime.datetime(2000, 1, 2, 0, 3, 31, 423333)
+    pyephem_prev_transit = datetime.datetime(1999, 12, 31, 12, 2, 48, 562755)
+    pyephem_prev_antitransit = datetime.datetime(2000, 1, 1, 0, 3, 2, 918943)
+
+    threshold_minutes = 8
+    assert (abs(astroplan_next_transit - pyephem_next_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_next_antitransit - pyephem_next_antitransit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_transit - pyephem_prev_transit) <
+        datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_antitransit - pyephem_prev_antitransit) <
+        datetime.timedelta(minutes=threshold_minutes))
+
+def test_solar_transit_convenience_methods():
+    '''
+    Test that astroplan's noon and midnight convenience methods agree with
+    PyEphem's solar transit/antitransit time.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    from astropy.coordinates import get_sun
+    obs = Observer(location=location, pressure=pressure)
+
+    # Compute next/previous noon/midnight using generic calc_transit methods
+    astroplan_next_noon = obs.noon(time, which='next').datetime
+    astroplan_next_midnight = obs.midnight(time, which='next').datetime
+    astroplan_prev_noon = obs.noon(time, which='previous').datetime
+    astroplan_prev_midnight = obs.midnight(time, which='previous').datetime
+
+    # Computed in print_pyephem_solar_transit_noon()
+    pyephem_next_transit = datetime.datetime(2000, 1, 1, 12, 3, 17, 207300)
+    pyephem_next_antitransit = datetime.datetime(2000, 1, 2, 0, 3, 31, 423333)
+    pyephem_prev_transit = datetime.datetime(1999, 12, 31, 12, 2, 48, 562755)
+    pyephem_prev_antitransit = datetime.datetime(2000, 1, 1, 0, 3, 2, 918943)
+
+    threshold_minutes = 8
+    assert (abs(astroplan_next_noon - pyephem_next_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_next_midnight - pyephem_next_antitransit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_noon - pyephem_prev_transit) <
+        datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_midnight - pyephem_prev_antitransit) <
+        datetime.timedelta(minutes=threshold_minutes))
+
+
+def print_pyephem_solar_transit_noon():
+    '''
+    Calculate next sunrise and sunset with PyEphem for an observer
+    on the equator.
+
+    To run:
+    python -c 'from astroplan.tests.test_core import print_pyephem_transit_noon as f; f()'
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    next_transit = obs.next_transit(ephem.Sun())
+    next_antitransit = obs.next_antitransit(ephem.Sun())
+    prev_transit = obs.previous_transit(ephem.Sun())
+    prev_antitransit = obs.previous_antitransit(ephem.Sun())
+
+    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
+    print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
+                                             prev_transit, prev_antitransit]))
 
 class TestRisingSetting(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):

@@ -36,7 +36,7 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
-def _generate_24hr_grid(t0, start, end, N):
+def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     '''
     Generate a nearly linearly spaced grid of time durations.
 
@@ -58,13 +58,22 @@ def _generate_24hr_grid(t0, start, end, N):
     N : int
         Number of grid points to generate
 
+    for_deriv : bool
+        Generate time series for taking numerical derivative (modify
+        bounds)?
+
     Returns
     -------
     `~astropy.time.Time`
     '''
-    time_grid = np.concatenate([[start - 1/(N-1)],
-                                np.linspace(start, end, N)[1:-1],
-                                [end + 1/(N-1)]])*u.day
+
+    if for_deriv:
+        time_grid = np.concatenate([[start - 1/(N-1)],
+                                    np.linspace(start, end, N)[1:-1],
+                                    [end + 1/(N-1)]])*u.day
+    else:
+        time_grid = np.linspace(start, end, N)*u.day
+
     return t0 + time_grid
 
 class Observer(object):
@@ -367,6 +376,59 @@ class Observer(object):
                                                     horizon)
         return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
 
+    def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
+        '''
+        Time at next transit of the meridian of `target`.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        target : `~astropy.coordinates.SkyCoord`
+            Position of target or multiple positions of that target
+            at multiple times (if target moves, like the Sun)
+
+        prev_next : str - either 'previous' or 'next'
+            Test next rise/set or previous rise/set
+
+        antitransit : bool
+            Toggle compute antitransit (below horizon, equivalent to midnight
+            for the Sun)
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        N : int
+            Number of altitudes to compute when searching for
+            rise or set.
+
+        Returns
+        -------
+        ret1 : `~astropy.time.Time`
+            Time of transit/antitransit
+        '''
+        if prev_next == 'next':
+            times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
+        else:
+            times = _generate_24hr_grid(time, -1, 0, N, for_deriv=True)
+
+        # The derivative of the altitude with respect to time is increasing
+        # from negative to positive values at the anti-transit of the meridian
+        if antitransit:
+            rise_set = 'rising'
+        else:
+            rise_set = 'setting'
+
+        altitudes = self.altaz(times, target).alt
+        dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
+        d_altitudes = altitudes.diff()
+
+        horizon = 0*u.degree # Find when derivative passes through zero
+        horizon_crossing_limits = self._horiz_cross(dt, d_altitudes, rise_set,
+                                                    horizon)
+        return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
+
     @u.quantity_input(horizon=u.deg)
     def calc_rise(self, time, target, which='nearest', horizon=0*u.degree):
         '''
@@ -471,6 +533,92 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
+    def calc_transit(self, time, target, which='nearest'):
+        '''
+        Calculate time at the transit of the meridian.
+
+        Compute time of the next/previous/nearest transit of the ``target``
+        object.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
+            Target celestial object
+
+        which : {'next', 'previous', 'nearest'}
+            Choose which sunrise relative to the present ``time`` would you
+            like to calculate
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Transit time of target
+        '''
+        if which == 'next' or which == 'nearest':
+            next_transit = self._calc_transit(time, target, 'next')
+            if which == 'next':
+                return next_transit
+
+        if which == 'previous' or which == 'nearest':
+            previous_transit = self._calc_transit(time, target, 'previous')
+            if which == 'previous':
+                return previous_transit
+
+        if which == 'nearest':
+            if abs(time - previous_transit) < abs(time - next_transit):
+                return previous_transit
+            else:
+                return next_transit
+        raise ValueError('"which" kwarg must be "next", "previous" or '
+                         '"nearest".')
+
+    def calc_antitransit(self, time, target, which='nearest'):
+        '''
+        Calculate time at the antitransit of the meridian.
+
+        Compute time of the next/previous/nearest antitransit of the ``target``
+        object.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
+            Target celestial object
+
+        which : {'next', 'previous', 'nearest'}
+            Choose which sunrise relative to the present ``time`` would you
+            like to calculate
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Antitransit time of target
+        '''
+        if which == 'next' or which == 'nearest':
+            next_antitransit = self._calc_transit(time, target, 'next',
+                                                  antitransit=True)
+            if which == 'next':
+                return next_antitransit
+
+        if which == 'previous' or which == 'nearest':
+            previous_antitransit = self._calc_transit(time, target, 'previous',
+                                                      antitransit=True)
+            if which == 'previous':
+                return previous_antitransit
+
+        if which == 'nearest':
+            if abs(time - previous_antitransit) < abs(time - next_antitransit):
+                return previous_antitransit
+            else:
+                return next_antitransit
+        raise ValueError('"which" kwarg must be "next", "previous" or '
+                         '"nearest".')
+
     @u.quantity_input(horizon=u.deg)
     def sunrise(self, time, which='nearest', horizon=0*u.degree):
         '''
@@ -487,7 +635,7 @@ class Observer(object):
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
-            like to calculate. 
+            like to calculate.
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
             Degrees above/below actual horizon to use
@@ -505,7 +653,7 @@ class Observer(object):
     def sunset(self, time, which='nearest', horizon=0*u.degree):
         '''
         Time of sunset.
-        
+
         Compute time of the next/previous/nearest sunset, where
         sunset is defined as when the Sun transitions from altitudes
         below ``horizon`` to above ``horizon``.
@@ -531,79 +679,45 @@ class Observer(object):
         '''
         return self.calc_set(time, get_sun(time), which, horizon)
 
-    def noon(self, time):
-        """
-        Returns the local, solar noon time.
+    def noon(self, time, which='nearest'):
+        '''
+        Time at solar noon.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
-        """
-        raise NotImplementedError()
+            Time of observation
 
-    def midnight(self, time):
-        """
-        Returns the local, solar midnight time.
+        which : {'next', 'previous', 'nearest'}
+            Choose which noon relative to the present ``time`` would you
+            like to calculate
 
-        Parameters
-        ----------
-        time : `~astropy.time.Time`
-        """
-        raise NotImplementedError()
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time at solar noon
+        '''
+        return self.calc_transit(time, get_sun(time), which)
 
-    # Moon-related methods.
-
-    def moonrise(self, time, **kwargs):
-        """
-        Returns the local moonrise time.
-
-        The default moonrise returned is the next one to occur.
+    def midnight(self, time, which='nearest'):
+        '''
+        Time at solar midnight.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
+            Time of observation
 
-        Keywords: str, optional
-            previous
-            next
-        """
-        raise NotImplementedError()
+        which : {'next', 'previous', 'nearest'}
+            Choose which noon relative to the present ``time`` would you
+            like to calculate
 
-    def moonset(self, time, **kwargs):
-        """
-        Returns the local moonset time.
-
-        The default moonset returned is the next one to occur.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time`
-
-        Keywords: str, optional
-            previous
-            next
-        """
-        raise NotImplementedError()
-
-    def moon_illumination(self, time):
-        """
-        Returns a float giving the percent illumation.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time`
-        """
-        raise NotImplementedError()
-
-    def moon_position(self, time):
-        """
-        Returns the position of the moon in alt/az.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time`
-        """
-        raise NotImplementedError()
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time at solar midnight
+        '''
+        return self.calc_antitransit(time, get_sun(time), which)
 
     # Twilight convenience functions
 
@@ -728,6 +842,59 @@ class Observer(object):
         """
         return self.sunrise(time, which, horizon=-6*u.degree)
 
+    # Moon-related methods.
+
+    def moonrise(self, time, **kwargs):
+        """
+        Returns the local moonrise time.
+
+        The default moonrise returned is the next one to occur.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+
+        Keywords: str, optional
+            previous
+            next
+        """
+        raise NotImplementedError()
+
+    def moonset(self, time, **kwargs):
+        """
+        Returns the local moonset time.
+
+        The default moonset returned is the next one to occur.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+
+        Keywords: str, optional
+            previous
+            next
+        """
+        raise NotImplementedError()
+
+    def moon_illumination(self, time):
+        """
+        Returns a float giving the percent illumation.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+        """
+        raise NotImplementedError()
+
+    def moon_position(self, time):
+        """
+        Returns the position of the moon in alt/az.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+        """
+        raise NotImplementedError()
 
 class Target(object):
     """
