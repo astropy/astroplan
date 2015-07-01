@@ -85,56 +85,56 @@ from astropy.time import Time
 time_obs = Time(2457189.500000, format='jd')
 
 # sunset
-obs.sunset(time=time_obs, which='nearest') # Default
-obs.sunset(time=time_obs, which='next')
-obs.sunset(time=time_obs, which='previous')
+obs.sunset(time_obs, which='nearest') # Default
+obs.sunset(time_obs, which='next')
+obs.sunset(time_obs, which='previous')
 obs.sunset() # Will be use time=Time.now(), which='nearest'
 
 # sunrise
-obs.sunrise(time=time_obs, which='nearest') # Default
-obs.sunrise(time=time_obs, which='next')
-obs.sunrise(time=time_obs, which='previous')
+obs.sunrise(time_obs, which='nearest') # Default
+obs.sunrise(time_obs, which='next')
+obs.sunrise(time_obs, which='previous')
 
 # moon rise
-obs.moonrise(time=time_obs, which='nearest')
+obs.moonrise(time_obs, which='nearest')
 
 # moon set
-obs.moonset(time=time_obs, which='nearest')
+obs.moonset(time_obs, which='nearest')
 
 # The above functions can be called with an `angle` keyword argument to specify
 # a particular horizon angle for rising or setting, or can be called with
 # convenience functions for particular morning/evening twilight.
 # For example, to compute astronomical twilight by specifying the `angle`:
-obs.sunset(time=time_obs, which='next', angle=18*u.degree) 
+obs.sunset(time_obs, which='next', angle=18*u.degree)
 
 # evening (astronomical) twilight
-obs.evening_astronomical(time=time_obs)
+obs.evening_astronomical(time_obs)
 
 # evening (nautical) twilight
-obs.evening_nautical(time=time_obs)
+obs.evening_nautical(time_obs)
 
 # evening (civil) twilight
-obs.evening_civil(time=time_obs)
+obs.evening_civil(time_obs)
 
 # morning (nautical) twilight
-obs.morning_nautical(time=time_obs)
+obs.morning_nautical(time_obs)
 
 # morning (civil) twilight
-obs.morning_civil(time=time_obs)
+obs.morning_civil(time_obs)
 
 # morning (astronomical) twilight
-obs.morning_astronomical(time=time_obs)
+obs.morning_astronomical(time_obs)
 
 # what is the moon illumination?
 # returns a float, which is percentage of the moon illuminated
-obs.moon_illumination(time=time_obs)
+obs.moon_illumination(time_obs)
 
 # what is the moon altitude and azimuth?
-obs.moon_altaz(time=time_obs)
+obs.moon_altaz(time_obs)
 
 # Other sun-related convenience functions:
-obs.noon(time=time_obs, which='nearest')
-obs.midnight(time=time_obs, which='nearest')
+obs.noon(time_obs, which='nearest')
+obs.midnight(time_obs, which='nearest')
 
 # ==============
 # Target objects
@@ -163,7 +163,7 @@ t1 = FixedTarget.from_name('Polaris')
 
 """
 Q: Can I observe this target on the night of May 1, 2015 between 18:30
-and 05:30 HST, above airmass 1.2, on a telescope that can observe between 
+and 05:30 HST, above airmass 1.2, on a telescope that can observe between
 15 degrees and 89 degrees altitude?
 """
 
@@ -179,7 +179,7 @@ constraint_list = [TimeRange("2015-05-01 18:30", "2015-05-02 05:30"),
 
 # (AboveAirmass will be a subclass of AltitudeWindow)
 
-# Combine a list of constraints to run on Observer, FixedTarget, and time to 
+# Combine a list of constraints to run on Observer, FixedTarget, and time to
 # determine the observability of target
 constraints = is_observable(constraint_list, obs, t1, time_obs)
 
@@ -189,11 +189,11 @@ constraints = is_observable(AirmassRange(1.2), obs, t1, time_obs)
 # AirmassRange can accept two bounding airmasses, assumes single argument is
 # an upper limit, lower limit = 1.
 
-# `constraints` will be a boolean where True=observable. For a list of 
+# `constraints` will be a boolean where True=observable. For a list of
 # targets, observatories, or times, `constraints` may be a booleans array
 
-# We will eventually need a more complicated method that minimizes a cost 
-# function when optimizing an observing schedule given the results of 
+# We will eventually need a more complicated method that minimizes a cost
+# function when optimizing an observing schedule given the results of
 # `is_observable`.
 
 # ======================================================
@@ -202,10 +202,10 @@ constraints = is_observable(AirmassRange(1.2), obs, t1, time_obs)
 
 # calculate the distance in alt and az degrees between two targets at
 # the given time (e.g. to calculate slew time)
-sf = FixedTarget(name='Sf', coord=SkyCoord('09d40m00.00s', '43d00m00.00s'))
-sm = FixedTarget(name='Sm', coord=SkyCoord('10d30m00.00s', '36d00m00.00s'))
+sf = FixedTarget(SkyCoord('09d40m00.00s', '43d00m00.00s'), name='Sf')
+sm = FixedTarget(SkyCoord('10d30m00.00s', '36d00m00.00s'), name='Sm')
 
 # Coordinate arithmetic gives separations in RA, Dec, alt, az
 dra, ddec = sf.ra - sm.ra, sf.dec - sm.dec
-dalt = obs.altaz(sf, time_obs).alt - obs.altaz(sm, time_obs).alt
-dazt = obs.altaz(sf, time_obs).az - obs.altaz(sm, time_obs).az
+dalt = obs.altaz(time_obs, sf).alt - obs.altaz(time_obs, sm).alt
+dazt = obs.altaz(time_obs, sf).az - obs.altaz(time_obs, sm).az
