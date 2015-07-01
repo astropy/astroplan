@@ -48,3 +48,6 @@ distribute-*.tar.gz
 
 # Mac OSX
 .DS_Store
+
+# Ignore IPython notebook (Jupyter) checkpoints.
+.ipynb_checkpoints
