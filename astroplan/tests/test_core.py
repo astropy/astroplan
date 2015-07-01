@@ -52,6 +52,7 @@ def test_FixedTarget_from_name():
 
     # Resolve coordinates with SkyCoord.from_name classmethod
     polaris_from_name = FixedTarget.from_name('Polaris')
+    polaris_from_name = FixedTarget.from_name('Polaris', name='Target 1')
     # Coordinates grabbed from SIMBAD
     polaris_from_SIMBAD = SkyCoord('02h31m49.09456s', '+89d15m50.7923s')
 
@@ -93,6 +94,10 @@ def test_Observer_altaz():
                     atol=tolerance)
     assert_allclose(pyephem_azimuth.value, astroplan_azimuth.value,
                     atol=tolerance)
+
+    # Check that alt/az without target returns AltAz frame
+    from astropy.coordinates import AltAz
+    assert isinstance(astroplan_obs.altaz(time), AltAz)
 
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
@@ -278,6 +283,9 @@ def test_vega_rise_set_equator():
     astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
     astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
 
+    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+
     # Run print_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
     pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 52, 8, 257401)
@@ -296,6 +304,10 @@ def test_vega_rise_set_equator():
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(pyephem_prev_set - astroplan_prev_set) <
             datetime.timedelta(minutes=threshold_minutes))
+
+    # Check that the 'nearest' option selects the nearest rise/set
+    assert astroplan_nearest_rise == astroplan_prev_rise
+    assert astroplan_nearest_set == astroplan_next_set
 
 def print_pyephem_vega_rise_set():
     '''
@@ -521,6 +533,12 @@ def test_solar_transit():
                                               which='previous').datetime
     astroplan_prev_antitransit = obs.calc_antitransit(time, get_sun(time),
                                                       which='previous').datetime
+
+    astroplan_nearest_transit = obs.calc_transit(time, get_sun(time),
+                                              which='nearest').datetime
+    astroplan_nearest_antitransit = obs.calc_antitransit(time, get_sun(time),
+                                                         which='nearest').datetime
+
     # Computed in print_pyephem_solar_transit_noon()
     pyephem_next_transit = datetime.datetime(2000, 1, 1, 12, 3, 17, 207300)
     pyephem_next_antitransit = datetime.datetime(2000, 1, 2, 0, 3, 31, 423333)
@@ -533,9 +551,13 @@ def test_solar_transit():
     assert (abs(astroplan_next_antitransit - pyephem_next_antitransit) <
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(astroplan_prev_transit - pyephem_prev_transit) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
     assert (abs(astroplan_prev_antitransit - pyephem_prev_antitransit) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Check nearest
+    assert astroplan_next_transit == astroplan_nearest_transit
+    assert astroplan_nearest_antitransit == astroplan_prev_antitransit
 
 def test_solar_transit_convenience_methods():
     '''
@@ -569,10 +591,9 @@ def test_solar_transit_convenience_methods():
     assert (abs(astroplan_next_midnight - pyephem_next_antitransit) <
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(astroplan_prev_noon - pyephem_prev_transit) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
     assert (abs(astroplan_prev_midnight - pyephem_prev_antitransit) <
-        datetime.timedelta(minutes=threshold_minutes))
-
+            datetime.timedelta(minutes=threshold_minutes))
 
 def print_pyephem_solar_transit_noon():
     '''
@@ -604,7 +625,7 @@ def print_pyephem_solar_transit_noon():
     print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
                                              prev_transit, prev_antitransit]))
 
-class TestRisingSetting(unittest.TestCase):
+class TestExceptions(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):
         with self.assertRaises(ValueError):
             lat = '90:00:00'
@@ -615,5 +636,42 @@ class TestRisingSetting(unittest.TestCase):
             polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
             obs = Observer(location=location)
-            astroplan_next_rise = obs.calc_rise(time, polaris,
-                                                which='next').datetime
+            _ = obs.calc_rise(time, polaris, which='next').datetime
+
+    def test_rise_set_transit_which(self):
+        lat = '00:00:00'
+        lon = '00:00:00'
+        elevation = 0.0 * u.m
+        location = EarthLocation.from_geodetic(lon, lat, elevation)
+        time = Time('2000-01-01 12:00:00')
+        vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
+
+        obs = Observer(location=location)
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_rise(time, vega_coords, which='oops').datetime
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_set(time, vega_coords, which='oops').datetime
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_transit(time, vega_coords, which='oops').datetime
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_antitransit(time, vega_coords, which='oops').datetime
+
+    def test_FixedTarget_duck_typing(self):
+        with self.assertRaises(TypeError):
+            _ = FixedTarget(['00:00:00', '00:00:00'], name='VE')
+
+    def test_Observer_init(self):
+        with self.assertRaises(TypeError):
+            _ = Observer(location='Greenwich')
+
+        with self.assertRaises(TypeError):
+            _ = Observer(location=EarthLocation(0, 0, 0), timezone=-6)
+
+    def test_Observer_altaz(self):
+        with self.assertRaises(TypeError):
+            obs = Observer(location=EarthLocation(0, 0, 0))
+            _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])

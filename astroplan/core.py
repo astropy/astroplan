@@ -218,7 +218,7 @@ class Observer(object):
             Grid of times
         alt : `~astropy.units.Quantity`
             Grid of altitudes
-        rise_set : str, either "rising" or "setting"
+        rise_set : {"rising",  "setting"}
             Calculate either rising or setting across the horizon
         horizon : float
             Number of degrees above/below actual horizon to use
@@ -233,9 +233,6 @@ class Observer(object):
             condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
         elif rise_set == 'setting':
             condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
-        else:
-            raise ValueError('`rise_set` keyword may only be "rising" or '
-                             '"setting"')
 
         if sum(condition) < 1:
             raise ValueError('Target does not rise/set with respect to '
