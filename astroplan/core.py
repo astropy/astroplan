@@ -239,32 +239,18 @@ class Observer(object):
             raise ValueError('Target does not rise/set with respect to '
                              '`horizon` within 24 hours')
 
+        # Isolate horizon crossing
         nearest_index = np.argwhere(condition)[0][0]
 
-        # Address special cases when nearest point is end point in array:
-        if nearest_index == 0:
-            lower_limit = t[0]
-            upper_limit = t[1]
-            lower_alt = alt[0]
-            upper_alt = alt[1]
-        elif nearest_index == len(alt):
-            lower_limit = t[-2]
-            upper_limit = t[-1]
-            lower_alt = alt[-2]
-            upper_alt = alt[-1]
-        # Normal cases:
-        elif alt[nearest_index] > horizon:
-            lower_limit = t[nearest_index-1]
-            upper_limit = t[nearest_index]
-            lower_alt = alt[nearest_index-1]
-            upper_alt = alt[nearest_index]
-        else:
-            lower_limit = t[nearest_index]
-            upper_limit = t[nearest_index+1]
-            lower_alt = alt[nearest_index]
-            upper_alt = alt[nearest_index+1]
+        # Determine points on either side of horizon crossing
+        if np.sign((alt[nearest_index] - horizon).value) != np.sign((alt[nearest_index+1] - horizon).value) and nearest_index != len(t):
+            lower_t, upper_t = t[nearest_index:nearest_index+2]
+            lower_alt, upper_alt = alt[nearest_index:nearest_index+2]
+        elif np.sign((alt[nearest_index] - horizon).value) != np.sign((alt[nearest_index-1] - horizon).value) and nearest_index != 0:
+            lower_t, upper_t = t[nearest_index-1:nearest_index+1]
+            lower_alt, upper_alt = alt[nearest_index-1:nearest_index+1]
 
-        return (lower_limit, upper_limit), (lower_alt, upper_alt)
+        return (lower_t, upper_t), (lower_alt, upper_alt)
 
     @u.quantity_input(horizon=u.deg)
     def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
@@ -364,7 +350,8 @@ class Observer(object):
             times = _generate_24hr_grid(time, -1, 0, N)
 
         # Use trigonometric altitude calculation when pressure = 0
-        if self.pressure == 0*u.bar:
+        # (Need to check for pressure=None first or else throws FutureWarning)
+        if self.pressure is not None and self.pressure == 0*u.bar:
             LST = times.sidereal_time('mean', longitude=self.location.longitude)
             altitudes = self._altitude_trig(LST, target)
         else:
@@ -373,6 +360,60 @@ class Observer(object):
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon)
         return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
+
+    def _calc_riseset_brentq(self, time, target, prev_next, rise_set, horizon,
+                             N=150, **kwargs):
+        '''
+        Time at next rise/set of ``target`` with `~scipy.optimize.brentq`.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        target : `~astropy.coordinates.SkyCoord`
+            Position of target or multiple positions of that target
+            at multiple times (if target moves, like the Sun)
+
+        prev_next : str - either 'previous' or 'next'
+            Test next rise/set or previous rise/set
+
+        rise_set : str - either 'rising' or 'setting'
+            Compute prev/next rise or prev/next set
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        horizon : `~astropy.units.Quantity`
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        N : int
+            Number of altitudes to compute when searching for
+            rise or set.
+
+        Returns
+        -------
+        ret1 : `~astropy.time.Time`
+            Time of rise/set
+        '''
+        if prev_next == 'next':
+            times = _generate_24hr_grid(time, 0, 1, N)
+        else:
+            times = _generate_24hr_grid(time, -1, 0, N)
+
+        altitudes = self.altaz(times, target).alt
+
+        time_limits, alt_limits = self._horiz_cross(times, altitudes, rise_set,
+                                                    horizon)
+
+        calc_altitude = lambda t: (self.altaz(Time(t, format='jd'),
+                                              target).alt - horizon).value
+        from scipy.optimize import brentq
+        root = brentq(calc_altitude, time_limits[0].jd, time_limits[1].jd,
+                      **kwargs)
+        return Time(root, format='jd')
 
     def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
         '''
