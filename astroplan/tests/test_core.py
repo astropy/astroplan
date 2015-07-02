@@ -625,6 +625,23 @@ def print_pyephem_solar_transit_noon():
     print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
                                              prev_transit, prev_antitransit]))
 
+def test_can_see():
+    '''
+    Test that Polaris is/isn't observable from north/south pole
+    '''
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    north = EarthLocation.from_geodetic('00:00:00',
+                                        '90:00:00', elevation)
+    south = EarthLocation.from_geodetic('00:00:00',
+                                        '-90:00:00', elevation)
+    time = Time('2000-01-01 12:00:00')
+    polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+    north_pole = Observer(location=north, pressure=pressure)
+    south_pole = Observer(location=south, pressure=pressure)
+    assert north_pole.can_see(time, polaris)
+    assert not south_pole.can_see(time, polaris)
+
 class TestExceptions(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):
         with self.assertRaises(ValueError):

@@ -242,13 +242,9 @@ class Observer(object):
         # Isolate horizon crossing
         nearest_index = np.argwhere(condition)[0][0]
 
-        # Determine points on either side of horizon crossing
-        if np.sign((alt[nearest_index] - horizon).value) != np.sign((alt[nearest_index+1] - horizon).value) and nearest_index != len(t):
-            lower_t, upper_t = t[nearest_index:nearest_index+2]
-            lower_alt, upper_alt = alt[nearest_index:nearest_index+2]
-        elif np.sign((alt[nearest_index] - horizon).value) != np.sign((alt[nearest_index-1] - horizon).value) and nearest_index != 0:
-            lower_t, upper_t = t[nearest_index-1:nearest_index+1]
-            lower_alt, upper_alt = alt[nearest_index-1:nearest_index+1]
+        # Capture points on either side of horizon crossing
+        lower_t, upper_t = t[nearest_index:nearest_index+2]
+        lower_alt, upper_alt = alt[nearest_index:nearest_index+2]
 
         return (lower_t, upper_t), (lower_alt, upper_alt)
 
