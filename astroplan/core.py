@@ -935,6 +935,36 @@ class Observer(object):
         """
         raise NotImplementedError()
 
+    @u.quantity_input(horizon=u.deg)
+    def can_see(self, time, target, horizon=0*u.degree, ret_altaz=False):
+        '''
+        Is ``target`` above ``horizon`` at this ``time```?
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Time of observation
+
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
+            Target celestial object
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        ret_altaz : bool (optional)
+            Also return the '~astropy.coordinates.AltAz' coordinate.
+        '''
+
+        altaz = self.altaz(time, target)
+        observable = bool(altaz.alt > horizon)
+
+        if not ret_altaz:
+            return observable
+        else:
+            return observable, altaz
+
 class Target(object):
     """
     This is an abstract base class -- you can't instantiate
