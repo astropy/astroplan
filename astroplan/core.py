@@ -178,9 +178,10 @@ class Observer(object):
 
         Returns
         -------
-        If ``target`` is `None`, returns `~astropy.coordinates.AltAz` frame. If
-        ``target`` is not `None`, returns the ``target`` transformed to the
-        `~astropy.coordinates.AltAz` frame.
+        `~astropy.coordinates.AltAz`
+            If ``target`` is `None`, returns `~astropy.coordinates.AltAz` frame.
+            If ``target`` is not `None`, returns the ``target`` transformed to
+            the `~astropy.coordinates.AltAz` frame.
 
         """
 
@@ -788,7 +789,7 @@ class Observer(object):
         time : `~astropy.time.Time`
             Time of observations
 
-         which : {'next', 'previous', 'nearest'}
+        which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
             like to calculate
 
