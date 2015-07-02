@@ -642,6 +642,54 @@ def test_can_see():
     assert north_pole.can_see(time, polaris)
     assert not south_pole.can_see(time, polaris)
 
+def test_string_times():
+    '''
+    Test that strings passed to time argument get successfully
+    passed to Time constructor. Analogous test to test_vega_rise_set_equator(),
+    just with a string for a time.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = '2000-01-01 12:00:00'
+    vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
+    vega = SkyCoord(vega_ra, vega_dec)
+
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
+    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+
+    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+
+    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+
+    # Run print_pyephem_vega_rise_set() to compute analogous
+    # result from PyEphem:
+    pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 52, 8, 257401)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 17, 54, 6, 211705)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 5, 56, 4, 165852)
+    pyephem_prev_set = datetime.datetime(1999, 12, 31, 17, 58, 2, 120088)
+
+    # Typical difference in this example between PyEphem and astroplan
+    # with an atmosphere is <2 min
+    threshold_minutes = 8
+    assert (abs(pyephem_next_rise - astroplan_next_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_set - astroplan_next_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_rise - astroplan_prev_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_set - astroplan_prev_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Check that the 'nearest' option selects the nearest rise/set
+    assert astroplan_nearest_rise == astroplan_prev_rise
+    assert astroplan_nearest_set == astroplan_next_set
+
 class TestExceptions(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):
         with self.assertRaises(ValueError):
