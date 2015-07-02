@@ -165,7 +165,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             The time at which the observation is taking place. Will be used as
             the ``obstime`` attribute in the resulting frame or coordinate.
 
@@ -184,6 +184,8 @@ class Observer(object):
             the `~astropy.coordinates.AltAz` frame.
 
         """
+        if not isinstance(time, Time):
+            time = Time(time)
 
         altaz_frame = AltAz(location=self.location, obstime=time,
                             pressure=self.pressure, obswl=obswl,
@@ -310,7 +312,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : `~astropy.coordinates.SkyCoord`
@@ -340,6 +342,10 @@ class Observer(object):
         ret1 : `~astropy.time.Time`
             Time of rise/set
         '''
+
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
         else:
@@ -364,7 +370,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : `~astropy.coordinates.SkyCoord`
@@ -394,6 +400,9 @@ class Observer(object):
         ret1 : `~astropy.time.Time`
             Time of rise/set
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
         else:
@@ -417,7 +426,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : `~astropy.coordinates.SkyCoord`
@@ -443,6 +452,9 @@ class Observer(object):
         ret1 : `~astropy.time.Time`
             Time of transit/antitransit
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
         else:
@@ -476,7 +488,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
@@ -496,6 +508,9 @@ class Observer(object):
         `~astropy.time.Time`
             Rise time of target
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if which == 'next' or which == 'nearest':
             next_rise = self._calc_riseset(time, target, 'next', 'rising',
                                            horizon)
@@ -527,7 +542,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
@@ -547,6 +562,9 @@ class Observer(object):
         `~astropy.time.Time`
             Set time of target.
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if which == 'next' or which == 'nearest':
             next_set = self._calc_riseset(time, target, 'next', 'setting',
                                           horizon)
@@ -577,7 +595,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
@@ -592,6 +610,9 @@ class Observer(object):
         `~astropy.time.Time`
             Transit time of target
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if which == 'next' or which == 'nearest':
             next_transit = self._calc_transit(time, target, 'next')
             if which == 'next':
@@ -619,7 +640,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
@@ -634,6 +655,9 @@ class Observer(object):
         `~astropy.time.Time`
             Antitransit time of target
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
         if which == 'next' or which == 'nearest':
             next_antitransit = self._calc_transit(time, target, 'next',
                                                   antitransit=True)
@@ -665,7 +689,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         which : {'next', 'previous', 'nearest'}
@@ -695,7 +719,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         which : {'next', 'previous', 'nearest'}
@@ -720,7 +744,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         which : {'next', 'previous', 'nearest'}
@@ -740,7 +764,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         which : {'next', 'previous', 'nearest'}
@@ -762,7 +786,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observations
 
         which : {'next', 'previous', 'nearest'}
@@ -783,7 +807,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observations
 
         which : {'next', 'previous', 'nearest'}
@@ -803,7 +827,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observations
 
         which : {'next', 'previous', 'nearest'}
@@ -823,7 +847,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observations
 
         which : {'next', 'previous', 'nearest'}
@@ -843,7 +867,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observations
 
         which : {'next', 'previous', 'nearest'}
@@ -863,7 +887,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observations
 
         which : {'next', 'previous', 'nearest'}
@@ -887,7 +911,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -903,7 +927,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
 
         Keywords: str, optional
             previous
@@ -917,7 +941,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
         """
         raise NotImplementedError()
 
@@ -927,7 +951,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
         """
         raise NotImplementedError()
 
@@ -938,7 +962,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        time : Anything accepted by `~astropy.time.Time`
             Time of observation
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
@@ -952,6 +976,8 @@ class Observer(object):
         ret_altaz : bool (optional)
             Also return the '~astropy.coordinates.AltAz' coordinate.
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
 
         altaz = self.altaz(time, target)
         observable = bool(altaz.alt > horizon)
