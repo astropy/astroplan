@@ -165,9 +165,12 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
+        time : `~astropy.time.Time` or other (see below)
             The time at which the observation is taking place. Will be used as
-            the ``obstime`` attribute in the resulting frame or coordinate.
+            the ``obstime`` attribute in the resulting frame or coordinate. This
+            will be passed in as the first argument to the `~astropy.time.Time`
+            initializer, so it can be anything that `~astropy.time.Time` will
+            accept (including a `~astropy.time.Time` object)
 
         target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
             Celestial object of interest. If ``target`` is `None`, return the
@@ -312,8 +315,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : `~astropy.coordinates.SkyCoord`
             Position of target or multiple positions of that target
@@ -370,8 +376,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : `~astropy.coordinates.SkyCoord`
             Position of target or multiple positions of that target
@@ -426,8 +435,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : `~astropy.coordinates.SkyCoord`
             Position of target or multiple positions of that target
@@ -488,8 +500,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
@@ -542,8 +557,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
@@ -595,8 +613,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
@@ -640,8 +661,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
@@ -689,8 +713,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -719,8 +746,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunset relative to the present ``time`` would you
@@ -744,8 +774,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which noon relative to the present ``time`` would you
@@ -764,8 +797,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which noon relative to the present ``time`` would you
@@ -786,8 +822,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observations
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
@@ -807,8 +846,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observations
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
@@ -827,8 +869,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observations
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
@@ -847,8 +892,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observations
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
@@ -867,8 +915,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observations
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
@@ -887,8 +938,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observations
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         which : {'next', 'previous', 'nearest'}
             Choose which twilight relative to the present ``time`` would you
@@ -911,7 +965,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
+        time : `~astropy.time.Time` or other (see below)
 
         Keywords: str, optional
             previous
@@ -927,7 +981,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
+        time : `~astropy.time.Time` or other (see below)
+            This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
 
         Keywords: str, optional
             previous
@@ -941,7 +999,11 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
+        time : `~astropy.time.Time` or other (see below)
+            This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
         """
         raise NotImplementedError()
 
@@ -951,19 +1013,26 @@ class Observer(object):
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
+        time : `~astropy.time.Time` or other (see below)
+            This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
         """
         raise NotImplementedError()
 
     @u.quantity_input(horizon=u.deg)
     def can_see(self, time, target, horizon=0*u.degree, ret_altaz=False):
         '''
-        Is ``target`` above ``horizon`` at this ``time```?
+        Is ``target`` above ``horizon`` at this ``time``?
 
         Parameters
         ----------
-        time : Anything accepted by `~astropy.time.Time`
-            Time of observation
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
 
         target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
             Target celestial object
