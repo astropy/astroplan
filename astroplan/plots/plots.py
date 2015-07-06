@@ -227,18 +227,20 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None):
         A dictionary with plotting style options.
     """
 
-    ## Set up axes & plot styles if needed.
-    #if ax is None:
-    #    # axisbg option sets background color within outer circle (plot bounds).
-    #    # May need to set a color outside of plot bounds.
-    #    ax = plt.gca(projection='polar', axisbg='0.96')
+    # Set up axes & plot styles if needed.
+    if ax is None:
+        # axisbg option sets background color within outer circle (plot bounds).
+        # May need to set a color outside of plot bounds.
+        #ax = plt.gca(projection='polar', axisbg='0.96')
+        ax = plt.gca(polar=True, axisbg='0.96')
     if style_kwargs is None:
         # Need to add more style options for ax's with existing plots?
         style_kwargs = {'marker': 'o', 'color': 'r'}
 
     # Grab altitude and azimuth from Astroplan objects.
-    altitude = observer.altaz(time, target).alt
-    azimuth = observer.altaz(time, target).az
+    # Note that values must be made dimensionless before plotting.
+    altitude = observer.altaz(time, target).alt*(1/u.deg)
+    azimuth = observer.altaz(time, target).az*(1/u.deg)
 
     # Some checks & info for labels.
     if hasattr(observer, 'name') is False:
@@ -256,9 +258,6 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None):
     else:
         observe_date = time[0].datetime.strftime('%Y-%m-%d')
     observe_timezone = 'UTC'
-
-    # Set up axes.
-    ax = plt.gca(projection='polar', axisbg='0.96')
 
     # Set up figure.
     dimensions = (10, 10)
@@ -281,50 +280,66 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None):
     # Plot star coordinates from dictionary or data object.
 
     # Coordinates MUST be given to plot() in radians.
-    az_rad = azimuth.to(u.rad)
+    az_rad = (np.pi/180.0)*azimuth
 
     ax.plot(az_rad, altitude, marker=style_kwargs['marker'],
             color=style_kwargs['color'])
 
-    # Add time and date labels.
-    if time.isscalar is True:
-        label = str(target_name)+' - '+str(time)
-        ax.text(az_rad, altitude, label, withdash=True,
-                dashdirection=0,
-                dashlength=0.05,
-                #rotation=r,
-                dashrotation=45.0,
-                dashpush=0.05)
-    else:
-        for t in time:
-            if t == time[0]:
-                ax.text(az_rad[t], altitude[t], target_name, withdash=True,
-                        dashdirection=0.5,
-                        dashlength=0.25,
-                        dashrotation=30,
-                        dashpush=0.05)
-            ax.text(az_rad[t], alt[t], t, withdash=True,
-                    dashdirection=0,
-                    dashlength=0.05,
-                    #rotation=r,
-                    dashrotation=45.0,
-                    dashpush=0.05)
+    # # Add time and date labels.
+    # if time.isscalar is True:
+    #     label = str(target_name)+' - '+str(time)
+    #     ax.text(az_rad, altitude, label, withdash=True,
+    #             dashdirection=0,
+    #             dashlength=20,
+    #             rotation=0,
+    #             dashrotation=0,
+    #             dashpush=10)
+    # else:
+    #     for t in time:
+    #         if t == time[0]:
+    #             ax.text(az_rad[t], altitude[t], target_name, withdash=True,
+    #                     dashdirection=0,
+    #                     dashlength=20,
+    #                     rotation=0
+    #                     dashrotation=0,
+    #                     dashpush=10)
+    #         ax.text(az_rad[t], alt[t], t, withdash=True,
+    #                 dashdirection=0,
+    #                 dashlength=20,
+    #                 rotation=0,
+    #                 dashrotation=0,
+    #                 dashpush=10)
 
     # Grid, ticks & labels.
     # Set ticks and labels AFTER plotting points.
     ax.grid(True, which='major', color='orange', linewidth=1.5)
     degree_sign = u'\N{DEGREE SIGN}'
 
-    plt.rgrids(range(1, 105, 15), ['90'+degree_sign, '', '60'+degree_sign, '', '30'+degree_sign, '', '0'+degree_sign+' - Alt.'], angle=-45)
-    plt.thetagrids(range(0, 360, 45), ['0'+degree_sign+' - Az.',
-                                       '45'+degree_sign,
-                                       '90'+degree_sign,
-                                       '135'+degree_sign,
-                                       '180'+degree_sign,
-                                       '225'+degree_sign,
-                                       '270'+degree_sign, ''])
+    r_labels = [
+        '90'+degree_sign, '',
+        '60'+degree_sign, '',
+        '30'+degree_sign, '',
+        '0'+degree_sign+' - Alt.',
+        ]
+    theta_labels = [
+        '0'+degree_sign+' - Az.',
+        '45'+degree_sign,
+        '90'+degree_sign,
+        '135'+degree_sign,
+        '180'+degree_sign,
+        '225'+degree_sign,
+        '270'+degree_sign,
+        '',
+        ]
 
-    # Set labels, title, legend, etc.
+    # plt.rgrids(range(1, 105, 15), r_labels)
+    # plt.thetagrids(range(0, 360, 45), theta_labels)
+
+    # An alternate way to set ticks and labels.
+    ax.set_rgrids(range(1, 105, 15), r_labels, angle=-45)
+    ax.set_thetagrids(range(0, 360, 45), theta_labels)
+
+    # Title, legend, etc.
     plt.title('Sky Chart | '+observer_name+' | '+observe_date, y=1.15, size=20)
 
     return ax
