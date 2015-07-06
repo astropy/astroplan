@@ -198,8 +198,8 @@ class Observer(object):
         if target is None:
             return altaz_frame
         else:
-            if not (isinstance(target, FixedTarget) or
-                    isinstance(target, SkyCoord)):
+            if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
+                    hasattr(target, 'coord')):
                 raise TypeError('The target must be a coordinate (i.e. a '
                                 'FixedTarget or SkyCoord).')
 
