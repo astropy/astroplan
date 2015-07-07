@@ -5,11 +5,10 @@ from __future__ import (absolute_import, division, print_function,
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, get_sun, Angle)
 import astropy.units as u
-from astropy.time import Time
 import datetime
+from astropy.time import Time
 import pytz
 import numpy as np
-from astropy.time import Time
 
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
@@ -157,6 +156,39 @@ class Observer(object):
         else:
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
+
+    def astropy_time_to_local(self, time):
+        '''
+        Localize ``time`` to the local timezone.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+
+        Returns
+        -------
+        `~datetime.datetime`
+            Localized datetime
+        '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        return self.timezone.localize(time.datetime)
+
+    def local_to_astropy_time(self, time):
+        '''
+        Convert localized time ``local_time`` to `~astropy.time.Time` object
+
+        Parameters
+        ----------
+        time : `~datetime.datetime`
+            Localized datetime
+
+        Returns
+        -------
+        `~astropy.time.Time`
+        '''
+        return Time(time, location=self.location)
 
     def altaz(self, time, target=None, obswl=None):
         """

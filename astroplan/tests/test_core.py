@@ -9,7 +9,10 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 import datetime
+<<<<<<< HEAD
 import unittest
+=======
+>>>>>>> Adding timezone convenience functions
 
 from ..core import FixedTarget, Observer
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
@@ -824,3 +827,18 @@ class TestExceptions(unittest.TestCase):
         with self.assertRaises(TypeError):
             obs = Observer(location=EarthLocation(0, 0, 0))
             _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+
+def test_timezone_convenience_methods():
+
+    timezone = pytz.timezone('US/Pacific')
+    time = datetime.datetime(2015, 1, 1, 0, 0, 0, tzinfo=timezone)
+    naive_time_utc = time.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
+
+    lat = '+19:00:00'
+    lon = '-155:00:00'
+    elevation = 0.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    obs1 = Observer(name='Seattle', location=location,
+                    timezone=timezone)
+    astropy_time = obs1.local_to_astropy_time(time)
+    assert naive_time_utc == astropy_time.utc.datetime
