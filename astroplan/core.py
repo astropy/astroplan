@@ -27,9 +27,6 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-# Originally authored by Jazmin Berlanga Medina (jazmin.berlanga@gmail.com),
-# and modified by Adrian Price-Whelan (email) and Erik Tollerud (email).
-
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
            "AboveAirmass", "Observation"]
