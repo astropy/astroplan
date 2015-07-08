@@ -3,11 +3,13 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz)
+                                 AltAz, Angle)
 import astropy.units as u
 from astropy.units import Quantity
 
 import pytz
+import numpy as np
+from astropy.time import Time
 
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
@@ -161,6 +163,42 @@ class Observer(object):
                 coordinate = target
             return coordinate.transform_to(altaz_frame)
 
+    def parallactic_angle(self, time, target):
+        '''
+        Calculate the parallactic angle.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            The time at which the observation is taking place.
+
+        target : {`~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`}
+            Celestial object of interest.
+
+        Returns
+        -------
+        `~astropy.coordinates.Angle`
+            Parallactic angle
+        '''
+
+        if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
+                hasattr(target, 'coord')):
+            raise TypeError('The target must be a coordinate (i.e. a '
+                            'FixedTarget or SkyCoord).')
+
+        if hasattr(target, 'coord'):
+            coordinate = target.coord
+        else:
+            coordinate = target
+
+        # Eqn (14.1) of Meeus' Astronomical Algorithms
+        H = (time.sidereal_time('mean', longitude=self.location.longitude)
+             - coordinate.ra).radian
+        phi = self.location.latitude.radian
+        delta = coordinate.dec.radian
+        q = np.arctan(np.sin(H)/
+                      (np.tan(phi)*np.cos(delta) - np.sin(delta)*np.cos(H)))
+        return Angle(q)
     # Sun-related methods.
 
     def noon(self, time):

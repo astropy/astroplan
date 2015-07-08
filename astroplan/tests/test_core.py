@@ -155,3 +155,30 @@ def test_FixedTarget_ra_dec():
                                                         'SkyCoord')
     assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
                                                            'SkyCoord')
+
+def test_pang():
+    lat = '+19:00:00'
+    lon = '-155:00:00'
+    elevation = 0.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2015-01-01')
+    vega = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
+    obs = Observer(name='Observatory', location=location)
+    threshold_angle = 10*u.deg
+    assert abs((obs.parallactic_angle(time, vega) - 2.16306782837*u.rad) < threshold_angle
+
+def print_pyephem_pang():
+    lat = '+19:00:00'
+    lon = '-155:00:00'
+    elevation = 0.0
+    time = Time('2015-01-01')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    vega = ephem.star('Vega')
+    vega.compute(obs)
+    print(float(vega.parallactic_angle()))
