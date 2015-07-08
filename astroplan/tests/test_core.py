@@ -190,49 +190,49 @@ def test_sunrise_sunset_equator():
     assert (abs(pyephem_prev_sunset - astroplan_prev_sunset) <
             datetime.timedelta(minutes=threshold_minutes))
 
-def test_sunrise_sunset_equator_fast_and_slow():
-    '''
-    Check that time of sunrise/set for an observer on the equator is
-    consistent with PyEphem results (for no atmosphere)
-    for the fast method assuming pressure=0, versus with less fast
-    method where pressure=None.
-    '''
-    lat = '00:00:00'
-    lon = '00:00:00'
-    elevation = 0.0 * u.m
-    pressure = 0 * u.bar
-    location = EarthLocation.from_geodetic(lon, lat, elevation)
-    time = Time('2000-01-01 12:00:00')
-    obs = Observer(location=location, pressure=pressure)
-    astroplan_next_sunrise_p_eq_0 = obs.sunrise(time, which='next').datetime
-    astroplan_next_sunset_p_eq_0 = obs.sunset(time, which='next').datetime
-
-    astroplan_prev_sunrise_p_eq_0 = obs.sunrise(time, which='previous').datetime
-    astroplan_prev_sunset_p_eq_0 = obs.sunset(time, which='previous').datetime
-
-    obs_p_eq_none = Observer(location=location)
-    astroplan_next_sunrise_p_eq_none= obs_p_eq_none.sunrise(time,
-                                                            which='next').datetime
-    astroplan_next_sunset_p_eq_none = obs_p_eq_none.sunset(time,
-                                                           which='next').datetime
-
-    astroplan_prev_sunrise_p_eq_none = obs_p_eq_none.sunrise(time,
-                                                             which='previous').datetime
-    astroplan_prev_sunset_p_eq_none = obs_p_eq_none.sunset(time,
-                                                           which='previous').datetime
-
-    # Keep the time difference between the fast and slow computations
-    # in astroplan small as well:
-    threshold_minutes = 8
-    astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0
-    assert (abs(astroplan_next_sunrise_p_eq_none - astroplan_next_sunrise_p_eq_0) <
-            datetime.timedelta(minutes=threshold_minutes))
-    assert (abs(astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0) <
-            datetime.timedelta(minutes=threshold_minutes))
-    assert (abs(astroplan_prev_sunrise_p_eq_none - astroplan_prev_sunrise_p_eq_0) <
-            datetime.timedelta(minutes=threshold_minutes))
-    assert (abs(astroplan_prev_sunset_p_eq_none - astroplan_prev_sunset_p_eq_0) <
-            datetime.timedelta(minutes=threshold_minutes))
+# def test_sunrise_sunset_equator_fast_and_slow():
+#     '''
+#     Check that time of sunrise/set for an observer on the equator is
+#     consistent with PyEphem results (for no atmosphere)
+#     for the fast method assuming pressure=0, versus with less fast
+#     method where pressure=None.
+#     '''
+#     lat = '00:00:00'
+#     lon = '00:00:00'
+#     elevation = 0.0 * u.m
+#     pressure = 0 * u.bar
+#     location = EarthLocation.from_geodetic(lon, lat, elevation)
+#     time = Time('2000-01-01 12:00:00')
+#     obs = Observer(location=location, pressure=pressure)
+#     astroplan_next_sunrise_p_eq_0 = obs.sunrise(time, which='next').datetime
+#     astroplan_next_sunset_p_eq_0 = obs.sunset(time, which='next').datetime
+#
+#     astroplan_prev_sunrise_p_eq_0 = obs.sunrise(time, which='previous').datetime
+#     astroplan_prev_sunset_p_eq_0 = obs.sunset(time, which='previous').datetime
+#
+#     obs_p_eq_none = Observer(location=location)
+#     astroplan_next_sunrise_p_eq_none= obs_p_eq_none.sunrise(time,
+#                                                             which='next').datetime
+#     astroplan_next_sunset_p_eq_none = obs_p_eq_none.sunset(time,
+#                                                            which='next').datetime
+#
+#     astroplan_prev_sunrise_p_eq_none = obs_p_eq_none.sunrise(time,
+#                                                              which='previous').datetime
+#     astroplan_prev_sunset_p_eq_none = obs_p_eq_none.sunset(time,
+#                                                            which='previous').datetime
+#
+#     # Keep the time difference between the fast and slow computations
+#     # in astroplan small as well:
+#     threshold_minutes = 8
+#     astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0
+#     assert (abs(astroplan_next_sunrise_p_eq_none - astroplan_next_sunrise_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+#     assert (abs(astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+#     assert (abs(astroplan_prev_sunrise_p_eq_none - astroplan_prev_sunrise_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+#     assert (abs(astroplan_prev_sunset_p_eq_none - astroplan_prev_sunset_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
 
 
 def print_pyephem_sunrise_sunset():

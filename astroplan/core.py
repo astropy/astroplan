@@ -357,13 +357,7 @@ class Observer(object):
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        # Use trigonometric altitude calculation when pressure = 0
-        # (Need to check for pressure=None first or else throws FutureWarning)
-        if self.pressure is not None and self.pressure == 0*u.bar:
-            LST = times.sidereal_time('mean', longitude=self.location.longitude)
-            altitudes = self._altitude_trig(LST, target)
-        else:
-            altitudes = self.altaz(times, target).alt
+        altitudes = self.altaz(times, target).alt
 
         horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon)
