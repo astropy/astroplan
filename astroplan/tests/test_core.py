@@ -164,8 +164,12 @@ def test_pang():
     time = Time('2015-01-01')
     vega = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
     obs = Observer(name='Observatory', location=location)
-    threshold_angle = 10*u.deg
-    assert abs((obs.parallactic_angle(time, vega) - 2.16306782837*u.rad) < threshold_angle
+    astroplan_q = obs.parallactic_angle(time, vega)
+    threshold_angle = 2*u.deg
+    # Get the PyEphem equivalent with:
+    # python -c 'from astroplan.tests.test_core import print_pyephem_pang as f; f()'
+    pyephem_pang = 2.16306782837*u.rad
+    assert abs((astroplan_q - pyephem_pang) < threshold_angle)
 
 def print_pyephem_pang():
     lat = '+19:00:00'

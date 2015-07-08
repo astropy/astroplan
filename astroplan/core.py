@@ -192,12 +192,16 @@ class Observer(object):
             coordinate = target
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
+        print(self.location.longitude, type(self.location.longitude))
         H = (time.sidereal_time('mean', longitude=self.location.longitude)
              - coordinate.ra).radian
-        phi = self.location.latitude.radian
-        delta = coordinate.dec.radian
-        q = np.arctan(np.sin(H)/
-                      (np.tan(phi)*np.cos(delta) - np.sin(delta)*np.cos(H)))
+        q = np.arctan(np.sin(H) /
+                      (np.tan(self.location.latitude.radian)*
+                       np.cos(coordinate.dec.radian) -
+                       np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
+
+        if q < 0*u.rad:
+            q += np.pi*u.rad
         return Angle(q)
     # Sun-related methods.
 
