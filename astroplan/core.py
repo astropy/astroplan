@@ -170,9 +170,9 @@ class Observer(object):
         Parameters
         ----------
         time : `~astropy.time.Time`
-            The time at which the observation is taking place.
+            Observation time.
 
-        target : {`~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`}
+        target : `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord`
             Celestial object of interest.
 
         Returns
@@ -192,7 +192,7 @@ class Observer(object):
             coordinate = target
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        print(self.location.longitude, type(self.location.longitude))
+
         H = (time.sidereal_time('mean', longitude=self.location.longitude)
              - coordinate.ra).radian
         q = np.arctan(np.sin(H) /

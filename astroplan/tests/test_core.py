@@ -156,7 +156,7 @@ def test_FixedTarget_ra_dec():
     assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
                                                            'SkyCoord')
 
-def test_pang():
+def test_parallactic_angle():
     lat = '+19:00:00'
     lon = '-155:00:00'
     elevation = 0.0 * u.m
@@ -171,7 +171,7 @@ def test_pang():
     pyephem_pang = 2.16306782837*u.rad
     assert abs((astroplan_q - pyephem_pang) < threshold_angle)
 
-def print_pyephem_pang():
+def print_pyephem_parallactic_angle():
     lat = '+19:00:00'
     lon = '-155:00:00'
     elevation = 0.0
