@@ -233,11 +233,13 @@ class Observer(object):
         of the horizon crossing.
         '''
         if rise_set == 'rising':
+            # Find index where altitude goes from below to above horizon
             condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
         elif rise_set == 'setting':
+            # Find index where altitude goes from above to below horizon
             condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
 
-        if sum(condition) < 1:
+        if not np.any(condition) < 1:
             raise ValueError('Target does not rise/set with respect to '
                              '`horizon` within 24 hours')
 
@@ -1013,7 +1015,7 @@ class Observer(object):
         raise NotImplementedError()
 
     @u.quantity_input(horizon=u.deg)
-    def can_see(self, time, target, horizon=0*u.degree, ret_altaz=False):
+    def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
         '''
         Is ``target`` above ``horizon`` at this ``time``?
 
@@ -1033,16 +1035,16 @@ class Observer(object):
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
 
-        ret_altaz : bool (optional)
+        return_altaz : bool (optional)
             Also return the '~astropy.coordinates.AltAz' coordinate.
         '''
         if not isinstance(time, Time):
             time = Time(time)
 
         altaz = self.altaz(time, target)
-        observable = bool(altaz.alt > horizon)
+        observable = altaz.alt > horizon
 
-        if not ret_altaz:
+        if not return_altaz:
             return observable
         else:
             return observable, altaz
