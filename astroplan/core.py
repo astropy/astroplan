@@ -4,12 +4,15 @@ from __future__ import (absolute_import, division, print_function,
 
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, get_sun, Angle)
+
+from astropy.utils.data import get_pkg_data_contents
 import astropy.units as u
 import datetime
 from astropy.time import Time
 import pytz
 import numpy as np
 
+import json
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
 from astropy.utils.data import download_file
@@ -74,6 +77,26 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
         time_grid = np.linspace(start, end, N)*u.day
 
     return t0 + time_grid
+
+def get_site(code, **kwargs):
+    '''
+    Construct an `~astroplan.core.Observer` object for known observatory.
+
+    Parameters
+    ----------
+    code : str
+        Short string code for the observatory.
+
+    Returns
+    -------
+    `~astroplan.core.Observer`
+        The observatory object.
+    '''
+    db = json.loads(get_pkg_data_contents('data/observatories.json'))
+    location = EarthLocation.from_geodetic(db[code]['longitude'],
+                                           db[code]['latitude'],
+                                           db[code]['elevation'])
+    return Observer(location=location, **kwargs)
 
 class Observer(object):
     """
