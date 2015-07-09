@@ -239,7 +239,7 @@ class Observer(object):
             # Find index where altitude goes from above to below horizon
             condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
 
-        if not np.any(condition) < 1:
+        if not np.any(condition):
             raise ValueError('Target does not rise/set with respect to '
                              '`horizon` within 24 hours')
 
@@ -597,7 +597,7 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
-    def calc_transit(self, time, target, which='nearest'):
+    def calc_meridian_transit(self, time, target, which='nearest'):
         '''
         Calculate time at the transit of the meridian.
 
@@ -645,7 +645,7 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
-    def calc_antitransit(self, time, target, which='nearest'):
+    def calc_meridian_antitransit(self, time, target, which='nearest'):
         '''
         Calculate time at the antitransit of the meridian.
 
@@ -782,7 +782,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time at solar noon
         '''
-        return self.calc_transit(time, get_sun(time), which)
+        return self.calc_meridian_transit(time, get_sun(time), which)
 
     def midnight(self, time, which='nearest'):
         '''
@@ -805,7 +805,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time at solar midnight
         '''
-        return self.calc_antitransit(time, get_sun(time), which)
+        return self.calc_meridian_antitransit(time, get_sun(time), which)
 
     # Twilight convenience functions
 

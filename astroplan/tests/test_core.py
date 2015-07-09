@@ -525,19 +525,21 @@ def test_solar_transit():
     obs = Observer(location=location, pressure=pressure)
 
     # Compute next/previous noon/midnight using generic calc_transit methods
-    astroplan_next_transit = obs.calc_transit(time, get_sun(time),
-                                              which='next').datetime
-    astroplan_next_antitransit = obs.calc_antitransit(time, get_sun(time),
-                                                      which='next').datetime
-    astroplan_prev_transit = obs.calc_transit(time, get_sun(time),
-                                              which='previous').datetime
-    astroplan_prev_antitransit = obs.calc_antitransit(time, get_sun(time),
-                                                      which='previous').datetime
+    astroplan_next_transit = obs.calc_meridian_transit(time, get_sun(time),
+                                                       which='next').datetime
+    astroplan_next_antitransit = obs.calc_meridian_antitransit(time,
+                                                               get_sun(time),
+                                                               which='next').datetime
+    astroplan_prev_transit = obs.calc_meridian_transit(time, get_sun(time),
+                                                       which='previous').datetime
+    astroplan_prev_antitransit = obs.calc_meridian_antitransit(time,
+                                                               get_sun(time),
+                                                               which='previous').datetime
 
-    astroplan_nearest_transit = obs.calc_transit(time, get_sun(time),
-                                              which='nearest').datetime
-    astroplan_nearest_antitransit = obs.calc_antitransit(time, get_sun(time),
-                                                         which='nearest').datetime
+    astroplan_nearest_transit = obs.calc_meridian_transit(time, get_sun(time),
+                                                          which='nearest').datetime
+    astroplan_nearest_antitransit = obs.calc_meridian_antitransit(time, get_sun(time),
+                                                                  which='nearest').datetime
 
     # Computed in print_pyephem_solar_transit_noon()
     pyephem_next_transit = datetime.datetime(2000, 1, 1, 12, 3, 17, 207300)
@@ -720,10 +722,10 @@ class TestExceptions(unittest.TestCase):
             _ = obs.calc_set(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            _ = obs.calc_transit(time, vega_coords, which='oops').datetime
+            _ = obs.calc_meridian_transit(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            _ = obs.calc_antitransit(time, vega_coords, which='oops').datetime
+            _ = obs.calc_meridian_antitransit(time, vega_coords, which='oops').datetime
 
     def test_FixedTarget_duck_typing(self):
         with self.assertRaises(TypeError):
