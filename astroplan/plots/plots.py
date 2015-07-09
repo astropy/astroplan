@@ -7,73 +7,79 @@ import numpy as np
 import astropy.units as u
 import random
 
-# Originally authored by Jazmin Berlanga Medina
-# (jazmin.berlanga@gmail.com), with input from
-# Adrian Price-Whelan (email), Erik Tollerud (email),
-# Christoph Deil (email), Eric Jeschke (email) and Brett Morris (email).
 
-
-# Replace function call later with below.
-def plot_airmass(target, observer, time, ax=None, style_kwargs=None, dark_plot=False):
+def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
+                 dark_plot=False):
     """
     TODO:
         1) Timezones?
         2) Limit airmass <= 3.
         3) Plot lines instead of points.
         4) Legend should not be transparent.
-        5) Airmass equation? Should this be moved to a separate function?
-        6) dark_plot option
+        5) dark_plot option
 
-    Returns an ax object with an airmass vs. time plot.
+    Makes an airmass vs. time plot.
 
     If an ax object is passed in, plots an additional airmass plot on top.
     Otherwise, creates a new ax object with an airmass plot.
 
+    When a `Time` object with a single instance in time is used (e.g., if
+    len(time) = 1), a new `Time` object is created internally.  This new object
+    contains a sampling of times within a window centered on the input `Time`.
+
     Parameters
     ----------
-    target: `~astroplan.FixedTarget`
+    target : `~astroplan.FixedTarget`
         The celestial body of interest.
 
-    observer: `~astroplan`
+    observer : `~astroplan.Observer`
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        An collection of times to use in generating data to plot.
+        Used in generating data to plot.
         Can be scalar (len(time)=1) or contain multiple times.
 
-    ax : `~matplotlib.axes.Axes` or None
-        Optional.
+    ax : `~matplotlib.axes.Axes` or None, optional.
+        The axes this plot will be added to. If none are passed in, new axes
+        will be created.
 
-    style_kwargs : WHAT TYPE IS DICTIONARY? or None
-        Optional.
-        A dictionary with plotting style options.
+    style_kwargs : Dictionary or Empty, optional.
+        A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
+        to set plotting styles.
 
-    dark_plot: Boolean.
-        Optional. False (default) or True.
+    dark_plot : Boolean, optional.
+        Default is False.
+
+    Returns
+    -------
+    ax :  `~matplotlib.axes.Axes`
+        An axes object with added airmass vs. time plot.
     """
 
     # Set up plot axes and style if needed.
     if ax is None:
         ax = plt.gca()
+    if dark_plot is True:
+        raise NotImplementedError
     if style_kwargs is None:
-        # Need to add more style options for ax's with existing plots?
-        style_kwargs = {'linestyle': '-', 'color': 'r'}
-    #if dark_plot is True:
-        # Set dark plot style stuff here.
+        style_kwargs = {}
+    style_kwargs = dict(style_kwargs)
+    style_kwargs.setdefault('linestyle', '-')
+    style_kwargs.setdefault('color', 'b')
+    style_kwargs.setdefault('fmt', '-')
 
     # Populate time window if needed.
     if time.isscalar:
         time = time + np.linspace(-12, 12, 100)*u.hour
 
     # Calculate airmass
-    altitude = observer.altaz(time, target).alt
-    airmass = (1.0/np.cos(90*u.deg - altitude))
+    airmass = observer.altaz(time, target).secz
 
     # Some checks & info for labels.
     assert len(time) == len(airmass)
 
     if hasattr(observer, 'name') is False:
-        observer_name = 'No Observer/Location Name'
+        observer_name = ''
     else:
         observer_name = observer.name
 
@@ -81,31 +87,29 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None, dark_plot=F
         target_name = str('%.3f' % (random.random()))
     else:
         target_name = target.name
+    style_kwargs.setdefault('label', target_name)
 
     observe_date = time[0].datetime.strftime('%Y-%m-%d')
     observe_timezone = 'UTC'
 
     # Plot data.
-    ax.plot_date(
-        time.plot_date,
-        airmass,
-        linestyle=style_kwargs['linestyle'],
-        color=style_kwargs['color'],
-        label=target_name,
-        )
+    ax.plot_date(time.plot_date, airmass, **style_kwargs)
     ax.figure.autofmt_xdate()
-    ax.invert_yaxis()
+    if plt.ylim()[1] > plt.ylim()[0]:
+        ax.invert_yaxis()
 
     # Set labels, title, legend, etc.
     ax.set_ylabel("Airmass")
-    ax.set_xlabel("Hour - "+observe_timezone)
-    ax.set_title("Airmass vs Time | "+observer_name+" | "+observe_date+" "+observe_timezone)
-    ax.legend(shadow=True)
+    ax.set_xlabel("Time - "+observe_timezone)
+    ax.set_title("Airmass vs Time | " + observer_name + " | " + observe_date +
+                 " " + observe_timezone)
 
+    # Output.
     return ax
 
 
-def plot_parallactic(target, observer, time, ax=None, style_kwargs=None, dark_plot=False):
+def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
+                     dark_plot=False):
     """
     TODO:
         1) dark_plot style
@@ -113,11 +117,15 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None, dark_pl
         3) observe_timezone -- update with info from observer?
         4) Dealing with NaN or invalid values.
 
-    Returns an ax object with a parallactic angle vs time plot.
+    Makes a parallactic angle vs time plot.
 
     If an ax object is passed in, plots an additional parallactic angle
     plot on top.
     Otherwise, creates a new ax object with a parallactic angle plot.
+
+    When a `Time` object with a single instance in time is used (e.g., if
+    len(time) = 1), a new `Time` object is created internally.  This new object
+    contains a sampling of times within a window centered on the input `Time`.
 
     Parameters
     ----------
@@ -128,38 +136,51 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None, dark_pl
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        An collection of times to use in generating data to plot.
-        Can be scalar (or len(time)=1).
+        Used in generating data to plot.
+        Can be scalar (or len(time)=1) or contain multiple times.
 
-    ax : `~matplotlib.axes.Axes` or None
-        Optional.
+    ax : `~matplotlib.axes.Axes` or None, optional.
+        The axes this plot will be added to. If none are passed in, new axes
+        will be created.
 
-    style_kwargs : WHAT TYPE IS DICTIONARY? or None
-        Optional.
-        A dictionary with plotting style options.
+    style_kwargs : Dictionary or Empty, optional.
+        A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
+        to set plotting styles.
 
     dark_plot: Boolean.
         Optional. False (default) or True.
+
+    Returns
+    -------
+    ax :  `~matplotlib.axes.Axes`
+        An axes object with added parallactic_angle vs. time plot.
     """
 
-    # Set up axes & plot styles if needed.
+    # Set up plot axes and style if needed.
     if ax is None:
         ax = plt.gca()
+    if dark_plot is True:
+        raise NotImplementedError
     if style_kwargs is None:
-        # Need to add more style options for ax's with existing plots?
-        style_kwargs = {'linestyle': '-', 'color': 'r'}
-    #if dark_plot is True:
-        #Add dark plot stuff here.
+        style_kwargs = {}
+    style_kwargs = dict(style_kwargs)
+    style_kwargs.setdefault('linestyle', '-')
+    style_kwargs.setdefault('color', 'b')
+    style_kwargs.setdefault('fmt', '-')
 
     # If Time object is scalar, pad time window.
     if time.isscalar:
         time = time + np.linspace(-12, 12, 100)*u.hour
 
     # Calculate parallactic angle.
-    declination = target.dec
-    latitude = observer.location.latitude
-    azimuth = observer.altaz(time, target).az
-    hour_angle = target.ra
+    declination = target.dec.to(u.rad)
+    latitude = observer.location.latitude.to(u.rad)
+    azimuth = observer.altaz(time, target).az.to(u.rad)
+
+    # Replace with Astroplan parallactic angle function call.
+    longitude = observer.location.longitude.to(u.rad).value
+    local_sidereal_time = time.sidereal_time('mean', longitude).to(u.rad).value
+    hour_angle = local_sidereal_time - target.ra.to(u.rad).value
 
     numerator = np.sin(azimuth) * np.cos(latitude)
     denominator = np.cos(declination) * (np.cos(azimuth)*np.cos(hour_angle) + np.sin(azimuth)*np.sin(hour_angle)*np.sin(latitude))
@@ -177,118 +198,19 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None, dark_pl
         target_name = str('%.3f' % (random.random()))
     else:
         target_name = target.name
+    style_kwargs.setdefault('label', target_name)
 
     observe_date = time[0].datetime.strftime('%Y-%m-%d')
     observe_timezone = 'UTC'
 
     # Plot data.
-    ax.plot_date(
-        time.plot_date,
-        parallactic_angle,
-        linestyle=style_kwargs['linestyle'],
-        color=style_kwargs['color'],
-        label=target_name,
-        )
+    ax.plot_date(time.plot_date, parallactic_angle, **style_kwargs)
     ax.figure.autofmt_xdate()
 
     # Set labels, title, legend, etc.
     ax.set_ylabel("Parallactic Angle")
-    ax.set_xlabel("Hour - "+observe_timezone)
-    ax.set_title("Parallactic Angle vs Time | "+observer_name+" | "+observe_date+" "+observe_timezone)
-    ax.legend(shadow=True)
-
-    return ax
-
-
-def plot_sky(target, observer, time, ax=None, style_kwargs=None):
-    """
-    Returns an ax object with a sky plot.
-
-    If an ax object is passed in, plots an additional sky plot on top.
-    Otherwise, creates a new ax object with a sky plot.
-
-    Parameters
-    ----------
-    target: `~astroplan.FixedTarget`
-        The celestial body of interest.
-
-    observer: `~astroplan.Observer`
-        The person, telescope, observatory, etc. doing the observing.
-
-    time : `~astropy.time.Time`
-        An collection of times to use in generating data to plot.
-        Can be scalar (len(time)=1).
-
-    ax : `~matplotlib.axes.Axes` or None
-        Optional.
-
-    style_kwargs : WHAT TYPE IS DICTIONARY? or None
-        Optional.
-        A dictionary with plotting style options.
-    """
-    #######################################################
-    # Pull in input from file & other bits.
-    # Replace this later with input from astroplan objects.
-    date = '2015-01-15'
-    #######################################################
-
-    # Set up axes & plot.
-    if ax is None:
-        # axisbg option sets background color within outer circle (plot bounds).
-        # May need to set a color outside of plot bounds.
-        ax = plt.gca(projection='polar', axisbg='0.96')
-    if style_kwargs is None:
-        # Need to add more style options for ax's with existing plots?
-        style_kwargs = {'marker': 'o', 'color': 'b'}
-
-    # Set up figure.
-    dimensions = (9, 9)
-    plt.figure(figsize=dimensions)
-
-    # Set up axes.
-    ax.set_theta_zero_location("N")
-    ax.set_rmax(90)
-
-    # Set cardinal directions--DON'T CHANGE.
-    ax.annotate('N', (0.5, 1), (0.49, 1.08), textcoords='axes fraction',
-                fontsize=16)
-    ax.annotate('E', (0, 0.5), (-0.1, 0.49), textcoords='axes fraction',
-                fontsize=16)
-    ax.annotate('S', (0.5, 0), (0.49, -0.1), textcoords='axes fraction',
-                fontsize=16)
-    ax.annotate('W', (1, 0.5), (1.09, 0.49), textcoords='axes fraction',
-                fontsize=16)
-
-    # Plot star coordinates from dictionary or data object.
-    # Coordinates MUST be given to plot() in radians.
-    az_rad = (np.pi/180)*az
-
-    for t in time:
-        ax.plot(az_rad, alt, marker=style_kwargs['marker'],
-                color=style_kwargs['color'])
-        ax.text(az_rad, alt, name, withdash=True,
-                dashdirection=0,
-                dashlength=0.05,
-                #rotation=r,
-                dashrotation=45.0,
-                dashpush=0.05)
-
-    # Grid, ticks & labels.
-    # Set ticks and labels AFTER plotting points.
-    ax.grid(True, which='major', color='orange', linewidth=1.5)
-    degree_sign = u'\N{DEGREE SIGN}'
-
-    plt.rgrids(range(1, 105, 15), ['90'+degree_sign, '', '60'+degree_sign, '', '30'+degree_sign, '', '0'+degree_sign+' - Alt.'], angle=-45)
-
-    plt.thetagrids(range(0, 360, 45), ['0'+degree_sign+' - Az.',
-                                       '45'+degree_sign,
-                                       '90'+degree_sign,
-                                       '135'+degree_sign,
-                                       '180'+degree_sign,
-                                       '225'+degree_sign,
-                                       '270'+degree_sign, ''])
-
-    # Set labels, title, legend, etc.
-    plt.title("Sky Chart | Sample | "+date, y=1.15, size=20)
+    ax.set_xlabel("Time - "+observe_timezone)
+    ax.set_title("Parallactic Angle vs Time | " + observer_name + " | " +
+                 observe_date + " " + observe_timezone)
 
     return ax
