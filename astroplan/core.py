@@ -77,6 +77,8 @@ class Observer(object):
     """
     A container class for information about an observer's location and
     environment.
+
+    TODO: write this docstring
     """
     @u.quantity_input(elevation=u.m)
     def __init__(self, name=None, location=None, latitude=None, longitude=None,
