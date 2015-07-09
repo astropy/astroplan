@@ -1,167 +1,274 @@
 {
     "BAO": {
+        "aliases": [
+            "BAO", 
+            "Beijing XingLong Observatory"
+        ], 
         "elevation": 950, 
         "latitude": "40d23m36s", 
         "longitude": "117d34m30s", 
         "name": "Beijing XingLong Observatory"
     }, 
     "NOV": {
+        "aliases": [
+            "National Observatory of Venezuela", 
+            "NOV"
+        ], 
         "elevation": 3610, 
         "latitude": "8d47m24s", 
         "longitude": "289d08m00s", 
         "name": "National Observatory of Venezuela"
     }, 
     "Palomar": {
+        "aliases": [
+            "Palomar", 
+            "Hale Telescope"
+        ], 
         "elevation": 1706, 
         "latitude": "33d21m21.6s", 
         "longitude": "243d08m13.2s", 
         "name": "The Hale Telescope"
     }, 
     "aao": {
+        "aliases": [
+            "AAO", 
+            "Anglo-Australian Observatory"
+        ], 
         "elevation": 1164, 
         "latitude": "-31d16m37.34s", 
         "longitude": "149d03m57.91s", 
         "name": "Anglo-Australian Observatory"
     }, 
     "apo": {
+        "aliases": [
+            "APO", 
+            "Apache Point Observatory", 
+            "Apache Point"
+        ], 
         "elevation": 2798, 
         "latitude": "32d46m48s", 
         "longitude": "254d10m48s", 
         "name": "Apache Point Observatory"
     }, 
     "bmo": {
+        "aliases": [
+            "Black Moshannon Observatory", 
+            "BMO"
+        ], 
         "elevation": 738, 
         "latitude": "40d55m18s", 
         "longitude": "281d59m42s", 
         "name": "Black Moshannon Observatory"
     }, 
     "cfht": {
+        "aliases": [
+            "Canada-France-Hawaii Telescope", 
+            "CFHT"
+        ], 
         "elevation": 4215, 
         "latitude": "19d49m36s", 
         "longitude": "204d31m42s", 
         "name": "Canada-France-Hawaii Telescope"
     }, 
     "ctio": {
+        "aliases": [
+            "Cerro Tololo Interamerican Observatory", 
+            "CTIO", 
+            "Cerro Tololo"
+        ], 
         "elevation": 2215, 
         "latitude": "-30d09m55s", 
         "longitude": "289d11m06s", 
         "name": "Cerro Tololo Interamerican Observatory"
     }, 
     "dao": {
+        "aliases": [
+            "DAO", 
+            "Dominion Astrophysical Observatory"
+        ], 
         "elevation": 229, 
         "latitude": "48d31m18s", 
         "longitude": "236d35m00s", 
         "name": "Dominion Astrophysical Observatory"
     }, 
     "ekar": {
+        "aliases": [
+            "ekar", 
+            "Mt. Ekar 182 cm. Telescope"
+        ], 
         "elevation": 1413, 
         "latitude": "45d50m54.92s", 
         "longitude": "11d34m52.08s", 
         "name": "Mt. Ekar 182 cm. Telescope"
     }, 
     "eso": {
+        "aliases": [
+            "European Southern Observatory", 
+            "ESO"
+        ], 
         "elevation": 2347, 
         "latitude": "-29d15m24s", 
         "longitude": "289d16m12s", 
         "name": "European Southern Observatory"
     }, 
     "flwo": {
+        "aliases": [
+            "Whipple", 
+            "Whipple Observatory", 
+            "FLWO"
+        ], 
         "elevation": 2320, 
         "latitude": "31d40m51.4s", 
         "longitude": "249d07m21s", 
         "name": "Whipple Observatory"
     }, 
     "keck": {
+        "aliases": [
+            "keck", 
+            "W. M. Keck Observatory", 
+            "Keck Observatory"
+        ], 
         "elevation": 4160, 
         "latitude": "19d49m42s", 
         "longitude": "204d31m18s", 
         "name": "W. M. Keck Observatory"
     }, 
     "kpno": {
+        "aliases": [
+            "Kitt Peak", 
+            "KPNO", 
+            "Kitt Peak National Observatory"
+        ], 
         "elevation": 2120, 
         "latitude": "31d57m48s", 
         "longitude": "248d24m00s", 
         "name": "Kitt Peak National Observatory"
     }, 
     "lapalma": {
+        "aliases": [
+            "lapalma", 
+            "Roque de los Muchachos"
+        ], 
         "elevation": 2327, 
         "latitude": "28d45m30s", 
         "longitude": "342d07m12s", 
         "name": "Roque de los Muchachos, La Palma"
     }, 
     "lco": {
+        "aliases": [
+            "LCO", 
+            "Las Campanas Observatory"
+        ], 
         "elevation": 2282, 
         "latitude": "-29d00m12s", 
         "longitude": "289d17m54s", 
         "name": "Las Campanas Observatory"
     }, 
     "lick": {
+        "aliases": [
+            "Lick", 
+            "Lick Observatory"
+        ], 
         "elevation": 1290, 
         "latitude": "37d20m36s", 
         "longitude": "238d21m48s", 
         "name": "Lick Observatory"
     }, 
     "lowell": {
+        "aliases": [
+            "Lowell Observatory", 
+            "Lowell"
+        ], 
         "elevation": 2198, 
         "latitude": "35d05m48s", 
         "longitude": "248d27m54s", 
         "name": "Lowell Observatory"
     }, 
     "mcdonald": {
+        "aliases": [
+            "McDonald Observatory", 
+            "mcdonald"
+        ], 
         "elevation": 2075, 
         "latitude": "30d40m18.0001s", 
         "longitude": "255d58m41.9999s", 
         "name": "McDonald Observatory"
     }, 
     "mdm": {
+        "aliases": [
+            "Michigan-Dartmouth-MIT Observatory", 
+            "MDM"
+        ], 
         "elevation": 1938, 
         "latitude": "31d57m00s", 
         "longitude": "248d23m00s", 
         "name": "Michigan-Dartmouth-MIT Observatory"
     }, 
     "mmt": {
+        "aliases": [
+            "Multiple Mirror Telescope", 
+            "MMT"
+        ], 
         "elevation": 2608, 
         "latitude": "31d41m18s", 
         "longitude": "249d06m54s", 
         "name": "Whipple Observatory"
     }, 
-    "mmto": {
-        "elevation": 2600, 
-        "latitude": "31d41m18s", 
-        "longitude": "249d06m54s", 
-        "name": "Multiple Mirror Telescope Observatory"
-    }, 
     "mso": {
+        "aliases": [
+            "MSO", 
+            "Mt. Stromlo Observatory"
+        ], 
         "elevation": 767, 
         "latitude": "-35d19m14.34s", 
         "longitude": "149d01m27.6s", 
         "name": "Mt. Stromlo Observatory"
     }, 
     "mtbigelow": {
+        "aliases": [
+            "mtbigelow", 
+            "Catalina Observatory"
+        ], 
         "elevation": 2510, 
         "latitude": "32d25m00s", 
         "longitude": "249d16m06s", 
         "name": "Catalina Observatory: 61 inch telescope"
     }, 
     "spm": {
+        "aliases": [
+            "Observatorio Astronomico Nacional, San Pedro Martir", 
+            "SPM"
+        ], 
         "elevation": 2830, 
         "latitude": "31d01m45s", 
         "longitude": "244d30m47s", 
         "name": "Observatorio Astronomico Nacional, San Pedro Martir"
     }, 
     "sso": {
+        "aliases": [
+            "Siding Spring Observatory", 
+            "sso"
+        ], 
         "elevation": 1149, 
         "latitude": "-31d16m24.1s", 
         "longitude": "149d03m40.3s", 
         "name": "Siding Spring Observatory"
     }, 
     "tona": {
+        "aliases": [
+            "tona", 
+            "Observatorio Astronomico Nacional, Tonantzintla"
+        ], 
         "elevation": 0, 
         "latitude": "19d01m58s", 
         "longitude": "261d41m10s", 
         "name": "Observatorio Astronomico Nacional, Tonantzintla"
     }, 
     "vbo": {
+        "aliases": [
+            "Vainu Bappu Observatory", 
+            "VBO"
+        ], 
         "elevation": 725, 
         "latitude": "12d34m35.976s", 
         "longitude": "78d49m35.76s", 

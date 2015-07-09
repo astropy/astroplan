@@ -78,7 +78,26 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
 
     return t0 + time_grid
 
-def get_site(code, **kwargs):
+# Observatory database and list of names:
+_site_db = None
+_site_names = []
+
+def _load_sites():
+    '''
+    Load observatory database.
+    '''
+    global _site_db, _site_names
+    _site_db = dict()
+    db = json.loads(get_pkg_data_contents('data/observatories.json'))
+    for site in db:
+        location = EarthLocation.from_geodetic(db[site]['longitude'],
+                                   db[site]['latitude'],
+                                   db[site]['elevation'])
+        for alias in db[site]['aliases']:
+            _site_db[alias.lower()] = location
+            _site_names.append(alias)
+
+def get_site(site_name, **kwargs):
     '''
     Construct an `~astroplan.core.Observer` object for known observatory.
 
@@ -92,11 +111,19 @@ def get_site(code, **kwargs):
     `~astroplan.core.Observer`
         The observatory object.
     '''
-    db = json.loads(get_pkg_data_contents('data/observatories.json'))
-    location = EarthLocation.from_geodetic(db[code]['longitude'],
-                                           db[code]['latitude'],
-                                           db[code]['elevation'])
-    return Observer(location=location, **kwargs)
+    if _site_db is None:
+        _load_sites()
+
+    if site_name.lower() not in get_site_names():
+        raise ValueError('Site not in database.')
+
+    return _site_db[site_name.lower()]
+
+def get_site_names():
+    '''
+    Get list of names of observatories for use with `~astroplan.core.get_site`
+    '''
+    return sorted(_site_names)
 
 class Observer(object):
     """
