@@ -123,6 +123,8 @@ def get_site_names():
     '''
     Get list of names of observatories for use with `~astroplan.core.get_site`
     '''
+    if _site_db is None:
+        _load_sites()
     return sorted(_site_names)
 
 class Observer(object):
