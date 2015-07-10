@@ -192,9 +192,8 @@ class Observer(object):
             coordinate = target
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-
-        H = (time.sidereal_time('mean', longitude=self.location.longitude)
-             - coordinate.ra).radian
+        LST = time.sidereal_time('mean', longitude=self.location.longitude)
+        H = (LST - coordinate.ra).radian
         q = np.arctan(np.sin(H) /
                       (np.tan(self.location.latitude.radian)*
                        np.cos(coordinate.dec.radian) -
