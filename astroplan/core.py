@@ -246,7 +246,7 @@ class Observer(object):
                       'hours'.format(horizon))
             if (alt > horizon).all():
                 raise AlwaysUpError(errmsg)
-            elif (alt < horizon).all():
+            else:
                 raise NeverUpError(errmsg)
 
         # Isolate horizon crossing
