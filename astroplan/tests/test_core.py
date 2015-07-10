@@ -12,7 +12,7 @@ import datetime
 import unittest
 
 from ..core import FixedTarget, Observer
-
+from ..exceptions import NeverUpError, AlwaysUpError
 
 def test_Observer_constructor_location():
     '''
@@ -694,7 +694,7 @@ def test_string_times():
 
 class TestExceptions(unittest.TestCase):
     def test_polaris_always_up_at_north_pole(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(AlwaysUpError):
             lat = '90:00:00'
             lon = '00:00:00'
             elevation = 0.0 * u.m
@@ -703,7 +703,19 @@ class TestExceptions(unittest.TestCase):
             polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
             obs = Observer(location=location)
-            _ = obs.calc_rise(time, polaris, which='next').datetime
+            _ = obs.calc_rise(time, polaris, which='next')
+
+    def test_tau_Oct_never_up_at_north_pole(self):
+        with self.assertRaises(NeverUpError):
+            lat = '90:00:00'
+            lon = '00:00:00'
+            elevation = 0.0 * u.m
+            location = EarthLocation.from_geodetic(lon, lat, elevation)
+            time = Time('2000-01-01 12:00:00')
+            tau_Oct = SkyCoord(352.01579005*u.degree, -87.48221374*u.degree)
+
+            obs = Observer(location=location)
+            _ = obs.calc_rise(time, tau_Oct, which='next')
 
     def test_rise_set_transit_which(self):
         lat = '00:00:00'
@@ -742,3 +754,4 @@ class TestExceptions(unittest.TestCase):
         with self.assertRaises(TypeError):
             obs = Observer(location=EarthLocation(0, 0, 0))
             _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+

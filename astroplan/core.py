@@ -20,7 +20,7 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 
 
 from astropy.extern.six import string_types
-
+from .exceptions import NeverUpError, AlwaysUpError
 #import sys
 #from math import sqrt, pi, exp, log, floor
 from abc import ABCMeta, abstractmethod
@@ -242,8 +242,12 @@ class Observer(object):
             condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
 
         if not np.any(condition):
-            raise ValueError('Target does not rise/set with respect to '
-                             '`horizon` within 24 hours')
+            errmsg = ('Target does not cross horizon={} within 24 '
+                      'hours'.format(horizon))
+            if (alt > horizon).all():
+                raise AlwaysUpError(errmsg)
+            elif (alt < horizon).all():
+                raise NeverUpError(errmsg)
 
         # Isolate horizon crossing
         nearest_index = np.argwhere(condition)[0][0]
