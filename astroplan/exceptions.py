@@ -3,9 +3,9 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 class AlwaysUpError(ValueError):
-    '''Target is circumpolar'''
+    """Target is circumpolar"""
     pass
 
 class NeverUpError(ValueError):
-    '''Target never rises above horizon'''
+    """Target never rises above horizon"""
     pass
