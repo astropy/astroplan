@@ -157,7 +157,7 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
-    def astropy_time_to_local(self, time):
+    def astropy_to_local_time(self, time):
         '''
         Localize ``time`` to the local timezone.
 
@@ -170,10 +170,10 @@ class Observer(object):
         `~datetime.datetime`
             Localized datetime
         '''
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        return self.timezone.localize(time.datetime)
+        # Convert astropy.time.Time to a UTC localized datetime (aware)
+        utc_datetime = pytz.utc.localize(time.utc.datetime)
+        # Convert UTC to local timezone
+        return self.timezone.normalize(utc_datetime)
 
     def local_to_astropy_time(self, time):
         '''
@@ -188,6 +188,16 @@ class Observer(object):
         -------
         `~astropy.time.Time`
         '''
+
+        # For timezone-aware datetimes with the wrong timezone
+        if time.tzinfo is not None and time.tzinfo != self.timezone:
+            raise ValueError("Timezone of input and Observer.timezone "
+                             "don't match!")
+
+        # For timezone-naive datetimes, assign local timezone
+        if time.tzinfo is None:
+            time = self.timezone.localize(time)
+
         return Time(time, location=self.location)
 
     def altaz(self, time, target=None, obswl=None):

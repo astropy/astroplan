@@ -830,15 +830,11 @@ class TestExceptions(unittest.TestCase):
 
 def test_timezone_convenience_methods():
 
-    timezone = pytz.timezone('US/Pacific')
-    time = datetime.datetime(2015, 1, 1, 0, 0, 0, tzinfo=timezone)
-    naive_time_utc = time.astimezone(pytz.timezone('UTC')).replace(tzinfo=None)
+    location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
+    obs = Observer(location=location,timezone=pytz.timezone('US/Eastern'))
+    t = Time(57100.3, format='mjd')
+    assert (obs.astropy_to_local_time(t).hour == 3)
 
-    lat = '+19:00:00'
-    lon = '-155:00:00'
-    elevation = 0.0 * u.m
-    location = EarthLocation.from_geodetic(lon, lat, elevation)
-    obs1 = Observer(name='Seattle', location=location,
-                    timezone=timezone)
-    astropy_time = obs1.local_to_astropy_time(time)
-    assert naive_time_utc == astropy_time.utc.datetime
+    dt = datetime.datetime(2015, 3, 19, 3, 12)
+    assert (obs.local_to_astropy_time(dt).datetime ==
+            datetime.datetime(2015, 3, 19, 7, 12))
