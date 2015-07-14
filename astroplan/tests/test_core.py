@@ -701,10 +701,11 @@ def test_AlwaysUpWarning(recwarn):
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
     obs = Observer(location=location)
-    _ = obs.calc_rise(time, polaris, which='next')
+    no_time = obs.calc_rise(time, polaris, which='next')
 
     w = recwarn.pop(AlwaysUpWarning)
     assert issubclass(w.category, AlwaysUpWarning)
+    assert np.isnan(no_time)
 
 def test_NeverUpWarning(recwarn):
     lat = '-90:00:00'
@@ -715,10 +716,11 @@ def test_NeverUpWarning(recwarn):
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
     obs = Observer(location=location)
-    _ = obs.calc_rise(time, polaris, which='next')
+    no_time = obs.calc_rise(time, polaris, which='next')
 
     w = recwarn.pop(NeverUpWarning)
     assert issubclass(w.category, NeverUpWarning)
+    assert np.isnan(no_time)
 
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):

@@ -286,7 +286,7 @@ class Observer(object):
 
         """
         if times[0] is None:
-            return None
+            return np.nan
         else:
             slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
             return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
