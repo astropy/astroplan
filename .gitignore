@@ -20,6 +20,9 @@ MANIFEST
 docs/api
 docs/_build
 
+# Sphinx-Gallery
+docs/auto_examples
+
 # Eclipse editor project files
 .project
 .pydevproject

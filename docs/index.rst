@@ -60,3 +60,7 @@ General documentation
    installation.rst
    getting_started.rst
    api.rst
+ 
+:ref:`plot_function_examples`
+-----------------------------
+
