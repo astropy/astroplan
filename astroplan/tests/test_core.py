@@ -12,7 +12,7 @@ import datetime
 import unittest
 
 from ..core import FixedTarget, Observer
-from ..exceptions import NeverUpError, AlwaysUpError
+from ..exceptions import AlwaysUpWarning, NeverUpWarning
 
 def test_Observer_constructor_location():
     '''
@@ -692,31 +692,35 @@ def test_string_times():
     assert astroplan_nearest_rise == astroplan_prev_rise
     assert astroplan_nearest_set == astroplan_next_set
 
+def test_AlwaysUpWarning(recwarn):
+    lat = '90:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+
+    obs = Observer(location=location)
+    _ = obs.calc_rise(time, polaris, which='next')
+
+    w = recwarn.pop(AlwaysUpWarning)
+    assert issubclass(w.category, AlwaysUpWarning)
+
+def test_NeverUpWarning(recwarn):
+    lat = '-90:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+
+    obs = Observer(location=location)
+    _ = obs.calc_rise(time, polaris, which='next')
+
+    w = recwarn.pop(NeverUpWarning)
+    assert issubclass(w.category, NeverUpWarning)
+
 class TestExceptions(unittest.TestCase):
-    def test_polaris_always_up_at_north_pole(self):
-        with self.assertRaises(AlwaysUpError):
-            lat = '90:00:00'
-            lon = '00:00:00'
-            elevation = 0.0 * u.m
-            location = EarthLocation.from_geodetic(lon, lat, elevation)
-            time = Time('2000-01-01 12:00:00')
-            polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
-
-            obs = Observer(location=location)
-            _ = obs.calc_rise(time, polaris, which='next')
-
-    def test_tau_Oct_never_up_at_north_pole(self):
-        with self.assertRaises(NeverUpError):
-            lat = '90:00:00'
-            lon = '00:00:00'
-            elevation = 0.0 * u.m
-            location = EarthLocation.from_geodetic(lon, lat, elevation)
-            time = Time('2000-01-01 12:00:00')
-            tau_Oct = SkyCoord(352.01579005*u.degree, -87.48221374*u.degree)
-
-            obs = Observer(location=location)
-            _ = obs.calc_rise(time, tau_Oct, which='next')
-
     def test_rise_set_transit_which(self):
         lat = '00:00:00'
         lon = '00:00:00'

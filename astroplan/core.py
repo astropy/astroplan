@@ -20,7 +20,8 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 
 
 from astropy.extern.six import string_types
-from .exceptions import NeverUpError, AlwaysUpError
+from .exceptions import NeverUpWarning, AlwaysUpWarning
+import warnings
 #import sys
 #from math import sqrt, pi, exp, log, floor
 from abc import ABCMeta, abstractmethod
@@ -242,12 +243,13 @@ class Observer(object):
             condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
 
         if not np.any(condition):
-            errmsg = ('Target does not cross horizon={} within 24 '
-                      'hours'.format(horizon))
+            warnmsg = ('Target does not cross horizon={} within 24 '
+                       'hours'.format(horizon))
             if (alt > horizon).all():
-                raise AlwaysUpError(errmsg)
+                warnings.warn(warnmsg, AlwaysUpWarning)
             else:
-                raise NeverUpError(errmsg)
+                warnings.warn(warnmsg, NeverUpWarning)
+            return (None, None), (None, None)
 
         # Isolate horizon crossing
         nearest_index = np.argwhere(condition)[0][0]
@@ -283,9 +285,12 @@ class Observer(object):
             Time when target crosses the horizon
 
         """
-        slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
-        return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
-                    format='jd')
+        if times[0] is None:
+            return None
+        else:
+            slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
+            return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
+                        format='jd')
 
     def _altitude_trig(self, LST, target):
         """
