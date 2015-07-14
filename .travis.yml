@@ -101,6 +101,7 @@ install:
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION Sphinx matplotlib; fi
     # Sphinx-Gallery
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $PIP_INSTALL sphinx-gallery; fi
+    - if [[ $SETUP_CMD == build_sphinx* ]]; then $PIP_INSTALL pillow; fi
 
     # COVERAGE DEPENDENCIES
     - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
