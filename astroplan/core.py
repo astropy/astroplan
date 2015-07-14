@@ -173,7 +173,7 @@ class Observer(object):
         # Convert astropy.time.Time to a UTC localized datetime (aware)
         utc_datetime = pytz.utc.localize(time.utc.datetime)
         # Convert UTC to local timezone
-        return self.timezone.normalize(utc_datetime)
+        return utc_datetime.astimezone(self.timezone)
 
     def local_to_astropy_time(self, time):
         '''
