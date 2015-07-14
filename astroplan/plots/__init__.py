@@ -1,1 +1,1 @@
-from .plots import *
+from .core import *
