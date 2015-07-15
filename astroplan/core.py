@@ -189,11 +189,6 @@ class Observer(object):
         `~astropy.time.Time`
         '''
 
-        # For timezone-aware datetimes with the wrong timezone
-        if time.tzinfo is not None and time.tzinfo != self.timezone:
-            raise ValueError("Timezone of input and Observer.timezone "
-                             "don't match!")
-
         # For timezone-naive datetimes, assign local timezone
         if time.tzinfo is None:
             time = self.timezone.localize(time)

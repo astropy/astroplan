@@ -220,6 +220,9 @@ def print_pyephem_parallactic_angle():
     pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
     print(pyephem_q1, pyephem_q2)
 
+    assert (obs.astropy_to_local_time(obs.local_to_astropy_time(dt)).replace(
+            tzinfo=None) == dt)
+
 def test_sunrise_sunset_equator():
     '''
     Check that time of sunrise/set for an observer on the equator is
