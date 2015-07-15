@@ -16,3 +16,6 @@ if not _ASTROPY_SETUP_:
 
     # Import everything in astroplan.core
     from .core import *
+
+    # Import everything in astroplan.exceptions
+    from .exceptions import *

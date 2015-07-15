@@ -20,7 +20,8 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 
 
 from astropy.extern.six import string_types
-
+from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
+import warnings
 #import sys
 #from math import sqrt, pi, exp, log, floor
 from abc import ABCMeta, abstractmethod
@@ -34,7 +35,7 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
-    '''
+    """
     Generate a nearly linearly spaced grid of time durations.
 
     The midpoints of these grid points will span times from ``t0``+``start``
@@ -62,7 +63,7 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     Returns
     -------
     `~astropy.time.Time`
-    '''
+    """
 
     if for_deriv:
         time_grid = np.concatenate([[start - 1/(N-1)],
@@ -211,7 +212,7 @@ class Observer(object):
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
     def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree):
-        '''
+        """
         Find time ``t`` when values in array ``a`` go from
         negative to positive or positive to negative (exclude endpoints)
 
@@ -233,7 +234,7 @@ class Observer(object):
         -------
         Returns the lower and upper limits on the time and altitudes
         of the horizon crossing.
-        '''
+        """
         if rise_set == 'rising':
             # Find index where altitude goes from below to above horizon
             condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
@@ -242,8 +243,13 @@ class Observer(object):
             condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
 
         if not np.any(condition):
-            raise ValueError('Target does not rise/set with respect to '
-                             '`horizon` within 24 hours')
+            warnmsg = ('Target does not cross horizon={} within 24 '
+                       'hours'.format(horizon))
+            if (alt > horizon).all():
+                warnings.warn(warnmsg, TargetAlwaysUpWarning)
+            else:
+                warnings.warn(warnmsg, TargetNeverUpWarning)
+            return (None, None), (None, None)
 
         # Isolate horizon crossing
         nearest_index = np.argwhere(condition)[0][0]
@@ -256,7 +262,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
-        '''
+        """
         Do linear interpolation between two ``altitudes`` at
         two ``times`` to determine the time where the altitude
         goes through zero.
@@ -278,13 +284,16 @@ class Observer(object):
         t : `~astropy.time.Time`
             Time when target crosses the horizon
 
-        '''
-        slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
-        return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
-                    format='jd')
+        """
+        if times[0] is None:
+            return np.nan
+        else:
+            slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
+            return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
+                        format='jd')
 
     def _altitude_trig(self, LST, target):
-        '''
+        """
         Calculate the altitude of ``target`` at local sidereal times ``LST``.
 
         This method provides a factor of ~3 speed up over calling `altaz`, and
@@ -302,7 +311,7 @@ class Observer(object):
         -------
         alt : `~astropy.unit.Quantity`
             Array of altitudes
-        '''
+        """
         alt = np.arcsin(np.sin(self.location.latitude.radian) *
                         np.sin(target.dec) +
                         np.cos(self.location.latitude.radian) *
@@ -311,7 +320,7 @@ class Observer(object):
         return alt
 
     def _calc_riseset(self, time, target, prev_next, rise_set, horizon, N=150):
-        '''
+        """
         Time at next rise/set of ``target``.
 
         Parameters
@@ -348,7 +357,7 @@ class Observer(object):
         -------
         ret1 : `~astropy.time.Time`
             Time of rise/set
-        '''
+        """
 
         if not isinstance(time, Time):
             time = Time(time)
@@ -366,7 +375,7 @@ class Observer(object):
 
     def _calc_riseset_brentq(self, time, target, prev_next, rise_set, horizon,
                              N=150, **kwargs):
-        '''
+        """
         Time at next rise/set of ``target`` with `~scipy.optimize.brentq`.
 
         Parameters
@@ -403,7 +412,7 @@ class Observer(object):
         -------
         ret1 : `~astropy.time.Time`
             Time of rise/set
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -425,7 +434,7 @@ class Observer(object):
         return Time(root, format='jd')
 
     def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
-        '''
+        """
         Time at next transit of the meridian of `target`.
 
         Parameters
@@ -458,7 +467,7 @@ class Observer(object):
         -------
         ret1 : `~astropy.time.Time`
             Time of transit/antitransit
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -485,7 +494,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def calc_rise(self, time, target, which='nearest', horizon=0*u.degree):
-        '''
+        """
         Calculate rise time.
 
         Compute time of the next/previous/nearest rise of the ``target``
@@ -517,7 +526,7 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Rise time of target
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -543,7 +552,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def calc_set(self, time, target, which='nearest', horizon=0*u.degree):
-        '''
+        """
         Calculate set time.
 
         Compute time of the next/previous/nearest set of ``target``, where
@@ -574,7 +583,7 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Set time of target.
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -600,7 +609,7 @@ class Observer(object):
                          '"nearest".')
 
     def calc_meridian_transit(self, time, target, which='nearest'):
-        '''
+        """
         Calculate time at the transit of the meridian.
 
         Compute time of the next/previous/nearest transit of the ``target``
@@ -625,7 +634,7 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Transit time of target
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -648,7 +657,7 @@ class Observer(object):
                          '"nearest".')
 
     def calc_meridian_antitransit(self, time, target, which='nearest'):
-        '''
+        """
         Calculate time at the antitransit of the meridian.
 
         Compute time of the next/previous/nearest antitransit of the ``target``
@@ -673,7 +682,7 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Antitransit time of target
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -699,7 +708,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def sunrise(self, time, which='nearest', horizon=0*u.degree):
-        '''
+        """
         Time of sunrise.
 
         Compute time of the next/previous/nearest sunrise, where
@@ -727,12 +736,12 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Time of sunrise
-        '''
+        """
         return self.calc_rise(time, get_sun(time), which, horizon)
 
     @u.quantity_input(horizon=u.deg)
     def sunset(self, time, which='nearest', horizon=0*u.degree):
-        '''
+        """
         Time of sunset.
 
         Compute time of the next/previous/nearest sunset, where
@@ -760,11 +769,11 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Time of sunset
-        '''
+        """
         return self.calc_set(time, get_sun(time), which, horizon)
 
     def noon(self, time, which='nearest'):
-        '''
+        """
         Time at solar noon.
 
         Parameters
@@ -783,11 +792,11 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Time at solar noon
-        '''
+        """
         return self.calc_meridian_transit(time, get_sun(time), which)
 
     def midnight(self, time, which='nearest'):
-        '''
+        """
         Time at solar midnight.
 
         Parameters
@@ -806,7 +815,7 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Time at solar midnight
-        '''
+        """
         return self.calc_meridian_antitransit(time, get_sun(time), which)
 
     # Twilight convenience functions
@@ -1018,7 +1027,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
-        '''
+        """
         Is ``target`` above ``horizon`` at this ``time``?
 
         Parameters
@@ -1039,7 +1048,7 @@ class Observer(object):
 
         return_altaz : bool (optional)
             Also return the '~astropy.coordinates.AltAz' coordinate.
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 
@@ -1103,9 +1112,9 @@ class FixedTarget(Target):
     An object that is "fixed" with respect to the celestial sphere.
     """
     def __init__(self, coord, name=None, **kwargs):
-        '''
+        """
         TODO: Docstring.
-        '''
+        """
         if not (hasattr(coord, 'transform_to') and
                 hasattr(coord, 'represent_as')):
             raise TypeError('`coord` must be a coordinate object.')
@@ -1115,10 +1124,10 @@ class FixedTarget(Target):
 
     @classmethod
     def from_name(cls, query_name, name=None, **kwargs):
-        '''
+        """
         Initialize a `FixedTarget` by querying for a name, using the machinery
         in `~astropy.coordinates.SkyCoord.from_name`.
-        '''
+        """
         # Allow manual override for name keyword so that the target name can
         # be different from the query name, otherwise assume name=queryname.
         if name is None:
