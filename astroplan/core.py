@@ -225,7 +225,16 @@ class Observer(object):
         Returns
         -------
         `~astropy.coordinates.Angle`
-            Parallactic angle
+            Parallactic angle.
+
+        Notes
+        -----
+        The parallactic angle is the angle between the great circle that
+        intersects a celestial object and the zenith, and the object's hour
+        circle [1]_.
+
+        .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
+
         '''
         if not isinstance(time, Time):
             time = Time(time)
@@ -249,6 +258,7 @@ class Observer(object):
                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
 
         return Angle(q)
+
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
     def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree):
