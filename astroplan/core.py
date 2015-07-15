@@ -81,8 +81,8 @@ class Observer(object):
     TODO: write this docstring
     """
     @u.quantity_input(elevation=u.m)
-    def __init__(self, name=None, location=None, latitude=None, longitude=None,
-                 elevation=0*u.m, timezone='UTC', pressure=None,
+    def __init__(self, location=None, name=None, timezone='UTC', latitude=None,
+                 longitude=None, elevation=0*u.m, pressure=None,
                  relative_humidity=None, temperature=None, description=None):
         """
         Parameters
