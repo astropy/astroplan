@@ -157,32 +157,65 @@ def test_FixedTarget_ra_dec():
                                                            'SkyCoord')
 
 def test_parallactic_angle():
-    lat = '+19:00:00'
-    lon = '-155:00:00'
-    elevation = 0.0 * u.m
+    '''
+    Compute parallactic angle for targets at hour angle = {3, 19} for
+    at observer at IRTF using the online SpeX calculator and PyEphem
+    '''
+    # Set up position for IRTF
+    lat = 19.826218*u.deg
+    lon = -155.471999*u.deg
+    elevation = 4160.0 * u.m
     location = EarthLocation.from_geodetic(lon, lat, elevation)
-    time = Time('2015-01-01')
-    vega = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
-    obs = Observer(name='Observatory', location=location)
-    astroplan_q = obs.parallactic_angle(time, vega)
-    threshold_angle = 2*u.deg
-    # Get the PyEphem equivalent with:
-    # python -c 'from astroplan.tests.test_core import print_pyephem_pang as f; f()'
-    pyephem_pang = 2.16306782837*u.rad
-    assert abs((astroplan_q - pyephem_pang) < threshold_angle)
+    time = Time('2015-01-01 00:00:00')
+    LST = time.sidereal_time('mean', longitude=lon)
+    desired_HA_1 = 3*u.hourangle
+    desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
+    target1 = SkyCoord(LST - desired_HA_1, -30*u.degree)
+    target2 = SkyCoord(LST - desired_HA_2, -30*u.degree)
+
+    obs = Observer(location=location)
+    q1 = obs.parallactic_angle(time, target1)
+    q2 = obs.parallactic_angle(time, target2)
+
+    # Get values from PyEphem for comparison from print_pyephem_parallactic_angle()
+    pyephem_q1 = 46.54610060782033*u.deg
+    pyephem_q2 = -65.51818282032019*u.deg
+
+    assert_allclose(q1.to(u.degree).value, pyephem_q1, atol=1)
+    assert_allclose(q2.to(u.degree).value, pyephem_q2, atol=1)
+
+    # Get SpeX parallactic angle calculator values for comparison from
+    # http://irtfweb.ifa.hawaii.edu/cgi-bin/spex/parangle.cgi to produce
+
+    SpeX_q1 = 46.7237968 # deg
+    SpeX_q2 = -65.428924 # deg
+
+    assert_allclose(q1.to(u.degree).value, SpeX_q1, atol=0.1)
+    assert_allclose(q2.to(u.degree).value, SpeX_q2, atol=0.1)
 
 def print_pyephem_parallactic_angle():
-    lat = '+19:00:00'
-    lon = '-155:00:00'
-    elevation = 0.0
-    time = Time('2015-01-01')
+    lat = 19.826218*u.deg
+    lon = -155.471999*u.deg
+    time = Time('2015-01-01 00:00:00')
+    LST = time.sidereal_time('mean', longitude=lon)
+    desired_HA_1 = 3*u.hourangle
+    desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
 
     import ephem
     obs = ephem.Observer()
-    obs.lat = lat
-    obs.lon = lon
-    obs.elevation = elevation
+    obs.lat = '19:49:34.3848'
+    obs.lon = '-155:28:19.1964'
+    obs.elevation = elevation.value
     obs.date = time.datetime
-    vega = ephem.star('Vega')
-    vega.compute(obs)
-    print(float(vega.parallactic_angle()))
+    pyephem_target1 = ephem.FixedBody()
+    pyephem_target1._ra = ephem.degrees((LST - desired_HA_1).to(u.rad).value)
+    pyephem_target1._dec = ephem.degrees((-30*u.deg).to(u.rad).value)
+    pyephem_target1.compute(obs)
+    pyephem_q1 = (float(pyephem_target1.parallactic_angle())*u.rad).to(u.deg)
+
+    pyephem_target2 = ephem.FixedBody()
+    pyephem_target2._ra = ephem.degrees((LST - desired_HA_2).to(u.rad).value)
+    pyephem_target2._dec = ephem.degrees((-30*u.deg).to(u.rad).value)
+    pyephem_target2.compute(obs)
+    pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
+    print(pyephem_q1, pyephem_q2)

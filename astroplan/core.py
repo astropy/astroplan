@@ -180,6 +180,8 @@ class Observer(object):
         `~astropy.coordinates.Angle`
             Parallactic angle
         '''
+        if not isinstance(time, Time):
+            time = Time(time)
 
         if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
                 hasattr(target, 'coord')):
@@ -199,8 +201,6 @@ class Observer(object):
                        np.cos(coordinate.dec.radian) -
                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
 
-        if q < 0*u.rad:
-            q += np.pi*u.rad
         return Angle(q)
     # Sun-related methods.
 
