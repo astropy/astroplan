@@ -153,6 +153,70 @@ def test_FixedTarget_ra_dec():
     assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
                                                            'SkyCoord')
 
+def test_parallactic_angle():
+    '''
+    Compute parallactic angle for targets at hour angle = {3, 19} for
+    at observer at IRTF using the online SpeX calculator and PyEphem
+    '''
+    # Set up position for IRTF
+    lat = 19.826218*u.deg
+    lon = -155.471999*u.deg
+    elevation = 4160.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2015-01-01 00:00:00')
+    LST = time.sidereal_time('mean', longitude=lon)
+    desired_HA_1 = 3*u.hourangle
+    desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
+    target1 = SkyCoord(LST - desired_HA_1, -30*u.degree)
+    target2 = SkyCoord(LST - desired_HA_2, -30*u.degree)
+
+    obs = Observer(location=location)
+    q1 = obs.parallactic_angle(time, target1)
+    q2 = obs.parallactic_angle(time, target2)
+
+    # Get values from PyEphem for comparison from print_pyephem_parallactic_angle()
+    pyephem_q1 = 46.54610060782033*u.deg
+    pyephem_q2 = -65.51818282032019*u.deg
+
+    assert_allclose(q1.to(u.degree).value, pyephem_q1, atol=1)
+    assert_allclose(q2.to(u.degree).value, pyephem_q2, atol=1)
+
+    # Get SpeX parallactic angle calculator values for comparison from
+    # http://irtfweb.ifa.hawaii.edu/cgi-bin/spex/parangle.cgi to produce
+
+    SpeX_q1 = 46.7237968 # deg
+    SpeX_q2 = -65.428924 # deg
+
+    assert_allclose(q1.to(u.degree).value, SpeX_q1, atol=0.1)
+    assert_allclose(q2.to(u.degree).value, SpeX_q2, atol=0.1)
+
+def print_pyephem_parallactic_angle():
+    lat = 19.826218*u.deg
+    lon = -155.471999*u.deg
+    time = Time('2015-01-01 00:00:00')
+    LST = time.sidereal_time('mean', longitude=lon)
+    desired_HA_1 = 3*u.hourangle
+    desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = '19:49:34.3848'
+    obs.lon = '-155:28:19.1964'
+    obs.elevation = elevation.value
+    obs.date = time.datetime
+    pyephem_target1 = ephem.FixedBody()
+    pyephem_target1._ra = ephem.degrees((LST - desired_HA_1).to(u.rad).value)
+    pyephem_target1._dec = ephem.degrees((-30*u.deg).to(u.rad).value)
+    pyephem_target1.compute(obs)
+    pyephem_q1 = (float(pyephem_target1.parallactic_angle())*u.rad).to(u.deg)
+
+    pyephem_target2 = ephem.FixedBody()
+    pyephem_target2._ra = ephem.degrees((LST - desired_HA_2).to(u.rad).value)
+    pyephem_target2._dec = ephem.degrees((-30*u.deg).to(u.rad).value)
+    pyephem_target2.compute(obs)
+    pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
+    print(pyephem_q1, pyephem_q2)
+
 def test_sunrise_sunset_equator():
     '''
     Check that time of sunrise/set for an observer on the equator is
@@ -760,4 +824,3 @@ class TestExceptions(unittest.TestCase):
         with self.assertRaises(TypeError):
             obs = Observer(location=EarthLocation(0, 0, 0))
             _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
-

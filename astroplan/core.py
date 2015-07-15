@@ -3,11 +3,13 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, get_sun)
+                                 AltAz, get_sun, Angle)
 import astropy.units as u
 from astropy.time import Time
 import datetime
 import pytz
+import numpy as np
+from astropy.time import Time
 
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
@@ -208,6 +210,55 @@ class Observer(object):
             else:
                 coordinate = target
             return coordinate.transform_to(altaz_frame)
+
+    def parallactic_angle(self, time, target):
+        '''
+        Calculate the parallactic angle.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time`
+            Observation time.
+
+        target : `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord`
+            Celestial object of interest.
+
+        Returns
+        -------
+        `~astropy.coordinates.Angle`
+            Parallactic angle.
+
+        Notes
+        -----
+        The parallactic angle is the angle between the great circle that
+        intersects a celestial object and the zenith, and the object's hour
+        circle [1]_.
+
+        .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
+
+        '''
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
+                hasattr(target, 'coord')):
+            raise TypeError('The target must be a coordinate (i.e. a '
+                            'FixedTarget or SkyCoord).')
+
+        if hasattr(target, 'coord'):
+            coordinate = target.coord
+        else:
+            coordinate = target
+
+        # Eqn (14.1) of Meeus' Astronomical Algorithms
+        LST = time.sidereal_time('mean', longitude=self.location.longitude)
+        H = (LST - coordinate.ra).radian
+        q = np.arctan(np.sin(H) /
+                      (np.tan(self.location.latitude.radian)*
+                       np.cos(coordinate.dec.radian) -
+                       np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
+
+        return Angle(q)
 
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
