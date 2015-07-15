@@ -157,9 +157,10 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
-    def astropy_to_local_time(self, time):
+    def astropy_to_local_time(self, astropy_time):
         '''
-        Localize ``time`` to the local timezone.
+        Convert the `~astropy.time.Time` object ``astropy_time`` to a
+        localized `~datetime.datetime` object.
 
         Parameters
         ----------
@@ -168,32 +169,39 @@ class Observer(object):
         Returns
         -------
         `~datetime.datetime`
-            Localized datetime
+            Localized datetime, where the timezone of the datetime is
+            set by the ``timezone`` keyword argument of the
+            `~astroplan.Observer` constructor.
         '''
         # Convert astropy.time.Time to a UTC localized datetime (aware)
-        utc_datetime = pytz.utc.localize(time.utc.datetime)
+        utc_datetime = pytz.utc.localize(astropy_time.utc.datetime)
         # Convert UTC to local timezone
-        return utc_datetime.astimezone(self.timezone)
+        return self.timezone.normalize(utc_datetime)
 
-    def local_to_astropy_time(self, time):
+    def local_to_astropy_time(self, date_time):
         '''
-        Convert localized time ``local_time`` to `~astropy.time.Time` object
+        Convert the `~datetime.datetime` object ``date_time`` to a
+        `~astropy.time.Time` object.
+
+        If the ``date_time`` is naive, the implied timezone is the one set by
+        the ``timezone`` keyword argument of the `~astroplan.Observer`
+        constructor.
 
         Parameters
         ----------
         time : `~datetime.datetime`
-            Localized datetime
 
         Returns
         -------
         `~astropy.time.Time`
+            Astropy time object (no timezone information preserved).
         '''
 
         # For timezone-naive datetimes, assign local timezone
-        if time.tzinfo is None:
-            time = self.timezone.localize(time)
+        if date_time.tzinfo is None:
+            date_time = self.timezone.localize(date_time)
 
-        return Time(time, location=self.location)
+        return Time(date_time, location=self.location)
 
     def altaz(self, time, target=None, obswl=None):
         """
