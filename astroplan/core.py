@@ -20,7 +20,7 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 
 
 from astropy.extern.six import string_types
-from .exceptions import NeverUpWarning, AlwaysUpWarning
+from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 import warnings
 #import sys
 #from math import sqrt, pi, exp, log, floor
@@ -246,9 +246,9 @@ class Observer(object):
             warnmsg = ('Target does not cross horizon={} within 24 '
                        'hours'.format(horizon))
             if (alt > horizon).all():
-                warnings.warn(warnmsg, AlwaysUpWarning)
+                warnings.warn(warnmsg, TargetAlwaysUpWarning)
             else:
-                warnings.warn(warnmsg, NeverUpWarning)
+                warnings.warn(warnmsg, TargetNeverUpWarning)
             return (None, None), (None, None)
 
         # Isolate horizon crossing

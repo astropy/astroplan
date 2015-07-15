@@ -4,10 +4,12 @@ from __future__ import (absolute_import, division, print_function,
 
 from astropy.utils.exceptions import AstropyWarning
 
-class AlwaysUpWarning(AstropyWarning):
+__all__ = ["TargetAlwaysUpWarning", "TargetNeverUpWarning"]
+
+class TargetAlwaysUpWarning(AstropyWarning):
     """Target is circumpolar"""
     pass
 
-class NeverUpWarning(AstropyWarning):
+class TargetNeverUpWarning(AstropyWarning):
     """Target never rises above horizon"""
     pass

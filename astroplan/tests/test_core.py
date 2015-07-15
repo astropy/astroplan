@@ -12,7 +12,7 @@ import datetime
 import unittest
 
 from ..core import FixedTarget, Observer
-from ..exceptions import AlwaysUpWarning, NeverUpWarning
+from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
     '''
@@ -692,7 +692,7 @@ def test_string_times():
     assert astroplan_nearest_rise == astroplan_prev_rise
     assert astroplan_nearest_set == astroplan_next_set
 
-def test_AlwaysUpWarning(recwarn):
+def test_TargetAlwaysUpWarning(recwarn):
     lat = '90:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -703,11 +703,11 @@ def test_AlwaysUpWarning(recwarn):
     obs = Observer(location=location)
     no_time = obs.calc_rise(time, polaris, which='next')
 
-    w = recwarn.pop(AlwaysUpWarning)
-    assert issubclass(w.category, AlwaysUpWarning)
+    w = recwarn.pop(TargetAlwaysUpWarning)
+    assert issubclass(w.category, TargetAlwaysUpWarning)
     assert np.isnan(no_time)
 
-def test_NeverUpWarning(recwarn):
+def test_TargetNeverUpWarning(recwarn):
     lat = '-90:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -718,8 +718,8 @@ def test_NeverUpWarning(recwarn):
     obs = Observer(location=location)
     no_time = obs.calc_rise(time, polaris, which='next')
 
-    w = recwarn.pop(NeverUpWarning)
-    assert issubclass(w.category, NeverUpWarning)
+    w = recwarn.pop(TargetNeverUpWarning)
+    assert issubclass(w.category, TargetNeverUpWarning)
     assert np.isnan(no_time)
 
 class TestExceptions(unittest.TestCase):
