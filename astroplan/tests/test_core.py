@@ -8,6 +8,8 @@ from astropy.tests.helper import remote_data
 import numpy as np
 from numpy.testing import assert_allclose
 import pytz
+import datetime
+import unittest
 
 from ..core import FixedTarget, Observer
 
@@ -50,6 +52,7 @@ def test_FixedTarget_from_name():
 
     # Resolve coordinates with SkyCoord.from_name classmethod
     polaris_from_name = FixedTarget.from_name('Polaris')
+    polaris_from_name = FixedTarget.from_name('Polaris', name='Target 1')
     # Coordinates grabbed from SIMBAD
     polaris_from_SIMBAD = SkyCoord('02h31m49.09456s', '+89d15m50.7923s')
 
@@ -66,7 +69,7 @@ def test_Observer_altaz():
     latitude = '00:00:00'
     longitude = '00:00:00'
     elevation = 0 # [m]
-    pressure = 0  # no atmosphere
+    pressure = 0  * u.bar # no atmosphere
     time = Time('2000-01-01 12:00:00')
     vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
 
@@ -79,17 +82,7 @@ def test_Observer_altaz():
     astroplan_altitude = altaz.alt
     astroplan_azimuth = altaz.az
 
-    # Calculate altitude/azimuth with PyEphem, like so with get_pyephem_altaz
-    '''
-    >>> pyephem_altitude, pyephem_azimuth = get_pyephem_altaz(latitude,
-                                                              longitude,
-                                                              elevation,
-                                                              time,
-                                                              pressure,
-                                                              vega_coords)
-    >>> pyephem_altitude, pyephem_azimuth
-    (<Latitude 51.198848716510874 deg>, <Longitude 358.4676707379987 deg>)
-    '''
+    # Calculate altitude/azimuth with PyEphem, like so with print_pyephem_altaz
     pyephem_altitude = Latitude('51.198848716510874 deg')
     pyephem_azimuth = Longitude('358.4676707379987 deg')
 
@@ -102,7 +95,11 @@ def test_Observer_altaz():
     assert_allclose(pyephem_azimuth.value, astroplan_azimuth.value,
                     atol=tolerance)
 
-def get_pyephem_altaz(latitude, longitude, elevation, time, pressure,
+    # Check that alt/az without target returns AltAz frame
+    from astropy.coordinates import AltAz
+    assert isinstance(astroplan_obs.altaz(time), AltAz)
+
+def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
     '''
     Run PyEphem to compute the altitude/azimuth of a target at specified time
@@ -122,7 +119,7 @@ def get_pyephem_altaz(latitude, longitude, elevation, time, pressure,
     pyephem_target.compute(pyephem_obs)
     pyephem_altitude = Latitude(np.degrees(pyephem_target.alt)*u.degree)
     pyephem_azimuth = Longitude(np.degrees(pyephem_target.az)*u.degree)
-    return pyephem_altitude, pyephem_azimuth
+    print(pyephem_altitude, pyephem_azimuth)
 
 def test_Observer_timezone_parser():
     lat = '+19:00:00'
@@ -219,3 +216,593 @@ def print_pyephem_parallactic_angle():
     pyephem_target2.compute(obs)
     pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
     print(pyephem_q1, pyephem_q2)
+
+def test_sunrise_sunset_equator():
+    '''
+    Check that time of sunrise/set for an observer on the equator is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_next_sunrise = obs.sunrise(time, which='next').datetime
+    astroplan_next_sunset = obs.sunset(time, which='next').datetime
+
+    astroplan_prev_sunrise = obs.sunrise(time, which='previous').datetime
+    astroplan_prev_sunset = obs.sunset(time, which='previous').datetime
+
+    # Run print_pyephem_sunrise_sunset() to compute analogous
+    # result from PyEphem:
+    pyephem_next_sunrise = datetime.datetime(2000, 1, 2, 6, 3, 39, 150790)
+    pyephem_next_sunset = datetime.datetime(2000, 1, 1, 18, 3, 23, 676686)
+    pyephem_prev_sunrise = datetime.datetime(2000, 1, 1, 6, 3, 10, 720052)
+    pyephem_prev_sunset = datetime.datetime(1999, 12, 31, 18, 2, 55, 100786)
+
+    # Typical difference in this example between PyEphem and astroplan
+    # with an atmosphere is <2 min
+    threshold_minutes = 8
+    assert (abs(pyephem_next_sunrise - astroplan_next_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_sunset - astroplan_next_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_sunrise - astroplan_prev_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_sunset - astroplan_prev_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+# def test_sunrise_sunset_equator_fast_and_slow():
+#     '''
+#     Check that time of sunrise/set for an observer on the equator is
+#     consistent with PyEphem results (for no atmosphere)
+#     for the fast method assuming pressure=0, versus with less fast
+#     method where pressure=None.
+#     '''
+#     lat = '00:00:00'
+#     lon = '00:00:00'
+#     elevation = 0.0 * u.m
+#     pressure = 0 * u.bar
+#     location = EarthLocation.from_geodetic(lon, lat, elevation)
+#     time = Time('2000-01-01 12:00:00')
+#     obs = Observer(location=location, pressure=pressure)
+#     astroplan_next_sunrise_p_eq_0 = obs.sunrise(time, which='next').datetime
+#     astroplan_next_sunset_p_eq_0 = obs.sunset(time, which='next').datetime
+#
+#     astroplan_prev_sunrise_p_eq_0 = obs.sunrise(time, which='previous').datetime
+#     astroplan_prev_sunset_p_eq_0 = obs.sunset(time, which='previous').datetime
+#
+#     obs_p_eq_none = Observer(location=location)
+#     astroplan_next_sunrise_p_eq_none= obs_p_eq_none.sunrise(time,
+#                                                             which='next').datetime
+#     astroplan_next_sunset_p_eq_none = obs_p_eq_none.sunset(time,
+#                                                            which='next').datetime
+#
+#     astroplan_prev_sunrise_p_eq_none = obs_p_eq_none.sunrise(time,
+#                                                              which='previous').datetime
+#     astroplan_prev_sunset_p_eq_none = obs_p_eq_none.sunset(time,
+#                                                            which='previous').datetime
+#
+#     # Keep the time difference between the fast and slow computations
+#     # in astroplan small as well:
+#     threshold_minutes = 8
+#     astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0
+#     assert (abs(astroplan_next_sunrise_p_eq_none - astroplan_next_sunrise_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+#     assert (abs(astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+#     assert (abs(astroplan_prev_sunrise_p_eq_none - astroplan_prev_sunrise_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+#     assert (abs(astroplan_prev_sunset_p_eq_none - astroplan_prev_sunset_p_eq_0) <
+#             datetime.timedelta(minutes=threshold_minutes))
+
+
+def print_pyephem_sunrise_sunset():
+    '''
+    To run:
+
+    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset as f; f()'
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    next_sunrise = obs.next_rising(ephem.Sun(), use_center=True)
+    next_sunset = obs.next_setting(ephem.Sun(), use_center=True)
+    prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
+    prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
+
+    print(map(repr, [next_sunrise.datetime(), next_sunset.datetime(),
+                     prev_sunrise.datetime(), prev_sunset.datetime()]))
+
+def test_vega_rise_set_equator():
+    '''
+    Check that time of rise/set of Vega for an observer on the equator is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
+    vega = SkyCoord(vega_ra, vega_dec)
+
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
+    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+
+    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+
+    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+
+    # Run print_pyephem_vega_rise_set() to compute analogous
+    # result from PyEphem:
+    pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 52, 8, 257401)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 17, 54, 6, 211705)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 5, 56, 4, 165852)
+    pyephem_prev_set = datetime.datetime(1999, 12, 31, 17, 58, 2, 120088)
+
+    # Typical difference in this example between PyEphem and astroplan
+    # with an atmosphere is <2 min
+    threshold_minutes = 8
+    assert (abs(pyephem_next_rise - astroplan_next_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_set - astroplan_next_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_rise - astroplan_prev_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_set - astroplan_prev_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Check that the 'nearest' option selects the nearest rise/set
+    assert astroplan_nearest_rise == astroplan_prev_rise
+    assert astroplan_nearest_set == astroplan_next_set
+
+def print_pyephem_vega_rise_set():
+    '''
+    To run:
+
+    python -c 'from astroplan.tests.test_core import print_pyephem_vega_rise_set as f; f()'
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+    vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
+    vega = SkyCoord(vega_ra, vega_dec)
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    target = ephem.FixedBody()
+    target._ra = ephem.degrees(np.radians(vega.ra.value))
+    target._dec = ephem.degrees(np.radians(vega.dec.value))
+    target.compute(obs)
+    next_rising = obs.next_rising(target).datetime()
+    next_setting = obs.next_setting(target).datetime()
+    prev_rising = obs.previous_rising(target).datetime()
+    prev_setting = obs.previous_setting(target).datetime()
+
+    print(map(repr, [next_rising, next_setting, prev_rising, prev_setting]))
+
+def test_sunrise_sunset_equator_civil_twilight():
+    '''
+    Check that time of sunrise/set for an observer on the equator is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    obs = Observer(location=location, pressure=pressure)
+    # Manually impose horizon equivalent to civil twilight
+    horizon = -6*u.degree
+    astroplan_next_sunrise = obs.sunrise(time, which='next',
+                                         horizon=horizon).datetime
+    astroplan_next_sunset = obs.sunset(time, which='next',
+                                       horizon=horizon).datetime
+
+    astroplan_prev_sunrise = obs.sunrise(time, which='previous',
+                                         horizon=horizon).datetime
+    astroplan_prev_sunset = obs.sunset(time, which='previous',
+                                       horizon=horizon).datetime
+
+    # Run print_pyephem_sunrise_sunset_equator_civil_twilight() to compute
+    # analogous result from PyEphem:
+    pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 37, 34, 83328)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 18, 29, 29, 195908)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 5, 37, 4, 701708)
+    pyephem_prev_set = datetime.datetime(1999, 12, 31, 18, 29, 1, 530987)
+
+
+    threshold_minutes = 8
+    assert (abs(pyephem_next_rise - astroplan_next_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_set - astroplan_next_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_rise - astroplan_prev_sunrise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_set - astroplan_prev_sunset) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def print_pyephem_sunrise_sunset_equator_civil_twilight():
+    '''
+    Calculate next sunrise and sunset with PyEphem for an observer
+    on the equator.
+
+    To run:
+    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    obs.horizon = '-06:00:00'
+    next_sunrise = obs.next_rising(ephem.Sun(), use_center=True)
+    next_sunset = obs.next_setting(ephem.Sun(), use_center=True)
+    prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
+    prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
+
+    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
+    print(map(pyephem_time_to_datetime_str, [next_sunrise, next_sunset,
+                                             prev_sunrise, prev_sunset]))
+
+def test_twilight_convenience_funcs():
+    '''
+    Check that the convenience functions for evening
+    astronomical/nautical/civil twilight correspond to their
+    PyEphem equivalents
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    obs = Observer(location=location, pressure=pressure)
+    # Compute morning twilights with astroplan
+    astroplan_morning_civil = obs.morning_civil(time, which='previous').datetime
+    astroplan_morning_nautical = obs.morning_nautical(time,
+                                                      which='previous').datetime
+    astroplan_morning_astro = obs.morning_astronomical(time,
+                                                       which='previous').datetime
+    # Compute evening twilights with astroplan
+    astroplan_evening_civil = obs.evening_civil(time, which='next').datetime
+    astroplan_evening_nautical = obs.evening_nautical(time,
+                                                      which='next').datetime
+    astroplan_evening_astro = obs.evening_astronomical(time,
+                                                       which='next').datetime
+
+    # Compute morning and evening twilights with PyEphem from
+    # the function print_pyephem_twilight_convenience_funcs()
+    pyephem_morning_civil, pyephem_morning_nautical, pyephem_morning_astronomical, = (
+        datetime.datetime(2000, 1, 1, 5, 37, 4, 701708),
+        datetime.datetime(2000, 1, 1, 5, 10, 55, 450939),
+        datetime.datetime(2000, 1, 1, 4, 44, 39, 415865))
+
+    pyephem_evening_civil, pyephem_evening_nautical, pyephem_evening_astronomical = (
+        datetime.datetime(2000, 1, 1, 18, 29, 29, 195908),
+        datetime.datetime(2000, 1, 1, 18, 55, 37, 864882),
+        datetime.datetime(2000, 1, 1, 19, 21, 53, 213768))
+
+    threshold_minutes = 8
+    # Compare morning twilights
+    assert (abs(astroplan_morning_civil - pyephem_morning_civil) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_morning_nautical - pyephem_morning_nautical) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_morning_astro - pyephem_morning_astronomical) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Compare evening twilights
+    assert (abs(astroplan_evening_civil - pyephem_evening_civil) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_evening_nautical - pyephem_evening_nautical) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_evening_astro - pyephem_evening_astronomical) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def print_pyephem_twilight_convenience_funcs():
+    '''
+    To run:
+    python -c 'from astroplan.tests.test_core import print_pyephem_twilight_convenience_funcs as f; f()'
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+
+    # Morning twilights
+    obs.horizon = '-06:00:00'
+    morning_civil = obs.previous_rising(ephem.Sun(), use_center=True)
+    obs.horizon = '-12:00:00'
+    morning_nautical = obs.previous_rising(ephem.Sun(), use_center=True)
+    obs.horizon = '-18:00:00'
+    morning_astronomical = obs.previous_rising(ephem.Sun(), use_center=True)
+
+    # Evening twilights
+    obs.horizon = '-06:00:00'
+    evening_civil = obs.next_setting(ephem.Sun(), use_center=True)
+    obs.horizon = '-12:00:00'
+    evening_nautical = obs.next_setting(ephem.Sun(), use_center=True)
+    obs.horizon = '-18:00:00'
+    evening_astronomical = obs.next_setting(ephem.Sun(), use_center=True)
+
+    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
+    print(map(pyephem_time_to_datetime_str, [morning_civil, morning_nautical,
+                                             morning_astronomical,
+                                             evening_civil, evening_nautical,
+                                             evening_astronomical]))
+
+def test_solar_transit():
+    '''
+    Test that astroplan's solar transit/antitransit (which are noon and
+    midnight) agree with PyEphem's
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    from astropy.coordinates import get_sun
+    obs = Observer(location=location, pressure=pressure)
+
+    # Compute next/previous noon/midnight using generic calc_transit methods
+    astroplan_next_transit = obs.calc_meridian_transit(time, get_sun(time),
+                                                       which='next').datetime
+    astroplan_next_antitransit = obs.calc_meridian_antitransit(time,
+                                                               get_sun(time),
+                                                               which='next').datetime
+    astroplan_prev_transit = obs.calc_meridian_transit(time, get_sun(time),
+                                                       which='previous').datetime
+    astroplan_prev_antitransit = obs.calc_meridian_antitransit(time,
+                                                               get_sun(time),
+                                                               which='previous').datetime
+
+    astroplan_nearest_transit = obs.calc_meridian_transit(time, get_sun(time),
+                                                          which='nearest').datetime
+    astroplan_nearest_antitransit = obs.calc_meridian_antitransit(time, get_sun(time),
+                                                                  which='nearest').datetime
+
+    # Computed in print_pyephem_solar_transit_noon()
+    pyephem_next_transit = datetime.datetime(2000, 1, 1, 12, 3, 17, 207300)
+    pyephem_next_antitransit = datetime.datetime(2000, 1, 2, 0, 3, 31, 423333)
+    pyephem_prev_transit = datetime.datetime(1999, 12, 31, 12, 2, 48, 562755)
+    pyephem_prev_antitransit = datetime.datetime(2000, 1, 1, 0, 3, 2, 918943)
+
+    threshold_minutes = 8
+    assert (abs(astroplan_next_transit - pyephem_next_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_next_antitransit - pyephem_next_antitransit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_transit - pyephem_prev_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_antitransit - pyephem_prev_antitransit) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Check nearest
+    assert astroplan_next_transit == astroplan_nearest_transit
+    assert astroplan_nearest_antitransit == astroplan_prev_antitransit
+
+def test_solar_transit_convenience_methods():
+    '''
+    Test that astroplan's noon and midnight convenience methods agree with
+    PyEphem's solar transit/antitransit time.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    from astropy.coordinates import get_sun
+    obs = Observer(location=location, pressure=pressure)
+
+    # Compute next/previous noon/midnight using generic calc_transit methods
+    astroplan_next_noon = obs.noon(time, which='next').datetime
+    astroplan_next_midnight = obs.midnight(time, which='next').datetime
+    astroplan_prev_noon = obs.noon(time, which='previous').datetime
+    astroplan_prev_midnight = obs.midnight(time, which='previous').datetime
+
+    # Computed in print_pyephem_solar_transit_noon()
+    pyephem_next_transit = datetime.datetime(2000, 1, 1, 12, 3, 17, 207300)
+    pyephem_next_antitransit = datetime.datetime(2000, 1, 2, 0, 3, 31, 423333)
+    pyephem_prev_transit = datetime.datetime(1999, 12, 31, 12, 2, 48, 562755)
+    pyephem_prev_antitransit = datetime.datetime(2000, 1, 1, 0, 3, 2, 918943)
+
+    threshold_minutes = 8
+    assert (abs(astroplan_next_noon - pyephem_next_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_next_midnight - pyephem_next_antitransit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_noon - pyephem_prev_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(astroplan_prev_midnight - pyephem_prev_antitransit) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+def print_pyephem_solar_transit_noon():
+    '''
+    Calculate next sunrise and sunset with PyEphem for an observer
+    on the equator.
+
+    To run:
+    python -c 'from astroplan.tests.test_core import print_pyephem_transit_noon as f; f()'
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('2000-01-01 12:00:00')
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    next_transit = obs.next_transit(ephem.Sun())
+    next_antitransit = obs.next_antitransit(ephem.Sun())
+    prev_transit = obs.previous_transit(ephem.Sun())
+    prev_antitransit = obs.previous_antitransit(ephem.Sun())
+
+    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
+    print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
+                                             prev_transit, prev_antitransit]))
+
+def test_can_see():
+    '''
+    Test that Polaris is/isn't observable from north/south pole
+    '''
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    north = EarthLocation.from_geodetic('00:00:00',
+                                        '90:00:00', elevation)
+    south = EarthLocation.from_geodetic('00:00:00',
+                                        '-90:00:00', elevation)
+    time = Time('2000-01-01 12:00:00')
+    polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+    north_pole = Observer(location=north, pressure=pressure)
+    south_pole = Observer(location=south, pressure=pressure)
+    assert north_pole.can_see(time, polaris)
+    assert not south_pole.can_see(time, polaris)
+
+def test_string_times():
+    '''
+    Test that strings passed to time argument get successfully
+    passed to Time constructor. Analogous test to test_vega_rise_set_equator(),
+    just with a string for a time.
+    '''
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = '2000-01-01 12:00:00'
+    vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
+    vega = SkyCoord(vega_ra, vega_dec)
+
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
+    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+
+    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+
+    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+
+    # Run print_pyephem_vega_rise_set() to compute analogous
+    # result from PyEphem:
+    pyephem_next_rise = datetime.datetime(2000, 1, 2, 5, 52, 8, 257401)
+    pyephem_next_set = datetime.datetime(2000, 1, 1, 17, 54, 6, 211705)
+    pyephem_prev_rise = datetime.datetime(2000, 1, 1, 5, 56, 4, 165852)
+    pyephem_prev_set = datetime.datetime(1999, 12, 31, 17, 58, 2, 120088)
+
+    # Typical difference in this example between PyEphem and astroplan
+    # with an atmosphere is <2 min
+    threshold_minutes = 8
+    assert (abs(pyephem_next_rise - astroplan_next_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_next_set - astroplan_next_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_rise - astroplan_prev_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_prev_set - astroplan_prev_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Check that the 'nearest' option selects the nearest rise/set
+    assert astroplan_nearest_rise == astroplan_prev_rise
+    assert astroplan_nearest_set == astroplan_next_set
+
+class TestExceptions(unittest.TestCase):
+    def test_polaris_always_up_at_north_pole(self):
+        with self.assertRaises(ValueError):
+            lat = '90:00:00'
+            lon = '00:00:00'
+            elevation = 0.0 * u.m
+            location = EarthLocation.from_geodetic(lon, lat, elevation)
+            time = Time('2000-01-01 12:00:00')
+            polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+
+            obs = Observer(location=location)
+            _ = obs.calc_rise(time, polaris, which='next').datetime
+
+    def test_rise_set_transit_which(self):
+        lat = '00:00:00'
+        lon = '00:00:00'
+        elevation = 0.0 * u.m
+        location = EarthLocation.from_geodetic(lon, lat, elevation)
+        time = Time('2000-01-01 12:00:00')
+        vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
+
+        obs = Observer(location=location)
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_rise(time, vega_coords, which='oops').datetime
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_set(time, vega_coords, which='oops').datetime
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_meridian_transit(time, vega_coords, which='oops').datetime
+
+        with self.assertRaises(ValueError):
+            _ = obs.calc_meridian_antitransit(time, vega_coords, which='oops').datetime
+
+    def test_FixedTarget_duck_typing(self):
+        with self.assertRaises(TypeError):
+            _ = FixedTarget(['00:00:00', '00:00:00'], name='VE')
+
+    def test_Observer_init(self):
+        with self.assertRaises(TypeError):
+            _ = Observer(location='Greenwich')
+
+        with self.assertRaises(TypeError):
+            _ = Observer(location=EarthLocation(0, 0, 0), timezone=-6)
+
+    def test_Observer_altaz(self):
+        with self.assertRaises(TypeError):
+            obs = Observer(location=EarthLocation(0, 0, 0))
+            _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
