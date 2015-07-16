@@ -170,23 +170,10 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         time = time + np.linspace(-12, 12, 100)*u.hour
 
     # Calculate parallactic angle.
-    declination = target.dec.to(u.rad)
-    latitude = observer.location.latitude.to(u.rad)
-    azimuth = observer.altaz(time, target).az.to(u.rad)
-
-    # Replace with Astroplan parallactic angle function call.
-    longitude = observer.location.longitude.to(u.rad).value
-    local_sidereal_time = time.sidereal_time('mean', longitude).to(u.rad).value
-    hour_angle = local_sidereal_time - target.ra.to(u.rad).value
-
-    numerator = np.sin(azimuth) * np.cos(latitude)
-    stuff_to_add = np.sin(azimuth)*np.sin(hour_angle)*np.sin(latitude)
-    not_hair_product = np.cos(azimuth)*np.cos(hour_angle)
-    denominator = np.cos(declination) * (not_hair_product + stuff_to_add)
-    parallactic_angle = np.arcsin(numerator/denominator)
+    p_angle = observer.parallactic_angle(time, target)
 
     # Some checks & info for labels.
-    assert len(time) == len(parallactic_angle)
+    assert len(time) == len(p_angle)
 
     if not hasattr(target, 'name'):
         target_name = ''
@@ -198,11 +185,11 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
     observe_timezone = 'UTC'
 
     # Plot data.
-    ax.plot_date(time.plot_date, parallactic_angle, **style_kwargs)
+    ax.plot_date(time.plot_date, p_angle, **style_kwargs)
     ax.figure.autofmt_xdate()
 
     # Set labels.
-    ax.set_ylabel("Parallactic Angle")
+    ax.set_ylabel("Parallactic Angle - Radians")
     ax.set_xlabel("Time - "+observe_timezone)
 
     return ax
