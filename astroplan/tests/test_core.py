@@ -11,7 +11,7 @@ import pytz
 import datetime
 import unittest
 
-from ..core import FixedTarget, Observer, get_site, get_site_names
+from ..core import FixedTarget, Observer, get_site, get_site_names, add_site
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
@@ -788,6 +788,14 @@ def test_get_site():
     assert_allclose(lat, Latitude('-30.16527778', unit=u.deg).to(u.deg).value,
                     atol=0.001)
     assert_allclose(el, 2215, atol=1)
+
+def test_add_site():
+    # Test observatory can be added and retrieved
+    new_site_name = 'University of Washington'
+    new_site_location = EarthLocation(-122.3080*u.deg, 47.6550*u.deg, 0*u.m)
+    add_site(new_site_name, new_site_location)
+    retrieved_location = get_site(new_site_name)
+    assert retrieved_location == new_site_location
 
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):

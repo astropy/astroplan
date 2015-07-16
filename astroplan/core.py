@@ -132,7 +132,7 @@ def get_site(site_name):
     return _site_db[site_name.lower()]
 
 def get_site_names(full_list=True):
-    '''
+    """
     Get list of names of observatories for use with `~astroplan.core.get_site`.
 
     Parameters
@@ -144,7 +144,7 @@ def get_site_names(full_list=True):
     Returns
     -------
     List of observatory names (strings)
-    '''
+    """
     if _site_db is None:
         _load_sites()
 
@@ -152,6 +152,32 @@ def get_site_names(full_list=True):
         return sorted(_site_db.keys())
     else:
         return sorted(_site_names)
+
+def add_site(site_name, location):
+    """
+    Add a site to the list of available observatories.
+
+    Parameters
+    ----------
+    site_name : string
+        Name of the observatory
+
+    location : `~astropy.coordinates.EarthLocation`
+        Location of the observatory
+    """
+    if _site_db is None:
+        _load_sites()
+
+    if not isinstance(location, EarthLocation):
+        raise ValueError('Location must be an EarthLocation.')
+
+    if site_name.lower() not in _site_db.keys():
+        _site_db[site_name.lower()] = location
+        _site_names.append(site_name)
+    else:
+        raise KeyError('The site "{}" already exists at (longitude,latitude,'
+                       'elevation)={}'.format(site_name,
+                                              _site_db[site_name.lower()].to_geodetic()))
 
 class Observer(object):
     """
