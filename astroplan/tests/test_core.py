@@ -747,6 +747,19 @@ def test_TargetNeverUpWarning(recwarn):
     assert issubclass(w.category, TargetNeverUpWarning)
     assert np.isnan(no_time)
 
+def test_timezone_convenience_methods():
+    location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
+    obs = Observer(location=location,timezone=pytz.timezone('US/Eastern'))
+    t = Time(57100.3, format='mjd')
+    assert (obs.astropy_to_local_time(t).hour == 3)
+
+    dt = datetime.datetime(2015, 3, 19, 3, 12)
+    assert (obs.local_to_astropy_time(dt).datetime ==
+            datetime.datetime(2015, 3, 19, 7, 12))
+
+    assert (obs.astropy_to_local_time(obs.local_to_astropy_time(dt)).replace(
+            tzinfo=None) == dt)
+
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):
         lat = '00:00:00'
@@ -785,14 +798,3 @@ class TestExceptions(unittest.TestCase):
         with self.assertRaises(TypeError):
             obs = Observer(location=EarthLocation(0, 0, 0))
             _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
-
-def test_timezone_convenience_methods():
-
-    location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
-    obs = Observer(location=location,timezone=pytz.timezone('US/Eastern'))
-    t = Time(57100.3, format='mjd')
-    assert (obs.astropy_to_local_time(t).hour == 3)
-
-    dt = datetime.datetime(2015, 3, 19, 3, 12)
-    assert (obs.local_to_astropy_time(dt).datetime ==
-            datetime.datetime(2015, 3, 19, 7, 12))
