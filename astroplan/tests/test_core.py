@@ -11,7 +11,7 @@ import pytz
 import datetime
 import unittest
 
-from ..core import FixedTarget, Observer
+from ..core import FixedTarget, Observer, get_site, get_site_names
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
@@ -772,6 +772,23 @@ def test_timezone_convenience_methods():
     naive_dts = list(map(lambda t: t.replace(tzinfo=None), dts))
     assert all(naive_dts == times_dt_ndarray - datetime.timedelta(hours=4))
 
+def test_get_site():
+    # Compare to the IRAF observatory list available at:
+    # http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html
+    keck = get_site('keck')
+    lon, lat, el = keck.to_geodetic()
+    assert_allclose(lon, -1*Longitude('155:28.7', unit=u.deg).value, atol=0.001)
+    assert_allclose(lat, Latitude('19:49.7', unit=u.deg).to(u.deg).value,
+                    atol=0.001)
+    assert_allclose(el, 4160, atol=1)
+
+    keck = get_site('ctio')
+    lon, lat, el = keck.to_geodetic()
+    assert_allclose(lon, -1*Longitude('70.815', unit=u.deg).value, atol=0.001)
+    assert_allclose(lat, Latitude('-30.16527778', unit=u.deg).to(u.deg).value,
+                    atol=0.001)
+    assert_allclose(el, 2215, atol=1)
+
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):
         lat = '00:00:00'
@@ -810,3 +827,7 @@ class TestExceptions(unittest.TestCase):
         with self.assertRaises(TypeError):
             obs = Observer(location=EarthLocation(0, 0, 0))
             _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+
+    def test_bad_site(self):
+        with self.assertRaises(KeyError):
+            _ = get_site('nonexistent site')

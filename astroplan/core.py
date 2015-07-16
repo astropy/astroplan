@@ -11,7 +11,7 @@ import datetime
 from astropy.time import Time
 import pytz
 import numpy as np
-
+from difflib import get_close_matches
 import json
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
@@ -26,8 +26,8 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 import warnings
-#import sys
-#from math import sqrt, pi, exp, log, floor
+
+
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
@@ -83,9 +83,9 @@ _site_db = None
 _site_names = []
 
 def _load_sites():
-    '''
-    Load observatory database.
-    '''
+    """
+    Load observatory database from astroplan/data/observatories.json
+    """
     global _site_db, _site_names
     _site_db = dict()
     db = json.loads(get_pkg_data_contents('data/observatories.json'))
@@ -93,39 +93,65 @@ def _load_sites():
         location = EarthLocation.from_geodetic(db[site]['longitude'],
                                    db[site]['latitude'],
                                    db[site]['elevation'])
+        _site_names.append(db[site]['name'])
         for alias in db[site]['aliases']:
             _site_db[alias.lower()] = location
-            _site_names.append(alias)
 
-def get_site(site_name, **kwargs):
-    '''
-    Construct an `~astroplan.core.Observer` object for known observatory.
+def get_site(site_name):
+    """
+    Return an `~astropy.coordinates.EarthLocation` object for known observatory.
+
+    Use `~astroplan.core.get_site_names` to see a list of available
+    observatories.
 
     Parameters
     ----------
-    code : str
-        Short string code for the observatory.
+    site_name : str
+        Name of the observatory.
 
     Returns
     -------
-    `~astroplan.core.Observer`
-        The observatory object.
-    '''
+    `~astropy.coordinates.EarthLocation`
+        The location of the observatory.
+    """
     if _site_db is None:
         _load_sites()
 
-    if site_name.lower() not in get_site_names():
-        raise ValueError('Site not in database.')
+    if site_name.lower() not in _site_db.keys():
+        # If site name not found, find close matches and suggest them in error
+        close_names = get_close_matches(site_name, _site_db.keys())
+        close_names = sorted(close_names, key=lambda x: len(x))
+        if len(close_names) > 0:
+            errmsg = ("Site not in database. Use `astroplan.get_site_names()` "
+                      "to see available sites. Did you mean: '{}'?".format(
+                      "', '".join(close_names)))
+        else:
+            errmsg = 'Site not in database.'
+        raise KeyError(errmsg)
 
     return _site_db[site_name.lower()]
 
-def get_site_names():
+def get_site_names(full_list=True):
     '''
-    Get list of names of observatories for use with `~astroplan.core.get_site`
+    Get list of names of observatories for use with `~astroplan.core.get_site`.
+
+    Parameters
+    ----------
+    full_list : bool
+        Show full list observatory names and aliases (True), or just the list
+        of names (False)? Default to True.
+
+    Returns
+    -------
+    List of observatory names (strings)
     '''
     if _site_db is None:
         _load_sites()
-    return sorted(_site_names)
+
+    if full_list:
+        return sorted(_site_db.keys())
+    else:
+        return sorted(_site_names)
 
 class Observer(object):
     """
