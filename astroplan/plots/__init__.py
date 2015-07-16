@@ -1,3 +1,3 @@
 from .core import *
-from .plots import *
+from .sky import *
 
