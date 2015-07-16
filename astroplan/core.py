@@ -157,14 +157,16 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
-    def astropy_to_local_time(self, astropy_time):
-        '''
+    def astropy_time_to_datetime(self, astropy_time):
+        """
         Convert the `~astropy.time.Time` object ``astropy_time`` to a
         localized `~datetime.datetime` object.
 
+        Timezones localized with `~pytz`.
+
         Parameters
         ----------
-        time : `~astropy.time.Time`
+        astropy_time : `~astropy.time.Time`
 
         Returns
         -------
@@ -172,30 +174,29 @@ class Observer(object):
             Localized datetime, where the timezone of the datetime is
             set by the ``timezone`` keyword argument of the
             `~astroplan.Observer` constructor.
-        '''
+        """
         # Convert astropy.time.Time to a UTC localized datetime (aware)
         utc_datetime = pytz.utc.localize(astropy_time.utc.datetime)
         # Convert UTC to local timezone
         return self.timezone.normalize(utc_datetime)
 
-    def local_to_astropy_time(self, date_time):
-        '''
+    def datetime_to_astropy_time(self, date_time):
+        """
         Convert the `~datetime.datetime` object ``date_time`` to a
         `~astropy.time.Time` object.
 
-        If the ``date_time`` is naive, the implied timezone is the one set by
-        the ``timezone`` keyword argument of the `~astroplan.Observer`
-        constructor.
+        Timezones localized with `~pytz`. If the ``date_time`` is naive, the
+        implied timezone is the ``timezone`` structure of ``self``.
 
         Parameters
         ----------
-        time : `~datetime.datetime`
+        date_time : `~datetime.datetime`
 
         Returns
         -------
         `~astropy.time.Time`
             Astropy time object (no timezone information preserved).
-        '''
+        """
 
         # For timezone-naive datetimes, assign local timezone
         if date_time.tzinfo is None:

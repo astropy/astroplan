@@ -748,13 +748,13 @@ def test_timezone_convenience_methods():
     location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
     obs = Observer(location=location,timezone=pytz.timezone('US/Eastern'))
     t = Time(57100.3, format='mjd')
-    assert (obs.astropy_to_local_time(t).hour == 3)
+    assert (obs.astropy_time_to_datetime(t).hour == 3)
 
     dt = datetime.datetime(2015, 3, 19, 3, 12)
-    assert (obs.local_to_astropy_time(dt).datetime ==
+    assert (obs.datetime_to_astropy_time(dt).datetime ==
             datetime.datetime(2015, 3, 19, 7, 12))
 
-    assert (obs.astropy_to_local_time(obs.local_to_astropy_time(dt)).replace(
+    assert (obs.astropy_time_to_datetime(obs.datetime_to_astropy_time(dt)).replace(
             tzinfo=None) == dt)
 
 class TestExceptions(unittest.TestCase):
