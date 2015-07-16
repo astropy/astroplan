@@ -8,16 +8,8 @@ import astropy.units as u
 import random
 
 
-def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
-                 dark_plot=False):
+def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     """
-    TODO:
-        1) Timezones?
-        2) Limit airmass <= 3.
-        3) Dark plot option.
-        4) Dealing with no target name.
-        5) ax.figure.autofmt_xdate() ?
-
     Plots airmass as a function of time for a given target.
 
     If an ax object already exists, an additional airmass plot will be
@@ -51,9 +43,6 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
         A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
         to set plotting styles.
 
-    dark_plot : bool, optional.
-        Default is False.
-
     Returns
     -------
     ax :  `~matplotlib.axes.Axes`
@@ -64,14 +53,18 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     y-axis defaults (if user wishes to change these, use `ax.<set attribute>`
     before drawing or saving plot):
         Inverted by default.
-        Lower limit is 3.0.
+        Shows airmasses between 1.0 and 3.0.
+
+    TODO:
+        1) Timezones?
+        2) Dark plot option.
+        3) Dealing with no target name.
+        4) ax.figure.autofmt_xdate() ?
     """
 
     # Set up plot axes and style if needed.
     if ax is None:
         ax = plt.gca()
-    if dark_plot is True:
-        raise NotImplementedError
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
@@ -95,17 +88,16 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
 
-    observe_date = time[0].datetime.strftime('%Y-%m-%d')
     observe_timezone = 'UTC'
 
     # Plot data.
     ax.plot_date(time.plot_date, airmass, **style_kwargs)
     ax.figure.autofmt_xdate()
+
+    # Invert y-axis and set limits.
     if ax.get_ylim()[1] > ax.get_ylim()[0]:
         ax.invert_yaxis()
-    if ax.get_ylim()[0] > 3.0:
-        upper = ax.get_ylim()[1]
-        ax.set_ylim([3, upper])
+    ax.set_ylim([3, 1])
 
     # Set labels.
     ax.set_ylabel("Airmass")
@@ -115,17 +107,8 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     return ax
 
 
-def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
-                     dark_plot=False):
+def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
     """
-    TODO:
-        1) dark_plot style
-        2) Use parallactic angle function.
-        3) observe_timezone -- update with info from observer?
-        4) Dealing with NaN or invalid values.
-        5) Dealing with no target name.
-        6) ax.figure.autofmt_xdate() ?
-
     Plots parallactic angle as a function of time for a given target.
 
     If an ax object already exists, an additional parallactic angle plot will
@@ -159,20 +142,22 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
         A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
         to set plotting styles.
 
-    dark_plot: bool, optional.
-        Optional. False (default) or True.
-
     Returns
     -------
     ax :  `~matplotlib.axes.Axes`
         An axes object with added parallactic_angle vs. time plot.
+
+    TODO:
+        1) dark_plot style
+        2) Use parallactic angle function.
+        3) observe_timezone -- update with info from observer?
+        4) Dealing with no target name.
+        5) ax.figure.autofmt_xdate() ?
     """
 
     # Set up plot axes and style if needed.
     if ax is None:
         ax = plt.gca()
-    if dark_plot is True:
-        raise NotImplementedError
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
