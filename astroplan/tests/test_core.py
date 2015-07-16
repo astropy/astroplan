@@ -9,10 +9,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 import datetime
-<<<<<<< HEAD
 import unittest
-=======
->>>>>>> Adding timezone convenience functions
 
 from ..core import FixedTarget, Observer
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
