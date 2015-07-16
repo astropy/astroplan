@@ -52,10 +52,23 @@ observer = Observer(name='Subaru Telescope',
                     timezone=timezone('US/Hawaii'),
                     description="Subaru Telescope on Mauna Kea, Hawaii")
 
-coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
-target = FixedTarget(name='Polaris', coord=coordinates)
+coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
+target = FixedTarget(name='Sirius', coord=coordinates)
 
-observe_time = Time('2015-01-15 23:30:00')
+coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+other_target = FixedTarget(name='Polaris', coord=coordinates)
+
+coordinates = SkyCoord('07h45m19.4s', '+28d01m35s', frame='icrs')
+third_target = FixedTarget(name='Pollux', coord=coordinates)
+
+observe_time = Time('2015-06-15 23:30:00')
+
+sirius_styles = {'linestyle': '--', 'color': 'r'}
+pollux_styles = {'linestyle': '-', 'color': 'g'}
 
 plot_airmass(target, observer, observe_time)
+plot_airmass(other_target, observer, observe_time, style_kwargs=sirius_styles)
+plot_airmass(third_target, observer, observe_time, style_kwargs=pollux_styles)
+
+plt.legend(loc=3, bbox_to_anchor=(1, 0.5))
 plt.show()

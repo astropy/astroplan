@@ -21,7 +21,7 @@ There are currently three basic types of plots you can make with `astroplan`:
 Airmass vs time
 ===============
 
-.. include:: examples/plots-sphinx/airmass.py
+.. include:: examples/plots-sphinx/plot--airmass.py
 .. raw:: html
 
         <div style='clear:both'></div>
