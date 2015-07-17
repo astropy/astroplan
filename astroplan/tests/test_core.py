@@ -757,6 +757,16 @@ def test_timezone_convenience_methods():
     assert (obs.astropy_time_to_datetime(obs.datetime_to_astropy_time(dt)).replace(
             tzinfo=None) == dt)
 
+    # Test vectors of times:
+    times = t + np.linspace(0, 24, 10)*u.hour
+    times_dt = times.datetime
+    assert all((obs.datetime_to_astropy_time(times_dt)).jd ==
+               (times + 4*u.hour).jd)
+
+    dts = obs.astropy_time_to_datetime(times)
+    naive_dts = map(lambda t: t.replace(tzinfo=None), dts)
+    assert all(naive_dts == times_dt - datetime.timedelta(hours=4))
+
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):
         lat = '00:00:00'

@@ -167,6 +167,7 @@ class Observer(object):
         Parameters
         ----------
         astropy_time : `~astropy.time.Time`
+            Scalar or list-like.
 
         Returns
         -------
@@ -175,8 +176,13 @@ class Observer(object):
             set by the ``timezone`` keyword argument of the
             `~astroplan.Observer` constructor.
         """
+
+        if not astropy_time.isscalar:
+            return [self.astropy_time_to_datetime(t) for t in astropy_time]
+
         # Convert astropy.time.Time to a UTC localized datetime (aware)
         utc_datetime = pytz.utc.localize(astropy_time.utc.datetime)
+
         # Convert UTC to local timezone
         return self.timezone.normalize(utc_datetime)
 
@@ -190,13 +196,16 @@ class Observer(object):
 
         Parameters
         ----------
-        date_time : `~datetime.datetime`
+        date_time : `~datetime.datetime` or list-like
 
         Returns
         -------
         `~astropy.time.Time`
             Astropy time object (no timezone information preserved).
         """
+
+        if hasattr(date_time, '__iter__'):
+            return Time([self.datetime_to_astropy_time(t) for t in date_time])
 
         # For timezone-naive datetimes, assign local timezone
         if date_time.tzinfo is None:
