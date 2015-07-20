@@ -1,7 +1,8 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord)
+from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
+                                 AltAz)
 import astropy.units as u
 from astropy.time import Time
 from astropy.tests.helper import remote_data
@@ -99,6 +100,43 @@ def test_Observer_altaz():
     # Check that alt/az without target returns AltAz frame
     from astropy.coordinates import AltAz
     assert isinstance(astroplan_obs.altaz(time), AltAz)
+
+def test_altaz_multiple_targets():
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    capella = SkyCoord(79.17232794*u.deg, 45.99799147*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    targets = [vega, capella, sirius]
+
+    location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
+
+    times = Time('1995-06-21 00:00:00') + np.linspace(0, 1, 5)*u.day
+
+    obs = Observer(location=location)
+    transformed_coords = obs.altaz(times, targets)
+    altitudes = np.split(transformed_coords.alt, len(targets))
+
+    # Double check by doing one star the normal way with astropy
+    vega_altaz = vega.transform_to(AltAz(location=location, obstime=times))
+    vega_alt = vega_altaz.alt
+    assert all(vega_alt == altitudes[0])
+
+    # check that a single element target list works:
+    single_target_list = [vega]
+    vega_list_alt = obs.altaz(times, single_target_list).alt
+    assert all(vega_list_alt == vega_alt)
+
+    # check that output elements are the proper lengths and types
+    assert isinstance(vega_list_alt, Latitude)
+    assert len(vega_list_alt) == len(times)
+
+    # Check for single time
+    single_time = times[0]
+    vega_single_time = obs.altaz(single_time, single_target_list).alt
+    assert vega_single_time[0] == vega_alt[0]
+
+    # Check single target input without list
+    vega_no_list = obs.altaz(times, vega).alt
+    assert all(vega_no_list == vega_alt)
 
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):

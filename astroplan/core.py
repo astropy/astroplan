@@ -3,7 +3,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 Angle)
+                                 Angle, Latitude, Longitude, UnitSphericalRepresentation)
 
 import astropy.units as u
 import datetime
@@ -75,6 +75,44 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
         time_grid = np.linspace(start, end, N)*u.day
 
     return t0 + time_grid
+
+def transform_target_list_to_altaz(times, targets, location):
+    """
+    Workaround for transforming a list of coordinates ``targets`` to
+    altitudes and azimuths.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time` or list of `~astropy.time.Time` objects
+        Time of observation
+
+    targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
+        List of target coordinates
+
+    location : `~astropy.coordinates.EarthLocation`
+        Location of observer
+
+    Returns
+    -------
+    altitudes : list
+        List of altitudes for each target, at each time
+    """
+    if times.isscalar:
+        times = Time([times])
+
+    if not isinstance(targets, list) and targets.isscalar:
+        targets = [targets]
+
+    repeated_times = np.tile(times, len(targets))
+    repeated_targets = np.repeat(targets, len(times))
+    target_SkyCoord = SkyCoord(SkyCoord(repeated_targets).data.represent_as(
+                               UnitSphericalRepresentation),
+                               representation=UnitSphericalRepresentation)
+
+    transformed_coord = target_SkyCoord.transform_to(AltAz(location=location,
+                                                           obstime=repeated_times))
+    #altitudes = np.split(transformed_coord.alt, len(targets))
+    return transformed_coord
 
 class Observer(object):
     """
@@ -265,8 +303,8 @@ class Observer(object):
             initializer, so it can be anything that `~astropy.time.Time` will
             accept (including a `~astropy.time.Time` object)
 
-        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
-            Celestial object of interest. If ``target`` is `None`, return the
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list; defaults to `None` (optional)
+            Celestial object(s) of interest. If ``target`` is `None`, return the
             `~astropy.coordinates.AltAz` frame without coordinates.
 
         obswl : `~astropy.units.Quantity` (optional)
@@ -279,6 +317,16 @@ class Observer(object):
             If ``target`` is not `None`, returns the ``target`` transformed to
             the `~astropy.coordinates.AltAz` frame.
 
+        Notes
+        -----
+        If N times and m targets are input (for m>1) and you'd like the
+        altitude or azimuth of each target as a function of time, you can use
+        `~numpy.split` to make a list of length m of the N altitudes or
+        azimuths at each time.
+        >>> obs = Observer(location=location)                               # doctest: +SKIP
+        >>> transformed_coords = obs.altaz(times, targets)                  # doctest: +SKIP
+        >>> altitudes = np.split(transformed_coords.alt, len(targets))      # doctest: +SKIP
+        >>> azimuths = np.split(transformed_coords.az, len(targets))        # doctest: +SKIP
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -287,14 +335,20 @@ class Observer(object):
                             pressure=self.pressure, obswl=obswl,
                             temperature=self.temperature,
                             relative_humidity=self.relative_humidity)
-
         if target is None:
+            # Return just the frame
             return altaz_frame
         else:
+            # If target is a list of targets:
             if hasattr(target, '__iter__'):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-                target = SkyCoord(map(get_coord, target))
+                transformed_coords = transform_target_list_to_altaz(time,
+                                                                    map(get_coord,
+                                                                        target),
+                                                                    self.location)
+                return transformed_coords
 
+            # If single target is a FixedTarget or a SkyCoord:
             if hasattr(target, 'coord'):
                 coordinate = target.coord
             else:
