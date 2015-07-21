@@ -574,22 +574,29 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
+        target_is_vector = True if hasattr(target, '__iter__') else False
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altitudes = self.altaz(times, target).alt
+        altaz = self.altaz(times, target)
+        if target_is_vector:
+            altitudes = np.split(altaz.alt, len(target))
+        else:
+            altitudes = altaz.alt
 
         time_limits, altitude_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon)
-        if len(time_limits) == 1:
+        if not target_is_vector:
             return self._two_point_interp(time_limits[0], altitude_limits[0],
                                           horizon=horizon)
         else:
-            return [self._two_point_interp(time_limit, altitude_limit,
-                                           horizon=horizon) for time_limit,
-                    altitude_limit in zip(time_limits, altitude_limits)]
+            return Time([self._two_point_interp(time_limit, altitude_limit,
+                                                horizon=horizon)
+                         for time_limit, altitude_limit in
+                         zip(time_limits, altitude_limits)])
 
     def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
         """
@@ -629,6 +636,8 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
+        target_is_vector = True if hasattr(target, '__iter__') else False
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
         else:
@@ -641,20 +650,27 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altitudes = self.altaz(times, target).alt
+        altaz = self.altaz(times, target)
+        if target_is_vector:
+            altitudes = np.split(altaz.alt, len(target))
+            d_altitudes = [alt.diff() for alt in altitudes]
+        else:
+            altitudes = altaz.alt
+            d_altitudes = altitudes.diff()
+
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
-        d_altitudes = altitudes.diff()
 
         horizon = 0*u.degree # Find when derivative passes through zero
         time_limits, altitude_limits = self._horiz_cross(dt, d_altitudes,
                                                          rise_set, horizon)
-        if len(time_limits) == 1:
+        if not target_is_vector:
             return self._two_point_interp(time_limits[0], altitude_limits[0],
                                           horizon=horizon)
         else:
-            return [self._two_point_interp(time_limit, altitude_limit,
-                                           horizon=horizon) for time_limit,
-                    altitude_limit in zip(time_limits, altitude_limits)]
+            return Time([self._two_point_interp(time_limit, altitude_limit,
+                                                horizon=horizon)
+                         for time_limit, altitude_limit in
+                         zip(time_limits, altitude_limits)])
 
     @u.quantity_input(horizon=u.deg)
     def target_rise_time(self, time, target, which='nearest', horizon=0*u.degree):
@@ -1299,6 +1315,10 @@ class Observer(object):
             time = Time(time)
 
         altaz = self.altaz(time, target)
+        if hasattr(target, '__iter__'):
+            altitudes = np.split(altaz.alt, len(target))
+        else:
+            altitudes = altaz.alt
         observable = altaz.alt > horizon
 
         if not return_altaz:
