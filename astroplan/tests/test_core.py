@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord)
 import astropy.units as u
 from astropy.time import Time
-from astropy.tests.helper import remote_data
+from astropy.tests.helper import remote_data, assert_quantity_allclose
 import numpy as np
 from numpy.testing import assert_allclose
 import pytz
@@ -777,17 +777,19 @@ def test_get_site():
     # http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html
     keck = get_site('keck')
     lon, lat, el = keck.to_geodetic()
-    assert_allclose(lon, -1*Longitude('155:28.7', unit=u.deg).value, atol=0.001)
-    assert_allclose(lat, Latitude('19:49.7', unit=u.deg).to(u.deg).value,
-                    atol=0.001)
-    assert_allclose(el, 4160, atol=1)
+    assert_quantity_allclose(lon, -1*Longitude('155:28.7', unit=u.deg),
+                             atol=0.001*u.deg)
+    assert_quantity_allclose(lat, Latitude('19:49.7', unit=u.deg),
+                             atol=0.001*u.deg)
+    assert_quantity_allclose(el, 4160*u.m, atol=1*u.m)
 
     keck = get_site('ctio')
     lon, lat, el = keck.to_geodetic()
-    assert_allclose(lon, -1*Longitude('70.815', unit=u.deg).value, atol=0.001)
-    assert_allclose(lat, Latitude('-30.16527778', unit=u.deg).to(u.deg).value,
-                    atol=0.001)
-    assert_allclose(el, 2215, atol=1)
+    assert_quantity_allclose(lon, -1*Longitude('70.815', unit=u.deg),
+                             atol=0.001*u.deg)
+    assert_quantity_allclose(lat, Latitude('-30.16527778', unit=u.deg),
+                             atol=0.001*u.deg)
+    assert_quantity_allclose(el, 2215*u.m, atol=1*u.m)
 
 def test_add_site():
     # Test observatory can be added and retrieved
