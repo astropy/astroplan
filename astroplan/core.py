@@ -349,8 +349,8 @@ class Observer(object):
             if _target_is_vector(target):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
                 transformed_coords = transform_target_list_to_altaz(time,
-                                                                    map(get_coord,
-                                                                        target),
+                                                                    list(map(get_coord,
+                                                                        target)),
                                                                     self.location)
                 return transformed_coords
 
@@ -392,7 +392,7 @@ class Observer(object):
 
         if _target_is_vector(target):
             get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-            coordinate = SkyCoord(map(get_coord, target))
+            coordinate = SkyCoord(list(map(get_coord, target)))
         else:
             if hasattr(target, 'coord'):
                 coordinate = target.coord
