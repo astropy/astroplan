@@ -430,30 +430,47 @@ class Observer(object):
         Returns the lower and upper limits on the time and altitudes
         of the horizon crossing.
         """
+        alt = Latitude(alt)
+
+        if len(np.shape(alt)) == 1:
+            alt = alt[np.newaxis, :]
+        n_targets = alt.shape[0]
+
         if rise_set == 'rising':
             # Find index where altitude goes from below to above horizon
-            condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
+            condition = (alt[:, :-1] < horizon) * (alt[:, 1:] > horizon)
         elif rise_set == 'setting':
             # Find index where altitude goes from above to below horizon
-            condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
+            condition = (alt[:, :-1] > horizon) * (alt[:, 1:] < horizon)
 
-        if not np.any(condition):
-            warnmsg = ('Target does not cross horizon={} within 24 '
-                       'hours'.format(horizon))
-            if (alt > horizon).all():
+        target_inds, time_inds = np.nonzero(condition)
+
+        if np.count_nonzero(condition) != n_targets:
+            target_inds, _ = np.nonzero(condition)
+            noncrossing_target_ind = np.setdiff1d(np.arange(n_targets),
+                                                  target_inds,
+                                                  assume_unique=True)[0]
+
+            warnmsg = ('Target(s) index {} does not cross horizon={} within '
+                       '24 hours'.format(noncrossing_target_ind, horizon))
+
+            if (alt[noncrossing_target_ind, :] > horizon).all():
                 warnings.warn(warnmsg, TargetAlwaysUpWarning)
             else:
                 warnings.warn(warnmsg, TargetNeverUpWarning)
-            return (None, None), (None, None)
 
-        # Isolate horizon crossing
-        nearest_index = np.argwhere(condition)[0][0]
+            # Fill in missing time with np.nan
+            target_inds = np.insert(target_inds, noncrossing_target_ind,
+                                    noncrossing_target_ind)
+            time_inds = np.insert(time_inds.astype(float),
+                                  noncrossing_target_ind,
+                                  np.nan)
 
-        # Capture points on either side of horizon crossing
-        lower_t, upper_t = t[nearest_index:nearest_index+2]
-        lower_alt, upper_alt = alt[nearest_index:nearest_index+2]
+        times = [t[i:i+2] if not np.isnan(i) else i for i in time_inds]
+        altitudes = [alt[i, j:j+2] if not np.isnan(j) else j
+                     for i, j in zip(target_inds, time_inds)]
 
-        return (lower_t, upper_t), (lower_alt, upper_alt)
+        return times, altitudes
 
     @u.quantity_input(horizon=u.deg)
     def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
@@ -480,7 +497,7 @@ class Observer(object):
             Time when target crosses the horizon
 
         """
-        if times[0] is None:
+        if not isinstance(times, Time) and np.any(np.isnan(times)):
             return np.nan
         else:
             slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
@@ -564,69 +581,15 @@ class Observer(object):
 
         altitudes = self.altaz(times, target).alt
 
-        horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
+        time_limits, altitude_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon)
-        return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
-
-    def _calc_riseset_brentq(self, time, target, prev_next, rise_set, horizon,
-                             N=150, **kwargs):
-        """
-        Time at next rise/set of ``target`` with `~scipy.optimize.brentq`.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time` or other (see below)
-            Time of observation. This will be passed in as the first argument to
-            the `~astropy.time.Time` initializer, so it can be anything that
-            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object)
-
-        target : `~astropy.coordinates.SkyCoord`
-            Position of target or multiple positions of that target
-            at multiple times (if target moves, like the Sun)
-
-        prev_next : str - either 'previous' or 'next'
-            Test next rise/set or previous rise/set
-
-        rise_set : str - either 'rising' or 'setting'
-            Compute prev/next rise or prev/next set
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
-
-        horizon : `~astropy.units.Quantity`
-            Degrees above/below actual horizon to use
-            for calculating rise/set times (i.e.,
-            -6 deg horizon = civil twilight, etc.)
-
-        N : int
-            Number of altitudes to compute when searching for
-            rise or set.
-
-        Returns
-        -------
-        ret1 : `~astropy.time.Time`
-            Time of rise/set
-        """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if prev_next == 'next':
-            times = _generate_24hr_grid(time, 0, 1, N)
+        if len(time_limits) == 1:
+            return self._two_point_interp(time_limits[0], altitude_limits[0],
+                                          horizon=horizon)
         else:
-            times = _generate_24hr_grid(time, -1, 0, N)
-
-        altitudes = self.altaz(times, target).alt
-
-        time_limits, alt_limits = self._horiz_cross(times, altitudes, rise_set,
-                                                    horizon)
-
-        calc_altitude = lambda t: (self.altaz(Time(t, format='jd'),
-                                              target).alt - horizon).value
-        from scipy.optimize import brentq
-        root = brentq(calc_altitude, time_limits[0].jd, time_limits[1].jd,
-                      **kwargs)
-        return Time(root, format='jd')
+            return [self._two_point_interp(time_limit, altitude_limit,
+                                           horizon=horizon) for time_limit,
+                    altitude_limit in zip(time_limits, altitude_limits)]
 
     def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
         """
@@ -683,9 +646,15 @@ class Observer(object):
         d_altitudes = altitudes.diff()
 
         horizon = 0*u.degree # Find when derivative passes through zero
-        horizon_crossing_limits = self._horiz_cross(dt, d_altitudes, rise_set,
-                                                    horizon)
-        return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
+        time_limits, altitude_limits = self._horiz_cross(dt, d_altitudes,
+                                                         rise_set, horizon)
+        if len(time_limits) == 1:
+            return self._two_point_interp(time_limits[0], altitude_limits[0],
+                                          horizon=horizon)
+        else:
+            return [self._two_point_interp(time_limit, altitude_limit,
+                                           horizon=horizon) for time_limit,
+                    altitude_limit in zip(time_limits, altitude_limits)]
 
     @u.quantity_input(horizon=u.deg)
     def target_rise_time(self, time, target, which='nearest', horizon=0*u.degree):
