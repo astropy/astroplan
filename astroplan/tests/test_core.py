@@ -764,7 +764,7 @@ def test_timezone_convenience_methods():
                (times + 4*u.hour).jd)
 
     dts = obs.astropy_time_to_datetime(times)
-    naive_dts = map(lambda t: t.replace(tzinfo=None), dts)
+    naive_dts = list(map(lambda t: t.replace(tzinfo=None), dts))
     assert all(naive_dts == times_dt - datetime.timedelta(hours=4))
 
 class TestExceptions(unittest.TestCase):
