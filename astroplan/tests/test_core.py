@@ -241,6 +241,7 @@ def print_pyephem_parallactic_angle():
     obs = ephem.Observer()
     obs.lat = '19:49:34.3848'
     obs.lon = '-155:28:19.1964'
+    obs.elevation = 0
     obs.date = time.datetime
     pyephem_target1 = ephem.FixedBody()
     pyephem_target1._ra = ephem.degrees((LST - desired_HA_1).to(u.rad).value)
