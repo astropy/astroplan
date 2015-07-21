@@ -346,7 +346,7 @@ class Observer(object):
             return altaz_frame
         else:
             # If target is a list of targets:
-            if hasattr(target, '__iter__'):
+            if _target_is_vector(target):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
                 transformed_coords = transform_target_list_to_altaz(time,
                                                                     map(get_coord,
@@ -390,15 +390,14 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
-                hasattr(target, 'coord')):
-            raise TypeError('The target must be a coordinate (i.e. a '
-                            'FixedTarget or SkyCoord).')
-
-        if hasattr(target, 'coord'):
-            coordinate = target.coord
+        if _target_is_vector(target):
+            get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
+            coordinate = SkyCoord(map(get_coord, target))
         else:
-            coordinate = target
+            if hasattr(target, 'coord'):
+                coordinate = target.coord
+            else:
+                coordinate = target
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
@@ -1325,7 +1324,7 @@ class Observer(object):
             altitudes = np.split(altaz.alt, len(target))
         else:
             altitudes = altaz.alt
-        observable = altaz.alt > horizon
+        observable = altitudes.alt > horizon
 
         if not return_altaz:
             return observable

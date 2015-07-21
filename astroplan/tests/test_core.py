@@ -212,6 +212,7 @@ def test_parallactic_angle():
     obs = Observer(location=location)
     q1 = obs.parallactic_angle(time, target1)
     q2 = obs.parallactic_angle(time, target2)
+    q12 = obs.parallactic_angle(time, [target1, target2])
 
     # Get values from PyEphem for comparison from print_pyephem_parallactic_angle()
     pyephem_q1 = 46.54610060782033*u.deg
@@ -228,6 +229,9 @@ def test_parallactic_angle():
 
     assert_allclose(q1.to(u.degree).value, SpeX_q1, atol=0.1)
     assert_allclose(q2.to(u.degree).value, SpeX_q2, atol=0.1)
+
+    assert q1 == q12[0]
+    assert q2 == q12[1]
 
 def print_pyephem_parallactic_angle():
     lat = 19.826218*u.deg
