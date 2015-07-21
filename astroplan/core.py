@@ -114,6 +114,12 @@ def transform_target_list_to_altaz(times, targets, location):
     #altitudes = np.split(transformed_coord.alt, len(targets))
     return transformed_coord
 
+def _target_is_vector(target):
+    if hasattr(target, '__iter__'):
+        return True
+    else:
+        return False
+
 class Observer(object):
     """
     A container class for information about an observer's location and
@@ -574,7 +580,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        target_is_vector = True if hasattr(target, '__iter__') else False
+        target_is_vector = _target_is_vector(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
@@ -636,7 +642,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        target_is_vector = True if hasattr(target, '__iter__') else False
+        target_is_vector = _target_is_vector(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
@@ -1315,7 +1321,7 @@ class Observer(object):
             time = Time(time)
 
         altaz = self.altaz(time, target)
-        if hasattr(target, '__iter__'):
+        if _target_is_vector(target):
             altitudes = np.split(altaz.alt, len(target))
         else:
             altitudes = altaz.alt
