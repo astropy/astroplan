@@ -1322,9 +1322,10 @@ class Observer(object):
         altaz = self.altaz(time, target)
         if _target_is_vector(target):
             altitudes = np.split(altaz.alt, len(target))
+            observable = [alt > horizon for alt in altitudes]
         else:
             altitudes = altaz.alt
-        observable = altitudes.alt > horizon
+            observable = altitudes > horizon
 
         if not return_altaz:
             return observable
