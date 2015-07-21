@@ -1,3 +1,6 @@
 .. _Astropy: http://astropy.org
-.. _skyfield: http://rhodesmill.org/skyfield/
-.. _pyephem: http://rhodesmill.org/pyephem/
+.. _Skyfield: http://rhodesmill.org/skyfield/
+.. _PyEphem: http://rhodesmill.org/pyephem/
+.. _Numpy: http://www.numpy.org
+.. _Matplotlib: http://www.matplotlib.org
+.. _pytz: https://pypi.python.org/pypi/pytz/

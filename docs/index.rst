@@ -9,37 +9,45 @@ Observation Planning (`astroplan`)
 What is astroplan?
 ==================
 
-**astroplan** is an open source Python package for observation planning for astronomers.
+**astroplan** is an open source Python package that helps astronomers plan
+observations.
 
-We're just getting started, this is not implemented yet, for now check out `Astropy`_,
-`pyephem`_ or `skyfield`_.
+We're just getting started, so for now check out `Astropy`_, `PyEphem`_ or
+`Skyfield`_.
 
-The plan is to create a flexible toolbox for observation planning and scheduling both
-for individual astronomers (professional or amateur) planning an observing night, as well
-as observatories preparing long-term or nightly schedules, taking constraints (moon, slew
-speeds, ...) into account.
+**astroplan** is a flexible toolbox for observation planning and scheduling,
+and is appropriate for astronomers at all skill levels.
+It's also great for observatories preparing long-term or nightly schedules,
+since **astroplan** can consider multiple constraints (i.e., airmass, moon,
+slew speeds, etc.)
 
-We anticipate that astroplan will have the following required dependencies: 
+We anticipate that **astroplan** will have the following required dependencies:
+
+* Python 2.7 or 3.3+ (Python 2.6 and 3.2 or earlier are not supported.)
 * Numpy
 * Astropy
 * pytz
 
-with potential optional dependencies including matplotlib and PyEphem or Skyfield.
+with potential optional dependencies including Matplotlib and PyEphem (or Skyfield).
 
-A more detailed description of the scope and API proposal for ``astroplan`` will be posted in May/June 2015.
+**A first version is expected to roll out in late August 2015.**
 
-* Code, feature requests, bug reports, pull requests: https://github.com/astroplanners/astroplan
-* Questions: http://groups.google.com/group/astropy
-* Docs: https://astroplan.readthedocs.org/
-* License: BSD-3
-* We support Python 2.7 and 3.3+. (Python 2.6 and 3.2 or earlier are not supported.)
+Links
+=====
+
+* `Code, feature requests, bug reports, pull requests <https://github.com/astroplanners/astroplan>`_
+* `Questions <http://groups.google.com/group/astropy>`_
+* `Docs <https://astroplan.readthedocs.org/>`_
+
+License: BSD-3
 
 .. _astroplan_news:
 
 News
 ====
 
-* April 28, 2015: astroplan repo set up
+* April 28, 2015: **astroplan** repo set up
+* May/June 2015: API proposal posted on GitHub.
 
 .. _astroplan_docs:
 
@@ -47,11 +55,8 @@ General documentation
 =====================
 
 .. toctree::
-  :maxdepth: 1
+   :maxdepth: 1
 
-  getting_started/index
-
-Reference/API
-=============
-
-.. automodapi:: astroplan
+   installation.rst
+   getting_started.rst
+   api.rst
