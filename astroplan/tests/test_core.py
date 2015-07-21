@@ -809,33 +809,33 @@ class TestExceptions(unittest.TestCase):
         obs = Observer(location=location)
 
         with self.assertRaises(ValueError):
-            _ = obs.calc_rise(time, vega_coords, which='oops').datetime
+            obs.calc_rise(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            _ = obs.calc_set(time, vega_coords, which='oops').datetime
+            obs.calc_set(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            _ = obs.calc_meridian_transit(time, vega_coords, which='oops').datetime
+            obs.calc_meridian_transit(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            _ = obs.calc_meridian_antitransit(time, vega_coords, which='oops').datetime
+            obs.calc_meridian_antitransit(time, vega_coords, which='oops').datetime
 
     def test_FixedTarget_duck_typing(self):
         with self.assertRaises(TypeError):
-            _ = FixedTarget(['00:00:00', '00:00:00'], name='VE')
+            FixedTarget(['00:00:00', '00:00:00'], name='VE')
 
     def test_Observer_init(self):
         with self.assertRaises(TypeError):
-            _ = Observer(location='Greenwich')
+            Observer(location='Greenwich')
 
         with self.assertRaises(TypeError):
-            _ = Observer(location=EarthLocation(0, 0, 0), timezone=-6)
+            Observer(location=EarthLocation(0, 0, 0), timezone=-6)
 
     def test_Observer_altaz(self):
         with self.assertRaises(TypeError):
             obs = Observer(location=EarthLocation(0, 0, 0))
-            _ = obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+            obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
 
     def test_bad_site(self):
         with self.assertRaises(KeyError):
-            _ = get_site('nonexistent site')
+            get_site('nonexistent site')
