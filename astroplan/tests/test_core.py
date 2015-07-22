@@ -757,15 +757,20 @@ def test_timezone_convenience_methods():
     assert (obs.astropy_time_to_datetime(obs.datetime_to_astropy_time(dt)).replace(
             tzinfo=None) == dt)
 
-    # Test vectors of times:
+    # Test ndarray of times:
     times = t + np.linspace(0, 24, 10)*u.hour
-    times_dt = times.datetime
-    assert all((obs.datetime_to_astropy_time(times_dt)).jd ==
+    times_dt_ndarray = times.datetime
+    assert all((obs.datetime_to_astropy_time(times_dt_ndarray)).jd ==
+               (times + 4*u.hour).jd)
+
+    # Test list of times:
+    times_dt_list = list(times.datetime)
+    assert all((obs.datetime_to_astropy_time(times_dt_list)).jd ==
                (times + 4*u.hour).jd)
 
     dts = obs.astropy_time_to_datetime(times)
     naive_dts = list(map(lambda t: t.replace(tzinfo=None), dts))
-    assert all(naive_dts == times_dt - datetime.timedelta(hours=4))
+    assert all(naive_dts == times_dt_ndarray - datetime.timedelta(hours=4))
 
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):
