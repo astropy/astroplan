@@ -1137,7 +1137,8 @@ class Observer(object):
         obs.lat = self.location.latitude.to(u.degree).to_string(sep=':')
         obs.lon = self.location.longitude.to(u.degree).to_string(sep=':')
         obs.elevation = self.location.height.to(u.m).value
-        obs.pressure = self.pressure.to(u.bar).value*1000.0
+        if self.pressure is not None:
+            obs.pressure = self.pressure.to(u.bar).value*1000.0
 
         if time.isscalar:
             obs.date = time.datetime
