@@ -7,6 +7,8 @@ from difflib import get_close_matches
 import json
 from astropy.coordinates import EarthLocation
 
+__all__ = ['get_site', 'get_site_names', 'add_site']
+
 # Observatory database and list of names:
 _site_db = None
 _site_names = []
