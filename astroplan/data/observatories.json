@@ -7,7 +7,8 @@
         "elevation_meters": 950, 
         "latitude": "40d23m36s", 
         "longitude": "117d34m30s", 
-        "name": "Beijing XingLong Observatory"
+        "name": "Beijing XingLong Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "NOV": {
         "aliases": [
@@ -17,7 +18,8 @@
         "elevation_meters": 3610, 
         "latitude": "8d47m24s", 
         "longitude": "289d08m00s", 
-        "name": "National Observatory of Venezuela"
+        "name": "National Observatory of Venezuela", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "Palomar": {
         "aliases": [
@@ -27,7 +29,8 @@
         "elevation_meters": 1706, 
         "latitude": "33d21m21.6s", 
         "longitude": "243d08m13.2s", 
-        "name": "The Hale Telescope"
+        "name": "The Hale Telescope", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "aao": {
         "aliases": [
@@ -37,7 +40,8 @@
         "elevation_meters": 1164, 
         "latitude": "-31d16m37.34s", 
         "longitude": "149d03m57.91s", 
-        "name": "Anglo-Australian Observatory"
+        "name": "Anglo-Australian Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "apo": {
         "aliases": [
@@ -48,7 +52,8 @@
         "elevation_meters": 2798, 
         "latitude": "32d46m48s", 
         "longitude": "254d10m48s", 
-        "name": "Apache Point Observatory"
+        "name": "Apache Point Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "bmo": {
         "aliases": [
@@ -58,7 +63,8 @@
         "elevation_meters": 738, 
         "latitude": "40d55m18s", 
         "longitude": "281d59m42s", 
-        "name": "Black Moshannon Observatory"
+        "name": "Black Moshannon Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "cfht": {
         "aliases": [
@@ -68,7 +74,8 @@
         "elevation_meters": 4215, 
         "latitude": "19d49m36s", 
         "longitude": "204d31m42s", 
-        "name": "Canada-France-Hawaii Telescope"
+        "name": "Canada-France-Hawaii Telescope", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "ctio": {
         "aliases": [
@@ -79,7 +86,8 @@
         "elevation_meters": 2215, 
         "latitude": "-30d09m55s", 
         "longitude": "289d11m06s", 
-        "name": "Cerro Tololo Interamerican Observatory"
+        "name": "Cerro Tololo Interamerican Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "dao": {
         "aliases": [
@@ -89,7 +97,8 @@
         "elevation_meters": 229, 
         "latitude": "48d31m18s", 
         "longitude": "236d35m00s", 
-        "name": "Dominion Astrophysical Observatory"
+        "name": "Dominion Astrophysical Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "ekar": {
         "aliases": [
@@ -99,7 +108,8 @@
         "elevation_meters": 1413, 
         "latitude": "45d50m54.92s", 
         "longitude": "11d34m52.08s", 
-        "name": "Mt. Ekar 182 cm. Telescope"
+        "name": "Mt. Ekar 182 cm. Telescope", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "eso": {
         "aliases": [
@@ -109,7 +119,8 @@
         "elevation_meters": 2347, 
         "latitude": "-29d15m24s", 
         "longitude": "289d16m12s", 
-        "name": "European Southern Observatory"
+        "name": "European Southern Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "flwo": {
         "aliases": [
@@ -120,7 +131,8 @@
         "elevation_meters": 2320, 
         "latitude": "31d40m51.4s", 
         "longitude": "249d07m21s", 
-        "name": "Whipple Observatory"
+        "name": "Whipple Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "keck": {
         "aliases": [
@@ -131,7 +143,8 @@
         "elevation_meters": 4160, 
         "latitude": "19d49m42s", 
         "longitude": "204d31m18s", 
-        "name": "W. M. Keck Observatory"
+        "name": "W. M. Keck Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "kpno": {
         "aliases": [
@@ -142,7 +155,8 @@
         "elevation_meters": 2120, 
         "latitude": "31d57m48s", 
         "longitude": "248d24m00s", 
-        "name": "Kitt Peak National Observatory"
+        "name": "Kitt Peak National Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "lapalma": {
         "aliases": [
@@ -152,7 +166,8 @@
         "elevation_meters": 2327, 
         "latitude": "28d45m30s", 
         "longitude": "342d07m12s", 
-        "name": "Roque de los Muchachos, La Palma"
+        "name": "Roque de los Muchachos, La Palma", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "lco": {
         "aliases": [
@@ -162,7 +177,8 @@
         "elevation_meters": 2282, 
         "latitude": "-29d00m12s", 
         "longitude": "289d17m54s", 
-        "name": "Las Campanas Observatory"
+        "name": "Las Campanas Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "lick": {
         "aliases": [
@@ -172,7 +188,8 @@
         "elevation_meters": 1290, 
         "latitude": "37d20m36s", 
         "longitude": "238d21m48s", 
-        "name": "Lick Observatory"
+        "name": "Lick Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "lowell": {
         "aliases": [
@@ -182,7 +199,8 @@
         "elevation_meters": 2198, 
         "latitude": "35d05m48s", 
         "longitude": "248d27m54s", 
-        "name": "Lowell Observatory"
+        "name": "Lowell Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "mcdonald": {
         "aliases": [
@@ -192,7 +210,8 @@
         "elevation_meters": 2075, 
         "latitude": "30d40m18.0001s", 
         "longitude": "255d58m41.9999s", 
-        "name": "McDonald Observatory"
+        "name": "McDonald Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "mdm": {
         "aliases": [
@@ -202,7 +221,8 @@
         "elevation_meters": 1938, 
         "latitude": "31d57m00s", 
         "longitude": "248d23m00s", 
-        "name": "Michigan-Dartmouth-MIT Observatory"
+        "name": "Michigan-Dartmouth-MIT Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "mmt": {
         "aliases": [
@@ -212,7 +232,8 @@
         "elevation_meters": 2608, 
         "latitude": "31d41m18s", 
         "longitude": "249d06m54s", 
-        "name": "Whipple Observatory"
+        "name": "Whipple Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "mso": {
         "aliases": [
@@ -222,7 +243,8 @@
         "elevation_meters": 767, 
         "latitude": "-35d19m14.34s", 
         "longitude": "149d01m27.6s", 
-        "name": "Mt. Stromlo Observatory"
+        "name": "Mt. Stromlo Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "mtbigelow": {
         "aliases": [
@@ -232,7 +254,8 @@
         "elevation_meters": 2510, 
         "latitude": "32d25m00s", 
         "longitude": "249d16m06s", 
-        "name": "Catalina Observatory: 61 inch telescope"
+        "name": "Catalina Observatory: 61 inch telescope", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "spm": {
         "aliases": [
@@ -242,7 +265,8 @@
         "elevation_meters": 2830, 
         "latitude": "31d01m45s", 
         "longitude": "244d30m47s", 
-        "name": "Observatorio Astronomico Nacional, San Pedro Martir"
+        "name": "Observatorio Astronomico Nacional, San Pedro Martir", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "sso": {
         "aliases": [
@@ -252,7 +276,8 @@
         "elevation_meters": 1149, 
         "latitude": "-31d16m24.1s", 
         "longitude": "149d03m40.3s", 
-        "name": "Siding Spring Observatory"
+        "name": "Siding Spring Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "tona": {
         "aliases": [
@@ -262,7 +287,8 @@
         "elevation_meters": 0, 
         "latitude": "19d01m58s", 
         "longitude": "261d41m10s", 
-        "name": "Observatorio Astronomico Nacional, Tonantzintla"
+        "name": "Observatorio Astronomico Nacional, Tonantzintla", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }, 
     "vbo": {
         "aliases": [
@@ -272,6 +298,7 @@
         "elevation_meters": 725, 
         "latitude": "12d34m35.976s", 
         "longitude": "78d49m35.76s", 
-        "name": "Vainu Bappu Observatory"
+        "name": "Vainu Bappu Observatory", 
+        "source": "http://tdc-www.harvard.edu/iraf/rvsao/bcvcorr/obsdb.html"
     }
 }
