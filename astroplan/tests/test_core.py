@@ -217,6 +217,9 @@ def print_pyephem_parallactic_angle():
     pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
     print(pyephem_q1, pyephem_q2)
 
+    assert (obs.astropy_to_local_time(obs.local_to_astropy_time(dt)).replace(
+            tzinfo=None) == dt)
+
 def test_sunrise_sunset_equator():
     '''
     Check that time of sunrise/set for an observer on the equator is
@@ -253,51 +256,6 @@ def test_sunrise_sunset_equator():
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(pyephem_prev_sunset - astroplan_prev_sunset) <
             datetime.timedelta(minutes=threshold_minutes))
-
-# def test_sunrise_sunset_equator_fast_and_slow():
-#     '''
-#     Check that time of sunrise/set for an observer on the equator is
-#     consistent with PyEphem results (for no atmosphere)
-#     for the fast method assuming pressure=0, versus with less fast
-#     method where pressure=None.
-#     '''
-#     lat = '00:00:00'
-#     lon = '00:00:00'
-#     elevation = 0.0 * u.m
-#     pressure = 0 * u.bar
-#     location = EarthLocation.from_geodetic(lon, lat, elevation)
-#     time = Time('2000-01-01 12:00:00')
-#     obs = Observer(location=location, pressure=pressure)
-#     astroplan_next_sunrise_p_eq_0 = obs.sunrise(time, which='next').datetime
-#     astroplan_next_sunset_p_eq_0 = obs.sunset(time, which='next').datetime
-#
-#     astroplan_prev_sunrise_p_eq_0 = obs.sunrise(time, which='previous').datetime
-#     astroplan_prev_sunset_p_eq_0 = obs.sunset(time, which='previous').datetime
-#
-#     obs_p_eq_none = Observer(location=location)
-#     astroplan_next_sunrise_p_eq_none= obs_p_eq_none.sunrise(time,
-#                                                             which='next').datetime
-#     astroplan_next_sunset_p_eq_none = obs_p_eq_none.sunset(time,
-#                                                            which='next').datetime
-#
-#     astroplan_prev_sunrise_p_eq_none = obs_p_eq_none.sunrise(time,
-#                                                              which='previous').datetime
-#     astroplan_prev_sunset_p_eq_none = obs_p_eq_none.sunset(time,
-#                                                            which='previous').datetime
-#
-#     # Keep the time difference between the fast and slow computations
-#     # in astroplan small as well:
-#     threshold_minutes = 8
-#     astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0
-#     assert (abs(astroplan_next_sunrise_p_eq_none - astroplan_next_sunrise_p_eq_0) <
-#             datetime.timedelta(minutes=threshold_minutes))
-#     assert (abs(astroplan_next_sunset_p_eq_none - astroplan_next_sunset_p_eq_0) <
-#             datetime.timedelta(minutes=threshold_minutes))
-#     assert (abs(astroplan_prev_sunrise_p_eq_none - astroplan_prev_sunrise_p_eq_0) <
-#             datetime.timedelta(minutes=threshold_minutes))
-#     assert (abs(astroplan_prev_sunset_p_eq_none - astroplan_prev_sunset_p_eq_0) <
-#             datetime.timedelta(minutes=threshold_minutes))
-
 
 def print_pyephem_sunrise_sunset():
     '''
@@ -785,6 +743,34 @@ def test_TargetNeverUpWarning(recwarn):
     w = recwarn.pop(TargetNeverUpWarning)
     assert issubclass(w.category, TargetNeverUpWarning)
     assert np.isnan(no_time)
+
+def test_timezone_convenience_methods():
+    location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
+    obs = Observer(location=location,timezone=pytz.timezone('US/Eastern'))
+    t = Time(57100.3, format='mjd')
+    assert (obs.astropy_time_to_datetime(t).hour == 3)
+
+    dt = datetime.datetime(2015, 3, 19, 3, 12)
+    assert (obs.datetime_to_astropy_time(dt).datetime ==
+            datetime.datetime(2015, 3, 19, 7, 12))
+
+    assert (obs.astropy_time_to_datetime(obs.datetime_to_astropy_time(dt)).replace(
+            tzinfo=None) == dt)
+
+    # Test ndarray of times:
+    times = t + np.linspace(0, 24, 10)*u.hour
+    times_dt_ndarray = times.datetime
+    assert all((obs.datetime_to_astropy_time(times_dt_ndarray)).jd ==
+               (times + 4*u.hour).jd)
+
+    # Test list of times:
+    times_dt_list = list(times.datetime)
+    assert all((obs.datetime_to_astropy_time(times_dt_list)).jd ==
+               (times + 4*u.hour).jd)
+
+    dts = obs.astropy_time_to_datetime(times)
+    naive_dts = list(map(lambda t: t.replace(tzinfo=None), dts))
+    assert all(naive_dts == times_dt_ndarray - datetime.timedelta(hours=4))
 
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):

@@ -5,11 +5,10 @@ from __future__ import (absolute_import, division, print_function,
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, get_sun, Angle)
 import astropy.units as u
-from astropy.time import Time
 import datetime
+from astropy.time import Time
 import pytz
 import numpy as np
-from astropy.time import Time
 
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
@@ -157,6 +156,62 @@ class Observer(object):
         else:
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
+
+    def astropy_time_to_datetime(self, astropy_time):
+        """
+        Convert the `~astropy.time.Time` object ``astropy_time`` to a
+        localized `~datetime.datetime` object.
+
+        Timezones localized with `~pytz`.
+
+        Parameters
+        ----------
+        astropy_time : `~astropy.time.Time`
+            Scalar or list-like.
+
+        Returns
+        -------
+        `~datetime.datetime`
+            Localized datetime, where the timezone of the datetime is
+            set by the ``timezone`` keyword argument of the
+            `~astroplan.Observer` constructor.
+        """
+
+        if not astropy_time.isscalar:
+            return [self.astropy_time_to_datetime(t) for t in astropy_time]
+
+        # Convert astropy.time.Time to a UTC localized datetime (aware)
+        utc_datetime = pytz.utc.localize(astropy_time.utc.datetime)
+
+        # Convert UTC to local timezone
+        return self.timezone.normalize(utc_datetime)
+
+    def datetime_to_astropy_time(self, date_time):
+        """
+        Convert the `~datetime.datetime` object ``date_time`` to a
+        `~astropy.time.Time` object.
+
+        Timezones localized with `~pytz`. If the ``date_time`` is naive, the
+        implied timezone is the ``timezone`` structure of ``self``.
+
+        Parameters
+        ----------
+        date_time : `~datetime.datetime` or list-like
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Astropy time object (no timezone information preserved).
+        """
+
+        if hasattr(date_time, '__iter__'):
+            return Time([self.datetime_to_astropy_time(t) for t in date_time])
+
+        # For timezone-naive datetimes, assign local timezone
+        if date_time.tzinfo is None:
+            date_time = self.timezone.localize(date_time)
+
+        return Time(date_time, location=self.location)
 
     def altaz(self, time, target=None, obswl=None):
         """
