@@ -785,6 +785,34 @@ def test_is_night():
     nights2 = [observer.is_night(time2) for observer in [lco, aao, vbo]]
     assert np.all(nights2 == [True, False, False])
 
+# def test_moon_altaz():
+#     time = Time('2012-06-21 03:00:00')
+#     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
+#     obs = Observer(location=location, pressure=0*u.bar)
+#     altaz = obs.moon_altaz(time)
+#     astroplan_altaz = [altaz.alt.radian, altaz.az.radian]
+#     # Get this from print_pyephem_moon_altaz():
+#     pyephem_altaz = [0.7092548608779907, 4.865438938140869]
+#     assert_allclose(astroplan_altaz, pyephem_altaz, atol=0.1)
+#
+# def print_pyephem_moon_altaz():
+#     """
+#     To run:
+#     python -c 'from astroplan.tests.test_core import print_pyephem_moon_altaz as f; f()'
+#     """
+#     time = Time('2012-06-21 03:00:00')
+#     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
+#     import ephem
+#     moon = ephem.Moon()
+#     pe_obs = ephem.Observer()
+#     pe_obs.lat = location.latitude.to(u.degree).to_string(sep=':')
+#     pe_obs.lon = location.longitude.to(u.degree).to_string(sep=':')
+#     pe_obs.elevation = location.height.to(u.m).value
+#     pe_obs.date = time.datetime
+#     pe_obs.pressure = 0
+#     moon.compute(pe_obs)
+#     print(map(float, [moon.alt, moon.az]))
+
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):
         lat = '00:00:00'

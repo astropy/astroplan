@@ -1137,6 +1137,7 @@ class Observer(object):
         obs.lat = self.location.latitude.to(u.degree).to_string(sep=':')
         obs.lon = self.location.longitude.to(u.degree).to_string(sep=':')
         obs.elevation = self.location.height.to(u.m).value
+        obs.pressure = self.pressure.to(u.bar).value*1000.0
 
         if time.isscalar:
             obs.date = time.datetime
@@ -1155,8 +1156,6 @@ class Observer(object):
                 moon_dec.append(float(moon.dec))
                 moon_dist.append(moon.earth_distance)
 
-        # For now, assemble a SkyCoord without a distance
-        #print(moon_ra, moon_dec, moon_dist)
         moon_sc = SkyCoord(ra=Longitude(moon_ra, unit=u.rad),
                            dec=Latitude(moon_dec, unit=u.rad),
                            distance=u.Quantity(moon_dist, u.AU), frame='gcrs')
@@ -1285,7 +1284,9 @@ class Observer(object):
         altaz : `~astropy.coordinates.SkyCoord`
             Position of the moon transformed to altitude and azimuth
         """
-        return self.altaz(time, self.get_moon(time))
+        # This solution is affected by bug in astropy Issue #3920
+        #return self.altaz(time, self.get_moon(time))
+        raise NotImplementedError()
 
     @u.quantity_input(horizon=u.deg)
     def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
