@@ -21,7 +21,7 @@ def _load_sites():
     for site in db:
         location = EarthLocation.from_geodetic(db[site]['longitude'],
                                    db[site]['latitude'],
-                                   db[site]['elevation'])
+                                   db[site]['elevation_meters'])
         _site_names.append(db[site]['name'])
         for alias in db[site]['aliases']:
             _site_db[alias.lower()] = location
