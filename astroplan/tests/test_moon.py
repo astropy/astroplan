@@ -7,8 +7,10 @@ from astropy.time import Time
 from astropy.coordinates import EarthLocation, get_sun
 import astropy.units as u
 from numpy.testing import assert_allclose
+from astropy.tests.helper import remote_data
 
-def test_illumination():
+@remote_data
+def test_illumination(recwarn):
     time = Time(['1990-01-01 00:00:00', '1990-03-01 06:00:00',
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
@@ -33,7 +35,8 @@ def test_illumination():
                             0.6170840254669668, 0.9780219372563843]
 
     assert_allclose(illumination1, pyephem_illumination, atol=1)
-
+    w = recwarn.pop(DeprecationWarning)
+    assert issubclass(w.category, DeprecationWarning)
 
 def print_pyephem_illumination():
     """
