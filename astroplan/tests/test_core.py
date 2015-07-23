@@ -70,13 +70,13 @@ def test_Observer_altaz():
     # Define the test case
     latitude = '00:00:00'
     longitude = '00:00:00'
-    elevation = 0 # [m]
-    pressure = 0  * u.bar # no atmosphere
+    elevation = 0*u.m
+    pressure = 0*u.bar # no atmosphere
     time = Time('2000-01-01 12:00:00')
     vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
 
     # Calculate altitude/azimuth with astroplan
-    location = EarthLocation.from_geodetic(longitude, latitude, elevation*u.m)
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
     astroplan_obs = Observer(name='Observatory', location=location,
                              pressure=pressure*u.bar)
     astroplan_vega = FixedTarget(vega_coords)
@@ -113,21 +113,21 @@ def test_altaz_multiple_targets():
 
     obs = Observer(location=location)
     transformed_coords = obs.altaz(times, targets)
-    altitudes = np.split(transformed_coords.alt, len(targets))
+    altitudes = transformed_coords.alt
 
     # Double check by doing one star the normal way with astropy
     vega_altaz = vega.transform_to(AltAz(location=location, obstime=times))
     vega_alt = vega_altaz.alt
-    assert all(vega_alt == altitudes[0])
+    assert all(vega_alt == altitudes[0, :])
 
     # check that a single element target list works:
     single_target_list = [vega]
     vega_list_alt = obs.altaz(times, single_target_list).alt
-    assert all(vega_list_alt == vega_alt)
+    assert np.all(vega_list_alt == vega_alt)
 
     # check that output elements are the proper lengths and types
     assert isinstance(vega_list_alt, Latitude)
-    assert len(vega_list_alt) == len(times)
+    assert len(vega_list_alt[0, :]) == len(times)
 
     # Check for single time
     single_time = times[0]

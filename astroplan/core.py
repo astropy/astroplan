@@ -111,7 +111,6 @@ def transform_target_list_to_altaz(times, targets, location):
 
     transformed_coord = target_SkyCoord.transform_to(AltAz(location=location,
                                                            obstime=repeated_times))
-    #altitudes = np.split(transformed_coord.alt, len(targets))
     return transformed_coord
 
 def _target_is_vector(target):
@@ -322,17 +321,6 @@ class Observer(object):
             If ``target`` is `None`, returns `~astropy.coordinates.AltAz` frame.
             If ``target`` is not `None`, returns the ``target`` transformed to
             the `~astropy.coordinates.AltAz` frame.
-
-        Notes
-        -----
-        If N times and m targets are input (for m>1) and you'd like the
-        altitude or azimuth of each target as a function of time, you can use
-        `~numpy.split` to make a list of length m of the N altitudes or
-        azimuths at each time.
-        >>> obs = Observer(location=location)                               # doctest: +SKIP
-        >>> transformed_coords = obs.altaz(times, targets)                  # doctest: +SKIP
-        >>> altitudes = np.split(transformed_coords.alt, len(targets))      # doctest: +SKIP
-        >>> azimuths = np.split(transformed_coords.az, len(targets))        # doctest: +SKIP
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -352,6 +340,11 @@ class Observer(object):
                                                                     list(map(get_coord,
                                                                         target)),
                                                                     self.location)
+                n_targets = len(target)
+                new_shape = (n_targets, int(len(transformed_coords)/n_targets))
+
+                for comp in transformed_coords.data.components:
+                    getattr(transformed_coords.data, comp).resize(new_shape)
                 return transformed_coords
 
             # If single target is a FixedTarget or a SkyCoord:
@@ -454,7 +447,7 @@ class Observer(object):
             target_inds, _ = np.nonzero(condition)
             noncrossing_target_ind = np.setdiff1d(np.arange(n_targets),
                                                   target_inds,
-                                                  assume_unique=True)[0]
+                                                  assume_unique=True)#[0]
 
             warnmsg = ('Target(s) index {} does not cross horizon={} within '
                        '24 hours'.format(noncrossing_target_ind, horizon))
@@ -588,7 +581,7 @@ class Observer(object):
 
         altaz = self.altaz(times, target)
         if target_is_vector:
-            altitudes = np.split(altaz.alt, len(target))
+            altitudes = [aa.alt for aa in altaz]
         else:
             altitudes = altaz.alt
 
@@ -657,8 +650,7 @@ class Observer(object):
 
         altaz = self.altaz(times, target)
         if target_is_vector:
-            altitudes = np.split(altaz.alt, len(target))
-            d_altitudes = [alt.diff() for alt in altitudes]
+            d_altitudes = [alt.diff() for alt in altaz.alt]
         else:
             altitudes = altaz.alt
             d_altitudes = altitudes.diff()
@@ -1321,8 +1313,7 @@ class Observer(object):
 
         altaz = self.altaz(time, target)
         if _target_is_vector(target):
-            altitudes = np.split(altaz.alt, len(target))
-            observable = [alt > horizon for alt in altitudes]
+            observable = [alt > horizon for alt in altaz.alt]
         else:
             altitudes = altaz.alt
             observable = altitudes > horizon
