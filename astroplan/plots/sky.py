@@ -96,7 +96,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
     # We only want to plot positions above the horizon.
     az_plot = None
     for alt in range(0, len(altitude)):
-        if altitude[alt] < 0.0:
+        if altitude[alt] > 91.0:
             print("Warning: Target " + str(target_name) +
                   " is below the horizon at time: " + str(time[alt]))
         else:
@@ -104,16 +104,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
                 az_plot = np.array([azimuth[alt]])
             else:
                 az_plot = np.append(az_plot, azimuth[alt])
-    alt_plot = altitude[altitude > 0.0]
-
-    print("Target: " + str(target_name))
-    print("Altitudes & Plot Altitudes:")
-    print(altitude)
-    print(alt_plot)
-    print("Azimuths & Plot Azimuths:")
-    print(azimuth)
-    print(az_plot)
-    print("\n")
+    alt_plot = altitude[altitude <= 91.0]
+    if az_plot is None:
+        az_plot = []
 
     # More axes set-up.
     # Position of North (azimuth = 0).
