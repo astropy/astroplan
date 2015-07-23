@@ -2,7 +2,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astroplan import Observer
+from astroplan import Observer, get_moon
 from astropy.time import Time
 from astropy.coordinates import EarthLocation, get_sun
 import astropy.units as u
@@ -13,12 +13,20 @@ def test_illumination():
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
     obs = Observer(location)
+    # Get illumination via time
     illumination1 = obs.moon_illumination(time)
 
-    moon = obs.get_moon(time)
+    moon = get_moon(time, obs.location, obs.pressure)
     sun = get_sun(time)
+    # Get illumination via sun and moon
     illumination2 = obs.moon_illumination(moon=moon, sun=sun)
     assert all(illumination1 == illumination2)
+
+    # Get illumination using jplephem instead of PyEphem
+    moon_jplephem = get_moon(time, obs.location, obs.pressure,
+                             use_pyephem=False)
+    illumination3 = obs.moon_illumination(moon=moon, sun=sun)
+    assert_allclose(illumination1, illumination3, atol=1)
 
     # Run print_pyephem_illumination() for PyEphem's solution
     pyephem_illumination = [0.15475513880925418, 0.19484233284757257,

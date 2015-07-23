@@ -23,10 +23,14 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 <<<<<<< HEAD
+<<<<<<< HEAD
 from .sites import get_site
 =======
 from .moon import calc_moon_illumination, calc_moon_phase_angle
 >>>>>>> Starting moon illumination and phase calculations with pyephem
+=======
+from .moon import get_moon, calc_moon_illumination, calc_moon_phase_angle
+>>>>>>> Splitting get_moon off of Observer, inserted JPLephem option
 import warnings
 
 from abc import ABCMeta, abstractmethod
@@ -1213,7 +1217,7 @@ class Observer(object):
 
         moon : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.core.get_moon`.
+            the position of the moon with `~astroplan.moon.get_moon`.
 
         sun : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the sun at time ``time``. If `None`, will calculate
@@ -1228,7 +1232,7 @@ class Observer(object):
             time = Time(time)
 
         if moon is None:
-            moon = self.get_moon(time)
+            moon = get_moon(time, self.location, self.pressure)
 
         if sun is None:
             sun = get_sun(time)
@@ -1251,7 +1255,7 @@ class Observer(object):
 
         moon : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.core.get_moon`.
+            the position of the moon with `~astroplan.moon.get_moon`.
 
         sun : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the sun at time ``time``. If `None`, will calculate
@@ -1261,7 +1265,7 @@ class Observer(object):
             time = Time(time)
 
         if moon is None:
-            moon = self.get_moon(time)
+            moon = get_moon(time, self.location, self.pressure)
 
         if sun is None:
             sun = get_sun(time)
@@ -1286,7 +1290,7 @@ class Observer(object):
             Position of the moon transformed to altitude and azimuth
         """
         # This solution is affected by bug in astropy Issue #3920
-        #return self.altaz(time, self.get_moon(time))
+        #return self.altaz(time, get_moon(time, self.location, self.pressure))
         raise NotImplementedError()
 
     @u.quantity_input(horizon=u.deg)
