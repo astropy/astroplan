@@ -2,14 +2,14 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, get_sun, Angle)
+from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
+                                 Angle)
+
 import astropy.units as u
 import datetime
 from astropy.time import Time
 import pytz
 import numpy as np
-
 ################################################################################
 # TODO: Temporary solution to IERS tables problems
 from astropy.utils.data import download_file
@@ -23,8 +23,8 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 import warnings
-#import sys
-#from math import sqrt, pi, exp, log, floor
+
+
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
