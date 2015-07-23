@@ -138,6 +138,11 @@ def test_altaz_multiple_targets():
     vega_no_list = obs.altaz(times, vega).alt
     assert all(vega_no_list == vega_alt)
 
+    # Check FixedTarget
+    vega_FixedTarget = FixedTarget(coord=vega, name='Vega')
+    vega_FixedTarget_alt = obs.altaz(times, vega_FixedTarget).alt
+    assert all(vega_FixedTarget_alt == vega_alt)
+
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
     """
