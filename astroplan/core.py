@@ -119,6 +119,26 @@ def _target_is_vector(target):
     else:
         return False
 
+def list_FixedTarget_to_SkyCoord(list_of_FixedTargets):
+    """
+    Convert a list of `~astroplan.core.FixedTarget` objects to a vector
+    `~astropy.coordinates.SkyCoord` object.
+
+    Parameters
+    ----------
+    list_of_FixedTargets : list
+        `~astroplan.core.FixedTarget` objects
+
+    Returns
+    -------
+    sc : `~astropy.coordinates.SkyCoord`
+    """
+    coord_list = [target.coord for target in list_of_FixedTargets]
+    sc = SkyCoord(SkyCoord(coord_list).data.represent_as(
+                  UnitSphericalRepresentation),
+                  representation=UnitSphericalRepresentation)
+    return sc
+
 class Observer(object):
     """
     A container class for information about an observer's location and

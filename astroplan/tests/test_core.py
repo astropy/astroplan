@@ -12,8 +12,8 @@ import pytz
 import datetime
 import pytest
 
-from ..core import FixedTarget, Observer
 from ..sites import get_site
+from ..core import FixedTarget, Observer, list_FixedTarget_to_SkyCoord
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
@@ -118,7 +118,10 @@ def test_altaz_multiple_targets():
     # Double check by doing one star the normal way with astropy
     vega_altaz = vega.transform_to(AltAz(location=location, obstime=times))
     vega_alt = vega_altaz.alt
+    sirius_altaz = sirius.transform_to(AltAz(location=location, obstime=times))
+    sirius_alt = sirius_altaz.alt
     assert all(vega_alt == altitudes[0, :])
+    assert all(sirius_alt == altitudes[2, :])
 
     # check that a single element target list works:
     single_target_list = [vega]
@@ -138,10 +141,32 @@ def test_altaz_multiple_targets():
     vega_no_list = obs.altaz(times, vega).alt
     assert all(vega_no_list == vega_alt)
 
-    # Check FixedTarget
+    # Check FixedTarget for single target
     vega_FixedTarget = FixedTarget(coord=vega, name='Vega')
     vega_FixedTarget_alt = obs.altaz(times, vega_FixedTarget).alt
     assert all(vega_FixedTarget_alt == vega_alt)
+
+    # Check for vector FixedTarget
+    vega_FixedTarget = FixedTarget(coord=vega, name='Vega')
+    capella_FixedTarget = FixedTarget(coord=capella, name='Capella')
+    sirius_FixedTarget = FixedTarget(coord=sirius, name='Sirius')
+    ft_list = [vega_FixedTarget, capella_FixedTarget, sirius_FixedTarget]
+    ft_vector_alt = obs.altaz(times, ft_list).alt
+    assert all(ft_vector_alt[0, :] == vega_alt)
+    assert all(ft_vector_alt[2, :] == sirius_alt)
+
+def test_list_FT_to_SC():
+    # Test conversion of FixedTargets to vector SkyCoord
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    capella = SkyCoord(79.17232794*u.deg, 45.99799147*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    sc_list = [vega, capella, sirius]
+
+    ft_list = [FixedTarget(coord=sc) for sc in sc_list]
+    vector_sc = list_FixedTarget_to_SkyCoord(ft_list)
+    assert sc_list[0].separation(vector_sc[0]) < 0.1*u.arcsec
+    assert sc_list[1].separation(vector_sc[1]) < 0.1*u.arcsec
+    assert sc_list[2].separation(vector_sc[2]) < 0.1*u.arcsec
 
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
