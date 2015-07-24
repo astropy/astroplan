@@ -7,8 +7,9 @@ import numpy as np
 import astropy.units as u
 
 
-def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
-             inc_az_ccw=True):
+@u.quantity_input(az_label_offset=u.deg)
+def plot_sky(target, observer, time, ax=None, style_kwargs=None,
+             north_to_east_ccw=True, az_label_offset=0.0*u.deg):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -42,13 +43,19 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
         A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
         to set plotting styles.
 
-    north: str, optional.
-        A string that indicates where to place North on the sky ('top', 'left',
-        'bottom' or 'right').
+    north_to_east_ccw: bool, optional.
+        True by default, meaning that azimuth is shown increasing
+        counter-clockwise (CCW), or with North at top, East at left, etc.
+        To show azimuth increasing clockwise (CW), set to False.
 
-    inc_az_ccw: bool, optional.
-        True by default, meaning that azimuth increases counter clockwise (CCW).
-        To make azimuth increase clockwise (CW), set to False.
+    az_label_offset: `~astropy.units.degree`, optional.
+        DANGER: It is not recommended that you change the default behavior,
+        as to do so makes it seem as if N/E/S/W are being decoupled from the
+        definition of azimuth (North from az = 0 deg., East from az = 90 deg.,
+        etc.).
+        An offset for azimuth labels from the North label.  A positive
+        offset will increase in the same direction as azimuth
+        (see `north_to_east_ccw` option).
 
     Returns
     -------
@@ -57,11 +64,20 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
     Notes
     -----
     Coordinate defaults:
-        Altazimuth (local horizon) coordinate system.
+
+        Altazimuth (local horizon) coordinate system.  North is always at top
+        of plot, South is always at the bottom, E/W can be right or left
+        depending on the `north_to_east_cw` option.
+
         Altitude: 90 degrees (zenith) is at plot origin (center) and 0 degrees
         (horizon) is at plot edge.  This cannot be changed by user.
-        Azimuth: 0 degrees is at North (top of plot), 90 degrees at East (left
-        of plot), etc.  This can be changed by user.
+
+        Azimuth: 0 degrees is at North (top of plot), 90 degrees at East, etc.
+        DANGER: Azimuth labels can be changed by user via the `az_label_offset`
+        option, but it is not recommended, as to do so makes it seem as if
+        N/E/S/W are being decoupled from the definition of azimuth
+        (North from az = 0 deg., East from az = 90 deg., etc.).
+
 
     TODO:
         1) Add time/date and target name labels?
@@ -109,23 +125,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
         az_plot = []
 
     # More axes set-up.
-    # Position of North (azimuth = 0).
-    if north == 'top':
-        n_dir = 'N'
-    elif north == 'left':
-        n_dir = 'W'
-    elif north == 'bottom':
-        n_dir = 'S'
-    elif north == 'right':
-        n_dir = 'E'
-    else:
-        print("Warning: You have entered an invalid position for North."
-              + " Defaulting to 'top'.")
-        n_dir = 'N'
-    ax.set_theta_zero_location(n_dir)
+    # Position of azimuth = 0 (data, not label).
+    ax.set_theta_zero_location('N')
 
-    # Direction of azimuth increase.
-    if inc_az_ccw is False:
+    # Direction of azimuth increase. Clockwise is -1
+    if north_to_east_ccw is False:
         ax.set_theta_direction(-1)
 
     # Plot target coordinates.
@@ -154,20 +158,27 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None, north='top',
         '',
         '0' + degree_sign + ' Alt.',
         ]
-    theta_labels = [
-        'N' + '\n' + '0' + degree_sign + ' Az.',
-        '45' + degree_sign,
-        'E' + '\n' + '90' + degree_sign,
-        '135' + degree_sign,
-        'S' + '\n' + '180' + degree_sign,
-        '225' + degree_sign,
-        'W' + '\n' + '270' + degree_sign,
-        '',
-        ]
+
+    theta_labels = []
+    for chunk in range(0, 7):
+        label_angle = (az_label_offset*(1/u.deg)) + (chunk*45.0)
+        while label_angle >= 360.0:
+            label_angle = label_angle - 360.0
+        if chunk == 0:
+            theta_labels.append('N ' + '\n' + str(label_angle) + degree_sign
+                                + ' Az')
+        elif chunk == 2:
+            theta_labels.append('E' + '\n' + str(label_angle) + degree_sign)
+        elif chunk == 4:
+            theta_labels.append('S' + '\n' + str(label_angle) + degree_sign)
+        elif chunk == 6:
+            theta_labels.append('W' + '\n' + str(label_angle) + degree_sign)
+        else:
+            theta_labels.append(str(label_angle) + degree_sign)
 
     # Set ticks and labels.
     ax.set_rgrids(range(1, 106, 15), r_labels, angle=-45)
-    ax.set_thetagrids(range(0, 360, 45), theta_labels)
+    ax.set_thetagrids(range(0, 360, 45), theta_labels, frac=1.2)
 
     # Below commands don't seem to work.
     #ax.rgrids(range(1, 91, 15), r_labels, angle=-45)
