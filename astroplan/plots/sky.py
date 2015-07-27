@@ -9,7 +9,7 @@ import astropy.units as u
 
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
-             north_to_east_ccw=True, az_label_offset=0.0*u.deg):
+             north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -47,6 +47,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         True by default, meaning that azimuth is shown increasing
         counter-clockwise (CCW), or with North at top, East at left, etc.
         To show azimuth increasing clockwise (CW), set to False.
+
+    grid: bool, optional.
+        True by default, meaning that grid is drawn.
 
     az_label_offset: `~astropy.units.degree`, optional.
         DANGER: It is not recommended that you change the default behavior,
@@ -144,7 +147,10 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     # Grid, ticks & labels.
     # May need to set ticks and labels AFTER plotting points.
-    ax.grid(True, which='major')
+    if grid is True:
+        ax.grid(True, which='major')
+    if grid is False:
+        ax.grid(False)
     degree_sign = u'\N{DEGREE SIGN}'
 
     # For positively-increasing range (e.g., range(1, 90, 15)),
