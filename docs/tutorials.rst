@@ -1,3 +1,5 @@
+.. include: tutorial_files/
+
 .. _tutorials:
 
 *********
@@ -14,10 +16,8 @@ Is there something you think we should add here?  Consider
 `posting an issue <https://github.com/astroplanners/astroplan/issues>`_ on
 GitHub or becoming a project contributor.
 
-Use case: Observing the Summer Triangle
-=======================================
-
-LINK TO USE CASE HERE
+:ref:`summer_triangle_tutorial`
+===============================
 
 Another use case: Observing the Monkey With A Rash
 ==================================================

@@ -45,11 +45,12 @@ as well as elevation and other location information::
                    description="Subaru Telescope on Mauna Kea, Hawaii")
 
 `Astroplan` makes heavy use of certain pieces of `Astropy` machinery, such as
-the representation of dates/times in `Time` objects::
+the representation of dates/times in `Time` objects (note that without these
+are in UTC by default)::
 
     from astropy.time import Time
 
-    time = Time(['2015-06-15 22:00:00'])
+    time = Time(['2015-06-16 06:00:00'])
 
 To pull some piece of information from or to manipulate an `astroplan` object,
 you will generally issue a command such as::
