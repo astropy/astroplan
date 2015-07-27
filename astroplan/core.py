@@ -463,7 +463,7 @@ class Observer(object):
 
         target_inds, time_inds = np.nonzero(condition)
 
-        if np.count_nonzero(condition) != n_targets:
+        if np.count_nonzero(condition) < n_targets:
             target_inds, _ = np.nonzero(condition)
             noncrossing_target_ind = np.setdiff1d(np.arange(n_targets),
                                                   target_inds,
@@ -483,6 +483,20 @@ class Observer(object):
             time_inds = np.insert(time_inds.astype(float),
                                   noncrossing_target_ind,
                                   np.nan)
+        elif np.count_nonzero(condition) > n_targets:
+            dup_target_inds = list(set([target_ind for target_ind in target_inds
+                                        if np.sum(target_inds == target_ind) > 1]))
+            old_target_inds = np.copy(target_inds)
+            old_time_inds = np.copy(time_inds)
+
+            time_inds = []
+            target_inds = []
+            for tgt, tm in zip(old_target_inds, old_time_inds):
+                if tgt not in target_inds:
+                    time_inds.append(tm)
+                    target_inds.append(tgt)
+            target_inds = np.array(target_inds)
+            time_inds = np.array(time_inds)
 
         times = [t[i:i+2] if not np.isnan(i) else i for i in time_inds]
         altitudes = [alt[i, j:j+2] if not np.isnan(j) else j
@@ -670,11 +684,13 @@ class Observer(object):
 
         altaz = self.altaz(times, target)
         if target_is_vector:
-            d_altitudes = [alt.diff() for alt in altaz.alt]
+            #d_altitudes = [each_altaz.alt.diff() for each_altaz in altaz]
+            d_altitudes = [each_alt.diff() for each_alt in altaz.alt]
         else:
             altitudes = altaz.alt
             d_altitudes = altitudes.diff()
 
+        print('alts:', [d_altitudes])
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
 
         horizon = 0*u.degree # Find when derivative passes through zero
@@ -740,10 +756,20 @@ class Observer(object):
                 return previous_rise
 
         if which == 'nearest':
-            if abs(time - previous_rise) < abs(time - next_rise):
-                return previous_rise
+            if _target_is_vector(target):
+                return_times = []
+                for next_r, prev_r in zip(next_rise, previous_rise):
+                    if abs(time - prev_r) < abs(time - next_r):
+                        return_times.append(prev_r)
+                    else:
+                        return_times.append(next_r)
+                return Time(return_times)
             else:
-                return next_rise
+                if abs(time - previous_rise) < abs(time - next_rise):
+                    return previous_rise
+                else:
+                    return next_rise
+
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
@@ -797,10 +823,19 @@ class Observer(object):
                 return previous_set
 
         if which == 'nearest':
-            if abs(time - previous_set) < abs(time - next_set):
-                return previous_set
+            if _target_is_vector(target):
+                return_times = []
+                for next_s, prev_s in zip(next_set, previous_set):
+                    if abs(time - prev_s) < abs(time - next_s):
+                        return_times.append(prev_s)
+                    else:
+                        return_times.append(next_s)
+                return Time(return_times)
             else:
-                return next_set
+                if abs(time - previous_set) < abs(time - next_set):
+                    return previous_set
+                else:
+                    return next_set
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
@@ -846,10 +881,25 @@ class Observer(object):
                 return previous_transit
 
         if which == 'nearest':
-            if abs(time - previous_transit) < abs(time - next_transit):
-                return previous_transit
+            if _target_is_vector(target):
+                return_times = []
+                for next_t, prev_t in zip(next_transit, previous_transit):
+                    print(prev_t, next_t,
+                          abs(time - prev_t) < abs(time - next_t),
+                          abs(time - prev_t), abs(time - next_t))
+                    if abs(time - prev_t) < abs(time - next_t):
+                        return_times.append(prev_t)
+                    else:
+                        return_times.append(next_t)
+                return Time(return_times)
             else:
-                return next_transit
+                print(previous_transit, next_transit,
+                      abs(time - previous_transit) < abs(time - next_transit),
+                      abs(time - previous_transit), abs(time - next_transit))
+                if abs(time - previous_transit) < abs(time - next_transit):
+                    return previous_transit
+                else:
+                    return next_transit
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
@@ -896,10 +946,22 @@ class Observer(object):
                 return previous_antitransit
 
         if which == 'nearest':
-            if abs(time - previous_antitransit) < abs(time - next_antitransit):
-                return previous_antitransit
+            if _target_is_vector(target):
+                return_times = []
+                for next_at, prev_at in zip(next_antitransit,
+                                          previous_antitransit):
+                    if abs(time - prev_at) < abs(time - next_at):
+                        return_times.append(prev_at)
+                    else:
+                        return_times.append(next_at)
+                return Time(return_times)
             else:
-                return next_antitransit
+                if (abs(time - previous_antitransit) <
+                        abs(time - next_antitransit)):
+                    return previous_antitransit
+                else:
+                    return next_antitransit
+
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 

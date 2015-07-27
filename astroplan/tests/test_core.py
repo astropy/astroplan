@@ -155,6 +155,43 @@ def test_altaz_multiple_targets():
     assert all(ft_vector_alt[0, :] == vega_alt)
     assert all(ft_vector_alt[2, :] == sirius_alt)
 
+def test_rise_set_transit_nearest_vector():
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    mira = SkyCoord(34.83663376*u.deg, -2.97763767*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    sc_list = [vega, mira, sirius]
+
+    location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
+    time = Time('1995-06-21 00:00:00')
+
+    obs = Observer(location=location)
+    rise_vector = obs.calc_rise(time, sc_list)
+    vega_rise = obs.calc_rise(time, vega)
+    mira_rise = obs.calc_rise(time, mira)
+    sirius_rise = obs.calc_rise(time, sirius)
+
+    assert rise_vector[0] == vega_rise
+    assert rise_vector[1] == mira_rise
+    assert rise_vector[2] == sirius_rise
+
+    set_vector = obs.calc_set(time, sc_list)
+    vega_set = obs.calc_set(time, vega)
+    mira_set = obs.calc_set(time, mira)
+    sirius_set = obs.calc_set(time, sirius)
+
+    assert set_vector[0] == vega_set
+    assert set_vector[1] == mira_set
+    assert set_vector[2] == sirius_set
+
+    transit_vector = obs.calc_meridian_transit(time, sc_list)
+    vega_trans = obs.calc_meridian_transit(time, vega)
+    mira_trans = obs.calc_meridian_transit(time, mira)
+    sirius_trans = obs.calc_meridian_transit(time, sirius)
+
+    assert transit_vector[0] == vega_trans
+    assert transit_vector[1] == mira_trans
+    assert transit_vector[2] == sirius_trans
+
 def test_list_FT_to_SC():
     # Test conversion of FixedTargets to vector SkyCoord
     vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
