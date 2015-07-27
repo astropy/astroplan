@@ -4,39 +4,64 @@
 Getting Started
 ***************
 
-Astroplan Overview
+General Guidelines
 ==================
 
-Astroplan was built around the creation of "objects" that contain all the
-information needed to perform certain tasks.  You, the user, will create and
-manipulate these objects to plan your observation.  Don't worry--it's easier
-than it sounds!
+`Astroplan` is based on `Astropy`_ and was built around the creation of "objects"
+that contain all the information needed to perform certain tasks.
+
+You, the user, will create and manipulate these objects to plan your
+observation.  Don't worry--it's easier than it sounds!
 
 For instance, a `Target` object contains all the data associated with observing
-targets--RA, Dec, etc.
+targets--RA, Dec, etc.::
 
-SHORT, ONE OR TWO LINE EXAMPLE OF TARGET SYNTAX
+    from astropy.coordinates import SkyCoord
+    from astroplan import FixedTarget
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
 
 Similarly, an `Observer` object has longitude/latitude coordinates of the
 observatory or telescope where you are planning on making your observations,
-as well as elevation and other location information.
+as well as elevation and other location information::
 
-SHORT, ONE OR TWO LINE EXAMPLE OF OBSERVER SYNTAX
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation
+    from pytz import timezone
+    from astroplan import Observer
 
-To pull some piece of information from or to manipulate one of these objects,
-you will generally issue a command such as:
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
 
-EXAMPLE - GET RA/DEC FROM TARGET
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
 
-EXAMPLE - DO ALT/AZ CALCULATION
+`Astroplan` makes heavy use of certain pieces of `Astropy` machinery, such as
+the representation of dates/times in `Time` objects::
 
-Constructing Basic Observers, Targets, etc.
-===========================================
+    from astropy.time import Time
 
-SOME EXAMPLES HERE
+    time = Time(['2015-06-15 22:00:00'])
+
+To pull some piece of information from or to manipulate an `astroplan` object,
+you will generally issue a command such as::
+
+    right_ascension = altair.ra
+
+or::
+
+    p_angle = observer.parallactic_angle(time, altair)
 
 Doing More
 ==========
 
 Now that you know the basics of working with `astroplan`, check out our
-:ref:`tutorials` and :ref:`how_to` pages.
+:ref:`tutorials` and :ref:`how_to` pages for detailed examples.

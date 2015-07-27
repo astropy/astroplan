@@ -1,7 +1,7 @@
 .. _how_to:
 
 *********
-How to...
+How To...
 *********
 
 This page contains a (mostly) exhaustive list of what you can do with
