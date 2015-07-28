@@ -1185,7 +1185,11 @@ class Observer(object):
             -6 deg horizon = civil twilight, etc.)
 
         obswl : `~astropy.units.Quantity` (optional)
-            Wavelength of the observation used in the calculation.
+            Wavelength of the observation used in the calculation
+
+        Returns
+        sun_below_horizon : bool
+            `True` if sun is below ``horizon`` at ``time``, else `False`.
         """
         if not isinstance(time, Time):
             time = Time(time)
