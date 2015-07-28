@@ -299,14 +299,14 @@ def test_vega_rise_set_equator():
     vega = SkyCoord(vega_ra, vega_dec)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
-    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+    astroplan_next_rise = obs.rise_time(time, vega, which='next').datetime
+    astroplan_next_set = obs.set_time(time, vega, which='next').datetime
 
-    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
-    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+    astroplan_prev_rise = obs.rise_time(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.set_time(time, vega, which='previous').datetime
 
-    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
-    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+    astroplan_nearest_rise = obs.rise_time(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.set_time(time, vega, which='nearest').datetime
 
     # Run print_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
@@ -682,14 +682,14 @@ def test_string_times():
     vega = SkyCoord(vega_ra, vega_dec)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
-    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+    astroplan_next_rise = obs.rise_time(time, vega, which='next').datetime
+    astroplan_next_set = obs.set_time(time, vega, which='next').datetime
 
-    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
-    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+    astroplan_prev_rise = obs.rise_time(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.set_time(time, vega, which='previous').datetime
 
-    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
-    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+    astroplan_nearest_rise = obs.rise_time(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.set_time(time, vega, which='nearest').datetime
 
     # Run print_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
@@ -723,7 +723,7 @@ def test_TargetAlwaysUpWarning(recwarn):
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
     obs = Observer(location=location)
-    no_time = obs.calc_rise(time, polaris, which='next')
+    no_time = obs.rise_time(time, polaris, which='next')
 
     w = recwarn.pop(TargetAlwaysUpWarning)
     assert issubclass(w.category, TargetAlwaysUpWarning)
@@ -738,7 +738,7 @@ def test_TargetNeverUpWarning(recwarn):
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
     obs = Observer(location=location)
-    no_time = obs.calc_rise(time, polaris, which='next')
+    no_time = obs.rise_time(time, polaris, which='next')
 
     w = recwarn.pop(TargetNeverUpWarning)
     assert issubclass(w.category, TargetNeverUpWarning)
@@ -797,10 +797,10 @@ class TestExceptions(unittest.TestCase):
         obs = Observer(location=location)
 
         with self.assertRaises(ValueError):
-            obs.calc_rise(time, vega_coords, which='oops').datetime
+            obs.rise_time(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            obs.calc_set(time, vega_coords, which='oops').datetime
+            obs.set_time(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
             obs.calc_meridian_transit(time, vega_coords, which='oops').datetime

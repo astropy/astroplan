@@ -599,7 +599,7 @@ class Observer(object):
         return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
 
     @u.quantity_input(horizon=u.deg)
-    def calc_rise(self, time, target, which='nearest', horizon=0*u.degree):
+    def rise_time(self, time, target, which='nearest', horizon=0*u.degree):
         """
         Calculate rise time.
 
@@ -657,7 +657,7 @@ class Observer(object):
                          '"nearest".')
 
     @u.quantity_input(horizon=u.deg)
-    def calc_set(self, time, target, which='nearest', horizon=0*u.degree):
+    def set_time(self, time, target, which='nearest', horizon=0*u.degree):
         """
         Calculate set time.
 
@@ -843,7 +843,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunrise
         """
-        return self.calc_rise(time, get_sun(time), which, horizon)
+        return self.rise_time(time, get_sun(time), which, horizon)
 
     @u.quantity_input(horizon=u.deg)
     def sunset(self, time, which='nearest', horizon=0*u.degree):
@@ -876,7 +876,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunset
         """
-        return self.calc_set(time, get_sun(time), which, horizon)
+        return self.set_time(time, get_sun(time), which, horizon)
 
     def noon(self, time, which='nearest'):
         """
