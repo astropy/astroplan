@@ -1196,8 +1196,7 @@ class Observer(object):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-        sun_below_horizon = solar_altitude < horizon
-        return sun_below_horizon
+        return solar_altitude < horizon
 
 class Target(object):
     """
