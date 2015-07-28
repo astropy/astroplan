@@ -53,15 +53,35 @@ Observable?
 ===========
 
 Next, it would be handy to know if our targets are visible from Subaru at the
-time we settled on (are they above the horizon)::
+time we settled on.  In other words--are they above the horizon?:
 
-    In [33]: subaru.can_see(time, altair)
-    Out[33]: array([ True], dtype=bool)
+.. code-block:: ipython
 
-    In [34]: subaru.can_see(time, vega)
-    Out[34]: array([ True], dtype=bool)
+    In [1]: subaru.can_see(time, altair)
+    Out[1]: array([ True], dtype=bool)
 
-    In [35]: subaru.can_see(time, deneb)
-    Out[35]: array([ True], dtype=bool)
+    In [2]: subaru.can_see(time, vega)
+    Out[2]: array([ True], dtype=bool)
 
-As it turns out, they are all above the horizon at 2AM local time.
+    In [3]: subaru.can_see(time, deneb)
+    Out[3]: array([ True], dtype=bool)
+
+...They are!
+
+However, we may want to know more details about their observability--when do
+they rise/set, is the Sun or the Moon out at that time as well?
+
+The best thing to do would probably be to find a window of time for tonight
+during which all three of our targets are above the horizon **and** the Sun is
+below the horizon (we can worry about the Moon later).
+
+So, let's calculate our target rise and set times::
+
+    altair_rise = subaru.calc_rise(time, altair)
+    altair_set = subaru.calc_set(time, altair)
+
+    vega_rise = subaru.calc_rise(time, vega)
+    vega_set = subaru.calc_set(time, vega)
+
+    deneb_rise = subaru.calc_rise(time, deneb)
+    deneb_set = subaru.calc_set(time, deneb)
