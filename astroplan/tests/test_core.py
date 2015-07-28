@@ -12,6 +12,7 @@ import datetime
 import unittest
 
 from ..core import FixedTarget, Observer
+from ..sites import get_site
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
@@ -770,6 +771,19 @@ def test_timezone_convenience_methods():
     dts = obs.astropy_time_to_datetime(times)
     naive_dts = list(map(lambda t: t.replace(tzinfo=None), dts))
     assert all(naive_dts == times_dt_ndarray - datetime.timedelta(hours=4))
+
+def test_is_night():
+    lco = Observer(location=get_site('lco')) # Las Campanas
+    aao = Observer(location=get_site('aao')) # Sydney, Australia
+    vbo = Observer(location=get_site('vbo')) # India
+
+    time1 = Time('2015-07-28 17:00:00')
+    nights1 = [observer.is_night(time1) for observer in [lco, aao, vbo]]
+    assert np.all(nights1 == [False, True, True])
+
+    time2 = Time('2015-07-28 02:00:00')
+    nights2 = [observer.is_night(time2) for observer in [lco, aao, vbo]]
+    assert np.all(nights2 == [True, False, False])
 
 class TestExceptions(unittest.TestCase):
     def test_rise_set_transit_which(self):

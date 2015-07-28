@@ -1166,6 +1166,38 @@ class Observer(object):
         else:
             return observable, altaz
 
+    @u.quantity_input(horizon=u.deg)
+    def is_night(self, time, horizon=0*u.deg, obswl=None):
+        """
+        Is the Sun below ``horizon`` at ``time``?
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating day/night (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        obswl : `~astropy.units.Quantity` (optional)
+            Wavelength of the observation used in the calculation
+
+        Returns
+        -------
+        sun_below_horizon : bool
+            `True` if sun is below ``horizon`` at ``time``, else `False`.
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
+        return solar_altitude < horizon
+
 class Target(object):
     """
     This is an abstract base class -- you can't instantiate
