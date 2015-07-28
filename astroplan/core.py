@@ -1188,6 +1188,7 @@ class Observer(object):
             Wavelength of the observation used in the calculation
 
         Returns
+        -------
         sun_below_horizon : bool
             `True` if sun is below ``horizon`` at ``time``, else `False`.
         """
