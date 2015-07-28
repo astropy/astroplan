@@ -96,7 +96,6 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
     style_kwargs.setdefault('marker', 'o')
-    style_kwargs.setdefault('color', 'k')
 
     # Grab altitude and azimuth from Astroplan objects.
     # Note that values must be made dimensionless before plotting.

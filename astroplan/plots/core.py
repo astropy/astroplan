@@ -69,7 +69,6 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
     style_kwargs.setdefault('linestyle', '-')
-    style_kwargs.setdefault('color', 'k')
     style_kwargs.setdefault('fmt', '-')
 
     # Populate time window if needed.
@@ -165,7 +164,6 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
     style_kwargs.setdefault('linestyle', '-')
-    style_kwargs.setdefault('color', 'k')
     style_kwargs.setdefault('fmt', '-')
 
     # If Time object is scalar, pad time window.
