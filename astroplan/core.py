@@ -103,10 +103,13 @@ def transform_target_list_to_altaz(times, targets, location):
     if not isinstance(targets, list) and targets.isscalar:
         targets = [targets]
 
-    repeated_times = np.tile(times, len(targets))
-    repeated_targets = np.repeat(targets, len(times))
-    target_SkyCoord = SkyCoord(SkyCoord(repeated_targets).data.represent_as(
-                               UnitSphericalRepresentation),
+    repeated_times = Time(np.tile(times.jd, len(targets)), format='jd')
+    ra_list = Longitude([x.ra for x in targets])
+    dec_list = Latitude([x.dec for x in targets])
+    repeated_ra = np.repeat(ra_list, len(times))
+    repeated_dec = np.repeat(dec_list, len(times))
+    inner_sc = SkyCoord(ra=repeated_ra, dec=repeated_dec)
+    target_SkyCoord = SkyCoord(inner_sc.data.represent_as(UnitSphericalRepresentation),
                                representation=UnitSphericalRepresentation)
 
     transformed_coord = target_SkyCoord.transform_to(AltAz(location=location,
