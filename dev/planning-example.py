@@ -84,28 +84,28 @@ If no parameter is given, the current date/time is assumed.
 from astropy.time import Time
 time_obs = Time(2457189.500000, format='jd')
 
-# sunset
-obs.sunset(time_obs, which='nearest') # Default
-obs.sunset(time_obs, which='next')
-obs.sunset(time_obs, which='previous')
-obs.sunset() # Will be use time=Time.now(), which='nearest'
+# sun_set
+obs.sun_set(time_obs, which='nearest') # Default
+obs.sun_set(time_obs, which='next')
+obs.sun_set(time_obs, which='previous')
+obs.sun_set() # Will be use time=Time.now(), which='nearest'
 
-# sunrise
-obs.sunrise(time_obs, which='nearest') # Default
-obs.sunrise(time_obs, which='next')
-obs.sunrise(time_obs, which='previous')
+# sun_rise
+obs.sun_rise(time_obs, which='nearest') # Default
+obs.sun_rise(time_obs, which='next')
+obs.sun_rise(time_obs, which='previous')
 
 # moon rise
-obs.moonrise(time_obs, which='nearest')
+obs.moon_rise(time_obs, which='nearest')
 
 # moon set
-obs.moonset(time_obs, which='nearest')
+obs.moon_set(time_obs, which='nearest')
 
 # The above functions can be called with an `angle` keyword argument to specify
 # a particular horizon angle for rising or setting, or can be called with
 # convenience functions for particular morning/evening twilight.
 # For example, to compute astronomical twilight by specifying the `angle`:
-obs.sunset(time_obs, which='next', angle=18*u.degree)
+obs.sun_set(time_obs, which='next', angle=18*u.degree)
 
 # evening (astronomical) twilight
 obs.evening_astronomical(time_obs)
