@@ -18,14 +18,14 @@ def test_illumination(recwarn):
     # Get illumination via time
     illumination1 = obs.moon_illumination(time)
 
-    moon = get_moon(time, obs.location, obs.pressure)
+    moon = get_moon(time, obs.location, pressure=obs.pressure)
     sun = get_sun(time)
     # Get illumination via sun and moon
     illumination2 = obs.moon_illumination(moon=moon, sun=sun)
     assert all(illumination1 == illumination2)
 
     # Get illumination using jplephem instead of PyEphem
-    moon_jplephem = get_moon(time, obs.location, obs.pressure,
+    moon_jplephem = get_moon(time, obs.location, pressure=obs.pressure,
                              use_pyephem=False)
     illumination3 = obs.moon_illumination(moon=moon, sun=sun)
     assert_allclose(illumination1, illumination3, atol=1)

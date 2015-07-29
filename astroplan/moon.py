@@ -30,7 +30,7 @@ def get_spk_file():
                  'generic_kernels/spk/planets/de430.bsp')
     return download_file(de430_url, cache=True, show_progress=True)
 
-def get_moon(time, location, pressure, use_pyephem=True):
+def get_moon(time, location, pressure=None, use_pyephem=True):
     """
     Position of the Earth's moon.
 
@@ -49,6 +49,8 @@ def get_moon(time, location, pressure, use_pyephem=True):
 
     location : `~astropy.coordinates.EarthLocation`
         Location of the observer on Earth
+
+    pressure : `None` or `~astropy.units.Quantity` (optional)
 
     use_pyephem : bool (default = `True`)
         Calculate position of moon using PyEphem (requires PyEphem to be
