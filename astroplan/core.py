@@ -599,7 +599,7 @@ class Observer(object):
         return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
 
     @u.quantity_input(horizon=u.deg)
-    def target_rise(self, time, target, which='nearest', horizon=0*u.degree):
+    def target_rise_time(self, time, target, which='nearest', horizon=0*u.degree):
         """
         Calculate rise time.
 
@@ -657,7 +657,7 @@ class Observer(object):
                          '"nearest".')
 
     @u.quantity_input(horizon=u.deg)
-    def target_set(self, time, target, which='nearest', horizon=0*u.degree):
+    def target_set_time(self, time, target, which='nearest', horizon=0*u.degree):
         """
         Calculate set time.
 
@@ -714,7 +714,7 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
-    def target_meridian_transit(self, time, target, which='nearest'):
+    def target_meridian_transit_time(self, time, target, which='nearest'):
         """
         Calculate time at the transit of the meridian.
 
@@ -762,7 +762,7 @@ class Observer(object):
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
 
-    def target_meridian_antitransit(self, time, target, which='nearest'):
+    def target_meridian_antitransit_time(self, time, target, which='nearest'):
         """
         Calculate time at the antitransit of the meridian.
 
@@ -813,7 +813,7 @@ class Observer(object):
                          '"nearest".')
 
     @u.quantity_input(horizon=u.deg)
-    def sun_rise(self, time, which='nearest', horizon=0*u.degree):
+    def sun_rise_time(self, time, which='nearest', horizon=0*u.degree):
         """
         Time of sunrise.
 
@@ -843,10 +843,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunrise
         """
-        return self.target_rise(time, get_sun(time), which, horizon)
+        return self.target_rise_time(time, get_sun(time), which, horizon)
 
     @u.quantity_input(horizon=u.deg)
-    def sun_set(self, time, which='nearest', horizon=0*u.degree):
+    def sun_set_time(self, time, which='nearest', horizon=0*u.degree):
         """
         Time of sunset.
 
@@ -876,7 +876,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunset
         """
-        return self.target_set(time, get_sun(time), which, horizon)
+        return self.target_set_time(time, get_sun(time), which, horizon)
 
     def noon(self, time, which='nearest'):
         """
@@ -899,7 +899,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time at solar noon
         """
-        return self.target_meridian_transit(time, get_sun(time), which)
+        return self.target_meridian_transit_time(time, get_sun(time), which)
 
     def midnight(self, time, which='nearest'):
         """
@@ -922,7 +922,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time at solar midnight
         """
-        return self.target_meridian_antitransit(time, get_sun(time), which)
+        return self.target_meridian_antitransit_time(time, get_sun(time), which)
 
     # Twilight convenience functions
 
@@ -947,7 +947,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_set(time, which, horizon=-18*u.degree)
+        return self.sun_set_time(time, which, horizon=-18*u.degree)
 
     def evening_nautical(self, time, which='nearest'):
 
@@ -971,7 +971,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_set(time, which, horizon=-12*u.degree)
+        return self.sun_set_time(time, which, horizon=-12*u.degree)
 
     def evening_civil(self, time, which='nearest'):
         """
@@ -994,7 +994,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_set(time, which, horizon=-6*u.degree)
+        return self.sun_set_time(time, which, horizon=-6*u.degree)
 
     def morning_astronomical(self, time, which='nearest'):
         """
@@ -1017,7 +1017,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_rise(time, which, horizon=-18*u.degree)
+        return self.sun_rise_time(time, which, horizon=-18*u.degree)
 
     def morning_nautical(self, time, which='nearest'):
         """
@@ -1040,7 +1040,7 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_rise(time, which, horizon=-12*u.degree)
+        return self.sun_rise_time(time, which, horizon=-12*u.degree)
 
     def morning_civil(self, time, which='nearest'):
         """
@@ -1063,11 +1063,11 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunset
         """
-        return self.sun_rise(time, which, horizon=-6*u.degree)
+        return self.sun_rise_time(time, which, horizon=-6*u.degree)
 
     # Moon-related methods.
 
-    def moon_rise(self, time, **kwargs):
+    def moon_rise_time(self, time, **kwargs):
         """
         Returns the local moonrise time.
 
@@ -1083,7 +1083,7 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def moon_set(self, time, **kwargs):
+    def moon_set_time(self, time, **kwargs):
         """
         Returns the local moonset time.
 
