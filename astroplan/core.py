@@ -22,15 +22,8 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
-<<<<<<< HEAD
-<<<<<<< HEAD
 from .sites import get_site
-=======
-from .moon import calc_moon_illumination, calc_moon_phase_angle
->>>>>>> Starting moon illumination and phase calculations with pyephem
-=======
 from .moon import get_moon, calc_moon_illumination, calc_moon_phase_angle
->>>>>>> Splitting get_moon off of Observer, inserted JPLephem option
 import warnings
 
 from abc import ABCMeta, abstractmethod
@@ -1322,8 +1315,8 @@ class Observer(object):
                 moon.compute(obs)
                 moon_alt.append(float(moon.alt))
                 moon_az.append(float(moon.az))
-        return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad, frame='altaz',
-                        obstime=time)
+        return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
+                        frame=self.altaz(time))
 
     @u.quantity_input(horizon=u.deg)
     def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
