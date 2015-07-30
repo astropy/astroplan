@@ -232,11 +232,11 @@ def test_sunrise_sunset_equator():
     location = EarthLocation.from_geodetic(lon, lat, elevation)
     time = Time('2000-01-01 12:00:00')
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_sunrise = obs.sunrise(time, which='next').datetime
-    astroplan_next_sunset = obs.sunset(time, which='next').datetime
+    astroplan_next_sunrise = obs.sun_rise_time(time, which='next').datetime
+    astroplan_next_sunset = obs.sun_set_time(time, which='next').datetime
 
-    astroplan_prev_sunrise = obs.sunrise(time, which='previous').datetime
-    astroplan_prev_sunset = obs.sunset(time, which='previous').datetime
+    astroplan_prev_sunrise = obs.sun_rise_time(time, which='previous').datetime
+    astroplan_prev_sunset = obs.sun_set_time(time, which='previous').datetime
 
     # Run print_pyephem_sunrise_sunset() to compute analogous
     # result from PyEphem:
@@ -299,14 +299,14 @@ def test_vega_rise_set_equator():
     vega = SkyCoord(vega_ra, vega_dec)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
-    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+    astroplan_next_rise = obs.target_rise_time(time, vega, which='next').datetime
+    astroplan_next_set = obs.target_set_time(time, vega, which='next').datetime
 
-    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
-    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+    astroplan_prev_rise = obs.target_rise_time(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.target_set_time(time, vega, which='previous').datetime
 
-    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
-    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+    astroplan_nearest_rise = obs.target_rise_time(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.target_set_time(time, vega, which='nearest').datetime
 
     # Run print_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
@@ -377,14 +377,14 @@ def test_sunrise_sunset_equator_civil_twilight():
     obs = Observer(location=location, pressure=pressure)
     # Manually impose horizon equivalent to civil twilight
     horizon = -6*u.degree
-    astroplan_next_sunrise = obs.sunrise(time, which='next',
+    astroplan_next_sunrise = obs.sun_rise_time(time, which='next',
                                          horizon=horizon).datetime
-    astroplan_next_sunset = obs.sunset(time, which='next',
+    astroplan_next_sunset = obs.sun_set_time(time, which='next',
                                        horizon=horizon).datetime
 
-    astroplan_prev_sunrise = obs.sunrise(time, which='previous',
+    astroplan_prev_sunrise = obs.sun_rise_time(time, which='previous',
                                          horizon=horizon).datetime
-    astroplan_prev_sunset = obs.sunset(time, which='previous',
+    astroplan_prev_sunset = obs.sun_set_time(time, which='previous',
                                        horizon=horizon).datetime
 
     # Run print_pyephem_sunrise_sunset_equator_civil_twilight() to compute
@@ -547,20 +547,20 @@ def test_solar_transit():
     obs = Observer(location=location, pressure=pressure)
 
     # Compute next/previous noon/midnight using generic calc_transit methods
-    astroplan_next_transit = obs.calc_meridian_transit(time, get_sun(time),
+    astroplan_next_transit = obs.target_meridian_transit_time(time, get_sun(time),
                                                        which='next').datetime
-    astroplan_next_antitransit = obs.calc_meridian_antitransit(time,
+    astroplan_next_antitransit = obs.target_meridian_antitransit_time(time,
                                                                get_sun(time),
                                                                which='next').datetime
-    astroplan_prev_transit = obs.calc_meridian_transit(time, get_sun(time),
+    astroplan_prev_transit = obs.target_meridian_transit_time(time, get_sun(time),
                                                        which='previous').datetime
-    astroplan_prev_antitransit = obs.calc_meridian_antitransit(time,
+    astroplan_prev_antitransit = obs.target_meridian_antitransit_time(time,
                                                                get_sun(time),
                                                                which='previous').datetime
 
-    astroplan_nearest_transit = obs.calc_meridian_transit(time, get_sun(time),
+    astroplan_nearest_transit = obs.target_meridian_transit_time(time, get_sun(time),
                                                           which='nearest').datetime
-    astroplan_nearest_antitransit = obs.calc_meridian_antitransit(time, get_sun(time),
+    astroplan_nearest_antitransit = obs.target_meridian_antitransit_time(time, get_sun(time),
                                                                   which='nearest').datetime
 
     # Computed in print_pyephem_solar_transit_noon()
@@ -682,14 +682,14 @@ def test_string_times():
     vega = SkyCoord(vega_ra, vega_dec)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_next_rise = obs.calc_rise(time, vega, which='next').datetime
-    astroplan_next_set = obs.calc_set(time, vega, which='next').datetime
+    astroplan_next_rise = obs.target_rise_time(time, vega, which='next').datetime
+    astroplan_next_set = obs.target_set_time(time, vega, which='next').datetime
 
-    astroplan_prev_rise = obs.calc_rise(time, vega, which='previous').datetime
-    astroplan_prev_set = obs.calc_set(time, vega, which='previous').datetime
+    astroplan_prev_rise = obs.target_rise_time(time, vega, which='previous').datetime
+    astroplan_prev_set = obs.target_set_time(time, vega, which='previous').datetime
 
-    astroplan_nearest_rise = obs.calc_rise(time, vega, which='nearest').datetime
-    astroplan_nearest_set = obs.calc_set(time, vega, which='nearest').datetime
+    astroplan_nearest_rise = obs.target_rise_time(time, vega, which='nearest').datetime
+    astroplan_nearest_set = obs.target_set_time(time, vega, which='nearest').datetime
 
     # Run print_pyephem_vega_rise_set() to compute analogous
     # result from PyEphem:
@@ -723,7 +723,7 @@ def test_TargetAlwaysUpWarning(recwarn):
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
     obs = Observer(location=location)
-    no_time = obs.calc_rise(time, polaris, which='next')
+    no_time = obs.target_rise_time(time, polaris, which='next')
 
     w = recwarn.pop(TargetAlwaysUpWarning)
     assert issubclass(w.category, TargetAlwaysUpWarning)
@@ -738,7 +738,7 @@ def test_TargetNeverUpWarning(recwarn):
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
 
     obs = Observer(location=location)
-    no_time = obs.calc_rise(time, polaris, which='next')
+    no_time = obs.target_rise_time(time, polaris, which='next')
 
     w = recwarn.pop(TargetNeverUpWarning)
     assert issubclass(w.category, TargetNeverUpWarning)
@@ -797,16 +797,16 @@ class TestExceptions(unittest.TestCase):
         obs = Observer(location=location)
 
         with self.assertRaises(ValueError):
-            obs.calc_rise(time, vega_coords, which='oops').datetime
+            obs.target_rise_time(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            obs.calc_set(time, vega_coords, which='oops').datetime
+            obs.target_set_time(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            obs.calc_meridian_transit(time, vega_coords, which='oops').datetime
+            obs.target_meridian_transit_time(time, vega_coords, which='oops').datetime
 
         with self.assertRaises(ValueError):
-            obs.calc_meridian_antitransit(time, vega_coords, which='oops').datetime
+            obs.target_meridian_antitransit_time(time, vega_coords, which='oops').datetime
 
     def test_FixedTarget_duck_typing(self):
         with self.assertRaises(TypeError):
