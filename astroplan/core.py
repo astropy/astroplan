@@ -1525,14 +1525,14 @@ class AltitudeRange(Constraint):
         raise NotImplementedError
 
 
-class AboveAirmass(Constraint):
+class AirmassRange(Constraint):
     """
-    An object containing an airmass lower limit.
+    Constrain the airmass within a given range.
     """
 
-    def __init__(self, low):
+    def __init__(self, upper_limit, lower_limit=1):
         """
-        Initializes an AboveAirmass object.
+        Initializes an AirmassRange object.
 
         Parameters
         ----------
