@@ -22,8 +22,8 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
+from .sites import get_site
 import warnings
-
 
 from abc import ABCMeta, abstractmethod
 
@@ -156,6 +156,41 @@ class Observer(object):
         else:
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
+
+    @classmethod
+    def at_site(cls, site_name, **kwargs):
+        """
+        Initialize an `~astroplan.core.Observer` object with a site name.
+
+        Extra keyword arguments are passed to the `~astroplan.core.Observer`
+        constructor (see `~astroplan.core.Observer` for available keyword
+        arguments).
+
+        Parameters
+        ----------
+        site_name : str
+            Observatory name, must be resolvable with
+            `~astroplan.sites.get_site`.
+
+        Returns
+        -------
+        `~astroplan.core.Observer`
+            Observer object.
+
+        Examples
+        --------
+        Initialize an observer at Kitt Peak National Observatory:
+
+        >>> from astroplan import Observer
+        >>> import astropy.units as u
+        >>> kpno_generic = Observer.at_site('kpno')
+        >>> kpno_today = Observer.at_site('kpno', pressure=1*u.bar, temperature=0*u.deg_C)
+        """
+        name = kwargs.pop('name', site_name)
+        if 'location' in kwargs:
+            raise ValueError("Location kwarg should not be used if "
+                             "initializing an Observer with Observer.at_site()")
+        return cls(location=get_site(site_name), name=name, **kwargs)
 
     def astropy_time_to_datetime(self, astropy_time):
         """

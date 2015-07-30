@@ -1,6 +1,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from ..sites import get_site, add_site
+from ..core import Observer
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.coordinates import Latitude, Longitude, EarthLocation
 import astropy.units as u
@@ -32,6 +33,17 @@ def test_add_site():
     add_site(new_site_name, new_site_location)
     retrieved_location = get_site(new_site_name)
     assert retrieved_location == new_site_location
+
+def test_Observer_classmethod():
+    site_name = 'kpno'
+    pressure = 1*u.bar
+    temperature = 0*u.deg_C
+    kpno = Observer.at_site(site_name, pressure=pressure,
+                            temperature=temperature)
+    assert kpno.location == get_site(site_name)
+    assert kpno.name == site_name
+    assert kpno.temperature == temperature
+    assert kpno.pressure == pressure
 
 class TestExceptions(unittest.TestCase):
     def test_bad_site(self):
