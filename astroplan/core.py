@@ -1103,63 +1103,6 @@ class Observer(object):
 
     # Moon-related methods.
 
-    def get_moon(self, time):
-        """
-        Position of the Earth's moon.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time` or see below
-            Time of observation. This will be passed in as the first argument to
-            the `~astropy.time.Time` initializer, so it can be anything that
-            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object).
-
-        Returns
-        -------
-        moon_sc : `~astropy.coordinates.SkyCoord`
-            Position of the moon at ``time``
-        """
-        try:
-            import ephem
-        except ImportError:
-            raise ImportError("The get_moon function currently requires "
-                              "PyEphem to compute the position of the moon.")
-
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        moon = ephem.Moon()
-        obs = ephem.Observer()
-        obs.lat = self.location.latitude.to(u.degree).to_string(sep=':')
-        obs.lon = self.location.longitude.to(u.degree).to_string(sep=':')
-        obs.elevation = self.location.height.to(u.m).value
-        if self.pressure is not None:
-            obs.pressure = self.pressure.to(u.bar).value*1000.0
-
-        if time.isscalar:
-            obs.date = time.datetime
-            moon.compute(obs)
-            moon_ra = float(moon.ra)
-            moon_dec = float(moon.dec)
-            moon_dist = moon.earth_distance
-        else:
-            moon_ra = []
-            moon_dec = []
-            moon_dist = []
-            for t in time:
-                obs.date = t.datetime
-                moon.compute(obs)
-                moon_ra.append(float(moon.ra))
-                moon_dec.append(float(moon.dec))
-                moon_dist.append(moon.earth_distance)
-
-        moon_sc = SkyCoord(ra=Longitude(moon_ra, unit=u.rad),
-                           dec=Latitude(moon_dec, unit=u.rad),
-                           distance=u.Quantity(moon_dist, u.AU), frame='gcrs')
-
-        return moon_sc
-
     def moon_rise_time(self, time, **kwargs):
         """
         Returns the local moonrise time.
@@ -1196,7 +1139,7 @@ class Observer(object):
         """
         raise NotImplementedError()
 
-    def moon_illumination(self, time=None, moon=None, sun=None):
+    def moon_illumination(self, time):
         """
         Calculate the illuminated fraction of the moon
 
@@ -1221,16 +1164,10 @@ class Observer(object):
         float
             Fraction of lunar surface illuminated
         """
-        if time is not None and not isinstance(time, Time):
+        if not isinstance(time, Time):
             time = Time(time)
 
-        if moon is None:
-            moon = get_moon(time, self.location, self.pressure)
-
-        if sun is None:
-            sun = get_sun(time)
-
-        return calc_moon_illumination(moon, sun)
+        return calc_moon_illumination(time, self.location)
 
     def moon_phase(self, time=None, moon=None, sun=None):
         """
@@ -1257,13 +1194,7 @@ class Observer(object):
         if time is not None and not isinstance(time, Time):
             time = Time(time)
 
-        if moon is None:
-            moon = get_moon(time, self.location, self.pressure)
-
-        if sun is None:
-            sun = get_sun(time)
-
-        return calc_moon_phase_angle(moon, sun)
+        return calc_moon_phase_angle(time, self.location)
 
     def moon_altaz(self, time):
         """

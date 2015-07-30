@@ -2,15 +2,14 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astroplan import Observer, get_moon
+from ..core import Observer
+from ..moon import get_moon
 from astropy.time import Time
-from astropy.coordinates import EarthLocation, get_sun
+from astropy.coordinates import EarthLocation
 import astropy.units as u
 from numpy.testing import assert_allclose
-from astropy.tests.helper import remote_data
 
-@remote_data
-def test_illumination(recwarn):
+def test_illumination():
     time = Time(['1990-01-01 00:00:00', '1990-03-01 06:00:00',
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
@@ -18,25 +17,15 @@ def test_illumination(recwarn):
     # Get illumination via time
     illumination1 = obs.moon_illumination(time)
 
-    moon = get_moon(time, obs.location, pressure=obs.pressure)
-    sun = get_sun(time)
     # Get illumination via sun and moon
-    illumination2 = obs.moon_illumination(moon=moon, sun=sun)
+    illumination2 = obs.moon_illumination(time)
     assert all(illumination1 == illumination2)
-
-    # Get illumination using jplephem instead of PyEphem
-    moon_jplephem = get_moon(time, obs.location, pressure=obs.pressure,
-                             use_pyephem=False)
-    illumination3 = obs.moon_illumination(moon=moon, sun=sun)
-    assert_allclose(illumination1, illumination3, atol=1)
 
     # Run print_pyephem_illumination() for PyEphem's solution
     pyephem_illumination = [0.15475513880925418, 0.19484233284757257,
                             0.6170840254669668, 0.9780219372563843]
 
-    assert_allclose(illumination1, pyephem_illumination, atol=1)
-    w = recwarn.pop(DeprecationWarning)
-    assert issubclass(w.category, DeprecationWarning)
+    assert_allclose(illumination1, pyephem_illumination, atol=0.05)
 
 def print_pyephem_illumination():
     """

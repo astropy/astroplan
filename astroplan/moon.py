@@ -11,7 +11,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import (SkyCoord, Longitude, Latitude, GCRS,
-                                 CartesianRepresentation)
+                                 CartesianRepresentation, get_sun, AltAz)
 import astropy.units as u
 from astropy.utils.data import download_file
 
@@ -123,7 +123,7 @@ def get_moon(time, location, pressure=None, use_pyephem=True):
 
     return moon_sc
 
-def calc_moon_phase_angle(moon, sun):
+def calc_moon_phase_angle(time, location):
     """
     Calculate lunar orbital phase [radians].
 
@@ -140,11 +140,15 @@ def calc_moon_phase_angle(moon, sun):
     i : float
         Phase angle of the moon [radians]
     """
+    # TODO: cache these sun/moon SkyCoord objects
+    sun = get_sun(time)
+    #sun = sun.transform_to(AltAz(location=location, obstime=time))
+    moon = get_moon(time, location)
     elongation = sun.separation(moon)
     return np.arctan2(sun.distance*np.sin(elongation),
                       moon.distance - sun.distance*np.cos(elongation))
 
-def calc_moon_illumination(moon, sun):
+def calc_moon_illumination(time, location):
     """
     Calculate fraction of the moon illuminated
 
@@ -161,6 +165,6 @@ def calc_moon_illumination(moon, sun):
     k : float
         Fraction of moon illuminated
     """
-    i = calc_moon_phase_angle(moon, sun)
+    i = calc_moon_phase_angle(time, location)
     k = (1 + np.cos(i))/2.0
     return k.value
