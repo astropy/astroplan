@@ -166,12 +166,57 @@ class Observer(object):
         ----------
         site_name : str
             Observatory name, must be resolvable with
-            `~astroplan.sites.get_site`
+            `~astroplan.sites.get_site`.
+
+        name : str
+            A short name for the telescope, observatory or location. If no name
+            is given, ``site_name`` will be used as the name.
+
+        location : `~astropy.coordinates.EarthLocation`
+            The location (latitude, longitude, elevation) of the observatory.
+
+        longitude : float, str, `~astropy.units.Quantity` (optional)
+            The longitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Longitude` object.
+
+        latitude : float, str, `~astropy.units.Quantity` (optional)
+            The latitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Latitude` object.
+
+        elevation : `~astropy.units.Quantity` (optional), default = 0 meters
+            The elevation of the observing location, with respect to sea
+            level. Defaults to sea level.
+
+        pressure : `~astropy.units.Quantity` (optional)
+            The ambient pressure. Defaults to zero (i.e. no atmosphere).
+
+        relative_humidity : float (optional)
+            The ambient relative humidity.
+
+        temperature : `~astropy.units.Quantity` (optional)
+            The ambient temperature.
+
+        timezone : str or `datetime.tzinfo` (optional)
+            The local timezone to assume. If a string, it will be passed through
+            `pytz.timezone()` to produce the timezone object.
+
+        description : str (optional)
+            A short description of the telescope, observatory or observing
+            location.
 
         Returns
         -------
         `~astroplan.core.Observer`
             Observer object.
+
+        Examples
+        --------
+        Initialize an observer at Kitt Peak National Observatory:
+
+        >>> from astroplan import Observer
+        >>> import astropy.units as u
+        >>> kpno_generic = Observer.at_site('kpno')
+        >>> kpno_today = Observer.at_site('kpno', pressure=1*u.bar, temperature=0*u.deg_C)
         """
         name = kwargs.pop('name', site_name)
         if 'location' in kwargs:

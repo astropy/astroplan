@@ -36,9 +36,14 @@ def test_add_site():
 
 def test_Observer_classmethod():
     site_name = 'kpno'
-    kpno = Observer.at_site(site_name)
+    pressure = 1*u.bar
+    temperature = 0*u.deg_C
+    kpno = Observer.at_site(site_name, pressure=pressure,
+                            temperature=temperature)
     assert kpno.location == get_site(site_name)
     assert kpno.name == site_name
+    assert kpno.temperature == temperature
+    assert kpno.pressure == pressure
 
 class TestExceptions(unittest.TestCase):
     def test_bad_site(self):
