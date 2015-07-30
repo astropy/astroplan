@@ -3,7 +3,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 Angle, Latitude, Longitude, UnitSphericalRepresentation)
+                                 Angle, Latitude, Longitude,
+                                 UnitSphericalRepresentation, SphericalRepresentation)
 
 import astropy.units as u
 import datetime
@@ -75,46 +76,6 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
         time_grid = np.linspace(start, end, N)*u.day
 
     return t0 + time_grid
-
-def transform_target_list_to_altaz(times, targets, location):
-    """
-    Workaround for transforming a list of coordinates ``targets`` to
-    altitudes and azimuths.
-
-    Parameters
-    ----------
-    times : `~astropy.time.Time` or list of `~astropy.time.Time` objects
-        Time of observation
-
-    targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
-        List of target coordinates
-
-    location : `~astropy.coordinates.EarthLocation`
-        Location of observer
-
-    Returns
-    -------
-    altitudes : list
-        List of altitudes for each target, at each time
-    """
-    if times.isscalar:
-        times = Time([times])
-
-    if not isinstance(targets, list) and targets.isscalar:
-        targets = [targets]
-
-    repeated_times = Time(np.tile(times.jd, len(targets)), format='jd')
-    ra_list = Longitude([x.ra for x in targets])
-    dec_list = Latitude([x.dec for x in targets])
-    repeated_ra = np.repeat(ra_list, len(times))
-    repeated_dec = np.repeat(dec_list, len(times))
-    inner_sc = SkyCoord(ra=repeated_ra, dec=repeated_dec)
-    target_SkyCoord = SkyCoord(inner_sc.data.represent_as(UnitSphericalRepresentation),
-                               representation=UnitSphericalRepresentation)
-
-    transformed_coord = target_SkyCoord.transform_to(AltAz(location=location,
-                                                           obstime=repeated_times))
-    return transformed_coord
 
 def _target_is_vector(target):
     if hasattr(target, '__iter__'):
@@ -315,6 +276,58 @@ class Observer(object):
 
         return Time(date_time, location=self.location)
 
+    def _transform_target_list_to_altaz(self, times, targets):
+        """
+        Workaround for transforming a list of coordinates ``targets`` to
+        altitudes and azimuths.
+
+        Parameters
+        ----------
+        times : `~astropy.time.Time` or list of `~astropy.time.Time` objects
+            Time of observation
+
+        targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
+            List of target coordinates
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        Returns
+        -------
+        altitudes : list
+            List of altitudes for each target, at each time
+        """
+        if times.isscalar:
+            times = Time([times])
+
+        if not isinstance(targets, list) and targets.isscalar:
+            targets = [targets]
+
+        targets_is_unitsphericalrep = [x.data.__class__ is
+                                       UnitSphericalRepresentation for x in targets]
+        if all(targets_is_unitsphericalrep) or not any(targets_is_unitsphericalrep):
+            repeated_times = np.tile(times, len(targets))
+            ra_list = Longitude([x.icrs.ra for x in targets])
+            dec_list = Latitude([x.icrs.dec for x in targets])
+            repeated_ra = np.repeat(ra_list, len(times))
+            repeated_dec = np.repeat(dec_list, len(times))
+            inner_sc = SkyCoord(ra=repeated_ra, dec=repeated_dec)
+            target_SkyCoord = SkyCoord(inner_sc.data.represent_as(UnitSphericalRepresentation),
+                                       representation=UnitSphericalRepresentation)
+            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
+                                                                   obstime=repeated_times))
+        else:
+            # TODO: This is super slow.
+            repeated_times = np.tile(times, len(targets))
+            repeated_targets = np.repeat(targets, len(times))
+            target_SkyCoord = SkyCoord(SkyCoord(repeated_targets).data.represent_as(
+                                       UnitSphericalRepresentation),
+                                       representation=UnitSphericalRepresentation)
+
+            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
+                                                                   obstime=repeated_times))
+        return transformed_coord
+
     def altaz(self, time, target=None, obswl=None):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
@@ -359,10 +372,8 @@ class Observer(object):
             # If target is a list of targets:
             if _target_is_vector(target):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-                transformed_coords = transform_target_list_to_altaz(time,
-                                                                    list(map(get_coord,
-                                                                        target)),
-                                                                    self.location)
+                transformed_coords = self._transform_target_list_to_altaz(time,
+                                          list(map(get_coord, target)))
                 n_targets = len(target)
                 new_shape = (n_targets, int(len(transformed_coords)/n_targets))
 
