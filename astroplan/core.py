@@ -1276,6 +1276,9 @@ class Observer(object):
         """
         Returns the position of the moon in alt/az.
 
+        TODO: Currently `moon_altaz` uses PyEphem to calculate the position
+        of the moon.
+
         Parameters
         ----------
         time : `~astropy.time.Time` or other (see below)
@@ -1289,9 +1292,38 @@ class Observer(object):
         altaz : `~astropy.coordinates.SkyCoord`
             Position of the moon transformed to altitude and azimuth
         """
-        # This solution is affected by bug in astropy Issue #3920
-        #return self.altaz(time, get_moon(time, self.location, self.pressure))
-        raise NotImplementedError()
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        try:
+            import ephem
+        except ImportError:
+            raise ImportError("The moon_altaz function currently requires "
+                              "PyEphem to compute the position of the moon.")
+
+        moon = ephem.Moon()
+        obs = ephem.Observer()
+        obs.lat = self.location.latitude.to(u.degree).to_string(sep=':')
+        obs.lon = self.location.longitude.to(u.degree).to_string(sep=':')
+        obs.elevation = self.location.height.to(u.m).value
+        if self.pressure is not None:
+            obs.pressure = self.pressure.to(u.bar).value*1000.0
+
+        if time.isscalar:
+            obs.date = time.datetime
+            moon.compute(obs)
+            moon_alt = float(moon.alt)
+            moon_az = float(moon.az)
+        else:
+            moon_alt = []
+            moon_az = []
+            for t in time:
+                obs.date = t.datetime
+                moon.compute(obs)
+                moon_alt.append(float(moon.alt))
+                moon_az.append(float(moon.az))
+        return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad, frame='altaz',
+                        obstime=time)
 
     @u.quantity_input(horizon=u.deg)
     def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
