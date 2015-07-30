@@ -31,9 +31,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
-           "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "MAGIC_TIME"]
+__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
@@ -1384,11 +1382,12 @@ class Observer(object):
 
 class Target(object):
     """
+    Abstract base class for target objects.
+
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as ``FixedTarget`` or ``NonFixedTarget``.
-
-    Would need to import six, abc to make this a metaclass?
+    subclasses such as `~astroplan.core.FixedTarget` or
+    `~astroplan.core.NonFixedTarget`.
     """
     __metaclass__ = ABCMeta
 
@@ -1490,14 +1489,14 @@ class Constraint(object):
         raise NotImplementedError
 
 
-class TimeWindow(Constraint):
+class TimeRange(Constraint):
     """
     An object containing start and end times for an observation.
     """
 
     def __init__(self, start, end):
         """
-        Initializes a TimeWindow object.
+        Initializes a TimeRange object.
 
         Parameters
         ----------
