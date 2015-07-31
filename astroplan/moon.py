@@ -79,16 +79,19 @@ def get_moon(time, location, pressure=None):
         moon.compute(obs)
         moon_alt = float(moon.alt)
         moon_az = float(moon.az)
+        moon_distance = moon.earth_distance
     else:
         moon_alt = []
         moon_az = []
+        moon_distance = []
         for t in time:
             obs.date = t.datetime
             moon.compute(obs)
             moon_alt.append(float(moon.alt))
             moon_az.append(float(moon.az))
-
+            moon_distance.append(moon.earth_distance)
     return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
+                    distance=moon_distance*u.AU,
                     frame=AltAz(location=location, obstime=time))
 
 def calc_moon_phase_angle(time, location):
