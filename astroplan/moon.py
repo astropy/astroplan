@@ -30,7 +30,7 @@ def get_spk_file():
                  'generic_kernels/spk/planets/de430.bsp')
     return download_file(de430_url, cache=True, show_progress=True)
 
-def get_moon(time, location, pressure=None, use_pyephem=True):
+def get_moon(time, location, pressure=None):
     """
     Position of the Earth's moon.
 
@@ -52,10 +52,6 @@ def get_moon(time, location, pressure=None, use_pyephem=True):
 
     pressure : `None` or `~astropy.units.Quantity` (optional)
 
-    use_pyephem : bool (default = `True`)
-        Calculate position of moon using PyEphem (requires PyEphem to be
-        installed). If `False`, calculates position of moon with jplephem.
-
     Returns
     -------
     moon_sc : `~astropy.coordinates.SkyCoord`
@@ -64,64 +60,36 @@ def get_moon(time, location, pressure=None, use_pyephem=True):
     if not isinstance(time, Time):
         time = Time(time)
 
-    if use_pyephem:
-        try:
-            import ephem
-        except ImportError:
-            raise ImportError("The get_moon function currently requires "
-                              "PyEphem to compute the position of the moon.")
+    try:
+        import ephem
+    except ImportError:
+        raise ImportError("The get_moon function currently requires "
+                          "PyEphem to compute the position of the moon.")
 
-        moon = ephem.Moon()
-        obs = ephem.Observer()
-        obs.lat = location.latitude.to(u.degree).to_string(sep=':')
-        obs.lon = location.longitude.to(u.degree).to_string(sep=':')
-        obs.elevation = location.height.to(u.m).value
-        if pressure is not None:
-            obs.pressure = pressure.to(u.bar).value*1000.0
+    moon = ephem.Moon()
+    obs = ephem.Observer()
+    obs.lat = location.latitude.to(u.degree).to_string(sep=':')
+    obs.lon = location.longitude.to(u.degree).to_string(sep=':')
+    obs.elevation = location.height.to(u.m).value
+    if pressure is not None:
+        obs.pressure = pressure.to(u.bar).value*1000.0
 
-        if time.isscalar:
-            obs.date = time.datetime
-            moon.compute(obs)
-            moon_ra = float(moon.ra)
-            moon_dec = float(moon.dec)
-            moon_dist = moon.earth_distance
-        else:
-            moon_ra = []
-            moon_dec = []
-            moon_dist = []
-            for t in time:
-                obs.date = t.datetime
-                moon.compute(obs)
-                moon_ra.append(float(moon.ra))
-                moon_dec.append(float(moon.dec))
-                moon_dist.append(moon.earth_distance)
-
+    if time.isscalar:
+        obs.date = time.datetime
+        moon.compute(obs)
+        moon_alt = float(moon.alt)
+        moon_az = float(moon.az)
     else:
-        try:
-            import jplephem
-        except ImportError:
-            raise ImportError("The get_moon function currently requires "
-                              "jplephem to compute the position of the moon.")
+        moon_alt = []
+        moon_az = []
+        for t in time:
+            obs.date = t.datetime
+            moon.compute(obs)
+            moon_alt.append(float(moon.alt))
+            moon_az.append(float(moon.az))
 
-        # Calculate position of moon relative to Earth by subtracting the
-        # vector pointing from the Earth-moon barycenter to the moon by
-        # the vector from the Earth-moon barycenter to the Earth
-        from jplephem.spk import SPK
-        kernel = SPK.open(get_spk_file())
-        cartesian_position = (kernel[3,301].compute(time.jd) -
-                              kernel[3,399].compute(time.jd))
-        x, y, z = cartesian_position*u.km
-
-        # Convert to GCRS coordinates
-        cartrep = CartesianRepresentation(x=x, y=y, z=z)
-        return SkyCoord(cartrep, frame=GCRS(obstime=time,
-                                            obsgeoloc=location))
-
-    moon_sc = SkyCoord(ra=Longitude(moon_ra, unit=u.rad),
-                       dec=Latitude(moon_dec, unit=u.rad),
-                       distance=u.Quantity(moon_dist, u.AU), frame='gcrs')
-
-    return moon_sc
+    return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
+                    frame=AltAz(location=location, obstime=time))
 
 def calc_moon_phase_angle(time, location):
     """
@@ -141,8 +109,7 @@ def calc_moon_phase_angle(time, location):
         Phase angle of the moon [radians]
     """
     # TODO: cache these sun/moon SkyCoord objects
-    sun = get_sun(time)
-    #sun = sun.transform_to(AltAz(location=location, obstime=time))
+    sun = get_sun(time).transform_to(AltAz(location=location, obstime=time))
     moon = get_moon(time, location)
     elongation = sun.separation(moon)
     return np.arctan2(sun.distance*np.sin(elongation),
