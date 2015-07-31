@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
+from astropy.time import Time
 
 
 @u.quantity_input(az_label_offset=u.deg)
@@ -32,15 +33,18 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        Can be scalar (e.g., Time('2000-1-1')) or not
-        (e.g., Time(['2000-1-1'])).
+        If scalar (e.g., Time('2000-1-1')), will result in plotting target
+        positions once an hour over a 24-hour window.
+        If non-scalar (e.g., Time(['2000-1-1']), [Time('2000-1-1')],
+        Time(['2000-1-1', '2000-1-2']) or [Time('2000-1-1'), Time('2000-1-2')]),
+        will result in plotting positions at the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
         The axes object to be drawn on.
         If None, use the current axes (`matplotlib.pyplot.gca`).
 
     style_kwargs : dict or Empty, optional.
-        A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
+        A dictionary of keywords passed into `matplotlib.pyplot.scatter`
         to set plotting styles.
 
     north_to_east_ccw: bool, optional.
@@ -96,6 +100,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
     style_kwargs.setdefault('marker', 'o')
+
+    # Populate time window if needed.
+    time = Time(time)
+    if time.isscalar:
+        time = time + np.linspace(-12, 12, 25)*u.hour
 
     # Grab altitude and azimuth from Astroplan objects.
     # Note that values must be made dimensionless before plotting.
