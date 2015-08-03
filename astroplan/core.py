@@ -704,7 +704,6 @@ class Observer(object):
             altitudes = altaz.alt
             d_altitudes = altitudes.diff()
 
-        print('alts:', [d_altitudes])
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
 
         horizon = 0*u.degree # Find when derivative passes through zero
@@ -898,18 +897,12 @@ class Observer(object):
             if _target_is_vector(target):
                 return_times = []
                 for next_t, prev_t in zip(next_transit, previous_transit):
-                    print(prev_t, next_t,
-                          abs(time - prev_t) < abs(time - next_t),
-                          abs(time - prev_t), abs(time - next_t))
                     if abs(time - prev_t) < abs(time - next_t):
                         return_times.append(prev_t)
                     else:
                         return_times.append(next_t)
                 return Time(return_times)
             else:
-                print(previous_transit, next_transit,
-                      abs(time - previous_transit) < abs(time - next_transit),
-                      abs(time - previous_transit), abs(time - next_transit))
                 if abs(time - previous_transit) < abs(time - next_transit):
                     return previous_transit
                 else:
