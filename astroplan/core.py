@@ -462,10 +462,7 @@ class Observer(object):
         Returns the lower and upper limits on the time and altitudes
         of the horizon crossing.
         """
-        alt = Latitude(alt)
-
-        if len(np.shape(alt)) == 1:
-            alt = alt[np.newaxis, :]
+        alt = np.atleast_2d(Latitude(alt))
         n_targets = alt.shape[0]
 
         if rise_set == 'rising':
