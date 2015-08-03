@@ -165,28 +165,28 @@ def test_rise_set_transit_nearest_vector():
     time = Time('1995-06-21 00:00:00')
 
     obs = Observer(location=location)
-    rise_vector = obs.calc_rise(time, sc_list)
-    vega_rise = obs.calc_rise(time, vega)
-    mira_rise = obs.calc_rise(time, mira)
-    sirius_rise = obs.calc_rise(time, sirius)
+    rise_vector = obs.target_rise_time(time, sc_list)
+    vega_rise = obs.target_rise_time(time, vega)
+    mira_rise = obs.target_rise_time(time, mira)
+    sirius_rise = obs.target_rise_time(time, sirius)
 
     assert rise_vector[0] == vega_rise
     assert rise_vector[1] == mira_rise
     assert rise_vector[2] == sirius_rise
 
-    set_vector = obs.calc_set(time, sc_list)
-    vega_set = obs.calc_set(time, vega)
-    mira_set = obs.calc_set(time, mira)
-    sirius_set = obs.calc_set(time, sirius)
+    set_vector = obs.target_set_time(time, sc_list)
+    vega_set = obs.target_set_time(time, vega)
+    mira_set = obs.target_set_time(time, mira)
+    sirius_set = obs.target_set_time(time, sirius)
 
     assert set_vector[0] == vega_set
     assert set_vector[1] == mira_set
     assert set_vector[2] == sirius_set
 
-    transit_vector = obs.calc_meridian_transit(time, sc_list)
-    vega_trans = obs.calc_meridian_transit(time, vega)
-    mira_trans = obs.calc_meridian_transit(time, mira)
-    sirius_trans = obs.calc_meridian_transit(time, sirius)
+    transit_vector = obs.target_meridian_transit_time(time, sc_list)
+    vega_trans = obs.target_meridian_transit_time(time, vega)
+    mira_trans = obs.target_meridian_transit_time(time, mira)
+    sirius_trans = obs.target_meridian_transit_time(time, sirius)
 
     assert transit_vector[0] == vega_trans
     assert transit_vector[1] == mira_trans
@@ -488,16 +488,19 @@ def test_vega_sirius_rise_set_seattle():
     sirius = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_vega_rise = obs.calc_rise(time, vega, which='next').datetime
-    astroplan_sirius_rise = obs.calc_rise(time, sirius, which='next').datetime
+    astroplan_vega_rise = obs.target_rise_time(time, vega,
+                                               which='next').datetime
+    astroplan_sirius_rise = obs.target_rise_time(time, sirius,
+                                                 which='next').datetime
 
-    astroplan_vector_rise = obs.calc_rise(time, [vega, sirius],
+    astroplan_vector_rise = obs.target_rise_time(time, [vega, sirius],
                                               which='next').datetime
 
-    astroplan_vega_set = obs.calc_set(time, vega, which='next').datetime
-    astroplan_sirius_set = obs.calc_set(time, sirius, which='next').datetime
+    astroplan_vega_set = obs.target_set_time(time, vega, which='next').datetime
+    astroplan_sirius_set = obs.target_set_time(time, sirius,
+                                               which='next').datetime
 
-    astroplan_vector_set = obs.calc_set(time, [vega, sirius],
+    astroplan_vector_set = obs.target_set_time(time, [vega, sirius],
                                         which='next').datetime
 
     # Run print_pyephem_vega_sirius_rise_set() to compute analogous
@@ -866,13 +869,14 @@ def test_vega_sirius_transit_seattle():
     sirius = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
 
     obs = Observer(location=location, pressure=pressure)
-    astroplan_vega_transit = obs.calc_meridian_transit(time, vega,
-                                                       which='next').datetime
-    astroplan_sirius_transit = obs.calc_meridian_transit(time, sirius,
-                                                         which='next').datetime
+    astroplan_vega_transit = obs.target_meridian_transit_time(time, vega,
+                                                              which='next').datetime
+    astroplan_sirius_transit = obs.target_meridian_transit_time(time, sirius,
+                                                                which='next').datetime
 
-    astroplan_vector_transit = obs.calc_meridian_transit(time, [vega, sirius],
-                                                         which='next').datetime
+    astroplan_vector_transit = obs.target_meridian_transit_time(time,
+                                                                [vega, sirius],
+                                                                which='next').datetime
 
     # Run print_pyephem_vega_sirius_transit() to compute analogous
     # result from PyEphem:
