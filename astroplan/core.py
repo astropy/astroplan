@@ -715,6 +715,59 @@ class Observer(object):
                          for time_limit, altitude_limit in
                          zip(time_limits, altitude_limits)])
 
+    def _determine_which_event(self, function, args_dict):
+        """
+        Run through the next/previous/nearest permutations of the solutions
+        to `function(time, ...)`, and return the previous/next/nearest one
+        specified by the args stored in args_dict.
+        """
+        time = args_dict.pop('time', None)
+        target = args_dict.pop('target', None)
+        which = args_dict.pop('which', None)
+        horizon = args_dict.pop('horizon', None)
+        rise_set = args_dict.pop('rise_set', None)
+        antitransit = args_dict.pop('antitransit', None)
+
+        # Assemble arguments for function, depending on the function.
+        if function == self._calc_riseset:
+            args = lambda w: (time, target, w, rise_set, horizon)
+        elif function == self._calc_transit:
+            args = lambda w: (time, target, w, antitransit)
+        else:
+            raise ValueError('Function {} not supported in '
+                             '_determine_which_event.'.format(function))
+
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        if which == 'next' or which == 'nearest':
+            next_event = function(*args('next'))
+            if which == 'next':
+                return next_event
+
+        if which == 'previous' or which == 'nearest':
+            previous_event = function(*args('previous'))
+            if which == 'previous':
+                return previous_event
+
+        if which == 'nearest':
+            if _target_is_vector(target):
+                return_times = []
+                for next_e, prev_e in zip(next_event, previous_event):
+                    if abs(time - prev_e) < abs(time - next_e):
+                        return_times.append(prev_e)
+                    else:
+                        return_times.append(next_e)
+                return Time(return_times)
+            else:
+                if abs(time - previous_event) < abs(time - next_event):
+                    return previous_event
+                else:
+                    return next_event
+
+        raise ValueError('"which" kwarg must be "next", "previous" or '
+                         '"nearest".')
+
     @u.quantity_input(horizon=u.deg)
     def target_rise_time(self, time, target, which='nearest', horizon=0*u.degree):
         """
@@ -750,38 +803,10 @@ class Observer(object):
         `~astropy.time.Time`
             Rise time of target
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_rise = self._calc_riseset(time, target, 'next', 'rising',
-                                           horizon)
-            if which == 'next':
-                return next_rise
-
-        if which == 'previous' or which == 'nearest':
-            previous_rise = self._calc_riseset(time, target, 'previous',
-                                               'rising', horizon)
-            if which == 'previous':
-                return previous_rise
-
-        if which == 'nearest':
-            if _target_is_vector(target):
-                return_times = []
-                for next_r, prev_r in zip(next_rise, previous_rise):
-                    if abs(time - prev_r) < abs(time - next_r):
-                        return_times.append(prev_r)
-                    else:
-                        return_times.append(next_r)
-                return Time(return_times)
-            else:
-                if abs(time - previous_rise) < abs(time - next_rise):
-                    return previous_rise
-                else:
-                    return next_rise
-
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_riseset,
+                                           dict(time=time, target=target,
+                                                which=which, rise_set='rising',
+                                                horizon=horizon))
 
     @u.quantity_input(horizon=u.deg)
     def target_set_time(self, time, target, which='nearest', horizon=0*u.degree):
@@ -817,38 +842,10 @@ class Observer(object):
         `~astropy.time.Time`
             Set time of target.
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_set = self._calc_riseset(time, target, 'next', 'setting',
-                                          horizon)
-            if which == 'next':
-                return next_set
-
-        if which == 'previous' or which == 'nearest':
-            previous_set = self._calc_riseset(time, target, 'previous',
-                                              'setting', horizon)
-            if which == 'previous':
-                return previous_set
-
-        if which == 'nearest':
-            if _target_is_vector(target):
-                return_times = []
-                for next_s, prev_s in zip(next_set, previous_set):
-                    if abs(time - prev_s) < abs(time - next_s):
-                        return_times.append(prev_s)
-                    else:
-                        return_times.append(next_s)
-                return Time(return_times)
-            else:
-                if abs(time - previous_set) < abs(time - next_set):
-                    return previous_set
-                else:
-                    return next_set
-
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_riseset,
+                                           dict(time=time, target=target,
+                                                which=which, rise_set='setting',
+                                                horizon=horizon))
 
     def target_meridian_transit_time(self, time, target, which='nearest'):
         """
@@ -877,35 +874,10 @@ class Observer(object):
         `~astropy.time.Time`
             Transit time of target
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_transit = self._calc_transit(time, target, 'next')
-            if which == 'next':
-                return next_transit
-
-        if which == 'previous' or which == 'nearest':
-            previous_transit = self._calc_transit(time, target, 'previous')
-            if which == 'previous':
-                return previous_transit
-
-        if which == 'nearest':
-            if _target_is_vector(target):
-                return_times = []
-                for next_t, prev_t in zip(next_transit, previous_transit):
-                    if abs(time - prev_t) < abs(time - next_t):
-                        return_times.append(prev_t)
-                    else:
-                        return_times.append(next_t)
-                return Time(return_times)
-            else:
-                if abs(time - previous_transit) < abs(time - next_transit):
-                    return previous_transit
-                else:
-                    return next_transit
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_transit,
+                                           dict(time=time, target=target,
+                                                which=which,
+                                                rise_set='setting'))
 
     def target_meridian_antitransit_time(self, time, target, which='nearest'):
         """
@@ -934,40 +906,10 @@ class Observer(object):
         `~astropy.time.Time`
             Antitransit time of target
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_antitransit = self._calc_transit(time, target, 'next',
-                                                  antitransit=True)
-            if which == 'next':
-                return next_antitransit
-
-        if which == 'previous' or which == 'nearest':
-            previous_antitransit = self._calc_transit(time, target, 'previous',
-                                                      antitransit=True)
-            if which == 'previous':
-                return previous_antitransit
-
-        if which == 'nearest':
-            if _target_is_vector(target):
-                return_times = []
-                for next_at, prev_at in zip(next_antitransit,
-                                          previous_antitransit):
-                    if abs(time - prev_at) < abs(time - next_at):
-                        return_times.append(prev_at)
-                    else:
-                        return_times.append(next_at)
-                return Time(return_times)
-            else:
-                if (abs(time - previous_antitransit) <
-                        abs(time - next_antitransit)):
-                    return previous_antitransit
-                else:
-                    return next_antitransit
-
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_transit,
+                                           dict(time=time, target=target,
+                                                which=which, antitransit=True,
+                                                rise_set='setting'))
 
     @u.quantity_input(horizon=u.deg)
     def sun_rise_time(self, time, which='nearest', horizon=0*u.degree):
