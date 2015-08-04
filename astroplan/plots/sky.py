@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
+import warnings
 
 
 @u.quantity_input(az_label_offset=u.deg)
@@ -33,11 +34,13 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        If scalar (e.g., Time('2000-1-1')), will result in plotting target
-        positions once an hour over a 24-hour window.
-        If non-scalar (e.g., Time(['2000-1-1']), [Time('2000-1-1')],
-        Time(['2000-1-1', '2000-1-2']) or [Time('2000-1-1'), Time('2000-1-2')]),
-        will result in plotting positions at the exact times specified.
+        If pass in a Time object with just one instance in time, whether it be
+        a scalar or an array (i.e., Time('2000-1-1'), Time(['2000-1-1']),
+        [Time('2000-1-1')]), `plot_sky` will return a map at one instance in
+        time.
+        If pass in a Time object with multiple instances in time (e.g.,
+        Time(['2000-1-1', '2000-1-2'])) will show positions plotted at the
+        exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
         The axes object to be drawn on.
@@ -70,6 +73,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     Notes
     -----
+    Using `astropy.time.Time` objects:
+        See Astropy documentation for more details.
+
     Coordinate defaults:
 
         Altazimuth (local horizon) coordinate system.  North is always at top
@@ -84,38 +90,31 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         option, but it is not recommended, as to do so makes it seem as if
         N/E/S/W are being decoupled from the definition of azimuth
         (North from az = 0 deg., East from az = 90 deg., etc.).
-
-
-    TODO:
-        1) Add time/date and target name labels?
     """
 
     # Set up axes & plot styles if needed.
     if ax is None:
-        # axisbg option sets background color within plot bounds (circle).
-        # May need to set a color outside of plot bounds.
         ax = plt.gca(projection='polar')
-        #ax = plt.gca(polar=True)
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
     style_kwargs.setdefault('marker', 'o')
 
-    # Populate time window if needed.
+    # Turn scalar Time objects into arrays.
     time = Time(time)
     if time.isscalar:
-        time = time + np.linspace(-12, 12, 25)*u.hour
+        time = Time([time])
 
     # Grab altitude and azimuth from Astroplan objects.
     # Note that values must be made dimensionless before plotting.
     # Modifying altitude is easier than inverting r-axis.
-    altitude = (91 * u.deg - observer.altaz(time, target).alt) *(1/u.deg)
+    altitude = (91 * u.deg - observer.altaz(time, target).alt) * (1/u.deg)
     # Azimuth MUST be given to plot() in radians.
     azimuth = observer.altaz(time, target).az * (1/u.deg) * (np.pi/180.0)
 
     # Some checks & info for labels.
     if not hasattr(target, 'name'):
-        target_name = '?'
+        target_name = ''
     else:
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
@@ -124,8 +123,10 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     az_plot = None
     for alt in range(0, len(altitude)):
         if altitude[alt] > 91.0:
-            print("Warning: Target " + str(target_name) +
-                  " is below the horizon at time: " + str(time[alt]))
+            msg = 'Warning: Target "{0}" is below the horizon at time: {1}'
+            warnings.warn(
+                msg.format(target_name if target_name else 'Unknown Name',
+                           time[alt]))
         else:
             if az_plot is None:
                 az_plot = np.array([azimuth[alt]])
@@ -144,11 +145,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         ax.set_theta_direction(-1)
 
     # Plot target coordinates.
-    # ax.plot connects dots.
-    #ax.plot(az_plot, alt_plot, **style_kwargs)
-    # ax.scatter does not connect dots.
     ax.scatter(az_plot, alt_plot, **style_kwargs)
-    #ax.polar(az_plot, alt_plot, **style_kwargs)
 
     # Set radial limits.
     ax.set_rlim(1, 91)
@@ -194,9 +191,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     ax.set_rgrids(range(1, 106, 15), r_labels, angle=-45)
     ax.set_thetagrids(range(0, 360, 45), theta_labels, frac=1.2)
 
-    # Below commands don't seem to work.
-    #ax.rgrids(range(1, 91, 15), r_labels, angle=-45)
-    #ax.thetagrids(range(0, 360, 45), theta_labels)
+    # Below commands don't seem to work for setting ticks/labels.
+    # ax.rgrids(range(1, 91, 15), r_labels, angle=-45)
+    # ax.thetagrids(range(0, 360, 45), theta_labels)
 
     # Redraw the figure for interactive sessions.
     ax.figure.canvas.draw()
