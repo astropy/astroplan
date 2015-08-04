@@ -8,6 +8,8 @@ import astropy.units as u
 from astropy.time import Time
 import warnings
 
+__all__ = ['plot_sky']
+
 
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
@@ -20,7 +22,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     Otherwise, creates a new ax object with a sky plot.
 
     Can pass in a scalar `Time` object (e.g., Time('2000-1-1')) or a non-scalar
-    one (e.g., Time(['2000-1-1'])).
+    one (e.g., Time(['2000-1-1'])) to get plot at one instanct in time.
     If pass in `Time` objects with multiple instances of time
     (e.g., Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])), target's position
     will be shown at each of these times.
@@ -36,7 +38,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     time : `~astropy.time.Time`
         If pass in a Time object with just one instance in time, whether it be
         a scalar or an array (i.e., Time('2000-1-1'), Time(['2000-1-1']),
-        [Time('2000-1-1')]), `plot_sky` will return a map at one instance in
+        [Time('2000-1-1')]), `plot_sky` will return plot at one instance in
         time.
         If pass in a Time object with multiple instances in time (e.g.,
         Time(['2000-1-1', '2000-1-2'])) will show positions plotted at the

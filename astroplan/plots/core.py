@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
+import warnings
+
+__all__ = ['plot_airmass', 'plot_parallactic']
 
 
 def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
@@ -35,8 +38,8 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     time : `~astropy.time.Time`
         If scalar (e.g., Time('2000-1-1')), will result in plotting target
         airmasses once an hour over a 24-hour window.
-        If non-scalar (e.g., Time(['2000-1-1']), [Time('2000-1-1')],
-        Time(['2000-1-1', '2000-1-2']) or [Time('2000-1-1'), Time('2000-1-2')]),
+        If non-scalar (i.e., Time(['2000-1-1']), [Time('2000-1-1')],
+        Time(['2000-1-1', '2000-1-2'])),
         will result in plotting data at the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
@@ -62,8 +65,6 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     TODO:
         1) Timezones?
         2) Dark plot option.
-        3) Dealing with no target name.
-        4) ax.figure.autofmt_xdate() ?
     """
 
     # Set up plot axes and style if needed.
@@ -80,9 +81,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     if time.isscalar:
         time = time + np.linspace(-12, 12, 100)*u.hour
     elif len(time) == 1:
-        print("Danger: You have used a non-scalar Time object of length 1, and"
-              + " are therefore trying to plot a line with only one data point"
-              + ". Please use a scalar or a list with length > 1.")
+        warnings.warn('You used a Time array of length 1.  Use a scalar or a list with length > 1.')
 
     # Calculate airmass
     airmass = observer.altaz(time, target).secz
@@ -143,8 +142,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
     time : `~astropy.time.Time`
         If scalar (e.g., Time('2000-1-1')), will result in plotting target
         parallactic angle once an hour over a 24-hour window.
-        If non-scalar (e.g., Time(['2000-1-1']), [Time('2000-1-1')],
-        Time(['2000-1-1', '2000-1-2']) or [Time('2000-1-1'), Time('2000-1-2')]),
+        If non-scalar (i.e., Time(['2000-1-1']), [Time('2000-1-1')],
+        Time(['2000-1-1', '2000-1-2'])),
         will result in plotting data at the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
@@ -162,10 +161,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
 
     TODO:
         1) dark_plot style
-        2) Use parallactic angle function.
-        3) observe_timezone -- update with info from observer?
-        4) Dealing with no target name.
-        5) ax.figure.autofmt_xdate() ?
+        2) observe_timezone -- update with info from observer?
     """
 
     # Set up plot axes and style if needed.
@@ -182,9 +178,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
     if time.isscalar:
         time = time + np.linspace(-12, 12, 100)*u.hour
     elif len(time) == 1:
-        print("Danger: You have used a non-scalar Time object of length 1, and"
-              + " are therefore trying to plot a line with only one data point"
-              + ". Please use a scalar or a list with length > 1.")
+        warnings.warn('You used a Time array of length 1.  Use a scalar or a list with length > 1.')
 
     # Calculate parallactic angle.
     p_angle = observer.parallactic_angle(time, target)
