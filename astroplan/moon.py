@@ -11,9 +11,10 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import (SkyCoord, Longitude, Latitude, GCRS,
-                                 CartesianRepresentation, get_sun, AltAz)
+                                 CartesianRepresentation, get_sun, AltAz, Angle)
 import astropy.units as u
 from astropy.utils.data import download_file
+from astropy.coordinates.angle_utilities import angular_separation
 
 __all__ = ["get_moon", "calc_moon_phase_angle", "calc_moon_illumination"]
 
@@ -114,7 +115,13 @@ def calc_moon_phase_angle(time, location):
     # TODO: cache these sun/moon SkyCoord objects
     sun = get_sun(time).transform_to(AltAz(location=location, obstime=time))
     moon = get_moon(time, location)
-    elongation = sun.separation(moon)
+    # The line below should have worked, but needs a workaround.
+    # TODO: once bug has been fixed, replace workaround with simpler version.
+    # elongation = sun.separation(moon)
+    elongation = Angle(angular_separation(moon.spherical.lon,
+                                   moon.spherical.lat,
+                                   sun.spherical.lon,
+                                   sun.spherical.lat), u.deg)
     return np.arctan2(sun.distance*np.sin(elongation),
                       moon.distance - sun.distance*np.cos(elongation))
 
