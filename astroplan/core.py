@@ -23,6 +23,7 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .sites import get_site
+from .moon import get_moon, moon_illumination, moon_phase_angle
 import warnings
 
 from abc import ABCMeta, abstractmethod
@@ -1140,7 +1141,7 @@ class Observer(object):
 
     def moon_illumination(self, time):
         """
-        Returns a float giving the percent illumation.
+        Calculate the illuminated fraction of the moon
 
         Parameters
         ----------
@@ -1149,13 +1150,59 @@ class Observer(object):
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
-        """
-        raise NotImplementedError()
 
-    def moon_position(self, time):
+        moon : `~astropy.coordinates.SkyCoord` or `None` (default)
+            Position of the moon at time ``time``. If `None`, will calculate
+            the position of the moon with `~astroplan.moon.get_moon`.
+
+        sun : `~astropy.coordinates.SkyCoord` or `None` (default)
+            Position of the sun at time ``time``. If `None`, will calculate
+            the position of the Sun with `~astropy.coordinates.get_sun`.
+
+        Returns
+        -------
+        float
+            Fraction of lunar surface illuminated
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        return moon_illumination(time, self.location)
+
+    def moon_phase(self, time=None, moon=None, sun=None):
+        """
+        Calculate lunar orbital phase.
+
+        For example, phase=0 is "new", phase=1 is "full".
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
+
+        moon : `~astropy.coordinates.SkyCoord` or `None` (default)
+            Position of the moon at time ``time``. If `None`, will calculate
+            the position of the moon with `~astroplan.moon.get_moon`.
+
+        sun : `~astropy.coordinates.SkyCoord` or `None` (default)
+            Position of the sun at time ``time``. If `None`, will calculate
+            the position of the Sun with `~astropy.coordinates.get_sun`.
+        """
+        if time is not None and not isinstance(time, Time):
+            time = Time(time)
+
+        return moon_phase_angle(time, self.location)
+
+    def moon_altaz(self, time):
         """
         Returns the position of the moon in alt/az.
 
+        TODO: Currently `moon_altaz` uses PyEphem to calculate the position
+        of the moon.
+
         Parameters
         ----------
         time : `~astropy.time.Time` or other (see below)
@@ -1163,8 +1210,44 @@ class Observer(object):
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
+
+        Returns
+        -------
+        altaz : `~astropy.coordinates.SkyCoord`
+            Position of the moon transformed to altitude and azimuth
         """
-        raise NotImplementedError()
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        try:
+            import ephem
+        except ImportError:
+            raise ImportError("The moon_altaz function currently requires "
+                              "PyEphem to compute the position of the moon.")
+
+        moon = ephem.Moon()
+        obs = ephem.Observer()
+        obs.lat = self.location.latitude.to(u.degree).to_string(sep=':')
+        obs.lon = self.location.longitude.to(u.degree).to_string(sep=':')
+        obs.elevation = self.location.height.to(u.m).value
+        if self.pressure is not None:
+            obs.pressure = self.pressure.to(u.bar).value*1000.0
+
+        if time.isscalar:
+            obs.date = time.datetime
+            moon.compute(obs)
+            moon_alt = float(moon.alt)
+            moon_az = float(moon.az)
+        else:
+            moon_alt = []
+            moon_az = []
+            for t in time:
+                obs.date = t.datetime
+                moon.compute(obs)
+                moon_alt.append(float(moon.alt))
+                moon_az.append(float(moon.az))
+        return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
+                        frame=self.altaz(time))
 
     @u.quantity_input(horizon=u.deg)
     def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
