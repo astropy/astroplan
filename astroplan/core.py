@@ -23,7 +23,7 @@ iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .sites import get_site
-from .moon import get_moon, calc_moon_illumination, calc_moon_phase_angle
+from .moon import get_moon, moon_illumination, moon_phase_angle
 import warnings
 
 from abc import ABCMeta, abstractmethod
@@ -1167,7 +1167,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        return calc_moon_illumination(time, self.location)
+        return moon_illumination(time, self.location)
 
     def moon_phase(self, time=None, moon=None, sun=None):
         """
@@ -1194,7 +1194,7 @@ class Observer(object):
         if time is not None and not isinstance(time, Time):
             time = Time(time)
 
-        return calc_moon_phase_angle(time, self.location)
+        return moon_phase_angle(time, self.location)
 
     def moon_altaz(self, time):
         """
