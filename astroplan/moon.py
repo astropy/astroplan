@@ -15,7 +15,7 @@ import astropy.units as u
 from astropy.utils.data import download_file
 from astropy.coordinates.angle_utilities import angular_separation
 
-__all__ = ["get_moon", "moon_phase_angle", "moon_illumination"]
+__all__ = ["get_moon"]
 
 def get_spk_file():
     """
@@ -100,11 +100,11 @@ def moon_phase_angle(time, location):
 
     Parameters
     ----------
-    moon : `~astropy.coordinates.SkyCoord`
-        Position of the moon
+    time : `~astropy.time.Time`
+        Time of observation
 
-    sun : `~astropy.coordinates.SkyCoord`
-        Position of the Sun
+    location : `~astropy.coordinates.EarthLocation`
+        Location of observer
 
     Returns
     -------
@@ -130,11 +130,11 @@ def moon_illumination(time, location):
 
     Parameters
     ----------
-    moon : `~astropy.coordinates.SkyCoord`
-        Position of the moon
+    time : `~astropy.time.Time`
+        Time of observation
 
-    sun : `~astropy.coordinates.SkyCoord`
-        Position of the Sun
+    location : `~astropy.coordinates.EarthLocation`
+        Location of observer
 
     Returns
     -------
