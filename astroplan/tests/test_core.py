@@ -663,8 +663,8 @@ def test_can_see():
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
     north_pole = Observer(location=north, pressure=pressure)
     south_pole = Observer(location=south, pressure=pressure)
-    assert north_pole.can_see(time, polaris)
-    assert not south_pole.can_see(time, polaris)
+    assert north_pole.target_is_up(time, polaris)
+    assert not south_pole.target_is_up(time, polaris)
 
 def test_string_times():
     '''

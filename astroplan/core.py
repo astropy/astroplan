@@ -1250,7 +1250,7 @@ class Observer(object):
                         frame=self.altaz(time))
 
     @u.quantity_input(horizon=u.deg)
-    def can_see(self, time, target, horizon=0*u.degree, return_altaz=False):
+    def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
         """
         Is ``target`` above ``horizon`` at this ``time``?
 
