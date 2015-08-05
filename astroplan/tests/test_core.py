@@ -932,7 +932,7 @@ def print_pyephem_vega_sirius_transit():
 
     print(map(repr, [vega_next_transit, sirius_next_transit]))
 
-def test_can_see():
+def test_target_is_up():
     """
     Test that Polaris is/isn't observable from north/south pole
     """
@@ -952,8 +952,8 @@ def test_can_see():
     assert north_pole.target_is_up(time, polaris)
     assert not south_pole.target_is_up(time, polaris)
 
-    assert all(north_pole.can_see(time, polaris_binary))
-    assert not any(south_pole.can_see(time, polaris_binary))
+    assert all(north_pole.target_is_up(time, polaris_binary))
+    assert not any(south_pole.target_is_up(time, polaris_binary))
 
 def test_string_times():
     """
