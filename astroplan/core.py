@@ -1494,15 +1494,23 @@ class TimeRange(Constraint):
     An object containing start and end times for an observation.
     """
 
-    def __init__(self, start, end):
+    def __init__(self, min=None, max=None):
         """
         Initializes a TimeRange object.
 
         Parameters
         ----------
-        start : STRING OR astropy.time OBJECT ?
+        min : `~astropy.time.Time`, `None` or other (see below)
+            Earliest time. `None` designates no lower limit. This will be passed
+            in as the first argument to the `~astropy.time.Time` initializer,
+            so it can be anything that `~astropy.time.Time` will accept
+            (including a `~astropy.time.Time` object).
 
-        end : STRING OR astropy.time OBJECT ?
+        max : `~astropy.time.Time`, `None` or other (see below)
+            Latest time. `None` designates no upper limit. This will be passed
+            in as the first argument to the `~astropy.time.Time` initializer,
+            so it can be anything that `~astropy.time.Time` will accept
+            (including a `~astropy.time.Time` object).
         """
         raise NotImplementedError
 
@@ -1512,30 +1520,41 @@ class AltitudeRange(Constraint):
     An object containing upper and lower altitude limits.
     """
 
-    def __init__(self, low, high):
+    def __init__(self, min=None, max=None):
         """
         Initializes an AltitudeRange object.
 
         Parameters
         ----------
-        low : `~astropy.units.Quantity`
+        min : `~astropy.units.Quantity` or `None`
+            Minimum altitude. `None` designates no lower limit.
 
-        high : `~astropy.units.Quantity`
+        max : `~astropy.units.Quantity` or `None`
+            Maximum altitude. `None` designates no upper limit.
         """
         raise NotImplementedError
 
 
-class AirmassRange(Constraint):
+class AirmassConstraint(Constraint):
     """
     Constrain the airmass within a given range.
     """
 
-    def __init__(self, upper_limit, lower_limit=1):
+    def __init__(self, max=None, min=None):
         """
-        Initializes an AirmassRange object.
+        Initializes an constraint for airmass.
+
+        Note: the keyword argument order is different for AirmassConstraint
+        than for other constraints for convenience in the common case that a
+        user wants to specify an upper limit on the airmass and not a lower
+        limit, so ``max`` comes before ``min``.
 
         Parameters
         ----------
-        low : float
+        max : float or `None`
+            Maximum airmass value. `None` designates no upper limit.
+
+        min : float or `None`
+            Minimum airmass value. `None` designates no lower limit.
         """
         raise NotImplementedError
