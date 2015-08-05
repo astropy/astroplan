@@ -13,7 +13,8 @@ import datetime
 import pytest
 
 from ..sites import get_site
-from ..core import FixedTarget, Observer, list_FixedTarget_to_SkyCoord
+from ..core import (FixedTarget, Observer, list_FixedTarget_to_SkyCoord,
+                    MAGIC_TIME)
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
@@ -1015,7 +1016,7 @@ def test_TargetAlwaysUpWarning(recwarn):
 
     w = recwarn.pop(TargetAlwaysUpWarning)
     assert issubclass(w.category, TargetAlwaysUpWarning)
-    assert np.isnan(no_time)
+    assert no_time == MAGIC_TIME
 
 def test_TargetNeverUpWarning(recwarn):
     lat = '-90:00:00'
@@ -1030,7 +1031,24 @@ def test_TargetNeverUpWarning(recwarn):
 
     w = recwarn.pop(TargetNeverUpWarning)
     assert issubclass(w.category, TargetNeverUpWarning)
-    assert np.isnan(no_time)
+    assert no_time == MAGIC_TIME
+
+def test_mixed_rise_and_dont_rise(recwarn):
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    polaris = SkyCoord(37.95456067*u.deg, 89.26410897*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    targets = [vega, polaris, sirius]
+
+    location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
+    time = Time('1995-06-21 00:00:00')
+
+    obs = Observer(location=location)
+    rise_times = obs.target_rise_time(time, targets, which='next')
+
+    assert rise_times[1] == MAGIC_TIME
+
+    w = recwarn.pop(TargetAlwaysUpWarning)
+    assert issubclass(w.category, TargetAlwaysUpWarning)
 
 def test_timezone_convenience_methods():
     location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)

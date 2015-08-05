@@ -37,6 +37,8 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
+MAGIC_TIME = Time(-999, format='jd')
+
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
     Generate a nearly linearly spaced grid of time durations.
@@ -488,15 +490,13 @@ class Observer(object):
             else:
                 warnings.warn(warnmsg, TargetNeverUpWarning)
 
-            # Fill in missing time with np.nan
+            # Fill in missing time with MAGIC_TIME
             target_inds = np.insert(target_inds, noncrossing_target_ind,
                                     noncrossing_target_ind)
             time_inds = np.insert(time_inds.astype(float),
                                   noncrossing_target_ind,
                                   np.nan)
         elif np.count_nonzero(condition) > n_targets:
-            dup_target_inds = list(set([target_ind for target_ind in target_inds
-                                        if np.sum(target_inds == target_ind) > 1]))
             old_target_inds = np.copy(target_inds)
             old_time_inds = np.copy(time_inds)
 
@@ -540,8 +540,8 @@ class Observer(object):
             Time when target crosses the horizon
 
         """
-        if not isinstance(times, Time) and np.any(np.isnan(times)):
-            return np.nan
+        if not isinstance(times, Time):
+            return MAGIC_TIME
         else:
             slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
             return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
@@ -695,7 +695,6 @@ class Observer(object):
 
         altaz = self.altaz(times, target)
         if target_is_vector:
-            #d_altitudes = [each_altaz.alt.diff() for each_altaz in altaz]
             d_altitudes = [each_alt.diff() for each_alt in altaz.alt]
         else:
             altitudes = altaz.alt
