@@ -509,8 +509,8 @@ class Observer(object):
             target_inds = np.array(target_inds)
             time_inds = np.array(time_inds)
 
-        times = [t[i:i+2] if not np.isnan(i) else i for i in time_inds]
-        altitudes = [alt[i, j:j+2] if not np.isnan(j) else j
+        times = [t[i:i+2] if not np.isnan(i) else np.nan for i in time_inds]
+        altitudes = [alt[i, j:j+2] if not np.isnan(j) else np.nan
                      for i, j in zip(target_inds, time_inds)]
 
         return times, altitudes
