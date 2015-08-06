@@ -158,6 +158,24 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        attr_names = ['name', 'location', 'timezone', 'pressure', 'temperature',
+                      'relative_humidity']
+        attr_values = [getattr(self, attr) for attr in attr_names]
+        attributes_strings = []
+        for name, value in zip(attr_names, attr_values):
+            if value is not None:
+                if name == 'location':
+                    formatted_loc = ["{} {}".format(i.value, i.unit)
+                                     for i in value.to_geodetic()]
+                    attributes_strings.append(
+                        "{} (lon, lat, el)=({})".format(name,
+                                                        ", ".join(formatted_loc)))
+                else:
+                    attributes_strings.append("{}={}".format(name, repr(value)))
+        return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
+
     @classmethod
     def at_site(cls, site_name, **kwargs):
         """
