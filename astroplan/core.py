@@ -399,8 +399,8 @@ class Observer(object):
         time : `~astropy.time.Time`
             Observation time.
 
-        target : `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord`
-            Celestial object of interest.
+        target : `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord` or list
+            Target celestial object(s).
 
         Returns
         -------
@@ -785,8 +785,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -824,8 +824,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunset relative to the present ``time`` would you
@@ -861,8 +861,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -893,8 +893,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -1324,8 +1324,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
             Degrees above/below actual horizon to use
