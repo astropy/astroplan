@@ -256,7 +256,7 @@ class Observer(object):
 
         Parameters
         ----------
-        iso_string : str or list-like (see below)
+        iso_string : str or list-like
             The ISO format time to convert to a local datetime, or a list of
             ISO format time strings.
 
@@ -276,8 +276,50 @@ class Observer(object):
         >>> keck.iso_utc_to_local_datetime(["2016-02-05 11:21:00", "2016-02-06 12:21:00"])
         [datetime.datetime(2016, 2, 5, 1, 21, tzinfo=<DstTzInfo 'US/Hawaii' HST-1 day, 14:00:00 STD>), datetime.datetime(2016, 2, 6, 2, 21, tzinfo=<DstTzInfo 'US/Hawaii' HST-1 day, 14:00:00 STD>)]
         """
-        astropytime = Time(iso_string, scale='utc', format='iso')
-        return self.astropy_time_to_datetime(astropytime)
+        astropy_time = Time(iso_string, scale='utc', format='iso')
+        return self.astropy_time_to_datetime(astropy_time)
+
+    def iso_local_to_astropy_time(self, iso_string, scale='utc'):
+        """
+        Convert local time in ISO formatted string to `~astropy.time.Time`
+        object.
+
+        Parameters
+        ----------
+        iso_string : str or list-like
+            The ISO format time to convert to a `~astropy.time.Time` object,
+            or a list of ISO format time strings, where the timezone of the
+            datetime is set by the ``timezone`` keyword argument of the
+            `~astroplan.Observer` constructor.
+
+        scale : str
+            Time scale passed to `~astropy.time.Time` initializer. Defaults
+            to 'utc'.
+
+        Returns
+        -------
+        astropy_time : `~astropy.time.Time`
+            Time represented as a `~astropy.time.Time` object (timezone naive)
+
+        Examples
+        --------
+        Convert ISO format times in the local timezone to `~astropy.time.Time`
+        objects,
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> t1 = keck.iso_local_to_astropy_time("2016-02-05 1:21:00")
+        >>> t2 = keck.iso_local_to_astropy_time(["2016-02-05 1:21:00", "2016-02-06 2:21"])
+        >>> print(repr(t1))
+        <Time object: scale='utc' format='datetime' value=2016-02-05 11:21:00>
+        >>> print(repr(t2))
+        <Time object: scale='utc' format='datetime' value=[datetime.datetime(2016, 2, 5, 11, 21) datetime.datetime(2016, 2, 6, 12, 21)]>
+        """
+        if hasattr(iso_string, '__iter__'):
+            date_time = [Time(iso, scale=scale, format='iso').datetime
+                         for iso in iso_string]
+        else:
+            date_time = Time(iso_string, scale=scale, format='iso').datetime
+        return self.datetime_to_astropy_time(date_time)
 
     def altaz(self, time, target=None, obswl=None):
         """
