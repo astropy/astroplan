@@ -166,6 +166,7 @@ class Observer(object):
         attributes_strings = []
         for name, value in zip(attr_names, attr_values):
             if value is not None:
+                # Format location for easy readability
                 if name == 'location':
                     formatted_loc = ["{} {}".format(i.value, i.unit)
                                      for i in value.to_geodetic()]
@@ -1407,6 +1408,17 @@ class FixedTarget(Target):
         if name is None:
             name = query_name
         return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
+
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        attr_names = ['name', 'coord']
+        attr_values = [getattr(self, attr) for attr in attr_names]
+        attributes_strings = []
+        for name, value in zip(attr_names, attr_values):
+            if value is not None:
+                attributes_strings.append("{}={}".format(name, repr(value)))
+        return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
+
 
 class NonFixedTarget(Target):
     """
