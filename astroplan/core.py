@@ -307,8 +307,8 @@ class Observer(object):
         objects,
         >>> from astroplan import Observer
         >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
-        >>> t1 = keck.iso_local_to_astropy_time("2016-02-05 1:21:00")
-        >>> t2 = keck.iso_local_to_astropy_time(["2016-02-05 1:21:00", "2016-02-06 2:21"])
+        >>> t1 = keck.iso_local_to_astropy_time("2016-02-05 01:21:00")
+        >>> t2 = keck.iso_local_to_astropy_time(["2016-02-05 01:21:00", "2016-02-06 02:21:00"])
         >>> print(repr(t1))
         <Time object: scale='utc' format='datetime' value=2016-02-05 11:21:00>
         >>> print(repr(t2))
