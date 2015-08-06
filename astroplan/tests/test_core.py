@@ -813,18 +813,6 @@ def print_pyephem_moon_altaz():
     moon.compute(pe_obs)
     print(map(float, [moon.alt, moon.az]))
 
-    #def test_rise_set_transit_which(self):
-def exceptions_setup():
-    lat = '00:00:00'
-    lon = '00:00:00'
-    elevation = 0.0 * u.m
-    location = EarthLocation.from_geodetic(lon, lat, elevation)
-    time = Time('2000-01-01 12:00:00')
-    vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
-
-    obs = Observer(location=location)
-    return obs, time, vega_coords
-
 def test_exceptions():
     lat = '00:00:00'
     lon = '00:00:00'
