@@ -1047,8 +1047,12 @@ def test_mixed_rise_and_dont_rise(recwarn):
 
     assert rise_times[1] == MAGIC_TIME
 
+    targets_that_rise = np.array(targets)[rise_times != MAGIC_TIME]
+    assert np.all([vega, sirius] == targets_that_rise)
+
     w = recwarn.pop(TargetAlwaysUpWarning)
     assert issubclass(w.category, TargetAlwaysUpWarning)
+
 
 def test_timezone_convenience_methods():
     location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
@@ -1155,3 +1159,19 @@ def test_exceptions():
     with pytest.raises(TypeError):
         obs = Observer(location=EarthLocation(0, 0, 0))
         obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+
+def vectorize_timing(n_targets):
+    """
+    Calculate the rise time of ``n_targets`` targets, return the
+    run time in seconds.
+    """
+    from time import time
+    vega_coord = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
+    vega = FixedTarget(name="Vega", coord=vega_coord)
+    target_list = n_targets*[vega]
+    t = Time("2008-02-27 22:00:00")
+    obs = Observer(location=EarthLocation(10*u.deg, 20*u.deg, 0*u.m))
+    start = time()
+    obs.target_rise_time(t, target_list)
+    end = time()
+    return end-start
