@@ -249,6 +249,36 @@ class Observer(object):
 
         return Time(date_time, location=self.location)
 
+    def iso_utc_to_local_datetime(self, iso_string):
+        """
+        Convert ISO format UTC string to a localized `~datetime.datetime`
+        object.
+
+        Parameters
+        ----------
+        iso_string : str or list-like (see below)
+            The ISO format time to convert to a local datetime, or a list of
+            ISO format time strings.
+
+        Returns
+        -------
+        localized_datetime : `~datetime.datetime` or list of `~datetime.datetime` objects
+            Timezone-aware datetime.
+
+        Examples
+        --------
+        To convert one or a list of UTC times in ISO format to a localized
+        datetime,
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck.iso_utc_to_local_datetime("2016-02-05 11:21:00")
+        datetime.datetime(2016, 2, 5, 1, 21, tzinfo=<DstTzInfo 'US/Hawaii' HST-1 day, 14:00:00 STD>)
+        >>> keck.iso_utc_to_local_datetime(["2016-02-05 11:21:00", "2016-02-06 12:21:00"])
+        [datetime.datetime(2016, 2, 5, 1, 21, tzinfo=<DstTzInfo 'US/Hawaii' HST-1 day, 14:00:00 STD>), datetime.datetime(2016, 2, 6, 2, 21, tzinfo=<DstTzInfo 'US/Hawaii' HST-1 day, 14:00:00 STD>)]
+        """
+        astropytime = Time(iso_string, scale='utc', format='iso')
+        return self.astropy_time_to_datetime(astropytime)
+
     def altaz(self, time, target=None, obswl=None):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
