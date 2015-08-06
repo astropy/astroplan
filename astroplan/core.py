@@ -1411,14 +1411,8 @@ class FixedTarget(Target):
 
     def __repr__(self):
         class_name = self.__class__.__name__
-        attr_names = ['name', 'coord']
-        attr_values = [getattr(self, attr) for attr in attr_names]
-        attributes_strings = []
-        for name, value in zip(attr_names, attr_values):
-            if value is not None:
-                attributes_strings.append("{}={}".format(name, repr(value)))
-        return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
-
+        fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
+        return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
 class NonFixedTarget(Target):
     """
