@@ -9,7 +9,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 import datetime
-import unittest
+import pytest
 
 from ..core import FixedTarget, Observer
 from ..sites import get_site
@@ -813,41 +813,51 @@ def print_pyephem_moon_altaz():
     moon.compute(pe_obs)
     print(map(float, [moon.alt, moon.az]))
 
-class TestExceptions(unittest.TestCase):
-    def test_rise_set_transit_which(self):
-        lat = '00:00:00'
-        lon = '00:00:00'
-        elevation = 0.0 * u.m
-        location = EarthLocation.from_geodetic(lon, lat, elevation)
-        time = Time('2000-01-01 12:00:00')
-        vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
+    #def test_rise_set_transit_which(self):
+def exceptions_setup():
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
 
-        obs = Observer(location=location)
+    obs = Observer(location=location)
+    return obs, time, vega_coords
 
-        with self.assertRaises(ValueError):
-            obs.target_rise_time(time, vega_coords, which='oops').datetime
+def test_exceptions():
+    lat = '00:00:00'
+    lon = '00:00:00'
+    elevation = 0.0 * u.m
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('2000-01-01 12:00:00')
+    vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
 
-        with self.assertRaises(ValueError):
-            obs.target_set_time(time, vega_coords, which='oops').datetime
+    obs = Observer(location=location)
 
-        with self.assertRaises(ValueError):
-            obs.target_meridian_transit_time(time, vega_coords, which='oops').datetime
+    with pytest.raises(ValueError):
+        obs.target_rise_time(time, vega_coords, which='oops').datetime
 
-        with self.assertRaises(ValueError):
-            obs.target_meridian_antitransit_time(time, vega_coords, which='oops').datetime
+    with pytest.raises(ValueError):
+        obs.target_set_time(time, vega_coords, which='oops').datetime
 
-    def test_FixedTarget_duck_typing(self):
-        with self.assertRaises(TypeError):
-            FixedTarget(['00:00:00', '00:00:00'], name='VE')
+    with pytest.raises(ValueError):
+        obs.target_meridian_transit_time(time, vega_coords,
+                                         which='oops').datetime
 
-    def test_Observer_init(self):
-        with self.assertRaises(TypeError):
-            Observer(location='Greenwich')
+    with pytest.raises(ValueError):
+        obs.target_meridian_antitransit_time(time, vega_coords,
+                                             which='oops').datetime
 
-        with self.assertRaises(TypeError):
-            Observer(location=EarthLocation(0, 0, 0), timezone=-6)
+    with pytest.raises(TypeError):
+        FixedTarget(['00:00:00', '00:00:00'], name='VE')
 
-    def test_Observer_altaz(self):
-        with self.assertRaises(TypeError):
-            obs = Observer(location=EarthLocation(0, 0, 0))
-            obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+    with pytest.raises(TypeError):
+        Observer(location='Greenwich')
+
+    with pytest.raises(TypeError):
+        Observer(location=EarthLocation(0, 0, 0), timezone=-6)
+
+    with pytest.raises(TypeError):
+        obs = Observer(location=EarthLocation(0, 0, 0))
+        obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])

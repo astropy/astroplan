@@ -5,7 +5,7 @@ from ..core import Observer
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.coordinates import Latitude, Longitude, EarthLocation
 import astropy.units as u
-import unittest
+import pytest
 
 def test_get_site():
     # Compare to the IRAF observatory list available at:
@@ -45,7 +45,6 @@ def test_Observer_classmethod():
     assert kpno.temperature == temperature
     assert kpno.pressure == pressure
 
-class TestExceptions(unittest.TestCase):
-    def test_bad_site(self):
-        with self.assertRaises(KeyError):
-            get_site('nonexistent site')
+def test_bad_site():
+    with pytest.raises(KeyError):
+        get_site('nonexistent site')
