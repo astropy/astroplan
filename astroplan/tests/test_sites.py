@@ -6,6 +6,8 @@ from astropy.tests.helper import assert_quantity_allclose
 from astropy.coordinates import Latitude, Longitude, EarthLocation
 import astropy.units as u
 import pytest
+import json
+from astropy.extern.six import string_types
 
 def test_get_site():
     # Compare to the IRAF observatory list available at:
@@ -54,19 +56,27 @@ def test_bad_site():
         get_site('nonexistent site')
 
 def test_new_site_info_to_json():
-    location = EarthLocation.from_geodetic("-155d28m34s", "+19d49m32s", 4139*u.m)
+    lon_str = "-155d28m34s"
+    lat_str = "+19d49m32s"
+    elevation = 4139*u.m
+    location = EarthLocation.from_geodetic(lon_str, lat_str, elevation)
     short_name = "New telescope (subaru)"
     aliases = ["example new telescope with subaru's coordinates"]
     source = "the tests module"
     new_site_json = new_site_info_to_json(short_name, location, aliases, source)
-    assert new_site_json == ('{\n    "New telescope (subaru)": {\n        '
-                             '"aliases": [\n            "example new telescope '
-                             'with subaru\'s coordinates"\n        ], \n'
-                             '        "elevation_meters": 4139.000000000389,'
-                             ' \n        "latitude": "19d49m32s", \n        '
-                             '"longitude": "-155d28m34s", \n        "name": '
-                             '"New telescope (subaru)", \n        "source": '
-                             '"the tests module"\n    }\n}')
+    new_site = json.loads(new_site_json)
+
+    assert_quantity_allclose(Longitude(lon_str),
+                             Longitude(new_site[short_name]["longitude"]),
+                             atol=0.001*u.deg)
+    assert_quantity_allclose(Latitude(lat_str),
+                             Latitude(new_site[short_name]["latitude"]),
+                             atol=0.001*u.deg)
+    assert_quantity_allclose(elevation,
+                             new_site[short_name]["elevation_meters"]*u.m,
+                             atol=1*u.m)
+    assert short_name == new_site[short_name]['name']
+    assert aliases == new_site[short_name]['aliases']
 
     with pytest.raises(ValueError):
         # This name already exists
