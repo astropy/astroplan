@@ -60,6 +60,19 @@ def test_FixedTarget_from_name():
     # Make sure separation is small
     assert polaris_from_name.coord.separation(polaris_from_SIMBAD) < 1*u.arcsec
 
+def test_fixedtarget_repr():
+    vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
+    vega = FixedTarget(coord=vega_coords, name="Vega")
+    assert repr(vega) == ('<FixedTarget "Vega" at SkyCoord (ICRS): (ra, dec) '
+                          'in deg (279.23473479, 38.78368894)>')
+
+def test_observer_repr():
+    obs = Observer.at_site("Keck", timezone="US/Hawaii")
+    assert repr(obs) == ("<Observer: name='Keck',\n    location (lon, lat, el)="
+                         "(-155.478333333 deg, 19.8283333333 deg, 4160.0 m),\n "
+                         "   timezone=<DstTzInfo 'US/Hawaii' LMT-1 day, "
+                         "13:29:00 STD>>")
+
 def test_Observer_altaz():
     '''
     Check that the altitude/azimuth computed by `Observer.altaz` is similar
