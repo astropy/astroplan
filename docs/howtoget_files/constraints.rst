@@ -30,7 +30,7 @@ Constraint
 Creating a Constraint object
 ----------------------------
 
-.. _constriants_time_window:
+.. _constraints_time_window:
 
 TimeWindow
 ==========
