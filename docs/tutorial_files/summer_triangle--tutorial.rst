@@ -162,7 +162,56 @@ can make a plot::
     plot_airmass(vega, subaru, time)
     plot_airmass(deneb, subaru, time)
 
-    plt.legend(bbox_to_anchor=(1, 1), loc=2)
+    plt.legend(loc=1, bbox_to_anchor=(1, 1))
+    plt.show()
+
+.. plot::
+
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation
+    from pytz import timezone
+    from astroplan import Observer
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    subaru = Observer(name='Subaru Telescope',
+                   location=location,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    from astropy.coordinates import SkyCoord
+    from astroplan import FixedTarget
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
+    vega = FixedTarget(name='Vega', coord=coordinates)
+
+    coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
+    deneb = FixedTarget(name='Deneb', coord=coordinates)
+
+    from astropy.time import Time
+
+    time = Time('2015-06-16 12:00:00')
+
+    from astroplan.plots import plot_airmass
+    import matplotlib.pyplot as plt
+
+    plot_airmass(altair, subaru, time)
+    plot_airmass(vega, subaru, time)
+    plot_airmass(deneb, subaru, time)
+
+    # Note that you don't need the ax commands below to produce the plot.
+    # They reduce the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height * 0.8])
+
+    plt.legend(loc=1, bbox_to_anchor=(1.35, 1))
     plt.show()
 
 We want a minimum airmass when observing, and it looks like sometime between
@@ -197,7 +246,50 @@ observation, we can make a plot::
     plot_parallactic(vega, subaru, time)
     plot_parallactic(deneb, subaru, time)
 
-    plt.legend(bbox_to_anchor=(1, 1), loc=2)
+    plt.legend(loc=2)
+    plt.show()
+
+.. plot::
+
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation
+    from pytz import timezone
+    from astroplan import Observer
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    subaru = Observer(name='Subaru Telescope',
+                   location=location,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    from astropy.coordinates import SkyCoord
+    from astroplan import FixedTarget
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
+    vega = FixedTarget(name='Vega', coord=coordinates)
+
+    coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
+    deneb = FixedTarget(name='Deneb', coord=coordinates)
+
+    from astropy.time import Time
+
+    time = Time('2015-06-16 12:00:00')
+
+    from astroplan.plots import plot_parallactic
+    import matplotlib.pyplot as plt
+
+    plot_parallactic(altair, subaru, time)
+    plot_parallactic(vega, subaru, time)
+    plot_parallactic(deneb, subaru, time)
+
+    plt.legend(loc=2)
     plt.show()
 
 We can also calculate this quantity directly:
@@ -212,3 +304,51 @@ We can also calculate this quantity directly:
 
     In [178]: subaru.parallactic_angle(time, deneb)
     Out[178]: 0.729871rad
+
+The Moon
+--------
+
+If you need to take the Moon into account when observing, you may want to know
+when it rises, sets, what phase its in, etc.
+
+Let's first find out if the Moon is out during the time we defined earlier:
+
+.. warning::
+
+    *moon_rise_time* and *moon_set_time* have not yet been implemented.
+
+.. code-block:: ipython
+
+    In [24]: #subaru.moon_rise_time(time)
+
+    In [25]: #subaru.moon_set_time(time)
+
+We could also look at the Moon's alt/az coordinates:
+
+.. code-block:: ipython
+
+    In [26]: subaru.moon_altaz(time).alt
+    Out[26]: −45∘05′18.2435′′
+
+    In [27]: subaru.moon_altaz(time).az
+    Out[27]: 34∘35′57.5413′′
+
+It looks like the Moon is well below the horizon at the time we picked before,
+but we should check to see if it will be out during the window of time our
+targets will be visible (again--as defined at the beginning of this tutorial):
+
+.. code-block:: ipython
+
+    In [36]: visible_time = start + (end - start)*np.linspace(0, 1, 20)
+
+    In [37]: subaru.moon_altaz(visible_time).alt
+    Out[37]: [−24∘15′08.8308′′ −29∘49′04.6286′′ −35∘03′43.449′′ −39∘53′16.0653′′
+             −44∘09′59.8904′′ −47∘44′08.5089′′ −50∘24′19.9784′′ −51∘59′18.4053′′
+             −52∘20′53.9214′′ −51∘27′04.0998′′ −49∘22′46.0578′′ −46∘17′54.7431′′
+             −42∘24′06.7653′′ −37∘52′10.4174′′ −32∘50′59.3228′′ −27∘27′24.8625′′
+             −21∘46′34.5241′′ −15∘52′15.6116′′ −9∘47′16.3944′′ −2∘11′39.571′′]
+
+Looks like the Moon will be below the horizon during the entire time--but what
+if it wasn't?
+
+INSERT SECTION FOR PHASES, PERCENT ILLUMINATION, ETC.

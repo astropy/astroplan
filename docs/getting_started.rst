@@ -52,8 +52,8 @@ are in UTC by default)::
 
     time = Time(['2015-06-16 06:00:00'])
 
-To pull some piece of information from or to manipulate an `astroplan` object,
-you will generally issue a command such as::
+To access an object attribute or to manipulate an object, you will generally
+issue a command such as::
 
     right_ascension = altair.ra
 
@@ -65,4 +65,4 @@ Doing More
 ==========
 
 Now that you know the basics of working with `astroplan`, check out our
-:ref:`tutorials` and :ref:`how_to` pages for detailed examples.
+:ref:`tutorials` and :ref:`how_to_get` pages for detailed examples.

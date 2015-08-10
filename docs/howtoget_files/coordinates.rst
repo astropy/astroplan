@@ -63,7 +63,6 @@ Target
 ------
 
 
-See also:
-=========
+.. seealso::
 
-:ref:`Plots <plots>`
+    :ref:`Plots <plots>`

@@ -1,6 +1,6 @@
 .. include: howtoget_files/
 
-.. _how_to:
+.. _how_to_get:
 
 *************
 How To Get...
