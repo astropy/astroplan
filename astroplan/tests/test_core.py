@@ -1156,10 +1156,6 @@ def test_exceptions():
     with pytest.raises(TypeError):
         Observer(location=EarthLocation(0, 0, 0), timezone=-6)
 
-    with pytest.raises(TypeError):
-        obs = Observer(location=EarthLocation(0, 0, 0))
-        obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
-
 def vectorize_timing(n_targets):
     """
     Calculate the rise time of ``n_targets`` targets, return the
