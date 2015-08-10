@@ -2,6 +2,8 @@
 
 .. _summer_triangle_tutorial:
 
+.. doctest-skip-all
+
 *****************************
 Observing the Summer Triangle
 *****************************
