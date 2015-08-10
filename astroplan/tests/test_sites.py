@@ -7,7 +7,6 @@ from astropy.coordinates import Latitude, Longitude, EarthLocation
 import astropy.units as u
 import pytest
 import json
-from astropy.extern.six import string_types
 
 def test_get_site():
     # Compare to the IRAF observatory list available at:
@@ -81,8 +80,3 @@ def test_new_site_info_to_json():
     with pytest.raises(ValueError):
         # This name already exists
         new_site_info_to_json("Keck", location, aliases, source)
-
-class TestExceptions(unittest.TestCase):
-    def test_bad_site(self):
-        with self.assertRaises(KeyError):
-            get_site('nonexistent site')
