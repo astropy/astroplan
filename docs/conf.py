@@ -181,6 +181,4 @@ from astroplan.utils import _mock_remote_data
 _mock_remote_data()
 
 # Add additional Sphinx extensions:
-extensions += ['IPython.sphinxext.ipython_console_highlighting',
-               'IPython.sphinxext.ipython_directive',
-               'matplotlib.sphinxext.plot_directive']
+extensions += ['matplotlib.sphinxext.plot_directive']
