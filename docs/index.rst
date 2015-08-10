@@ -12,8 +12,11 @@ What is astroplan?
 **astroplan** is an open source Python package that helps astronomers plan
 observations.
 
-We're still in development, so for now check out `Astropy`_, `PyEphem`_ or
-`Skyfield`_.
+.. warning::
+
+    We're still in development, so the `astroplan` API may change.  
+    `Astropy`_, `PyEphem`_ or `Skyfield`_ are good options if you're looking
+    for a more stable package.
 
 Our aim is to make astroplan a flexible toolbox for observation planning and
 scheduling.  We want astroplan to be easy for Python and observing beginners

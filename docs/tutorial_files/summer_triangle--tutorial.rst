@@ -58,25 +58,25 @@ Next, it would be handy to know if our targets are visible from Subaru at the
 time we settled on.  In other words--are they above the horizon while the Sun
 is down?
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [162]: subaru.target_is_up(time, altair)
-    Out[162]: array(True, dtype=bool)
+    >>> subaru.target_is_up(time, altair)
+    array(True, dtype=bool)
 
-    In [163]: subaru.target_is_up(time, vega)
-    Out[163]: array(True, dtype=bool)
+    >>> subaru.target_is_up(time, vega)
+    array(True, dtype=bool)
 
-    In [164]: subaru.target_is_up(time, deneb)
-    Out[164]: array(True, dtype=bool)
+    >>> subaru.target_is_up(time, deneb)
+    array(True, dtype=bool)
 
 ...They are!
 
 Let's also pretend I'm not sure if the Sun is down at this time:
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [165]: subaru.is_night(time)
-    Out[165]: array([ True], dtype=bool)
+    >>> subaru.is_night(time)
+    array([ True], dtype=bool)
 
 ...It is!
 
@@ -103,38 +103,38 @@ Let's define the window of time during which all targets are above the horizon::
 Now, let's find sunset and sunrise for tonight (and confirm that they are
 indeed those for tonight):
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [167]: sunset_tonight = subaru.sun_set_time(time, which='nearest')
+    >>> sunset_tonight = subaru.sun_set_time(time, which='nearest')
 
-    In [168]: sunset_tonight.iso
-    Out[168]: '2015-06-16 04:59:12.610'
+    >>> sunset_tonight.iso
+    '2015-06-16 04:59:12.610'
 
 This is '2015-06-15 18:49:12.610' US/Hawaii.
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [168]: sunrise_tonight = subaru.sun_rise_time(time, which='nearest')
+    >>> sunrise_tonight = subaru.sun_rise_time(time, which='nearest')
 
-    In [169]: sunrise_tonight.iso
-    Out[169]: '2015-06-16 15:47:36.466'
+    >>> sunrise_tonight.iso
+    '2015-06-16 15:47:36.466'
 
 This is '2015-06-15 05:47:36.466' US/Hawaii.
 
 Sunset and sunrise check out, so now we define the limits of our observation
 window:
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [169]: start = np.max([sunset_tonight, all_up_start])
+    >>> start = np.max([sunset_tonight, all_up_start])
 
-    In [170]: start.iso
-    Out[170]: '2015-06-16 06:23:40.991'
+    >>> start.iso
+    '2015-06-16 06:23:40.991'
 
-    In [171]: end = np.min([sunrise_tonight, all_up_end])
+    >>> end = np.min([sunrise_tonight, all_up_end])
 
-    In [172]: end.iso
-    Out[172]: '2015-06-16 15:47:36.466'
+    >>> end.iso
+    '2015-06-16 15:47:36.466'
 
 So, our targets will be visible (as we've defined it above) from
 '2015-06-15 20:23:40.991' to '2015-06-16 05:47:36.466' US/Hawaii.  Depending on
@@ -156,7 +156,6 @@ can make a plot::
 
     from astroplan.plots import plot_airmass
     import matplotlib.pyplot as plt
-    %matplotlib inline
 
     plot_airmass(altair, subaru, time)
     plot_airmass(vega, subaru, time)
@@ -223,16 +222,16 @@ can calculate this quantity directly.
 
 To get airmass measurements, we have to go through the `altaz` frame:
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [172]: subaru.altaz(time, altair).secz
-    Out[172]: 1.030256
+    >>> subaru.altaz(time, altair).secz
+    1.030256
 
-    In [173]: subaru.altaz(time, vega).secz
-    Out[173]: 1.0690128
+    >>> subaru.altaz(time, vega).secz
+    1.0690128
 
-    In [174]: subaru.altaz(time, deneb).secz
-    Out[174]: 1.1677464
+    >>> subaru.altaz(time, deneb).secz
+    1.1677464
 
 Parallactic Angle
 -----------------
@@ -294,16 +293,16 @@ observation, we can make a plot::
 
 We can also calculate this quantity directly:
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [176]: subaru.parallactic_angle(time, altair)
-    Out[176]: −0.640582rad
+    >>> subaru.parallactic_angle(time, altair)
+    −0.640582rad
 
-    In [177]: subaru.parallactic_angle(time, vega)
-    Out[177]: −0.465298rad
+    >>> subaru.parallactic_angle(time, vega)
+    −0.465298rad
 
-    In [178]: subaru.parallactic_angle(time, deneb)
-    Out[178]: 0.729871rad
+    >>> subaru.parallactic_angle(time, deneb)
+    0.729871rad
 
 The Moon
 --------
@@ -317,36 +316,36 @@ Let's first find out if the Moon is out during the time we defined earlier:
 
     *moon_rise_time* and *moon_set_time* have not yet been implemented.
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [24]: #subaru.moon_rise_time(time)
+    >>> #subaru.moon_rise_time(time)
 
-    In [25]: #subaru.moon_set_time(time)
+    >>> #subaru.moon_set_time(time)
 
 We could also look at the Moon's alt/az coordinates:
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [26]: subaru.moon_altaz(time).alt
-    Out[26]: −45∘05′18.2435′′
+    >>> subaru.moon_altaz(time).alt
+    −45∘05′18.2435′′
 
-    In [27]: subaru.moon_altaz(time).az
-    Out[27]: 34∘35′57.5413′′
+    >>> subaru.moon_altaz(time).az
+    34∘35′57.5413′′
 
 It looks like the Moon is well below the horizon at the time we picked before,
 but we should check to see if it will be out during the window of time our
 targets will be visible (again--as defined at the beginning of this tutorial):
 
-.. code-block:: ipython
+.. code-block:: python
 
-    In [36]: visible_time = start + (end - start)*np.linspace(0, 1, 20)
+    >>> visible_time = start + (end - start)*np.linspace(0, 1, 20)
 
-    In [37]: subaru.moon_altaz(visible_time).alt
-    Out[37]: [−24∘15′08.8308′′ −29∘49′04.6286′′ −35∘03′43.449′′ −39∘53′16.0653′′
-             −44∘09′59.8904′′ −47∘44′08.5089′′ −50∘24′19.9784′′ −51∘59′18.4053′′
-             −52∘20′53.9214′′ −51∘27′04.0998′′ −49∘22′46.0578′′ −46∘17′54.7431′′
-             −42∘24′06.7653′′ −37∘52′10.4174′′ −32∘50′59.3228′′ −27∘27′24.8625′′
-             −21∘46′34.5241′′ −15∘52′15.6116′′ −9∘47′16.3944′′ −2∘11′39.571′′]
+    >>> subaru.moon_altaz(visible_time).alt
+    [−24∘15′08.8308′′ −29∘49′04.6286′′ −35∘03′43.449′′ −39∘53′16.0653′′
+    −44∘09′59.8904′′ −47∘44′08.5089′′ −50∘24′19.9784′′ −51∘59′18.4053′′
+    −52∘20′53.9214′′ −51∘27′04.0998′′ −49∘22′46.0578′′ −46∘17′54.7431′′
+    −42∘24′06.7653′′ −37∘52′10.4174′′ −32∘50′59.3228′′ −27∘27′24.8625′′
+    −21∘46′34.5241′′ −15∘52′15.6116′′ −9∘47′16.3944′′ −2∘11′39.571′′]
 
 Looks like the Moon will be below the horizon during the entire time--but what
 if it wasn't?
