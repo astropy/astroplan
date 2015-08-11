@@ -1,7 +1,6 @@
 {
     "BAO": {
         "aliases": [
-            "BAO", 
             "Beijing XingLong Observatory"
         ], 
         "elevation_meters": 950, 
@@ -12,9 +11,8 @@
     }, 
     "NOV": {
         "aliases": [
-            "National Observatory of Venezuela", 
-            "NOV"
-        ], 
+            "National Observatory of Venezuela"
+        ],
         "elevation_meters": 3610, 
         "latitude": "8d47m24s", 
         "longitude": "289d08m00s", 
@@ -23,7 +21,6 @@
     }, 
     "Palomar": {
         "aliases": [
-            "Palomar", 
             "Hale Telescope"
         ], 
         "elevation_meters": 1706, 
@@ -34,7 +31,6 @@
     }, 
     "aao": {
         "aliases": [
-            "AAO", 
             "Anglo-Australian Observatory"
         ], 
         "elevation_meters": 1164, 
@@ -45,7 +41,6 @@
     }, 
     "apo": {
         "aliases": [
-            "APO", 
             "Apache Point Observatory", 
             "Apache Point"
         ], 
@@ -57,8 +52,7 @@
     }, 
     "bmo": {
         "aliases": [
-            "Black Moshannon Observatory", 
-            "BMO"
+            "Black Moshannon Observatory"
         ], 
         "elevation_meters": 738, 
         "latitude": "40d55m18s", 
@@ -68,8 +62,7 @@
     }, 
     "cfht": {
         "aliases": [
-            "Canada-France-Hawaii Telescope", 
-            "CFHT"
+            "Canada-France-Hawaii Telescope"
         ], 
         "elevation_meters": 4215, 
         "latitude": "19d49m36s", 
@@ -80,7 +73,6 @@
     "ctio": {
         "aliases": [
             "Cerro Tololo Interamerican Observatory", 
-            "CTIO", 
             "Cerro Tololo"
         ], 
         "elevation_meters": 2215, 
@@ -91,7 +83,6 @@
     }, 
     "dao": {
         "aliases": [
-            "DAO", 
             "Dominion Astrophysical Observatory"
         ], 
         "elevation_meters": 229, 
@@ -102,7 +93,6 @@
     }, 
     "ekar": {
         "aliases": [
-            "ekar", 
             "Mt. Ekar 182 cm. Telescope"
         ], 
         "elevation_meters": 1413, 
@@ -113,9 +103,8 @@
     }, 
     "eso": {
         "aliases": [
-            "European Southern Observatory", 
-            "ESO"
-        ], 
+            "European Southern Observatory"
+        ],
         "elevation_meters": 2347, 
         "latitude": "-29d15m24s", 
         "longitude": "289d16m12s", 
@@ -125,9 +114,8 @@
     "flwo": {
         "aliases": [
             "Whipple", 
-            "Whipple Observatory", 
-            "FLWO"
-        ], 
+            "Whipple Observatory"
+        ],
         "elevation_meters": 2320, 
         "latitude": "31d40m51.4s", 
         "longitude": "249d07m21s", 
@@ -136,8 +124,7 @@
     }, 
     "keck": {
         "aliases": [
-            "keck", 
-            "W. M. Keck Observatory", 
+            "W. M. Keck Observatory",
             "Keck Observatory"
         ], 
         "elevation_meters": 4160, 
@@ -149,7 +136,6 @@
     "kpno": {
         "aliases": [
             "Kitt Peak", 
-            "KPNO", 
             "Kitt Peak National Observatory"
         ], 
         "elevation_meters": 2120, 
@@ -160,7 +146,6 @@
     }, 
     "lapalma": {
         "aliases": [
-            "lapalma", 
             "Roque de los Muchachos"
         ], 
         "elevation_meters": 2327, 
@@ -171,7 +156,6 @@
     }, 
     "lco": {
         "aliases": [
-            "LCO", 
             "Las Campanas Observatory"
         ], 
         "elevation_meters": 2282, 
@@ -182,7 +166,6 @@
     }, 
     "lick": {
         "aliases": [
-            "Lick", 
             "Lick Observatory"
         ], 
         "elevation_meters": 1290, 
@@ -193,9 +176,8 @@
     }, 
     "lowell": {
         "aliases": [
-            "Lowell Observatory", 
-            "Lowell"
-        ], 
+            "Lowell Observatory"
+        ],
         "elevation_meters": 2198, 
         "latitude": "35d05m48s", 
         "longitude": "248d27m54s", 
@@ -204,8 +186,7 @@
     }, 
     "mcdonald": {
         "aliases": [
-            "McDonald Observatory", 
-            "mcdonald"
+            "McDonald Observatory"
         ], 
         "elevation_meters": 2075, 
         "latitude": "30d40m18.0001s", 
@@ -215,9 +196,8 @@
     }, 
     "mdm": {
         "aliases": [
-            "Michigan-Dartmouth-MIT Observatory", 
-            "MDM"
-        ], 
+            "Michigan-Dartmouth-MIT Observatory"
+        ],
         "elevation_meters": 1938, 
         "latitude": "31d57m00s", 
         "longitude": "248d23m00s", 
@@ -226,9 +206,8 @@
     }, 
     "mmt": {
         "aliases": [
-            "Multiple Mirror Telescope", 
-            "MMT"
-        ], 
+            "Multiple Mirror Telescope"
+        ],
         "elevation_meters": 2608, 
         "latitude": "31d41m18s", 
         "longitude": "249d06m54s", 
@@ -237,7 +216,6 @@
     }, 
     "mso": {
         "aliases": [
-            "MSO", 
             "Mt. Stromlo Observatory"
         ], 
         "elevation_meters": 767, 
@@ -248,7 +226,6 @@
     }, 
     "mtbigelow": {
         "aliases": [
-            "mtbigelow", 
             "Catalina Observatory"
         ], 
         "elevation_meters": 2510, 
@@ -259,9 +236,8 @@
     }, 
     "spm": {
         "aliases": [
-            "Observatorio Astronomico Nacional, San Pedro Martir", 
-            "SPM"
-        ], 
+            "Observatorio Astronomico Nacional, San Pedro Martir"
+        ],
         "elevation_meters": 2830, 
         "latitude": "31d01m45s", 
         "longitude": "244d30m47s", 
@@ -270,9 +246,8 @@
     }, 
     "sso": {
         "aliases": [
-            "Siding Spring Observatory", 
-            "sso"
-        ], 
+            "Siding Spring Observatory"
+        ],
         "elevation_meters": 1149, 
         "latitude": "-31d16m24.1s", 
         "longitude": "149d03m40.3s", 
@@ -281,7 +256,6 @@
     }, 
     "tona": {
         "aliases": [
-            "tona", 
             "Observatorio Astronomico Nacional, Tonantzintla"
         ], 
         "elevation_meters": 0, 
@@ -292,13 +266,22 @@
     }, 
     "vbo": {
         "aliases": [
-            "Vainu Bappu Observatory", 
-            "VBO"
-        ], 
+            "Vainu Bappu Observatory"
+        ],
         "elevation_meters": 725, 
         "latitude": "12d34m35.976s", 
         "longitude": "78d49m35.76s", 
         "name": "Vainu Bappu Observatory", 
         "source": "IRAF Observatory Database"
+    },
+    "Subaru": {
+        "aliases": [
+            "Subaru Telescope"
+        ],
+        "elevation_meters": 4139,
+        "latitude": "19d49m32s",
+        "longitude": "-155d28m34s",
+        "name": "Subaru",
+        "source": "Subaru Telescope website (August 2015)"
     }
 }
