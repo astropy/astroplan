@@ -159,6 +159,31 @@ def new_site_info_to_json(short_name, location, aliases, source):
     json_str : str
         String representation of the JSON-formatted observatory information
         for submissions to the astroplan observatories database via pull request
+
+    Example
+    -------
+    Make a new site for a telescope at the University of Washington
+    >>> from astropy.coordinates import EarthLocation
+    >>> from astroplan.sites import new_site_info_to_json
+    >>> import astropy.units as u
+    >>> location = EarthLocation.from_geodetic(-122.307703*u.deg, 47.653706*u.deg, 10*u.m)
+    >>> short_name = "My Fake Telescope"
+    >>> aliases = ["UW Drumheller Fountain Telescope"]
+    >>> source = "Brett Morris, personal communication"
+    >>> print(new_site_info_to_json(short_name, location, aliases, source)) # doctest: +SKIP
+    {
+        "My Fake Telescope": {
+            "aliases": [
+                "UW Drumheller Fountain Telescope"
+            ],
+            "elevation_meters": 9.999999999832553,
+            "latitude": "47d39m13.3416s",
+            "longitude": "-122d18m27.7308s",
+            "name": "My Fake Telescope",
+            "source": "Brett Morris, personal communication"
+        }
+    }
+
     """
     if _site_db is None:
         _load_sites()
