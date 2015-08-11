@@ -108,22 +108,22 @@ obs.moon_set(time_obs, which='nearest')
 obs.sun_set_time(time_obs, which='next', angle=18*u.degree)
 
 # evening (astronomical) twilight
-obs.evening_astronomical(time_obs)
+obs.twilight_evening_astronomical(time_obs)
 
 # evening (nautical) twilight
-obs.evening_nautical(time_obs)
+obs.twilight_evening_nautical(time_obs)
 
 # evening (civil) twilight
-obs.evening_civil(time_obs)
+obs.twilight_evening_civil(time_obs)
 
 # morning (nautical) twilight
-obs.morning_nautical(time_obs)
+obs.twilight_morning_nautical(time_obs)
 
 # morning (civil) twilight
-obs.morning_civil(time_obs)
+obs.twilight_morning_civil(time_obs)
 
 # morning (astronomical) twilight
-obs.morning_astronomical(time_obs)
+obs.twilight_morning_astronomical(time_obs)
 
 # what is the moon illumination?
 # returns a float, which is percentage of the moon illuminated

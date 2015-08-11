@@ -962,7 +962,7 @@ class Observer(object):
 
     # Twilight convenience functions
 
-    def evening_astronomical(self, time, which='nearest'):
+    def twilight_evening_astronomical(self, time, which='nearest'):
         """
         Time at evening astronomical (-18 degree) twilight.
 
@@ -985,7 +985,7 @@ class Observer(object):
         """
         return self.sun_set_time(time, which, horizon=-18*u.degree)
 
-    def evening_nautical(self, time, which='nearest'):
+    def twilight_evening_nautical(self, time, which='nearest'):
 
         """
         Time at evening nautical (-12 degree) twilight.
@@ -1009,7 +1009,7 @@ class Observer(object):
         """
         return self.sun_set_time(time, which, horizon=-12*u.degree)
 
-    def evening_civil(self, time, which='nearest'):
+    def twilight_evening_civil(self, time, which='nearest'):
         """
         Time at evening civil (-6 degree) twilight.
 
@@ -1032,7 +1032,7 @@ class Observer(object):
         """
         return self.sun_set_time(time, which, horizon=-6*u.degree)
 
-    def morning_astronomical(self, time, which='nearest'):
+    def twilight_morning_astronomical(self, time, which='nearest'):
         """
         Time at morning astronomical (-18 degree) twilight.
 
@@ -1055,7 +1055,7 @@ class Observer(object):
         """
         return self.sun_rise_time(time, which, horizon=-18*u.degree)
 
-    def morning_nautical(self, time, which='nearest'):
+    def twilight_morning_nautical(self, time, which='nearest'):
         """
         Time at morning nautical (-12 degree) twilight.
 
@@ -1078,7 +1078,7 @@ class Observer(object):
         """
         return self.sun_rise_time(time, which, horizon=-12*u.degree)
 
-    def morning_civil(self, time, which='nearest'):
+    def twilight_morning_civil(self, time, which='nearest'):
         """
         Time at morning civil (-6 degree) twilight.
 
