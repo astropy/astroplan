@@ -52,15 +52,14 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
 
     Returns
     -------
-    ax :  `~matplotlib.axes.Axes`
+    ax : `~matplotlib.axes.Axes`
         An axes object with added airmass vs. time plot.
 
     Notes
     -----
-    y-axis defaults (if user wishes to change these, use `ax.<set attribute>`
-    before drawing or saving plot):
-        Inverted by default.
-        Shows airmasses between 1.0 and 3.0.
+    y-axis is inverted and shows airmasses between 1.0 and 3.0 by default.
+    If user wishes to change these, use `ax.\<set attribute\>` before drawing
+    or saving plot:
 
     TODO:
         1) Timezones?
