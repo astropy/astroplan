@@ -33,7 +33,7 @@ import numpy as np
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "Observation", "MAGIC_TIME"]
+           "AboveAirmass", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
