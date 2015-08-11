@@ -656,16 +656,16 @@ def test_twilight_convenience_funcs():
     time = Time('2000-01-01 12:00:00')
     obs = Observer(location=location, pressure=pressure)
     # Compute morning twilights with astroplan
-    astroplan_morning_civil = obs.morning_civil(time, which='previous').datetime
-    astroplan_morning_nautical = obs.morning_nautical(time,
+    astroplan_morning_civil = obs.twilight_morning_civil(time, which='previous').datetime
+    astroplan_morning_nautical = obs.twilight_morning_nautical(time,
                                                       which='previous').datetime
-    astroplan_morning_astro = obs.morning_astronomical(time,
+    astroplan_morning_astro = obs.twilight_morning_astronomical(time,
                                                        which='previous').datetime
     # Compute evening twilights with astroplan
-    astroplan_evening_civil = obs.evening_civil(time, which='next').datetime
-    astroplan_evening_nautical = obs.evening_nautical(time,
+    astroplan_evening_civil = obs.twilight_evening_civil(time, which='next').datetime
+    astroplan_evening_nautical = obs.twilight_evening_nautical(time,
                                                       which='next').datetime
-    astroplan_evening_astro = obs.evening_astronomical(time,
+    astroplan_evening_astro = obs.twilight_evening_astronomical(time,
                                                        which='next').datetime
 
     # Compute morning and evening twilights with PyEphem from
