@@ -222,7 +222,7 @@ def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
     pyephem_obs.pressure = pressure
     pyephem_target = ephem.FixedBody()
     pyephem_target._ra = ephem.degrees(target_coords.ra.radian)
-    pyephem_target._dec = ephem.degrees(target_coords.ra.radian)
+    pyephem_target._dec = ephem.degrees(target_coords.dec.radian)
     pyephem_target.compute(pyephem_obs)
     pyephem_altitude = Latitude(np.degrees(pyephem_target.alt)*u.degree)
     pyephem_azimuth = Longitude(np.degrees(pyephem_target.az)*u.degree)
@@ -464,8 +464,8 @@ def print_pyephem_vega_rise_set():
     obs.date = time.datetime
     obs.pressure = pressure
     target = ephem.FixedBody()
-    target._ra = ephem.degrees(vega.ra.radians)
-    target._dec = ephem.degrees(vega.dec.radians)
+    target._ra = ephem.degrees(vega.ra.radian)
+    target._dec = ephem.degrees(vega.dec.radian)
     target.compute(obs)
     next_rising = obs.next_rising(target).datetime()
     next_setting = obs.next_setting(target).datetime()
@@ -552,13 +552,13 @@ def print_pyephem_vega_sirius_rise_set():
     obs.date = time.datetime
     obs.pressure = pressure
     vega = ephem.FixedBody()
-    vega._ra = ephem.degrees(vega_coords.ra.radians)
-    vega._dec = ephem.degrees(vega_coords.dec.radians)
+    vega._ra = ephem.degrees(vega_coords.ra.radian)
+    vega._dec = ephem.degrees(vega_coords.dec.radian)
     vega.compute(obs)
 
     sirius = ephem.FixedBody()
-    sirius._ra = ephem.degrees(sirius_coords.ra.radians)
-    sirius._dec = ephem.degrees(sirius_coords.dec.radians)
+    sirius._ra = ephem.degrees(sirius_coords.ra.radian)
+    sirius._dec = ephem.degrees(sirius_coords.dec.radian)
     sirius.compute(obs)
 
     vega_next_rising = obs.next_rising(vega).datetime()
@@ -918,13 +918,13 @@ def print_pyephem_vega_sirius_transit():
     obs.date = time.datetime
     obs.pressure = pressure
     vega = ephem.FixedBody()
-    vega._ra = ephem.degrees(vega_coords.ra.radians)
-    vega._dec = ephem.degrees(vega_coords.dec.radians)
+    vega._ra = ephem.degrees(vega_coords.ra.radian)
+    vega._dec = ephem.degrees(vega_coords.dec.radian)
     vega.compute(obs)
 
     sirius = ephem.FixedBody()
-    sirius._ra = ephem.degrees(sirius_coords.ra.radians)
-    sirius._dec = ephem.degrees(sirius_coords.dec.radians)
+    sirius._ra = ephem.degrees(sirius_coords.ra.radian)
+    sirius._dec = ephem.degrees(sirius_coords.dec.radian)
     sirius.compute(obs)
 
     vega_next_transit = obs.next_transit(vega).datetime()
