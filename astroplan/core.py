@@ -110,7 +110,34 @@ class Observer(object):
     A container class for information about an observer's location and
     environment.
 
-    TODO: write this docstring
+    Examples
+    --------
+    We can create an observer at Subaru Observatory in Hawaii two ways. First,
+    by specifying the location with `~astropy.coordinates.EarthLocation`:
+
+    >>> from astropy.coordinates import EarthLocation
+    >>> import astropy.units as u
+    >>> location = EarthLocation.from_geodetic(-155.4761*u.deg, 19.825*u.deg,
+    ...                                        4139*u.m)
+    >>> subaru = Observer(location=location, name="Subaru", timezone="US/Hawaii")
+
+    Locations for some observatories are stored in astroplan, and these can be
+    accessed by name, like so:
+
+    >>> from astroplan import Observer
+    >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+
+    To find out which observatories can be accessed by name, check out
+    `~astroplan.get_site_names`.
+
+    You can also create an observer without an
+    `~astropy.coordinates.EarthLocation`:
+
+    >>> from astroplan import Observer
+    >>> import astropy.units as u
+    >>> subaru = Observer(longitude=-155.4761*u.deg, latitude=19.825*u.deg,
+    ...                   elevation=0*u.m, name="Subaru", timezone="US/Hawaii")
+
     """
     @u.quantity_input(elevation=u.m)
     def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
