@@ -3,7 +3,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 Angle)
+                                 Angle, Latitude, Longitude,
+                                 UnitSphericalRepresentation, SphericalRepresentation)
 
 import astropy.units as u
 import datetime
@@ -32,9 +33,11 @@ import numpy as np
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "Observation"]
+           "AboveAirmass", "Observation", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
+
+MAGIC_TIME = Time(-999, format='jd')
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
@@ -75,6 +78,32 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
         time_grid = np.linspace(start, end, N)*u.day
 
     return t0 + time_grid
+
+def _target_is_vector(target):
+    if hasattr(target, '__iter__'):
+        return True
+    else:
+        return False
+
+def list_FixedTarget_to_SkyCoord(list_of_FixedTargets):
+    """
+    Convert a list of `~astroplan.core.FixedTarget` objects to a vector
+    `~astropy.coordinates.SkyCoord` object.
+
+    Parameters
+    ----------
+    list_of_FixedTargets : list
+        `~astroplan.core.FixedTarget` objects
+
+    Returns
+    -------
+    sc : `~astropy.coordinates.SkyCoord`
+    """
+    coord_list = [target.coord for target in list_of_FixedTargets]
+    sc = SkyCoord(SkyCoord(coord_list).data.represent_as(
+                  UnitSphericalRepresentation),
+                  representation=UnitSphericalRepresentation)
+    return sc
 
 class Observer(object):
     """
@@ -249,6 +278,58 @@ class Observer(object):
 
         return Time(date_time, location=self.location)
 
+    def _transform_target_list_to_altaz(self, times, targets):
+        """
+        Workaround for transforming a list of coordinates ``targets`` to
+        altitudes and azimuths.
+
+        Parameters
+        ----------
+        times : `~astropy.time.Time` or list of `~astropy.time.Time` objects
+            Time of observation
+
+        targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
+            List of target coordinates
+
+        location : `~astropy.coordinates.EarthLocation`
+            Location of observer
+
+        Returns
+        -------
+        altitudes : list
+            List of altitudes for each target, at each time
+        """
+        if times.isscalar:
+            times = Time([times])
+
+        if not isinstance(targets, list) and targets.isscalar:
+            targets = [targets]
+
+        targets_is_unitsphericalrep = [x.data.__class__ is
+                                       UnitSphericalRepresentation for x in targets]
+        if all(targets_is_unitsphericalrep) or not any(targets_is_unitsphericalrep):
+            repeated_times = np.tile(times, len(targets))
+            ra_list = Longitude([x.icrs.ra for x in targets])
+            dec_list = Latitude([x.icrs.dec for x in targets])
+            repeated_ra = np.repeat(ra_list, len(times))
+            repeated_dec = np.repeat(dec_list, len(times))
+            inner_sc = SkyCoord(ra=repeated_ra, dec=repeated_dec)
+            target_SkyCoord = SkyCoord(inner_sc.data.represent_as(UnitSphericalRepresentation),
+                                       representation=UnitSphericalRepresentation)
+            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
+                                                                   obstime=repeated_times))
+        else:
+            # TODO: This is super slow.
+            repeated_times = np.tile(times, len(targets))
+            repeated_targets = np.repeat(targets, len(times))
+            target_SkyCoord = SkyCoord(SkyCoord(repeated_targets).data.represent_as(
+                                       UnitSphericalRepresentation),
+                                       representation=UnitSphericalRepresentation)
+
+            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
+                                                                   obstime=repeated_times))
+        return transformed_coord
+
     def altaz(self, time, target=None, obswl=None):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
@@ -265,8 +346,8 @@ class Observer(object):
             initializer, so it can be anything that `~astropy.time.Time` will
             accept (including a `~astropy.time.Time` object)
 
-        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, defaults to `None` (optional)
-            Celestial object of interest. If ``target`` is `None`, return the
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list; defaults to `None` (optional)
+            Celestial object(s) of interest. If ``target`` is `None`, return the
             `~astropy.coordinates.AltAz` frame without coordinates.
 
         obswl : `~astropy.units.Quantity` (optional)
@@ -278,7 +359,6 @@ class Observer(object):
             If ``target`` is `None`, returns `~astropy.coordinates.AltAz` frame.
             If ``target`` is not `None`, returns the ``target`` transformed to
             the `~astropy.coordinates.AltAz` frame.
-
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -287,15 +367,23 @@ class Observer(object):
                             pressure=self.pressure, obswl=obswl,
                             temperature=self.temperature,
                             relative_humidity=self.relative_humidity)
-
         if target is None:
+            # Return just the frame
             return altaz_frame
         else:
-            if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
-                    hasattr(target, 'coord')):
-                raise TypeError('The target must be a coordinate (i.e. a '
-                                'FixedTarget or SkyCoord).')
+            # If target is a list of targets:
+            if _target_is_vector(target):
+                get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
+                transformed_coords = self._transform_target_list_to_altaz(time,
+                                          list(map(get_coord, target)))
+                n_targets = len(target)
+                new_shape = (n_targets, int(len(transformed_coords)/n_targets))
 
+                for comp in transformed_coords.data.components:
+                    getattr(transformed_coords.data, comp).resize(new_shape)
+                return transformed_coords
+
+            # If single target is a FixedTarget or a SkyCoord:
             if hasattr(target, 'coord'):
                 coordinate = target.coord
             else:
@@ -311,8 +399,8 @@ class Observer(object):
         time : `~astropy.time.Time`
             Observation time.
 
-        target : `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord`
-            Celestial object of interest.
+        target : `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord` or list
+            Target celestial object(s).
 
         Returns
         -------
@@ -331,15 +419,14 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        if not (hasattr(target, 'ra') or hasattr(target, 'dec') or
-                hasattr(target, 'coord')):
-            raise TypeError('The target must be a coordinate (i.e. a '
-                            'FixedTarget or SkyCoord).')
-
-        if hasattr(target, 'coord'):
-            coordinate = target.coord
+        if _target_is_vector(target):
+            get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
+            coordinate = SkyCoord(list(map(get_coord, target)))
         else:
-            coordinate = target
+            if hasattr(target, 'coord'):
+                coordinate = target.coord
+            else:
+                coordinate = target
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
@@ -377,30 +464,56 @@ class Observer(object):
         Returns the lower and upper limits on the time and altitudes
         of the horizon crossing.
         """
+        alt = np.atleast_2d(Latitude(alt))
+        n_targets = alt.shape[0]
+
         if rise_set == 'rising':
             # Find index where altitude goes from below to above horizon
-            condition = (alt[:-1] < horizon) * (alt[1:] > horizon)
+            condition = (alt[:, :-1] < horizon) * (alt[:, 1:] > horizon)
         elif rise_set == 'setting':
             # Find index where altitude goes from above to below horizon
-            condition = (alt[:-1] > horizon) * (alt[1:] < horizon)
+            condition = (alt[:, :-1] > horizon) * (alt[:, 1:] < horizon)
 
-        if not np.any(condition):
-            warnmsg = ('Target does not cross horizon={} within 24 '
-                       'hours'.format(horizon))
-            if (alt > horizon).all():
+        target_inds, time_inds = np.nonzero(condition)
+
+        if np.count_nonzero(condition) < n_targets:
+            target_inds, _ = np.nonzero(condition)
+            noncrossing_target_ind = np.setdiff1d(np.arange(n_targets),
+                                                  target_inds,
+                                                  assume_unique=True)#[0]
+
+            warnmsg = ('Target(s) index {} does not cross horizon={} within '
+                       '24 hours'.format(noncrossing_target_ind, horizon))
+
+            if (alt[noncrossing_target_ind, :] > horizon).all():
                 warnings.warn(warnmsg, TargetAlwaysUpWarning)
             else:
                 warnings.warn(warnmsg, TargetNeverUpWarning)
-            return (None, None), (None, None)
 
-        # Isolate horizon crossing
-        nearest_index = np.argwhere(condition)[0][0]
+            # Fill in missing time with MAGIC_TIME
+            target_inds = np.insert(target_inds, noncrossing_target_ind,
+                                    noncrossing_target_ind)
+            time_inds = np.insert(time_inds.astype(float),
+                                  noncrossing_target_ind,
+                                  np.nan)
+        elif np.count_nonzero(condition) > n_targets:
+            old_target_inds = np.copy(target_inds)
+            old_time_inds = np.copy(time_inds)
 
-        # Capture points on either side of horizon crossing
-        lower_t, upper_t = t[nearest_index:nearest_index+2]
-        lower_alt, upper_alt = alt[nearest_index:nearest_index+2]
+            time_inds = []
+            target_inds = []
+            for tgt, tm in zip(old_target_inds, old_time_inds):
+                if tgt not in target_inds:
+                    time_inds.append(tm)
+                    target_inds.append(tgt)
+            target_inds = np.array(target_inds)
+            time_inds = np.array(time_inds)
 
-        return (lower_t, upper_t), (lower_alt, upper_alt)
+        times = [t[i:i+2] if not np.isnan(i) else np.nan for i in time_inds]
+        altitudes = [alt[i, j:j+2] if not np.isnan(j) else np.nan
+                     for i, j in zip(target_inds, time_inds)]
+
+        return times, altitudes
 
     @u.quantity_input(horizon=u.deg)
     def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
@@ -427,8 +540,8 @@ class Observer(object):
             Time when target crosses the horizon
 
         """
-        if times[0] is None:
-            return np.nan
+        if not isinstance(times, Time):
+            return MAGIC_TIME
         else:
             slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
             return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
@@ -504,76 +617,29 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        if prev_next == 'next':
-            times = _generate_24hr_grid(time, 0, 1, N)
-        else:
-            times = _generate_24hr_grid(time, -1, 0, N)
-
-        altitudes = self.altaz(times, target).alt
-
-        horizon_crossing_limits = self._horiz_cross(times, altitudes, rise_set,
-                                                    horizon)
-        return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
-
-    def _calc_riseset_brentq(self, time, target, prev_next, rise_set, horizon,
-                             N=150, **kwargs):
-        """
-        Time at next rise/set of ``target`` with `~scipy.optimize.brentq`.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time` or other (see below)
-            Time of observation. This will be passed in as the first argument to
-            the `~astropy.time.Time` initializer, so it can be anything that
-            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object)
-
-        target : `~astropy.coordinates.SkyCoord`
-            Position of target or multiple positions of that target
-            at multiple times (if target moves, like the Sun)
-
-        prev_next : str - either 'previous' or 'next'
-            Test next rise/set or previous rise/set
-
-        rise_set : str - either 'rising' or 'setting'
-            Compute prev/next rise or prev/next set
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
-
-        horizon : `~astropy.units.Quantity`
-            Degrees above/below actual horizon to use
-            for calculating rise/set times (i.e.,
-            -6 deg horizon = civil twilight, etc.)
-
-        N : int
-            Number of altitudes to compute when searching for
-            rise or set.
-
-        Returns
-        -------
-        ret1 : `~astropy.time.Time`
-            Time of rise/set
-        """
-        if not isinstance(time, Time):
-            time = Time(time)
+        target_is_vector = _target_is_vector(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altitudes = self.altaz(times, target).alt
+        altaz = self.altaz(times, target)
+        if target_is_vector:
+            altitudes = [aa.alt for aa in altaz]
+        else:
+            altitudes = altaz.alt
 
-        time_limits, alt_limits = self._horiz_cross(times, altitudes, rise_set,
+        time_limits, altitude_limits = self._horiz_cross(times, altitudes, rise_set,
                                                     horizon)
-
-        calc_altitude = lambda t: (self.altaz(Time(t, format='jd'),
-                                              target).alt - horizon).value
-        from scipy.optimize import brentq
-        root = brentq(calc_altitude, time_limits[0].jd, time_limits[1].jd,
-                      **kwargs)
-        return Time(root, format='jd')
+        if not target_is_vector:
+            return self._two_point_interp(time_limits[0], altitude_limits[0],
+                                          horizon=horizon)
+        else:
+            return Time([self._two_point_interp(time_limit, altitude_limit,
+                                                horizon=horizon)
+                         for time_limit, altitude_limit in
+                         zip(time_limits, altitude_limits)])
 
     def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
         """
@@ -613,6 +679,8 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
+        target_is_vector = _target_is_vector(target)
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
         else:
@@ -625,14 +693,79 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altitudes = self.altaz(times, target).alt
+        altaz = self.altaz(times, target)
+        if target_is_vector:
+            d_altitudes = [each_alt.diff() for each_alt in altaz.alt]
+        else:
+            altitudes = altaz.alt
+            d_altitudes = altitudes.diff()
+
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
-        d_altitudes = altitudes.diff()
 
         horizon = 0*u.degree # Find when derivative passes through zero
-        horizon_crossing_limits = self._horiz_cross(dt, d_altitudes, rise_set,
-                                                    horizon)
-        return self._two_point_interp(*horizon_crossing_limits, horizon=horizon)
+        time_limits, altitude_limits = self._horiz_cross(dt, d_altitudes,
+                                                         rise_set, horizon)
+        if not target_is_vector:
+            return self._two_point_interp(time_limits[0], altitude_limits[0],
+                                          horizon=horizon)
+        else:
+            return Time([self._two_point_interp(time_limit, altitude_limit,
+                                                horizon=horizon)
+                         for time_limit, altitude_limit in
+                         zip(time_limits, altitude_limits)])
+
+    def _determine_which_event(self, function, args_dict):
+        """
+        Run through the next/previous/nearest permutations of the solutions
+        to `function(time, ...)`, and return the previous/next/nearest one
+        specified by the args stored in args_dict.
+        """
+        time = args_dict.pop('time', None)
+        target = args_dict.pop('target', None)
+        which = args_dict.pop('which', None)
+        horizon = args_dict.pop('horizon', None)
+        rise_set = args_dict.pop('rise_set', None)
+        antitransit = args_dict.pop('antitransit', None)
+
+        # Assemble arguments for function, depending on the function.
+        if function == self._calc_riseset:
+            args = lambda w: (time, target, w, rise_set, horizon)
+        elif function == self._calc_transit:
+            args = lambda w: (time, target, w, antitransit)
+        else:
+            raise ValueError('Function {} not supported in '
+                             '_determine_which_event.'.format(function))
+
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        if which == 'next' or which == 'nearest':
+            next_event = function(*args('next'))
+            if which == 'next':
+                return next_event
+
+        if which == 'previous' or which == 'nearest':
+            previous_event = function(*args('previous'))
+            if which == 'previous':
+                return previous_event
+
+        if which == 'nearest':
+            if _target_is_vector(target):
+                return_times = []
+                for next_e, prev_e in zip(next_event, previous_event):
+                    if abs(time - prev_e) < abs(time - next_e):
+                        return_times.append(prev_e)
+                    else:
+                        return_times.append(next_e)
+                return Time(return_times)
+            else:
+                if abs(time - previous_event) < abs(time - next_event):
+                    return previous_event
+                else:
+                    return next_event
+
+        raise ValueError('"which" kwarg must be "next", "previous" or '
+                         '"nearest".')
 
     @u.quantity_input(horizon=u.deg)
     def target_rise_time(self, time, target, which='nearest', horizon=0*u.degree):
@@ -652,8 +785,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -669,28 +802,10 @@ class Observer(object):
         `~astropy.time.Time`
             Rise time of target
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_rise = self._calc_riseset(time, target, 'next', 'rising',
-                                           horizon)
-            if which == 'next':
-                return next_rise
-
-        if which == 'previous' or which == 'nearest':
-            previous_rise = self._calc_riseset(time, target, 'previous',
-                                               'rising', horizon)
-            if which == 'previous':
-                return previous_rise
-
-        if which == 'nearest':
-            if abs(time - previous_rise) < abs(time - next_rise):
-                return previous_rise
-            else:
-                return next_rise
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_riseset,
+                                           dict(time=time, target=target,
+                                                which=which, rise_set='rising',
+                                                horizon=horizon))
 
     @u.quantity_input(horizon=u.deg)
     def target_set_time(self, time, target, which='nearest', horizon=0*u.degree):
@@ -709,8 +824,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunset relative to the present ``time`` would you
@@ -726,29 +841,10 @@ class Observer(object):
         `~astropy.time.Time`
             Set time of target.
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_set = self._calc_riseset(time, target, 'next', 'setting',
-                                          horizon)
-            if which == 'next':
-                return next_set
-
-        if which == 'previous' or which == 'nearest':
-            previous_set = self._calc_riseset(time, target, 'previous',
-                                              'setting', horizon)
-            if which == 'previous':
-                return previous_set
-
-        if which == 'nearest':
-            if abs(time - previous_set) < abs(time - next_set):
-                return previous_set
-            else:
-                return next_set
-
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_riseset,
+                                           dict(time=time, target=target,
+                                                which=which, rise_set='setting',
+                                                horizon=horizon))
 
     def target_meridian_transit_time(self, time, target, which='nearest'):
         """
@@ -765,8 +861,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -777,26 +873,10 @@ class Observer(object):
         `~astropy.time.Time`
             Transit time of target
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_transit = self._calc_transit(time, target, 'next')
-            if which == 'next':
-                return next_transit
-
-        if which == 'previous' or which == 'nearest':
-            previous_transit = self._calc_transit(time, target, 'previous')
-            if which == 'previous':
-                return previous_transit
-
-        if which == 'nearest':
-            if abs(time - previous_transit) < abs(time - next_transit):
-                return previous_transit
-            else:
-                return next_transit
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_transit,
+                                           dict(time=time, target=target,
+                                                which=which,
+                                                rise_set='setting'))
 
     def target_meridian_antitransit_time(self, time, target, which='nearest'):
         """
@@ -813,8 +893,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
@@ -825,28 +905,10 @@ class Observer(object):
         `~astropy.time.Time`
             Antitransit time of target
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if which == 'next' or which == 'nearest':
-            next_antitransit = self._calc_transit(time, target, 'next',
-                                                  antitransit=True)
-            if which == 'next':
-                return next_antitransit
-
-        if which == 'previous' or which == 'nearest':
-            previous_antitransit = self._calc_transit(time, target, 'previous',
-                                                      antitransit=True)
-            if which == 'previous':
-                return previous_antitransit
-
-        if which == 'nearest':
-            if abs(time - previous_antitransit) < abs(time - next_antitransit):
-                return previous_antitransit
-            else:
-                return next_antitransit
-        raise ValueError('"which" kwarg must be "next", "previous" or '
-                         '"nearest".')
+        return self._determine_which_event(self._calc_transit,
+                                           dict(time=time, target=target,
+                                                which=which, antitransit=True,
+                                                rise_set='setting'))
 
     @u.quantity_input(horizon=u.deg)
     def sun_rise_time(self, time, which='nearest', horizon=0*u.degree):
@@ -1262,8 +1324,8 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`)
-            Target celestial object
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
             Degrees above/below actual horizon to use
@@ -1277,7 +1339,11 @@ class Observer(object):
             time = Time(time)
 
         altaz = self.altaz(time, target)
-        observable = altaz.alt > horizon
+        if _target_is_vector(target):
+            observable = [alt > horizon for alt in altaz.alt]
+        else:
+            altitudes = altaz.alt
+            observable = altitudes > horizon
 
         if not return_altaz:
             return observable

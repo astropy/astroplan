@@ -1,7 +1,8 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord)
+from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
+                                 AltAz)
 import astropy.units as u
 from astropy.time import Time
 from astropy.tests.helper import remote_data
@@ -11,15 +12,16 @@ import pytz
 import datetime
 import pytest
 
-from ..core import FixedTarget, Observer
 from ..sites import get_site
+from ..core import (FixedTarget, Observer, list_FixedTarget_to_SkyCoord,
+                    MAGIC_TIME)
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 def test_Observer_constructor_location():
-    '''
+    """
     Show that location defined by latitude/longitude/elevation is parsed
     identically to passing in an `~astropy.coordinates.EarthLocation` directly.
-    '''
+    """
 
     lat = '+19:00:00'
     lon = '-155:00:00'
@@ -46,10 +48,10 @@ def test_Observer_constructor_location():
 
 @remote_data
 def test_FixedTarget_from_name():
-    '''
+    """
     Check that resolving target names with the `SkyCoord.from_name` constructor
     to produce a `FixedTarget` accurately resolves the coordinates of Polaris.
-    '''
+    """
 
     # Resolve coordinates with SkyCoord.from_name classmethod
     polaris_from_name = FixedTarget.from_name('Polaris')
@@ -61,21 +63,21 @@ def test_FixedTarget_from_name():
     assert polaris_from_name.coord.separation(polaris_from_SIMBAD) < 1*u.arcsec
 
 def test_Observer_altaz():
-    '''
+    """
     Check that the altitude/azimuth computed by `Observer.altaz` is similar
     to the result from PyEphem when pressure = 0 (no atmosphere) for Vega at
     2000-01-01 12:00:00 UTC.
-    '''
+    """
     # Define the test case
     latitude = '00:00:00'
     longitude = '00:00:00'
-    elevation = 0 # [m]
-    pressure = 0  * u.bar # no atmosphere
+    elevation = 0*u.m
+    pressure = 0*u.bar # no atmosphere
     time = Time('2000-01-01 12:00:00')
     vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
 
     # Calculate altitude/azimuth with astroplan
-    location = EarthLocation.from_geodetic(longitude, latitude, elevation*u.m)
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
     astroplan_obs = Observer(name='Observatory', location=location,
                              pressure=pressure*u.bar)
     astroplan_vega = FixedTarget(vega_coords)
@@ -100,13 +102,117 @@ def test_Observer_altaz():
     from astropy.coordinates import AltAz
     assert isinstance(astroplan_obs.altaz(time), AltAz)
 
+def test_altaz_multiple_targets():
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    capella = SkyCoord(79.17232794*u.deg, 45.99799147*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    targets = [vega, capella, sirius]
+
+    location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
+
+    times = Time('1995-06-21 00:00:00') + np.linspace(0, 1, 5)*u.day
+
+    obs = Observer(location=location)
+    transformed_coords = obs.altaz(times, targets)
+    altitudes = transformed_coords.alt
+
+    # Double check by doing one star the normal way with astropy
+    vega_altaz = vega.transform_to(AltAz(location=location, obstime=times))
+    vega_alt = vega_altaz.alt
+    sirius_altaz = sirius.transform_to(AltAz(location=location, obstime=times))
+    sirius_alt = sirius_altaz.alt
+    assert all(vega_alt == altitudes[0, :])
+    assert all(sirius_alt == altitudes[2, :])
+
+    # check that a single element target list works:
+    single_target_list = [vega]
+    vega_list_alt = obs.altaz(times, single_target_list).alt
+    assert np.all(vega_list_alt == vega_alt)
+
+    # check that output elements are the proper lengths and types
+    assert isinstance(vega_list_alt, Latitude)
+    assert len(vega_list_alt[0, :]) == len(times)
+
+    # Check for single time
+    single_time = times[0]
+    vega_single_time = obs.altaz(single_time, single_target_list).alt
+    assert vega_single_time[0] == vega_alt[0]
+
+    # Check single target input without list
+    vega_no_list = obs.altaz(times, vega).alt
+    assert all(vega_no_list == vega_alt)
+
+    # Check FixedTarget for single target
+    vega_FixedTarget = FixedTarget(coord=vega, name='Vega')
+    vega_FixedTarget_alt = obs.altaz(times, vega_FixedTarget).alt
+    assert all(vega_FixedTarget_alt == vega_alt)
+
+    # Check for vector FixedTarget
+    vega_FixedTarget = FixedTarget(coord=vega, name='Vega')
+    capella_FixedTarget = FixedTarget(coord=capella, name='Capella')
+    sirius_FixedTarget = FixedTarget(coord=sirius, name='Sirius')
+    ft_list = [vega_FixedTarget, capella_FixedTarget, sirius_FixedTarget]
+    ft_vector_alt = obs.altaz(times, ft_list).alt
+    assert all(ft_vector_alt[0, :] == vega_alt)
+    assert all(ft_vector_alt[2, :] == sirius_alt)
+
+def test_rise_set_transit_nearest_vector():
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    mira = SkyCoord(34.83663376*u.deg, -2.97763767*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    sc_list = [vega, mira, sirius]
+
+    location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
+    time = Time('1995-06-21 00:00:00')
+
+    obs = Observer(location=location)
+    rise_vector = obs.target_rise_time(time, sc_list)
+    vega_rise = obs.target_rise_time(time, vega)
+    mira_rise = obs.target_rise_time(time, mira)
+    sirius_rise = obs.target_rise_time(time, sirius)
+
+    assert rise_vector[0] == vega_rise
+    assert rise_vector[1] == mira_rise
+    assert rise_vector[2] == sirius_rise
+
+    set_vector = obs.target_set_time(time, sc_list)
+    vega_set = obs.target_set_time(time, vega)
+    mira_set = obs.target_set_time(time, mira)
+    sirius_set = obs.target_set_time(time, sirius)
+
+    assert set_vector[0] == vega_set
+    assert set_vector[1] == mira_set
+    assert set_vector[2] == sirius_set
+
+    transit_vector = obs.target_meridian_transit_time(time, sc_list)
+    vega_trans = obs.target_meridian_transit_time(time, vega)
+    mira_trans = obs.target_meridian_transit_time(time, mira)
+    sirius_trans = obs.target_meridian_transit_time(time, sirius)
+
+    assert transit_vector[0] == vega_trans
+    assert transit_vector[1] == mira_trans
+    assert transit_vector[2] == sirius_trans
+
+def test_list_FT_to_SC():
+    # Test conversion of FixedTargets to vector SkyCoord
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    capella = SkyCoord(79.17232794*u.deg, 45.99799147*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    sc_list = [vega, capella, sirius]
+
+    ft_list = [FixedTarget(coord=sc) for sc in sc_list]
+    vector_sc = list_FixedTarget_to_SkyCoord(ft_list)
+    assert sc_list[0].separation(vector_sc[0]) < 0.1*u.arcsec
+    assert sc_list[1].separation(vector_sc[1]) < 0.1*u.arcsec
+    assert sc_list[2].separation(vector_sc[2]) < 0.1*u.arcsec
+
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
-    '''
+    """
     Run PyEphem to compute the altitude/azimuth of a target at specified time
     and observatory, for comparison with astroplan calucation tested in
     `test_Observer_altaz`.
-    '''
+    """
     import ephem
     pyephem_obs = ephem.Observer()
     pyephem_obs.lat = latitude
@@ -115,8 +221,8 @@ def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
     pyephem_obs.date = time.datetime
     pyephem_obs.pressure = pressure
     pyephem_target = ephem.FixedBody()
-    pyephem_target._ra = ephem.degrees(np.radians(target_coords.ra.value))
-    pyephem_target._dec = ephem.degrees(np.radians(target_coords.dec.value))
+    pyephem_target._ra = ephem.degrees(target_coords.ra.radian)
+    pyephem_target._dec = ephem.degrees(target_coords.dec.radian)
     pyephem_target.compute(pyephem_obs)
     pyephem_altitude = Latitude(np.degrees(pyephem_target.alt)*u.degree)
     pyephem_azimuth = Longitude(np.degrees(pyephem_target.az)*u.degree)
@@ -140,11 +246,11 @@ def test_Observer_timezone_parser():
     assert obs2.timezone == obs3.timezone, ('Default timezone should be UTC')
 
 def test_FixedTarget_ra_dec():
-    '''
+    """
     Confirm that FixedTarget.ra and FixedTarget.dec are the same as the
     right ascension and declination stored in the FixedTarget.coord variable -
     which is a SkyCoord
-    '''
+    """
 
     vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
     vega = FixedTarget(vega_coords, name='Vega')
@@ -155,10 +261,10 @@ def test_FixedTarget_ra_dec():
                                                            'SkyCoord')
 
 def test_parallactic_angle():
-    '''
+    """
     Compute parallactic angle for targets at hour angle = {3, 19} for
     at observer at IRTF using the online SpeX calculator and PyEphem
-    '''
+    """
     # Set up position for IRTF
     lat = 19.826218*u.deg
     lon = -155.471999*u.deg
@@ -174,6 +280,7 @@ def test_parallactic_angle():
     obs = Observer(location=location)
     q1 = obs.parallactic_angle(time, target1)
     q2 = obs.parallactic_angle(time, target2)
+    q12 = obs.parallactic_angle(time, [target1, target2])
 
     # Get values from PyEphem for comparison from print_pyephem_parallactic_angle()
     pyephem_q1 = 46.54610060782033*u.deg
@@ -191,6 +298,9 @@ def test_parallactic_angle():
     assert_allclose(q1.to(u.degree).value, SpeX_q1, atol=0.1)
     assert_allclose(q2.to(u.degree).value, SpeX_q2, atol=0.1)
 
+    assert q1 == q12[0]
+    assert q2 == q12[1]
+
 def print_pyephem_parallactic_angle():
     lat = 19.826218*u.deg
     lon = -155.471999*u.deg
@@ -203,6 +313,7 @@ def print_pyephem_parallactic_angle():
     obs = ephem.Observer()
     obs.lat = '19:49:34.3848'
     obs.lon = '-155:28:19.1964'
+    obs.elevation = 0
     obs.date = time.datetime
     pyephem_target1 = ephem.FixedBody()
     pyephem_target1._ra = ephem.degrees((LST - desired_HA_1).to(u.rad).value)
@@ -221,10 +332,10 @@ def print_pyephem_parallactic_angle():
             tzinfo=None) == dt)
 
 def test_sunrise_sunset_equator():
-    '''
+    """
     Check that time of sunrise/set for an observer on the equator is
     consistent with PyEphem results (for no atmosphere/pressure=0)
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -258,11 +369,11 @@ def test_sunrise_sunset_equator():
             datetime.timedelta(minutes=threshold_minutes))
 
 def print_pyephem_sunrise_sunset():
-    '''
+    """
     To run:
 
     python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset as f; f()'
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -285,10 +396,10 @@ def print_pyephem_sunrise_sunset():
                      prev_sunrise.datetime(), prev_sunset.datetime()]))
 
 def test_vega_rise_set_equator():
-    '''
+    """
     Check that time of rise/set of Vega for an observer on the equator is
     consistent with PyEphem results (for no atmosphere/pressure=0)
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -332,11 +443,11 @@ def test_vega_rise_set_equator():
     assert astroplan_nearest_set == astroplan_next_set
 
 def print_pyephem_vega_rise_set():
-    '''
+    """
     To run:
 
     python -c 'from astroplan.tests.test_core import print_pyephem_vega_rise_set as f; f()'
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -353,8 +464,8 @@ def print_pyephem_vega_rise_set():
     obs.date = time.datetime
     obs.pressure = pressure
     target = ephem.FixedBody()
-    target._ra = ephem.degrees(np.radians(vega.ra.value))
-    target._dec = ephem.degrees(np.radians(vega.dec.value))
+    target._ra = ephem.degrees(vega.ra.radian)
+    target._dec = ephem.degrees(vega.dec.radian)
     target.compute(obs)
     next_rising = obs.next_rising(target).datetime()
     next_setting = obs.next_setting(target).datetime()
@@ -363,11 +474,106 @@ def print_pyephem_vega_rise_set():
 
     print(map(repr, [next_rising, next_setting, prev_rising, prev_setting]))
 
+def test_vega_sirius_rise_set_seattle():
+    """
+    Check that time of rise/set of Vega for an observer in Seattle is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
+    """
+    lat = '47d36m34.92s'
+    lon = '122d19m59.16s'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('1990-01-01 12:00:00')
+    vega = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
+    sirius = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
+
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_vega_rise = obs.target_rise_time(time, vega,
+                                               which='next').datetime
+    astroplan_sirius_rise = obs.target_rise_time(time, sirius,
+                                                 which='next').datetime
+
+    astroplan_vector_rise = obs.target_rise_time(time, [vega, sirius],
+                                              which='next').datetime
+
+    astroplan_vega_set = obs.target_set_time(time, vega, which='next').datetime
+    astroplan_sirius_set = obs.target_set_time(time, sirius,
+                                               which='next').datetime
+
+    astroplan_vector_set = obs.target_set_time(time, [vega, sirius],
+                                        which='next').datetime
+
+    # Run print_pyephem_vega_sirius_rise_set() to compute analogous
+    # result from PyEphem:
+    pyephem_vega_rise = datetime.datetime(1990, 1, 1, 17, 36, 15, 615484)
+    pyephem_sirius_rise = datetime.datetime(1990, 1, 2, 11, 4, 52, 35375)
+    pyephem_vega_set = datetime.datetime(1990, 1, 1, 13, 49, 58, 788327)
+    pyephem_sirius_set = datetime.datetime(1990, 1, 1, 20, 33, 42, 342885)
+
+    # Typical difference in this example between PyEphem and astroplan
+    # with an atmosphere is <8 min
+    threshold_minutes = 8
+    assert (abs(pyephem_vega_rise - astroplan_vega_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_sirius_rise - astroplan_sirius_rise) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    assert (abs(pyephem_vega_set - astroplan_vega_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_sirius_set - astroplan_sirius_set) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Now check vectorized solutions against scalar:
+    assert (astroplan_vector_rise[0] == astroplan_vega_rise)
+    assert (astroplan_vector_rise[1] == astroplan_sirius_rise)
+    assert (astroplan_vector_set[0] == astroplan_vega_set)
+    assert (astroplan_vector_set[1] == astroplan_sirius_set)
+
+def print_pyephem_vega_sirius_rise_set():
+    """
+    To run:
+
+    python -c 'from astroplan.tests.test_core import print_pyephem_vega_sirius_rise_set as f; f()'
+    """
+    lat = '47:36:34.92'
+    lon = '122:19:59.16'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('1990-01-01 12:00:00')
+    vega_coords = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
+    sirius_coords = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    vega = ephem.FixedBody()
+    vega._ra = ephem.degrees(vega_coords.ra.radian)
+    vega._dec = ephem.degrees(vega_coords.dec.radian)
+    vega.compute(obs)
+
+    sirius = ephem.FixedBody()
+    sirius._ra = ephem.degrees(sirius_coords.ra.radian)
+    sirius._dec = ephem.degrees(sirius_coords.dec.radian)
+    sirius.compute(obs)
+
+    vega_next_rising = obs.next_rising(vega).datetime()
+    vega_next_setting = obs.next_setting(vega).datetime()
+    sirius_next_rising = obs.next_rising(sirius).datetime()
+    sirius_next_setting = obs.next_setting(sirius).datetime()
+
+    print(map(repr, [vega_next_rising, sirius_next_rising,
+                     vega_next_setting, sirius_next_setting]))
+
 def test_sunrise_sunset_equator_civil_twilight():
-    '''
+    """
     Check that time of sunrise/set for an observer on the equator is
     consistent with PyEphem results (for no atmosphere/pressure=0)
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -406,13 +612,13 @@ def test_sunrise_sunset_equator_civil_twilight():
             datetime.timedelta(minutes=threshold_minutes))
 
 def print_pyephem_sunrise_sunset_equator_civil_twilight():
-    '''
+    """
     Calculate next sunrise and sunset with PyEphem for an observer
     on the equator.
 
     To run:
     python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -437,11 +643,11 @@ def print_pyephem_sunrise_sunset_equator_civil_twilight():
                                              prev_sunrise, prev_sunset]))
 
 def test_twilight_convenience_funcs():
-    '''
+    """
     Check that the convenience functions for evening
     astronomical/nautical/civil twilight correspond to their
     PyEphem equivalents
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -492,10 +698,10 @@ def test_twilight_convenience_funcs():
             datetime.timedelta(minutes=threshold_minutes))
 
 def print_pyephem_twilight_convenience_funcs():
-    '''
+    """
     To run:
     python -c 'from astroplan.tests.test_core import print_pyephem_twilight_convenience_funcs as f; f()'
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -533,10 +739,10 @@ def print_pyephem_twilight_convenience_funcs():
                                              evening_astronomical]))
 
 def test_solar_transit():
-    '''
+    """
     Test that astroplan's solar transit/antitransit (which are noon and
     midnight) agree with PyEphem's
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -584,10 +790,10 @@ def test_solar_transit():
     assert astroplan_nearest_antitransit == astroplan_prev_antitransit
 
 def test_solar_transit_convenience_methods():
-    '''
+    """
     Test that astroplan's noon and midnight convenience methods agree with
     PyEphem's solar transit/antitransit time.
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -620,13 +826,13 @@ def test_solar_transit_convenience_methods():
             datetime.timedelta(minutes=threshold_minutes))
 
 def print_pyephem_solar_transit_noon():
-    '''
+    """
     Calculate next sunrise and sunset with PyEphem for an observer
     on the equator.
 
     To run:
     python -c 'from astroplan.tests.test_core import print_pyephem_transit_noon as f; f()'
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -649,10 +855,87 @@ def print_pyephem_solar_transit_noon():
     print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
                                              prev_transit, prev_antitransit]))
 
-def test_can_see():
-    '''
+def test_vega_sirius_transit_seattle():
+    """
+    Check that time of transit of Vega for an observer in Seattle is
+    consistent with PyEphem results (for no atmosphere/pressure=0)
+    """
+    lat = '47d36m34.92s'
+    lon = '122d19m59.16s'
+    elevation = 0.0 * u.m
+    pressure = 0 * u.bar
+    location = EarthLocation.from_geodetic(lon, lat, elevation)
+    time = Time('1990-01-01 12:00:00')
+    vega = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
+    sirius = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
+
+    obs = Observer(location=location, pressure=pressure)
+    astroplan_vega_transit = obs.target_meridian_transit_time(time, vega,
+                                                              which='next').datetime
+    astroplan_sirius_transit = obs.target_meridian_transit_time(time, sirius,
+                                                                which='next').datetime
+
+    astroplan_vector_transit = obs.target_meridian_transit_time(time,
+                                                                [vega, sirius],
+                                                                which='next').datetime
+
+    # Run print_pyephem_vega_sirius_transit() to compute analogous
+    # result from PyEphem:
+    pyephem_vega_transit = datetime.datetime(1990, 1, 2, 3, 41, 9, 244067)
+    pyephem_sirius_transit = datetime.datetime(1990, 1, 1, 15, 51, 15, 135167)
+
+    # Typical difference in this example between PyEphem and astroplan
+    # with an atmosphere is <2 min
+    threshold_minutes = 8
+    assert (abs(pyephem_vega_transit - astroplan_vega_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(pyephem_sirius_transit - astroplan_sirius_transit) <
+            datetime.timedelta(minutes=threshold_minutes))
+
+    # Now check vectorized solutions against scalar:
+    assert (astroplan_vector_transit[0] == astroplan_vega_transit)
+    assert (astroplan_vector_transit[1] == astroplan_sirius_transit)
+
+def print_pyephem_vega_sirius_transit():
+    """
+    To run:
+
+    python -c 'from astroplan.tests.test_core import print_pyephem_vega_sirius_transit as f; f()'
+    """
+    lat = '47:36:34.92'
+    lon = '122:19:59.16'
+    elevation = 0.0 * u.m
+    pressure = 0
+    time = Time('1990-01-01 12:00:00')
+    vega_coords = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
+    sirius_coords = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
+
+    import ephem
+    obs = ephem.Observer()
+    obs.lat = lat
+    obs.lon = lon
+    obs.elevation = elevation
+    obs.date = time.datetime
+    obs.pressure = pressure
+    vega = ephem.FixedBody()
+    vega._ra = ephem.degrees(vega_coords.ra.radian)
+    vega._dec = ephem.degrees(vega_coords.dec.radian)
+    vega.compute(obs)
+
+    sirius = ephem.FixedBody()
+    sirius._ra = ephem.degrees(sirius_coords.ra.radian)
+    sirius._dec = ephem.degrees(sirius_coords.dec.radian)
+    sirius.compute(obs)
+
+    vega_next_transit = obs.next_transit(vega).datetime()
+    sirius_next_transit = obs.next_transit(sirius).datetime()
+
+    print(map(repr, [vega_next_transit, sirius_next_transit]))
+
+def test_target_is_up():
+    """
     Test that Polaris is/isn't observable from north/south pole
-    '''
+    """
     elevation = 0.0 * u.m
     pressure = 0 * u.bar
     north = EarthLocation.from_geodetic('00:00:00',
@@ -661,17 +944,23 @@ def test_can_see():
                                         '-90:00:00', elevation)
     time = Time('2000-01-01 12:00:00')
     polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+    polaris_B = SkyCoord(37.639725*u.degree, 89.26080556*u.degree)
+    polaris_binary = [polaris, polaris_B]
+
     north_pole = Observer(location=north, pressure=pressure)
     south_pole = Observer(location=south, pressure=pressure)
     assert north_pole.target_is_up(time, polaris)
     assert not south_pole.target_is_up(time, polaris)
 
+    assert all(north_pole.target_is_up(time, polaris_binary))
+    assert not any(south_pole.target_is_up(time, polaris_binary))
+
 def test_string_times():
-    '''
+    """
     Test that strings passed to time argument get successfully
     passed to Time constructor. Analogous test to test_vega_rise_set_equator(),
     just with a string for a time.
-    '''
+    """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
@@ -727,7 +1016,7 @@ def test_TargetAlwaysUpWarning(recwarn):
 
     w = recwarn.pop(TargetAlwaysUpWarning)
     assert issubclass(w.category, TargetAlwaysUpWarning)
-    assert np.isnan(no_time)
+    assert no_time == MAGIC_TIME
 
 def test_TargetNeverUpWarning(recwarn):
     lat = '-90:00:00'
@@ -742,7 +1031,28 @@ def test_TargetNeverUpWarning(recwarn):
 
     w = recwarn.pop(TargetNeverUpWarning)
     assert issubclass(w.category, TargetNeverUpWarning)
-    assert np.isnan(no_time)
+    assert no_time == MAGIC_TIME
+
+def test_mixed_rise_and_dont_rise(recwarn):
+    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
+    polaris = SkyCoord(37.95456067*u.deg, 89.26410897*u.deg)
+    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
+    targets = [vega, polaris, sirius]
+
+    location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
+    time = Time('1995-06-21 00:00:00')
+
+    obs = Observer(location=location)
+    rise_times = obs.target_rise_time(time, targets, which='next')
+
+    assert rise_times[1] == MAGIC_TIME
+
+    targets_that_rise = np.array(targets)[rise_times != MAGIC_TIME]
+    assert np.all([vega, sirius] == targets_that_rise)
+
+    w = recwarn.pop(TargetAlwaysUpWarning)
+    assert issubclass(w.category, TargetAlwaysUpWarning)
+
 
 def test_timezone_convenience_methods():
     location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
@@ -846,6 +1156,18 @@ def test_exceptions():
     with pytest.raises(TypeError):
         Observer(location=EarthLocation(0, 0, 0), timezone=-6)
 
-    with pytest.raises(TypeError):
-        obs = Observer(location=EarthLocation(0, 0, 0))
-        obs.altaz(Time('2000-01-01 00:00:00'), ['00:00:00','00:00:00'])
+def vectorize_timing(n_targets):
+    """
+    Calculate the rise time of ``n_targets`` targets, return the
+    run time in seconds.
+    """
+    from time import time
+    vega_coord = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
+    vega = FixedTarget(name="Vega", coord=vega_coord)
+    target_list = n_targets*[vega]
+    t = Time("2008-02-27 22:00:00")
+    obs = Observer(location=EarthLocation(10*u.deg, 20*u.deg, 0*u.m))
+    start = time()
+    obs.target_rise_time(t, target_list)
+    end = time()
+    return end-start
