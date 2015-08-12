@@ -6,30 +6,60 @@
 Plots
 *****
 
-`Astroplan` currently has convenience functions for making three different types
+`astroplan` currently has convenience functions for making three different types
 of plots: airmass vs time, parallactic angle vs time and sky charts.  While
-`Astroplan` requires `Matplotlib`, the use of other plotting packages
+`astroplan` requires `Matplotlib`_, the use of additional plotting packages
 (such as `Seaborn`) is neither explicitly prohibited or supported.
+
+All `astroplan` plots return a `matplotlib.axes.Axes` object (often referred
+to as `ax`).  You can further manipulate the returned `ax` object (including
+using it as input for an `astroplan` plotting function, see examples below)
+or you can simply display/print the plot.
+
+Contents
+========
+
+    * :ref:`plots_time_dependent`
+
+    * :ref:`plots_sky_charts`
 
 .. warning::
 
     All examples here assume you know how to and have already constructed
-    :ref:`observer` and :ref:`FixedTarget <targets_fixed_target_object>`
-    objects.
+    `astroplan.Observer` and `astroplan.FixedTarget` objects.
 
+
+.. _plots_time_dependent:
+
+Time Dependent Plots
+====================
+
+Although all `astroplan` plots are time-dependent in some way, we label those
+that have time on one axis "time-dependent".
+
+`Astroplan` currently has two different types of "time-dependent" plots:
+
+* Airmass vs. Time
+* Parallactic Angle vs. Time
+
+These take, at minimum, `astroplan.Observer`, `astroplan.FixedTarget` and
+`astropy.time.Time` objects as input.
 
 .. _plots_airmass:
 
-Airmass vs Time
-===============
+Airmass plots are made with a command such as::
 
-Airmass vs time plots are made with a call to the `plot_airmass` function.
-It takes, at minimum, a `Target`, and `Observer` and a `Time` object as input.
-Optional arguments include an `Axes` object and a plotting style dictionary.
+    plot_airmass(target, observer, time)
 
-plot_airmass will return an Axes object that contains airmass data for the
-window of time specified by the Time object passed in. You can further
-manipulate the returned Axes object or print the plot to your display/a file.
+.. _plots_parallactic:
+
+Parallactic angle plots::
+
+    plot_parallactic(target, observer, time)
+
+Below are general guidelines for working with time-dependent plots in
+`astroplan`.  Examples use airmass, but the following works for parallactic
+angle as well.
 
 Making a quick plot
 -------------------
@@ -80,8 +110,8 @@ plotting command::
     plt.show()
 
 As you can see, the 24-hour plot is centered on the time input.  You can use
-arrays for these quick plots as well--they just can't contain more than one
-instance in time::
+array `astropy.time.Time` objects for these quick plots as well--they just
+can't contain more than one instance in time::
 
     Time(['2015-06-15 23:30:00'])
 
@@ -94,13 +124,13 @@ If you want to see airmass plotted over a window that is not 24 hours long or
 you want to control the precision of the plot, you must specify every time for
 which you want to see an airmass plotted.
 
-To quickly populate a ``Time`` object with many instances of time, use `Numpy`_
-and ``astropy.units``.
+To quickly populate an `astropy.time.Time` object with many instances of time,
+use `Numpy`_ and `astropy.units`.
 
-Centering the window at some ``Time``
-+++++++++++++++++++++++++++++++++++++
+Centering the window at some time
++++++++++++++++++++++++++++++++++
 
-To center your time window at some ``Time``::
+To center your time window at some instance in time::
 
     import numpy as np
 
@@ -151,7 +181,7 @@ Specify start and end times
 +++++++++++++++++++++++++++
 
 If you know the start and end times of your observation run, you can use a
-DeltaTime object::
+`astropy.time.DeltaTime` object to create an array for time input::
 
     start_time = Time('2015-06-15 20:00:00')
     end_time = Time('2015-06-16 04:00:00')
@@ -198,14 +228,14 @@ DeltaTime object::
     plot_airmass(target, observer, observe_time)
     plt.show()
 
-Plotting airmass for multiple targets
--------------------------------------
+Plotting a quantity for multiple targets
+----------------------------------------
 
 If you want to plot airmass information for multiple targets, simply reissue
-the ``plot_airmass command``, using a different Target object as input this
+the ``plot_airmass`` command, using a different `Target` object as input this
 time. Repeat until you have as many targets on the plot as you wish.
 
-When you're ready to make a different plot, use *ax.cla()* to clear the ``Axes``
+When you're ready to make a different plot, use *ax.cla()* to clear the `ax`
 object::
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
@@ -269,7 +299,7 @@ object::
 Changing style options
 ----------------------
 
-You can set the *linestyle* and *color* options by passing in a style
+You can set the `Matplotlib` *linestyle* and *color* options by passing in a
 dictionary with your preferences::
 
     sirius_styles = {'linestyle': '--', 'color': 'r'}
@@ -326,14 +356,12 @@ dictionary with your preferences::
     plt.legend(shadow=True, loc=2)
     plt.show()
 
-.. _plots_parallactic_angle:
-
-Parallactic Angle vs Time
-=========================
+:ref:`Return to Top <plots>`
 
 
+.. _plots_sky_charts:
 
-.. _plots_sky_chart:
+Sky Charts
+==========
 
-Sky Chart
-=========
+:ref:`Return to Top <plots>`

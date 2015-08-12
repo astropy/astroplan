@@ -1,4 +1,4 @@
-.. include: tutorial_files/
+.. include: tutorials/
 
 .. _tutorials:
 
@@ -18,12 +18,8 @@ GitHub or becoming a project contributor.
 :ref:`Observing the Summer Triangle <summer_triangle_tutorial>`
 ===============================================================
 
-Another use case: Observing the Monkey With A Rash
+:ref:`Plotting with Astroplan <plots>`
 ==================================================
-
-LINK TO USE CASE HERE
 
 Yet another use case: Handling large numbers of targets
 =======================================================
-
-ksjlkjdslkdj
