@@ -419,8 +419,7 @@ class Observer(object):
         Examples
         --------
         Create an instance of the `~astropy.coordinates.AltAz` frame for an
-        observer at Apache Point Observatory at a particular time; and
-        transform that
+        observer at Apache Point Observatory at a particular time:
 
         >>> from astroplan import Observer
         >>> from astropy.time import Time
@@ -429,8 +428,15 @@ class Observer(object):
         >>> time = Time('2001-02-03 04:05:06')
         >>> target = SkyCoord(0*u.deg, 0*u.deg)
         >>> altaz_frame = apo.altaz(time)
-        >>> target_transformed_to_altaz_frame = target.transform_to(altaz_frame)
-        >>> target_transformed_to_altaz_frame = apo.altaz(time, target) # Alternatively
+
+        Now transform the target's coordinates to the alt/az frame:
+
+        >>> target_altaz = target.transform_to(altaz_frame)
+
+        Alternatively, construct an alt/az frame and transform the target to
+        that frame all in one step:
+
+        >>> target_altaz = apo.altaz(time, target)
         """
         if not isinstance(time, Time):
             time = Time(time)
