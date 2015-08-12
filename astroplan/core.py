@@ -1355,7 +1355,7 @@ class Observer(object):
 
     def moon_illumination(self, time):
         """
-        Calculate the illuminated fraction of the moon
+        Calculate the illuminated fraction of the moon.
 
         Parameters
         ----------
@@ -1377,6 +1377,18 @@ class Observer(object):
         -------
         float
             Fraction of lunar surface illuminated
+
+        Examples
+        --------
+        How much of the lunar surface is illuminated at 2015-08-29 18:35 UTC,
+        which we happen to know is the time of a full moon?
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time("2015-08-29 18:35")
+        >>> apo.moon_illumination(time)
+        array([ 0.99972487])
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -1413,14 +1425,15 @@ class Observer(object):
 
         Examples
         --------
+        Calculate the phase of the moon at 2015-08-29 18:35 UTC. Near zero
+        radians corresponds to a nearly full moon.
+
         >>> from astroplan import Observer
         >>> from astropy.time import Time
         >>> apo = Observer.at_site('APO')
         >>> time = Time('2015-08-29 18:35')
         >>> apo.moon_phase(time) # doctest: +SKIP
         <Quantity [ 0.03317537] rad>
-
-        Above, near zero radians corresponds to a nearly full moon.
         """
         if time is not None and not isinstance(time, Time):
             time = Time(time)
@@ -1449,6 +1462,9 @@ class Observer(object):
 
         Examples
         --------
+        Calculate the altitude and azimuth of the moon at Apache Point
+        Observatory:
+
         >>> from astroplan import Observer
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
@@ -1521,16 +1537,19 @@ class Observer(object):
 
         Examples
         --------
+        Are Aldebaran and Vega above the horizon at Apache Point Observatory
+        at 2015-08-29 18:35 UTC?
+
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
         >>> aldebaran = FixedTarget.from_name("Aldebaran")
-        >>> vega = FixedTarget.from_name("Aldebaran")
+        >>> vega = FixedTarget.from_name("Vega")
         >>> apo.target_is_up(time, aldebaran)
         True
         >>> apo.target_is_up(time, [aldebaran, vega])
-        [True, True]
+        [True, False]
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -1574,7 +1593,10 @@ class Observer(object):
 
         Examples
         --------
-        >>> from astroplan import Observer, FixedTarget
+        Is it "nighttime" (i.e. is the Sun below ``horizon``) at Apache Point
+        Observatory at 2015-08-29 18:35 UTC?
+
+        >>> from astroplan import Observer
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
@@ -1636,11 +1658,35 @@ class Target(object):
 
 class FixedTarget(Target):
     """
-    An object that is "fixed" with respect to the celestial sphere.
+    Coordinates and metadata for an object that is "fixed" with respect to the
+    celestial sphere.
+
+    Examples
+    --------
+    Create a `~astroplan.FixedTarget` object for Sirius:
+
+    >>> from astroplan import FixedTarget
+    >>> from astropy.coordinates import SkyCoord
+    >>> import astropy.units as u
+    >>> sirius_coord = SkyCoord(ra=101.28715533*u.deg, dec=16.71611586*u.deg)
+    >>> sirius = FixedTarget(coord=sirius_coord, name="Sirius")
+
+    Create an equivalent `~astroplan.FixedTarget` object for Sirius by querying
+    for the coordinates of Sirius by name:
+
+    >>> from astroplan import FixedTarget
+    >>> sirius = FixedTarget.from_name("Sirius")
     """
     def __init__(self, coord, name=None, **kwargs):
         """
-        TODO: Docstring.
+        Parameters
+        ----------
+        coord : `~astropy.coordinates.SkyCoord`
+            Coordinate of the target
+
+        name : str (optional)
+            Name of the target, used for plotting and representing the target
+            as a string
         """
         if not (hasattr(coord, 'transform_to') and
                 hasattr(coord, 'represent_as')):
@@ -1654,6 +1700,23 @@ class FixedTarget(Target):
         """
         Initialize a `FixedTarget` by querying for a name, using the machinery
         in `~astropy.coordinates.SkyCoord.from_name`.
+
+        Parameters
+        ----------
+        query_name : str
+            Name of the target used to query for coordinates.
+
+        name : string or `None`
+            Name of the target to use within astroplan. If `None`, query_name
+            is used as ``name``.
+
+        Examples
+        --------
+        >>> from astroplan import FixedTarget
+        >>> sirius = FixedTarget.from_name("Sirius")
+        >>> sirius.coord
+        <SkyCoord (ICRS): (ra, dec) in deg
+            (101.28715533, -16.71611586)>
         """
         # Allow manual override for name keyword so that the target name can
         # be different from the query name, otherwise assume name=queryname.
