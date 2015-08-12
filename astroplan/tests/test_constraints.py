@@ -38,3 +38,25 @@ def test_at_night_basic():
         assert all(is_always_observable(AtNight(), time_range, targets, subaru) ==
                    len(targets)*[observer_is_night_all])
 
+def test_compare_altitude_constraint_and_observer():
+    time = Time('2001-02-03 04:05:06')
+    time_ranges = [Time([time, time+1*u.hour]) + offset for offset in np.arange(5)*u.day]
+    for time_range in time_ranges:
+        subaru = Observer.at_site("Subaru")
+        targets = [vega, rigel, polaris]
+
+        min_alt = 40*u.deg
+        max_alt = 80*u.deg
+        # Check if each target meets altitude constraints in using Observer
+        always_from_observer = [all([min_alt < subaru.altaz(time, target).alt < max_alt
+                                     for time in time_grid_from_range(time_range)])
+                                for target in targets]
+        # Check if each target meets altitude constraints in using
+        # is_always_observable and AltitudeConstraint
+        always_from_constraint = is_always_observable(AltitudeConstraint(min_alt,
+                                                                         max_alt),
+                                                      time_range, targets, subaru)
+        assert all(always_from_observer == always_from_constraint)
+
+
+
