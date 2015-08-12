@@ -5,9 +5,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNight,
                            is_observable, is_always_observable,
                            time_grid_from_range)
 from ..core import Observer, FixedTarget
-import pytest
 import numpy as np
-from numpy.testing import assert_allclose
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
@@ -17,8 +15,7 @@ vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
 rigel = FixedTarget(coord=SkyCoord(ra=78.63446707*u.deg, dec=8.20163837*u.deg),
                     name="Rigel")
 polaris = FixedTarget(coord=SkyCoord(ra=37.95456067*u.deg,
-                                     dec=89.26410897*u.deg),
-                      name="Polaris")
+                                     dec=89.26410897*u.deg), name="Polaris")
 
 def test_at_night_basic():
     subaru = Observer.at_site("Subaru")
@@ -40,23 +37,44 @@ def test_at_night_basic():
 
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
-    time_ranges = [Time([time, time+1*u.hour]) + offset for offset in np.arange(5)*u.day]
+    time_ranges = [Time([time, time+1*u.hour]) + offset
+                   for offset in np.arange(0, 400, 100)*u.day]
     for time_range in time_ranges:
         subaru = Observer.at_site("Subaru")
         targets = [vega, rigel, polaris]
 
         min_alt = 40*u.deg
         max_alt = 80*u.deg
-        # Check if each target meets altitude constraints in using Observer
+        # Check if each target meets altitude constraints using Observer
         always_from_observer = [all([min_alt < subaru.altaz(time, target).alt < max_alt
                                      for time in time_grid_from_range(time_range)])
                                 for target in targets]
-        # Check if each target meets altitude constraints in using
+        # Check if each target meets altitude constraints using
         # is_always_observable and AltitudeConstraint
         always_from_constraint = is_always_observable(AltitudeConstraint(min_alt,
                                                                          max_alt),
                                                       time_range, targets, subaru)
         assert all(always_from_observer == always_from_constraint)
 
+def test_compare_airmass_constraint_and_observer():
+    time = Time('2001-02-03 04:05:06')
+    time_ranges = [Time([time, time+1*u.hour]) + offset
+                   for offset in np.arange(0, 400, 100)*u.day]
+    for time_range in time_ranges:
+        print(time_range)
+        subaru = Observer.at_site("Subaru")
+        targets = [vega, rigel, polaris]
+
+        max_airmass = 2
+        # Check if each target meets airmass constraint in using Observer
+        always_from_observer = [all([subaru.altaz(time, target).secz < max_airmass
+                                     for time in time_grid_from_range(time_range)])
+                                for target in targets]
+        # Check if each target meets altitude constraints using
+        # is_always_observable and AirmassConstraint
+        always_from_constraint = is_always_observable(AirmassConstraint(max_airmass),
+                                                      time_range, targets, subaru)
+
+        assert all(always_from_observer == always_from_constraint)
 
 

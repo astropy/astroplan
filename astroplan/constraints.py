@@ -160,21 +160,19 @@ class AirmassConstraint(AltitudeConstraint):
         min : float or `None`
             Minimum airmass of the target. `None` indicates no limit.
         """
-        if min is None:
-            self.min = 0
-        else:
-            self.min = min
-        if max is None:
-            self.max = 100
-        else:
-            self.max = max
+        self.min = min
+        self.max = max
 
     def _compute_constraint(self, time_range, observer, targets):
         cached_altaz = self._get_altaz(time_range, observer, targets)
         altaz = cached_altaz['altaz']
-        lowermask = self.min < altaz.secz
-        uppermask = altaz.secz < self.max
-        return lowermask & uppermask
+        if self.min is None:
+            mask = altaz.secz < self.max
+        elif self.max is None:
+            mask = self.min < altaz.secz
+        elif self.min is not None and self.max is not None:
+            mask = (self.min < altaz.secz) & (altaz.secz < self.max)
+        return mask
 
 class AtNight(Constraint):
     """
