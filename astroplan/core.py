@@ -33,7 +33,7 @@ import numpy as np
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "Observation", "MAGIC_TIME"]
+           "AboveAirmass", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
@@ -1540,95 +1540,3 @@ class AboveAirmass(Constraint):
         low : float
         """
         raise NotImplementedError
-
-
-class Observation(object):
-    """
-    Comments.
-    """
-
-    def __init__(self, target, time):
-        """
-        Initializes an Observation object.
-
-        Parameters
-        ----------
-        target : WHAT TYPE IS Target OBJECT ?
-
-        date : WHAT TYPE IS date OBJECT ?
-        """
-        raise NotImplementedError()
-
-    # Observability properties.
-
-    @property
-    def alt(self):
-        """
-        Altitude at time of observation.
-        """
-        raise NotImplementedError()
-
-    @property
-    def az(self):
-        """
-        Azimuth at time of observation.
-        """
-        raise NotImplementedError()
-
-    @property
-    def airmass(self):
-        """
-        Airmass.
-        """
-        raise NotImplementedError()
-
-    @property
-    def pang(self):
-        """
-        Parallactic angle.
-        """
-        raise NotImplementedError()
-
-    @property
-    def ha(self):
-        """ 
-        Hour angle.
-        """
-        raise NotImplementedError()
-
-    @property
-    def moon_sep(self):
-        """
-        Separation between moon and object at time of observation.
-        """
-        raise NotImplementedError()
-
-    # Time properties.
-
-    @property
-    def ut(self):
-        """
-        Time of observation in UST.
-        """
-        raise NotImplementedError()
-
-    @property
-    def lt(self):
-        """
-        Time of observation in local time.
-        """
-        raise NotImplementedError()
-
-    @property
-    def gmst(self):
-        """
-        Time of observation in GMST.
-        """
-        raise NotImplementedError()
-
-    @property
-    def lmst(self):
-        """
-        Time of observation in local mean sidereal time.
-        """
-        raise NotImplementedError()
