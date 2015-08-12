@@ -267,6 +267,17 @@ class Observer(object):
             Localized datetime, where the timezone of the datetime is
             set by the ``timezone`` keyword argument of the
             `~astroplan.Observer` constructor.
+
+        Examples
+        --------
+        Convert an astropy time to a localized `~datetime.datetime`:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+        >>> astropy_time = Time('1999-12-31 06:00:00')
+        >>> print(subaru.astropy_time_to_datetime(astropy_time))
+        1999-12-30 20:00:00-10:00
         """
 
         if not astropy_time.isscalar:
@@ -294,6 +305,24 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Astropy time object (no timezone information preserved).
+
+        Examples
+        --------
+        Convert a localized `~datetime.datetime` to a `~astropy.time.Time`
+        object. Non-localized datetimes are assumed to be UTC.
+        <Time object: scale='utc' format='datetime' value=1999-12-31 06:00:00>
+
+        >>> from astroplan import Observer
+        >>> import datetime
+        >>> import pytz
+        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+        >>> hi_date_time = datetime.datetime(2005, 6, 21, 20, 0, 0, 0)
+        >>> subaru.datetime_to_astropy_time(hi_date_time)
+        <Time object: scale='utc' format='datetime' value=2005-06-22 06:00:00>
+        >>> utc_date_time = datetime.datetime(2005, 6, 22, 6, 0, 0, 0,
+        ...                                   tzinfo=pytz.timezone("UTC"))
+        >>> subaru.datetime_to_astropy_time(utc_date_time)
+        <Time object: scale='utc' format='datetime' value=2005-06-22 06:00:00>
         """
 
         if hasattr(date_time, '__iter__'):
