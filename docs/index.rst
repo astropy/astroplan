@@ -14,7 +14,7 @@ observations.
 
 .. warning::
 
-    We're still in development, so the `astroplan` API may change.  
+    We're still in development, so the `astroplan` API may change.
     `Astropy`_, `PyEphem`_ or `Skyfield`_ are good options if you're looking
     for a more stable package.
 
@@ -26,7 +26,7 @@ long-term schedules.
 Features:
 
 * `Astropy`_ powered!
-* Ability to take multiple constraints into account (i.e., airmass, moon, slew speeds, etc.) to determine visibility of objects.
+* Ability to take multiple constraints into account (i.e., airmass, moon, etc.) when determining visibility of objects.
 * Built-in plotting functions (airmass, parallactic angle, sky maps)
 
 We anticipate that **astroplan** will have the following required dependencies:
@@ -38,8 +38,6 @@ We anticipate that **astroplan** will have the following required dependencies:
 
 with potential optional dependencies including Matplotlib and PyEphem
 (or Skyfield).
-
-**A first version is expected to roll out in late August 2015.**
 
 Links
 =====
