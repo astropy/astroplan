@@ -11,20 +11,13 @@ import datetime
 from astropy.time import Time
 import pytz
 import numpy as np
-
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .sites import get_site
 from .moon import get_moon, moon_illumination, moon_phase_angle
 import warnings
 
-from abc import ABCMeta, abstractmethod
-
-import numpy as np
-
-__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
-           "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "MAGIC_TIME"]
+__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
@@ -1802,82 +1795,3 @@ class NonFixedTarget(Target):
     """
     Placeholder for future function.
     """
-
-class Constraint(object):
-    """
-    An object containing observational constraints.
-
-    A Constraints object is used in conjunction with a Target
-    and an Observer object (via the apply_constraints method) to find out
-    if a particular target is visible to the observer.
-    """
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def apply_constraints(self, target, observer, constraint_list):
-        """
-        Returns information on a target's visibility.
-
-        Finds out if a Target is observable by an Observer given a list
-        of Constraint objects.  The list must contain at least one
-        Constraint object.
-
-        Parameters
-        ----------
-        target : WHAT TYPE IS Target OBJECT ?
-
-        constraint_list : WHAT TYPE IS constraint_list ? `numpy.array` ??
-        """
-        raise NotImplementedError
-
-
-class TimeWindow(Constraint):
-    """
-    An object containing start and end times for an observation.
-    """
-
-    def __init__(self, start, end):
-        """
-        Initializes a TimeWindow object.
-
-        Parameters
-        ----------
-        start : STRING OR astropy.time OBJECT ?
-
-        end : STRING OR astropy.time OBJECT ?
-        """
-        raise NotImplementedError
-
-
-class AltitudeRange(Constraint):
-    """
-    An object containing upper and lower altitude limits.
-    """
-
-    def __init__(self, low, high):
-        """
-        Initializes an AltitudeRange object.
-
-        Parameters
-        ----------
-        low : `~astropy.units.Quantity`
-
-        high : `~astropy.units.Quantity`
-        """
-        raise NotImplementedError
-
-
-class AboveAirmass(Constraint):
-    """
-    An object containing an airmass lower limit.
-    """
-
-    def __init__(self, low):
-        """
-        Initializes an AboveAirmass object.
-
-        Parameters
-        ----------
-        low : float
-        """
-        raise NotImplementedError
