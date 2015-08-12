@@ -882,7 +882,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")
+        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
         >>> keck = Observer.at_site("Keck")
         >>> rigel_rise_time = keck.target_rise_time(time, target, which="next")
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time))
@@ -934,7 +934,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")
+        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
         >>> keck = Observer.at_site("Keck")
         >>> rigel_set_time = keck.target_set_time(time, target, which="next")
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time))
@@ -979,7 +979,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")
+        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
         >>> keck = Observer.at_site("Keck")
         >>> rigel_transit_time = keck.target_meridian_transit_time(time, target,
         ...                                                        which="next")
@@ -1025,7 +1025,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")
+        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
         >>> keck = Observer.at_site("Keck")
         >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
         ...                                                                which="next")
@@ -1544,8 +1544,8 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
-        >>> aldebaran = FixedTarget.from_name("Aldebaran")
-        >>> vega = FixedTarget.from_name("Vega")
+        >>> aldebaran = FixedTarget.from_name("Aldebaran") # doctest: +REMOTE_DATA
+        >>> vega = FixedTarget.from_name("Vega")           # doctest: +REMOTE_DATA
         >>> apo.target_is_up(time, aldebaran)
         True
         >>> apo.target_is_up(time, [aldebaran, vega])
@@ -1675,7 +1675,7 @@ class FixedTarget(Target):
     for the coordinates of Sirius by name:
 
     >>> from astroplan import FixedTarget
-    >>> sirius = FixedTarget.from_name("Sirius")
+    >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
     """
     def __init__(self, coord, name=None, **kwargs):
         """
@@ -1713,7 +1713,7 @@ class FixedTarget(Target):
         Examples
         --------
         >>> from astroplan import FixedTarget
-        >>> sirius = FixedTarget.from_name("Sirius")
+        >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
         >>> sirius.coord
         <SkyCoord (ICRS): (ra, dec) in deg
             (101.28715533, -16.71611586)>
