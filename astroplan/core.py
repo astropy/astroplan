@@ -159,6 +159,19 @@ class Observer(object):
                             'instance of datetime.tzinfo')
 
     def __repr__(self):
+        """
+        String representation of the `~astroplan.Observer` object.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> print(keck)                                    # doctest: +FLOAT_CMP
+        <Observer: name='Keck',
+            location (lon, lat, el)=(-155.478333333 deg, 19.8283333333 deg, 4160.0 m),
+            timezone=<DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>>
+        """
         class_name = self.__class__.__name__
         attr_names = ['name', 'location', 'timezone', 'pressure', 'temperature',
                       'relative_humidity']
@@ -174,7 +187,11 @@ class Observer(object):
                         "{} (lon, lat, el)=({})".format(name,
                                                         ", ".join(formatted_loc)))
                 else:
-                    attributes_strings.append("{}={}".format(name, repr(value)))
+                    if name != 'name':
+                        value = repr(value)
+                    else:
+                        value = "'{}'".format(value)
+                    attributes_strings.append("{}={}".format(name, value))
         return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
 
     @classmethod
@@ -1410,6 +1427,21 @@ class FixedTarget(Target):
         return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
 
     def __repr__(self):
+        """
+        String representation of `~astroplan.FixedTarget`.
+
+        Examples
+        --------
+        Show string representation of a `~astroplan.FixedTarget` for Vega:
+
+        >>> from astroplan import FixedTarget
+        >>> from astroplan import FixedTarget
+        >>> from astropy.coordinates import SkyCoord
+        >>> vega_coord = SkyCoord(ra='279.23473479d', dec='38.78368896d')
+        >>> vega = FixedTarget(coord=vega_coord, name="Vega")
+        >>> print(vega)                             # doctest: +FLOAT_CMP
+        <FixedTarget "Vega" at SkyCoord (ICRS): (ra, dec) in deg (279.23473479, 38.78368894)>
+        """
         class_name = self.__class__.__name__
         fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
