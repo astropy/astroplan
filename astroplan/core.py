@@ -187,6 +187,42 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
+    def __repr__(self):
+        """
+        String representation of the `~astroplan.Observer` object.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> print(keck)                                    # doctest: +FLOAT_CMP
+        <Observer: name='Keck',
+            location (lon, lat, el)=(-155.478333333 deg, 19.8283333333 deg, 4160.0 m),
+            timezone=<DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>>
+        """
+        class_name = self.__class__.__name__
+        attr_names = ['name', 'location', 'timezone', 'pressure', 'temperature',
+                      'relative_humidity']
+        attr_values = [getattr(self, attr) for attr in attr_names]
+        attributes_strings = []
+        for name, value in zip(attr_names, attr_values):
+            if value is not None:
+                # Format location for easy readability
+                if name == 'location':
+                    formatted_loc = ["{} {}".format(i.value, i.unit)
+                                     for i in value.to_geodetic()]
+                    attributes_strings.append(
+                        "{} (lon, lat, el)=({})".format(name,
+                                                        ", ".join(formatted_loc)))
+                else:
+                    if name != 'name':
+                        value = repr(value)
+                    else:
+                        value = "'{}'".format(value)
+                    attributes_strings.append("{}={}".format(name, value))
+        return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
+
     @classmethod
     def at_site(cls, site_name, **kwargs):
         """
@@ -1455,6 +1491,26 @@ class FixedTarget(Target):
         if name is None:
             name = query_name
         return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
+
+    def __repr__(self):
+        """
+        String representation of `~astroplan.FixedTarget`.
+
+        Examples
+        --------
+        Show string representation of a `~astroplan.FixedTarget` for Vega:
+
+        >>> from astroplan import FixedTarget
+        >>> from astroplan import FixedTarget
+        >>> from astropy.coordinates import SkyCoord
+        >>> vega_coord = SkyCoord(ra='279.23473479d', dec='38.78368896d')
+        >>> vega = FixedTarget(coord=vega_coord, name="Vega")
+        >>> print(vega)                             # doctest: +FLOAT_CMP
+        <FixedTarget "Vega" at SkyCoord (ICRS): (ra, dec) in deg (279.23473479, 38.78368894)>
+        """
+        class_name = self.__class__.__name__
+        fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
+        return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
 class NonFixedTarget(Target):
     """
