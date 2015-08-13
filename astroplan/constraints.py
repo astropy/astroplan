@@ -88,8 +88,8 @@ class Constraint(object):
 
         times = time_grid_from_range(time_range)
 
-        # convert targets to tuple for hashing
-        aakey = (times, tuple(targets))
+        # convert times, targets to tuple for hashing
+        aakey = (tuple(times.jd), tuple(targets))
 
         if aakey not in observer._altaz_cache:
             if force_zero_pressure:
@@ -210,7 +210,6 @@ class AtNight(Constraint):
         times = Time(np.arange(time_range[0].jd, time_range[1].jd,
                                time_resolution.to(u.day).value), format='jd')
 
-        # convert targets to tuple for hashing
         aakey = (times, 'sun')
 
         if aakey not in observer._altaz_cache:
