@@ -210,7 +210,7 @@ class AtNight(Constraint):
         times = Time(np.arange(time_range[0].jd, time_range[1].jd,
                                time_resolution.to(u.day).value), format='jd')
 
-        aakey = (times, 'sun')
+        aakey = (tuple(times.jd), 'sun')
 
         if aakey not in observer._altaz_cache:
             if self.force_pressure_zero:
