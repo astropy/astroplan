@@ -1756,7 +1756,7 @@ class FixedTarget(Target):
         --------
         >>> from astroplan import FixedTarget
         >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
-        >>> sirius.coord
+        >>> sirius.coord                              # doctest: +FLOAT_CMP
         <SkyCoord (ICRS): (ra, dec) in deg
             (101.28715533, -16.71611586)>
         """
