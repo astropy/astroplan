@@ -106,10 +106,10 @@ install:
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION Sphinx matplotlib; fi
 
     # COVERAGE DEPENDENCIES
-    - if [[ $SETUP_CMD == 'test --coverage  --remote-data' ]]; then $PIP_INSTALL coverage coveralls; fi
+    - if [[ $SETUP_CMD == 'test --coverage --remote-data' ]]; then $PIP_INSTALL coverage coveralls; fi
 
 script:
    - python setup.py $SETUP_CMD
 
 after_success:
-    - if [[ $SETUP_CMD == 'test --coverage  --remote-data' ]]; then coveralls --rcfile='astroplan/tests/coveragerc'; fi
+    - if [[ $SETUP_CMD == 'test --coverage --remote-data' ]]; then coveralls --rcfile='astroplan/tests/coveragerc'; fi
