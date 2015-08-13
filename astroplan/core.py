@@ -31,9 +31,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
-__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
-           "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "MAGIC_TIME"]
+__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
 
@@ -1420,11 +1418,12 @@ class Observer(object):
 
 class Target(object):
     """
+    Abstract base class for target objects.
+
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as ``FixedTarget`` or ``NonFixedTarget``.
-
-    Would need to import six, abc to make this a metaclass?
+    subclasses such as `~astroplan.core.FixedTarget` or
+    `~astroplan.core.NonFixedTarget`.
     """
     __metaclass__ = ABCMeta
 
@@ -1546,20 +1545,28 @@ class Constraint(object):
         raise NotImplementedError
 
 
-class TimeWindow(Constraint):
+class TimeRange(Constraint):
     """
     An object containing start and end times for an observation.
     """
 
-    def __init__(self, start, end):
+    def __init__(self, min=None, max=None):
         """
-        Initializes a TimeWindow object.
+        Initializes a TimeRange object.
 
         Parameters
         ----------
-        start : STRING OR astropy.time OBJECT ?
+        min : `~astropy.time.Time`, `None` or other (see below)
+            Earliest time. `None` designates no lower limit. This will be passed
+            in as the first argument to the `~astropy.time.Time` initializer,
+            so it can be anything that `~astropy.time.Time` will accept
+            (including a `~astropy.time.Time` object).
 
-        end : STRING OR astropy.time OBJECT ?
+        max : `~astropy.time.Time`, `None` or other (see below)
+            Latest time. `None` designates no upper limit. This will be passed
+            in as the first argument to the `~astropy.time.Time` initializer,
+            so it can be anything that `~astropy.time.Time` will accept
+            (including a `~astropy.time.Time` object).
         """
         raise NotImplementedError
 
@@ -1569,30 +1576,41 @@ class AltitudeRange(Constraint):
     An object containing upper and lower altitude limits.
     """
 
-    def __init__(self, low, high):
+    def __init__(self, min=None, max=None):
         """
         Initializes an AltitudeRange object.
 
         Parameters
         ----------
-        low : `~astropy.units.Quantity`
+        min : `~astropy.units.Quantity` or `None`
+            Minimum altitude. `None` designates no lower limit.
 
-        high : `~astropy.units.Quantity`
+        max : `~astropy.units.Quantity` or `None`
+            Maximum altitude. `None` designates no upper limit.
         """
         raise NotImplementedError
 
 
-class AboveAirmass(Constraint):
+class AirmassConstraint(Constraint):
     """
-    An object containing an airmass lower limit.
+    Constrain the airmass within a given range.
     """
 
-    def __init__(self, low):
+    def __init__(self, max=None, min=None):
         """
-        Initializes an AboveAirmass object.
+        Initializes an constraint for airmass.
+
+        Note: the keyword argument order is different for AirmassConstraint
+        than for other constraints for convenience in the common case that a
+        user wants to specify an upper limit on the airmass and not a lower
+        limit, so ``max`` comes before ``min``.
 
         Parameters
         ----------
-        low : float
+        max : float or `None`
+            Maximum airmass value. `None` designates no upper limit.
+
+        min : float or `None`
+            Minimum airmass value. `None` designates no lower limit.
         """
         raise NotImplementedError
