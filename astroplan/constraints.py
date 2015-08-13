@@ -192,15 +192,15 @@ class AtNight(Constraint):
 
     @classmethod
     def twilight_civil(cls, **kwargs):
-        cls(max_solar_altitude=-6*u.deg, **kwargs)
+        return cls(max_solar_altitude=-6*u.deg, **kwargs)
 
     @classmethod
     def twilight_nautical(cls, **kwargs):
-        cls(max_solar_altitude=-12*u.deg, **kwargs)
+        return cls(max_solar_altitude=-12*u.deg, **kwargs)
 
     @classmethod
     def twilight_astronomical(cls, **kwargs):
-        cls(max_solar_altitude=-18*u.deg, **kwargs)
+        return cls(max_solar_altitude=-18*u.deg, **kwargs)
 
     def _get_solar_altitudes(self, time_range, observer, targets,
                              time_resolution=DEFAULT_TIME_RESOLUTION):
