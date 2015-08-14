@@ -35,7 +35,7 @@ Time Dependent Plots
 ====================
 
 Although all `astroplan` plots are time-dependent in some way, we label those
-that have time on one axis "time-dependent".
+that have a time-based axis as "time-dependent".
 
 `Astroplan` currently has two different types of "time-dependent" plots:
 
@@ -60,6 +60,11 @@ Parallactic angle plots::
 Below are general guidelines for working with time-dependent plots in
 `astroplan`.  Examples use airmass, but the following works for parallactic
 angle as well.
+
+.. seealso:
+
+    ???? `astroplan.Observer.altaz.secz` ?????
+    `astroplan.Observer.parallactic_angle`
 
 Making a quick plot
 -------------------
@@ -364,4 +369,73 @@ dictionary with your preferences::
 Sky Charts
 ==========
 
+Many users planning an observation run will want to see the positions of targets
+with respect to their local horizon, as well as the positions of familiar stars
+or other objects to act as guides.
+
+.. _plots_sky_charts::
+
+`plot_sky` allows you to plot the positions of targets at a single instance or
+over some window of time with a command such as::
+
+    plot_sky(target, observer, time)
+
+Note that the time input for `plot_sky` has to either be an array of
+`astropy.time.Time` objects or has to be an `astropy.time.Time` object
+containing an array of times--in other words, it **cannot** be scalar.
+
+.. warning::
+
+    `plot_sky` currently produces polar plots in altitude/azimuth coordinates
+    only.
+
+.. seealso:
+
+    `astroplan.Observer.altaz`
+
+Making a plot for one instance in time
+--------------------------------------
+
+After constructing your `Observer` and `FixedTarget` objects, construct a time
+input using an array of length 1.
+
+That is, either an `astropy.time.Time` object with an array containing one time
+value::
+
+    Time(['2000-1-1'])
+
+or an array containing one scalar `astropy.time.Time` object::
+
+    [Time('2000-1-1')]
+
+Showing movement over time
+--------------------------
+
+CODE, ETC. HERE
+
+.. warning::
+
+    When an object is below an observer's horizon
+
+    Note that in the case of an object being under the horizon (or having
+    negative altitude) at any of the times in your **time** input, `plot_sky`
+    will warn you.  Your object(s) will not show up on the plot for those
+    particular times, but any positions above the horizon will still be plotted
+    as normal.
+
+Customizing your plot
+---------------------
+
+Style options
++++++++++++++
+
+Changing coordinate defaults
+++++++++++++++++++++++++++++
+
+Other tweaks
+++++++++++++
+
 :ref:`Return to Top <plots>`
+
+Explicitly passing in a `matplotlib.axes.Axes` object
+=====================================================
