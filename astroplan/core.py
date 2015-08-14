@@ -113,15 +113,7 @@ class Observer(object):
     Examples
     --------
     We can create an observer at Subaru Observatory in Hawaii two ways. First,
-    by specifying the location with `~astropy.coordinates.EarthLocation`:
-
-    >>> from astropy.coordinates import EarthLocation
-    >>> import astropy.units as u
-    >>> location = EarthLocation.from_geodetic(-155.4761*u.deg, 19.825*u.deg,
-    ...                                        4139*u.m)
-    >>> subaru = Observer(location=location, name="Subaru", timezone="US/Hawaii")
-
-    Locations for some observatories are stored in astroplan, and these can be
+    locations for some observatories are stored in astroplan, and these can be
     accessed by name, like so:
 
     >>> from astroplan import Observer
@@ -129,6 +121,15 @@ class Observer(object):
 
     To find out which observatories can be accessed by name, check out
     `~astroplan.get_site_names`.
+
+    Next, you can initialize an observer by specifying the location with
+    `~astropy.coordinates.EarthLocation`:
+
+    >>> from astropy.coordinates import EarthLocation
+    >>> import astropy.units as u
+    >>> location = EarthLocation.from_geodetic(-155.4761*u.deg, 19.825*u.deg,
+    ...                                        4139*u.m)
+    >>> subaru = Observer(location=location, name="Subaru", timezone="US/Hawaii")
 
     You can also create an observer without an
     `~astropy.coordinates.EarthLocation`:
