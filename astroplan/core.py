@@ -1654,11 +1654,12 @@ class Observer(object):
 
 class Target(object):
     """
+    Abstract base class for target objects.
+
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as ``FixedTarget`` or ``NonFixedTarget``.
-
-    Would need to import six, abc to make this a metaclass?
+    subclasses such as `~astroplan.core.FixedTarget` or
+    `~astroplan.core.NonFixedTarget`.
     """
     __metaclass__ = ABCMeta
 
