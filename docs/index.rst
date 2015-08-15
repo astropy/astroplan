@@ -68,5 +68,4 @@ General Documentation
    installation.rst
    getting_started.rst
    tutorials.rst
-   howtoget.rst
    api.rst

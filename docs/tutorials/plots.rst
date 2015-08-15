@@ -1,10 +1,12 @@
 :orphan:
 
+.. include:: ../references.txt
+
 .. _plots:
 
-*****
-Plots
-*****
+***********************
+Plotting with Astroplan
+***********************
 
 `astroplan` currently has convenience functions for making three different types
 of plots: airmass vs time, parallactic angle vs time and sky charts.  While
@@ -37,7 +39,7 @@ Time Dependent Plots
 Although all `astroplan` plots are time-dependent in some way, we label those
 that have a time-based axis as "time-dependent".
 
-`Astroplan` currently has two different types of "time-dependent" plots:
+`astroplan` currently has two different types of "time-dependent" plots:
 
 * Airmass vs. Time
 * Parallactic Angle vs. Time
@@ -47,21 +49,20 @@ These take, at minimum, `astroplan.Observer`, `astroplan.FixedTarget` and
 
 .. _plots_airmass:
 
-Airmass plots are made with a command such as::
+Airmass versus time plots are made in the following manner::
 
     plot_airmass(target, observer, time)
 
 .. _plots_parallactic:
 
-Parallactic angle plots::
+Parallactic angle vs time plots are made in the following manner::
 
     plot_parallactic(target, observer, time)
 
 Below are general guidelines for working with time-dependent plots in
-`astroplan`.  Examples use airmass, but the following works for parallactic
-angle as well.
+`astroplan`.  Examples use airmass but apply to parallactic angle as well.
 
-.. seealso:
+.. seealso::
 
     ???? `astroplan.Observer.altaz.secz` ?????
     `astroplan.Observer.parallactic_angle`
@@ -75,6 +76,8 @@ a quick plot over a 24-hour period.
 After constructing `Observer` and `Target` objects, construct a
 `astropy.time.Time` object with a single instance in time and issue the
 plotting command::
+
+    from astropy.time import Time
 
     observe_time = Time('2015-06-15 23:30:00')
 
@@ -114,22 +117,25 @@ plotting command::
     plot_airmass(target, observer, observe_time)
     plt.show()
 
-As you can see, the 24-hour plot is centered on the time input.  You can use
-array `astropy.time.Time` objects for these quick plots as well--they just
-can't contain more than one instance in time::
+As you can see, the 24-hour plot is centered on the time input.  You can also
+use array `astropy.time.Time` objects for these quick plots--they just
+can't contain more than one instance in time.
+
+For example, these are acceptable *time* inputs::
 
     Time(['2015-06-15 23:30:00'])
 
     [Time('2015-06-15 23:30:00')]
 
-.. plots_time_window::
+.. _plots_time_window:
 
 Specifying a time window
 ------------------------
 
 If you want to see airmass plotted over a window that is not 24 hours long or
 you want to control the precision of the plot, you must specify every time for
-which you want to see an airmass plotted.
+which you want to see an airmass plotted.  Therefore, an array
+`astropy.time.Time` object is necessary.
 
 To quickly populate an `astropy.time.Time` object with many instances of time,
 use `Numpy`_ and `astropy.units`.
@@ -137,9 +143,10 @@ use `Numpy`_ and `astropy.units`.
 Centering the window at some time
 +++++++++++++++++++++++++++++++++
 
-To center your time window at some instance in time::
+To center your window at some instance in time::
 
     import numpy as np
+    import astropy.units as u
 
     observe_time = Time('2015-06-15 23:30:00')
     observe_time = observe_time + np.linspace(-5, 5, 55)*u.hour
@@ -375,8 +382,6 @@ Many users planning an observation run will want to see the positions of targets
 with respect to their local horizon, as well as the positions of familiar stars
 or other objects to act as guides.
 
-.. _plots_sky_charts::
-
 `plot_sky` allows you to plot the positions of targets at a single instance or
 over some window of time with a command such as::
 
@@ -393,7 +398,7 @@ over some window of time with a command such as::
     `plot_sky` currently produces polar plots in altitude/azimuth coordinates
     only.  Plots are centered on the observer's zenith.
 
-.. seealso:
+.. seealso::
 
     `astroplan.Observer.altaz`
 
