@@ -14,7 +14,7 @@ observations.
 
 .. warning::
 
-    We're still in development, so the `astroplan` API may change.
+    We're still in development, so the `astroplan` API may change.  
     `Astropy`_, `PyEphem`_ or `Skyfield`_ are good options if you're looking
     for a more stable package.
 

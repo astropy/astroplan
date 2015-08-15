@@ -4,6 +4,8 @@
 
 .. _plots:
 
+.. doctest-skip-all
+
 ***********************
 Plotting with Astroplan
 ***********************
@@ -65,6 +67,7 @@ Below are general guidelines for working with time-dependent plots in
 .. seealso::
 
     ???? `astroplan.Observer.altaz.secz` ?????
+
     `astroplan.Observer.parallactic_angle`
 
 Making a quick plot
@@ -73,9 +76,9 @@ Making a quick plot
 Any plot function in `astroplan` with a time-based axis will allow you to make
 a quick plot over a 24-hour period.
 
-After constructing `Observer` and `Target` objects, construct a
-`astropy.time.Time` object with a single instance in time and issue the
-plotting command::
+After constructing `astroplan.Observer` and `astroplan.FixedTarget` objects,
+construct a `astropy.time.Time` object with a single instance in time and issue
+the plotting command::
 
     from astropy.time import Time
 
@@ -117,7 +120,7 @@ plotting command::
     plot_airmass(target, observer, observe_time)
     plt.show()
 
-As you can see, the 24-hour plot is centered on the time input.  You can also
+As you can see, the 24-hour plot is centered on the *time* input.  You can also
 use array `astropy.time.Time` objects for these quick plots--they just
 can't contain more than one instance in time.
 
@@ -195,7 +198,7 @@ Specify start and end times
 +++++++++++++++++++++++++++
 
 If you know the start and end times of your observation run, you can use a
-`astropy.time.DeltaTime` object to create an array for time input::
+`astropy.time.TimeDelta` object to create an array for time input::
 
     start_time = Time('2015-06-15 20:00:00')
     end_time = Time('2015-06-16 04:00:00')
@@ -246,11 +249,8 @@ Plotting a quantity for multiple targets
 ----------------------------------------
 
 If you want to plot airmass information for multiple targets, simply reissue
-the ``plot_airmass`` command, using a different `Target` object as input this
-time. Repeat until you have as many targets on the plot as you wish.
-
-When you're ready to make a different plot, use *ax.cla()* to clear the `ax`
-object::
+the `plot_airmass` command, using a different `FixedTarget` object as input this
+time. Repeat until you have as many targets on the plot as you wish::
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     other_target = FixedTarget(name='Polaris', coord=coordinates)
@@ -309,18 +309,25 @@ object::
 
     plt.legend(shadow=True, loc=2)
     plt.show()
+
+When you're ready to make a different plot, use `ax.cla()` to clear the current
+`matplotlib.axes.Axes` object.
+
+.. _plots_style:
 
 Changing style options
 ----------------------
 
-You can set the `Matplotlib` *linestyle* and *color* options by passing in a
-dictionary with your preferences::
+The default line for time-dependent plots is solid and the default label (should
+you choose to display a legend) is the name contained in the `Target` object.
+You can change the *linestyle*, *color*, *label* and other plotting properties
+by setting the *style_kwargs* option::
 
     sirius_styles = {'linestyle': '--', 'color': 'r'}
-    polaris_styles = {'linestyle': '-', 'color': 'g'}
+    pollux_styles = {'color': 'g'}
 
-    plot_airmass(other_target, observer, observe_time, style_kwargs=sirius_styles)
-    plot_airmass(third_target, observer, observe_time, style_kwargs=pollux_styles)
+    plot_airmass(target, observer, observe_time, style_kwargs=sirius_styles)
+    plot_airmass(other_target, observer, observe_time, style_kwargs=pollux_styles)
 
     plt.legend(shadow=True, loc=2)
     plt.show()
@@ -353,22 +360,22 @@ dictionary with your preferences::
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
 
-    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
-    other_target = FixedTarget(name='Polaris', coord=coordinates)
-
     coordinates = SkyCoord('07h45m19.4s', '+28d01m35s', frame='icrs')
-    third_target = FixedTarget(name='Pollux', coord=coordinates)
+    other_target = FixedTarget(name='Pollux', coord=coordinates)
 
-    observe_time = Time('2015-06-30 23:30:00') + np.linspace(-7.0, 5.5, 50)*u.hour
+    observe_time = Time('2015-06-30 23:30:00') + np.linspace(-10, 10, 50)*u.hour
 
     sirius_styles = {'linestyle': '--', 'color': 'r'}
-    pollux_styles = {'linestyle': '-', 'color': 'g'}
+    pollux_styles = {'color': 'g'}
 
-    plot_airmass(other_target, observer, observe_time, style_kwargs=sirius_styles)
-    plot_airmass(third_target, observer, observe_time, style_kwargs=pollux_styles)
+    plot_airmass(target, observer, observe_time, style_kwargs=sirius_styles)
+    plot_airmass(other_target, observer, observe_time, style_kwargs=pollux_styles)
 
     plt.legend(shadow=True, loc=2)
     plt.show()
+
+See the `Matplotlib`_ documentation for information on plotting styles in line
+plots.
 
 :ref:`Return to Top <plots>`
 
@@ -391,7 +398,8 @@ over some window of time with a command such as::
 
     Note that the time input for `plot_sky` has to either be an array of
     `astropy.time.Time` objects or has to be an `astropy.time.Time` object
-    containing an array of times--in other words, it **cannot** be scalar.
+    containing an array of times--in other words, it **cannot** be scalar.  See
+    `astropy`'s documentation for more details.
 
 .. warning::
 
@@ -405,15 +413,15 @@ over some window of time with a command such as::
 Making a plot for one instance in time
 --------------------------------------
 
-After constructing your `Observer` and `FixedTarget` objects, construct a time
-input using an array of length 1.
+After constructing your `astroplan.Observer` and `astroplan.FixedTarget`
+objects, construct a time input using an array of length 1.
 
 That is, either an `astropy.time.Time` object with an array containing one time
 value (e.g., ``Time(['2000-1-1'])``) or an array containing one scalar
 `astropy.time.Time` object (e.g., ``[Time('2000-1-1')]``).
 
-Let's say that you created `FixedTarget` objects for Polaris, Altair, Vega and
-Deneb.  To plot a map of the sky::
+Let's say that you created `astroplan.FixedTarget` objects for Polaris, Altair,
+Vega and Deneb.  To plot a map of the sky::
 
     observe_time = Time(['2015-03-15 15:30:00'])
 
@@ -551,7 +559,7 @@ documentation, or :ref:`plots_time_window`.
 .. warning::
 
     Note that in the case of an object being under the horizon (or having
-    negative altitude) at any of the times in your **time** input, `plot_sky`
+    negative altitude) at any of the times in your *time* input, `plot_sky`
     will warn you.  Your object(s) will not show up on the plot for those
     particular times, but any positions above the horizon will still be plotted
     as normal.
@@ -565,17 +573,19 @@ much the same way you tweak any `Matplotlib`_ plot.
 Setting style options
 +++++++++++++++++++++
 
-The default marker is a circle and the default label (should you choose
-to display a legend) is the name contained in the `Target` object.  You can
-change the **marker**, **color**, **label** and other plotting properties by
-setting the **style_kwargs** option, as seen in the various examples here.
+The default marker for `plot_sky` is a circle and the default label (should you
+choose to display a legend) is the name contained in the `Target` object.  You
+can change the *marker*, *color*, *label* and other plotting properties by
+setting the *style_kwargs* option, in the same way shown for the
+:ref:`time-dependent plots <plots_style>`.
 
 One situation in which this is particularly useful is the plotting of guide
 positions, such as a few familiar stars or any body used in calibrating your
 telescope. You can also use this feature to set apart different types of targets
 (e.g., high-priority, candidates for observing run, etc.).
 
-See the `Matplotlib`_ documentation for information on plotting styles.
+See the `Matplotlib`_ documentation for information on plotting styles in
+scatter plots.
 
 Changing coordinate defaults
 ++++++++++++++++++++++++++++
@@ -586,7 +596,7 @@ the plot, and South at the bottom, with azimuth increasing counter-clockwise
 
 You can't change the position of North or South (either in the actual plotting
 of the data, or the labels), but you can "flip" East/West by changing the
-direction in which azimuth increases via the **north_to_east_ccw** option::
+direction in which azimuth increases via the *north_to_east_ccw* option::
 
     guide_style = {'marker': '*'}
 
@@ -644,10 +654,10 @@ direction in which azimuth increases via the **north_to_east_ccw** option::
 Some observatories may need to offset or rotate the azimuth labels due to their
 particular telescope setup.
 
-To do this, set **az_label_offset** equal to the number of degrees by which you
-wish to rotate the labels.  By default, **az_label_offset** is set to 0 degrees.
+To do this, set *az_label_offset* equal to the number of degrees by which you
+wish to rotate the labels.  By default, *az_label_offset* is set to 0 degrees.
 A positive offset is in the same direction as azimuth increase (see the
-**north_to_east_ccw** option)::
+*north_to_east_ccw* option)::
 
     guide_style = {'marker': '*'}
 
@@ -705,16 +715,17 @@ A positive offset is in the same direction as azimuth increase (see the
 
 .. warning::
 
-    This option does not rotate the actual positions on the plot, but simply the
-    theta grid labels (which are drawn regardless of gridline presence). Since
-    labels are drawn with every call to `plot_sky`, we recommend you use the
-    same **az_label_offset argument** for every target on the same plot.
+    The *az_label_offset* option does not rotate the actual positions on the
+    plot, but simply the theta grid labels (which are drawn regardless of
+    gridline presence).  Since labels are drawn with every call to `plot_sky`,
+    we recommend you use the same *az_label_offset* argument for every target on
+    the same plot.
 
     It is not advised that most users change this option, as it may **appear**
     that your alt/az data does not coincide with the definition of altazimuth
     (local horizon) coordinate system.
 
-You can turn off the grid lines by setting the **grid** option to False::
+You can turn off the grid lines by setting the *grid* option to *False*::
 
     guide_style = {'marker': '*'}
 
@@ -772,15 +783,15 @@ You can turn off the grid lines by setting the **grid** option to False::
 
 .. warning::
 
-    Since grids are redrawn with every call to plot_sky, you must set grid=False
-    for every target in the same plot.
+    Since grids are redrawn with every call to `plot_sky`, you must set
+    `grid=False` for every target in the same plot.
 
 Other tweaks
 ++++++++++++
 
 You can easily change other plot attributes by acting on the returned
-`matplotlib.axes.Axes` object or via `matplotlib.pyplot` calls (i.e.,
-plt.figure, plt.rc, etc.).
+`matplotlib.axes.Axes` object or via `matplotlib.pyplot` calls (e.g.,
+`plt.figure`, `plt.rc`, etc.).
 
 For instance, you can increase the size of your plot and its font::
 
@@ -799,58 +810,6 @@ For instance, you can increase the size of your plot and its font::
     # Change font size back to default once done plotting.
     plt.rc('font', size=12)
 
-.. plot::
-
-    import matplotlib.pyplot as plt
-    import astropy.units as u
-    from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
-    from astropy.time import Time
-
-    from astroplan import Observer
-    from astroplan import FixedTarget
-    from astroplan.plots import plot_sky
-
-    # Set up Observer, Target and observation time objects.
-    longitude = '-155d28m48.900s'
-    latitude = '+19d49m42.600s'
-    elevation = 4163 * u.m
-    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
-
-    observer = Observer(name='Subaru Telescope',
-                   location=location,
-                   pressure=0.615 * u.bar,
-                   relative_humidity=0.11,
-                   temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
-
-    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
-    polaris = FixedTarget(name='Polaris', coord=coordinates)
-
-    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
-    altair = FixedTarget(name='Altair', coord=coordinates)
-
-    import numpy as np
-
-    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
-
-    guide_style = {'marker': '*'}
-
-    # Set the figure size/font before you issue the plotting command.
-    plt.figure(figsize=(8,6))
-    plt.rc('font', size=14)
-
-    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
-    plot_sky(altair, observer, observe_time)
-
-    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    plt.show()
-
-    # Change font size back to default once done plotting.
-    plt.rc('font', size=12)
-
-
 :ref:`Return to Top <plots>`
 
 Miscellaneous
@@ -862,7 +821,7 @@ the background.  You do, however, have the option of explicitly passing in a
 named axis, assuming that you have created the appropriate type for the
 particular plot you want.
 
-Here, we explicitly give a name to the `matplotlib.axes.Axes` object returned
+We can explicitly give a name to the `matplotlib.axes.Axes` object returned
 by `plot_sky` when plotting Polaris and reuse it to plot Altair::
 
     observe_time = Time(['2015-03-15 15:30:00'])
@@ -875,7 +834,7 @@ by `plot_sky` when plotting Polaris and reuse it to plot Altair::
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
-Here, we first create a `matplotlib.axes.Axes` object entirely outside of
+We can also create a `matplotlib.axes.Axes` object entirely outside of
 `plot_sky`, then pass it in::
 
     my_ax = plt.gca(projection='polar')
@@ -953,3 +912,5 @@ make multiple plots::
     plot_sky(deneb, observer, observe_time, other_ax, style_kwargs=deneb_style)
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
+
+:ref:`Return to Top <plots>`
