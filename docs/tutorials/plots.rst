@@ -70,7 +70,7 @@ Making a quick plot
 -------------------
 
 Any plot function in `astroplan` with a time-based axis will allow you to make
-a quick plot over a 24-hour period
+a quick plot over a 24-hour period.
 
 After constructing `Observer` and `Target` objects, construct a
 `astropy.time.Time` object with a single instance in time and issue the
@@ -413,12 +413,11 @@ Deneb.  To plot a map of the sky::
     observe_time = Time(['2015-03-15 15:30:00'])
 
     polaris_style = {color': 'k'}
-    altair_style = {'color': 'b'}
     vega_style = {'color': 'g'}
     deneb_style = {'color': 'r'}
 
     plot_sky(polaris, observer, observe_time, style_kwargs=polaris_style)
-    plot_sky(altair, observer, observe_time, style_kwargs=altair_style)
+    plot_sky(altair, observer, observe_time)
     plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
     plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
 
@@ -460,25 +459,24 @@ Deneb.  To plot a map of the sky::
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
-    polaris_style = {'marker': 'o', 'color': 'k'}
+    polaris_style = {'color': 'k'}
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
-    altair_style = {'marker': 'o', 'color': 'b'}
 
     coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
     vega = FixedTarget(name='Vega', coord=coordinates)
-    vega_style = {'marker': 'o', 'color': 'g'}
+    vega_style = {'color': 'g'}
 
     coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
     deneb = FixedTarget(name='Deneb', coord=coordinates)
-    deneb_style = {'marker': 'o', 'color': 'r'}
+    deneb_style = {'color': 'r'}
 
     # Note that this is not a scalar.
     observe_time = Time(['2015-03-15 15:30:00'])
 
     plot_sky(polaris, observer, observe_time, style_kwargs=polaris_style)
-    plot_sky(altair, observer, observe_time, style_kwargs=altair_style)
+    plot_sky(altair, observer, observe_time)
     plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
     plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
 
@@ -556,16 +554,397 @@ documentation, or :ref:`plots_time_window`.
 Customizing your sky plot
 -------------------------
 
-Style options
-+++++++++++++
+`astroplan` plots use `Matplotlib`_ defaults, so you can customize your plots in
+much the same way you tweak any `Matplotlib`_ plot.
+
+Setting style options
++++++++++++++++++++++
+
+The default marker is a circle and the default label (should you choose
+to display a legend) is the name contained in the `Target` object.  You can
+change the **marker**, **color**, **label** and other plotting properties by
+setting the **style_kwargs** option, as seen in the various examples here.
+
+One situation in which this is particularly useful is the plotting of guide
+positions, such as a few familiar stars or any body used in calibrating your
+telescope. You can also use this feature to set apart different types of targets
+(e.g., high-priority, candidates for observing run, etc.).
+
+See the `Matplotlib`_ documentation for information on plotting styles.
 
 Changing coordinate defaults
 ++++++++++++++++++++++++++++
 
+As seen in the above examples, the default position of North is at the top of
+the plot, and South at the bottom, with azimuth increasing counter-clockwise
+(CCW), putting East to the left, and West to the right.
+
+You can't change the position of North or South (either in the actual plotting
+of the data, or the labels), but you can "flip" East/West by changing the
+direction in which azimuth increases via the **north_to_east_ccw** option::
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
+    plot_sky(altair, observer, observe_time, north_to_east_ccw=False)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_sky
+
+    # Set up Observer, Target and observation time objects.
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+    polaris = FixedTarget(name='Polaris', coord=coordinates)
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    import numpy as np
+
+    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, north_to_east_ccw=False,
+             style_kwargs=guide_style)
+    plot_sky(altair, observer, observe_time, north_to_east_ccw=False)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+Some observatories may need to offset or rotate the azimuth labels due to their
+particular telescope setup.
+
+To do this, set **az_label_offset** equal to the number of degrees by which you
+wish to rotate the labels.  By default, **az_label_offset** is set to 0 degrees.
+A positive offset is in the same direction as azimuth increase (see the
+**north_to_east_ccw** option)::
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
+             az_label_offset=180.0*u.deg)
+    plot_sky(altair, observer, observe_time, az_label_offset=180.0*u.deg)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_sky
+
+    # Set up Observer, Target and observation time objects.
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+    polaris = FixedTarget(name='Polaris', coord=coordinates)
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    import numpy as np
+
+    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
+             az_label_offset=180.0*u.deg)
+    plot_sky(altair, observer, observe_time, az_label_offset=180.0*u.deg)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. warning::
+
+    This option does not rotate the actual positions on the plot, but simply the
+    theta grid labels (which are drawn regardless of gridline presence). Since
+    labels are drawn with every call to `plot_sky`, we recommend you use the
+    same **az_label_offset argument** for every target on the same plot.
+
+    It is not advised that most users change this option, as it may **appear**
+    that your alt/az data does not coincide with the definition of altazimuth
+    (local horizon) coordinate system.
+
+You can turn off the grid lines by setting the **grid** option to False::
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
+             grid=False)
+    plot_sky(altair, observer, observe_time, grid=False)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_sky
+
+    # Set up Observer, Target and observation time objects.
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+    polaris = FixedTarget(name='Polaris', coord=coordinates)
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    import numpy as np
+
+    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
+             grid=False)
+    plot_sky(altair, observer, observe_time, grid=False)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. warning::
+
+    Since grids are redrawn with every call to plot_sky, you must set grid=False
+    for every target in the same plot.
+
 Other tweaks
 ++++++++++++
 
+You can easily change other plot attributes by acting on the returned
+`matplotlib.axes.Axes` object or via `matplotlib.pyplot` calls (i.e.,
+plt.figure, plt.rc, etc.).
+
+For instance, you can increase the size of your plot and its font::
+
+    # Set the figure size/font before you issue the plotting command.
+    plt.figure(figsize=(8,6))
+    plt.rc('font', size=14)
+
+    guide_style = {'marker': '*'}
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
+    plot_sky(altair, observer, observe_time)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+    # Change font size back to default once done plotting.
+    plt.rc('font', size=12)
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_sky
+
+    # Set up Observer, Target and observation time objects.
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+    polaris = FixedTarget(name='Polaris', coord=coordinates)
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    import numpy as np
+
+    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+
+    guide_style = {'marker': '*'}
+
+    # Set the figure size/font before you issue the plotting command.
+    plt.figure(figsize=(8,6))
+    plt.rc('font', size=14)
+
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
+    plot_sky(altair, observer, observe_time)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+    # Change font size back to default once done plotting.
+    plt.rc('font', size=12)
+
+
 :ref:`Return to Top <plots>`
 
-Explicitly passing in a `matplotlib.axes.Axes` object
-=====================================================
+Miscellaneous
++++++++++++++
+
+The easiest way to reuse the `matplotlib.axes.Axes` object that is the base of
+your plots is to just let `astroplan`'s plotting functions take care of it in
+the background.  You do, however, have the option of explicitly passing in a
+named axis, assuming that you have created the appropriate type for the
+particular plot you want.
+
+Here, we explicitly give a name to the `matplotlib.axes.Axes` object returned
+by `plot_sky` when plotting Polaris and reuse it to plot Altair::
+
+    observe_time = Time(['2015-03-15 15:30:00'])
+
+    guide_style = {'marker': '*'}
+
+    my_ax = plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
+    plot_sky(altair, observer, observe_time, my_ax)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+Here, we first create a `matplotlib.axes.Axes` object entirely outside of
+`plot_sky`, then pass it in::
+
+    my_ax = plt.gca(projection='polar')
+    plot_sky(polaris, observer, observe_time, my_ax)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+Passing in named `matplotlib.axes.Axes` objects comes in handy when you want to
+make multiple plots::
+
+    my_ax = plot_sky(polaris, observer, observe_time, style_kwargs=polaris_style)
+    plot_sky(altair, observer, observe_time, my_ax, style_kwargs=altair_style)
+    plt.legend(loc='center left', bbox_to_anchor=(1.3, 0.5))
+    # Note that this plt.show (or another action, such as saving a figure) is
+    # critical in maintaining two separate plots.
+    plt.show()
+
+    other_ax = plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
+    plot_sky(deneb, observer, observe_time, other_ax, style_kwargs=deneb_style)
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_sky
+
+    # Set up Observer, Target and observation time objects.
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
+    polaris = FixedTarget(name='Polaris', coord=coordinates)
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+    altair_style = {'color': 'b'}
+
+    coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
+    vega = FixedTarget(name='Vega', coord=coordinates)
+    vega_style = {'color': 'g'}
+
+    coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
+    deneb = FixedTarget(name='Deneb', coord=coordinates)
+    deneb_style = {'color': 'r'}
+
+    observe_time = Time(['2015-03-15 15:30:00'])
+
+    my_ax = plot_sky(polaris, observer, observe_time)
+    plot_sky(altair, observer, observe_time, my_ax, style_kwargs=altair_style)
+    plt.legend(loc='center left', bbox_to_anchor=(1.3, 0.5))
+    # Note that this plt.show (or another action, such as saving a figure) is
+    # critical in maintaining two separate plots.
+    plt.show()
+
+    other_ax = plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
+    plot_sky(deneb, observer, observe_time, other_ax, style_kwargs=deneb_style)
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
