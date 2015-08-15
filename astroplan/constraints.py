@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun
+from astropy.coordinates import get_sun, Angle
 
 DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
@@ -166,12 +166,15 @@ class AirmassConstraint(AltitudeConstraint):
     def _compute_constraint(self, time_range, observer, targets):
         cached_altaz = self._get_altaz(time_range, observer, targets)
         altaz = cached_altaz['altaz']
-        if self.min is None:
+        if self.min is None and self.max is not None:
             mask = altaz.secz < self.max
-        elif self.max is None:
+        elif self.max is None and self.min is not None:
             mask = self.min < altaz.secz
         elif self.min is not None and self.max is not None:
             mask = (self.min < altaz.secz) & (altaz.secz < self.max)
+        else:
+            raise ValueError("No max and/or min specified in "
+                             "AirmassConstraint.")
         return mask
 
 class AtNight(Constraint):
@@ -207,8 +210,7 @@ class AtNight(Constraint):
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
 
-        times = Time(np.arange(time_range[0].jd, time_range[1].jd,
-                               time_resolution.to(u.day).value), format='jd')
+        times = time_grid_from_range(time_range)
 
         aakey = (tuple(times.jd), 'sun')
 
@@ -234,6 +236,32 @@ class AtNight(Constraint):
         sun_altaz = self._get_solar_altitudes(time_range, observer, targets)
         solar_altitude = sun_altaz['altitude']
         mask = solar_altitude < self.max_solar_altitude
+        return mask
+
+class SunSeparation(Constraint):
+    """
+    Constrain the sun to be a distance away from target.
+    """
+    def __init__(self, min=None, max=None):
+        self.min = min
+        self.max = max
+
+    def _compute_constraint(self, time_range, observer, targets):
+        times = time_grid_from_range(time_range)
+        sun = get_sun(times)
+        targets = [target.coord if hasattr(target, 'coord') else target
+                   for target in targets]
+        solar_separation = Angle([sun.separation(target) for target in targets])
+        if self.min is None and self.max is not None:
+            mask = self.max > solar_separation
+        elif self.max is None and self.min is not None:
+            mask = self.min < solar_separation
+        elif self.min is not None and self.max is not None:
+            mask = ((self.min < solar_separation) &
+                    (solar_separation < self.max))
+        else:
+            raise ValueError("No max and/or min specified in "
+                             "SunSeparation.")
         return mask
 
 def is_always_observable(constraints, time_range, targets, observer):
