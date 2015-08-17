@@ -1681,7 +1681,10 @@ class Target(object):
         """
         if isinstance(self, FixedTarget):
             return self.coord.ra
-        raise NotImplementedError()
+        if isinstance(self. NonFixedTarget):
+            raise ValueError("NonFixedTarget objects require a time and/or "
+                             "other specifications to calculate a position. "
+                             "Did you mean to do NonFixedTarget.at(args).ra?")
 
     @property
     def dec(self):
@@ -1690,8 +1693,10 @@ class Target(object):
         """
         if isinstance(self, FixedTarget):
             return self.coord.dec
-        raise NotImplementedError()
-
+        if isinstance(self. NonFixedTarget):
+            raise ValueError("NonFixedTarget objects require a time and/or "
+                             "other specifications to calculate a position. "
+                             "Did you mean to do NonFixedTarget.at(args).dec?")
 
 class FixedTarget(Target):
     """
@@ -1813,17 +1818,6 @@ class NonFixedTarget(Target):
         self.name = name.lower() if name is not None else name
         self.coord_function = coord_function
 
-    def at(self, *args, **kwargs):
-        """
-        Get `~astropy.coordinates.SkyCoord` for the `~astroplan.NonFixedTarget`
-        at a given time, location, etc.
-
-        Parameters
-        ----------
-        Any parameters passed to the
-        """
-        return self.coord_function(*args, **kwargs)
-
     @classmethod
     def from_function(cls, coord_function, name=None):
         """
@@ -1831,6 +1825,21 @@ class NonFixedTarget(Target):
         computes a `~astropy.coordinates.SkyCoord` for the target object.
         """
         return cls(coord_function=coord_function, name=name)
+
+    def at(self, *args, **kwargs):
+        """
+        Get `~astropy.coordinates.SkyCoord` for the `~astroplan.NonFixedTarget`
+        at a given time, location, etc.
+
+        Parameters
+        ----------
+        All parameters passed to ``coord_function``.
+
+        Returns
+        -------
+        A `~astropy.coordinates.SkyCoord` object as specified by the parameters.
+        """
+        return self.coord_function(*args, **kwargs)
 
 class Constraint(object):
     """
