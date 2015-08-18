@@ -1,6 +1,7 @@
 """
-`astroplan.plots` is a module for making plots of important quantities within
-the `astroplan` toolbox, such as airmass vs. time, etc.
+`astroplan.plots` contains functions for making plots of commonly-used
+quantities in observation planning (e.g., airmass vs. time), using `astroplan`
+and `Matplotlib`.
 """
 
 from .time_dependent import *
