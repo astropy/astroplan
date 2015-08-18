@@ -1809,7 +1809,11 @@ class NonFixedTarget(Target):
     """
     An object that is not "fixed" with respect to the celestial sphere.
 
-    Currently only some celestial objects are supported in this class.
+    A NonFixedTarget object holds a function that computes the coordinates
+    of the object at various points in time.
+
+    NonFixedTarget objects can at present be initialized only by the
+    ``NonFixedTarget.from_name`` class method.
     """
     def __init__(self, coord_function=None, name=None, constant_kwargs=None):
         """
@@ -1824,21 +1828,33 @@ class NonFixedTarget(Target):
         """
         Initialize a `~astropy.NonFixedTarget` by passing in a function that
         computes a `~astropy.coordinates.SkyCoord` for the target object.
+
+        Parameters
+        ----------
+        coord_function : function
+            This function takes some input parameters and outputs a
+            `~astropy.coordinates.SkyCoord` for the object at one instance
+            in time
+
+        name : str (optional)
+            Name of the object
         """
         return cls(coord_function=coord_function, name=name)
 
     def at(self, *args, **kwargs):
         """
-        Get `~astropy.coordinates.SkyCoord` for the `~astroplan.NonFixedTarget`
-        at a given time, location, etc.
+        Get a `~astropy.coordinates.SkyCoord` object for the
+        `~astroplan.NonFixedTarget` at a given time, and/or other parameters.
 
         Parameters
         ----------
-        All parameters passed to ``coord_function``.
+        All arguments and keyword arguments passed to already-specified
+        ``self.coord_function``.
 
         Returns
         -------
-        A `~astropy.coordinates.SkyCoord` object as specified by the parameters.
+        `~astropy.coordinates.SkyCoord`
+            Specified by passing the arguments to ``self.coord_function``.
         """
         if self.constant_kwargs is not None:
             for key in self.constant_kwargs:
