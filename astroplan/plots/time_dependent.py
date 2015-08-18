@@ -193,7 +193,6 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
 
-    observe_date = time[0].datetime.strftime('%Y-%m-%d')
     observe_timezone = 'UTC'
 
     # Plot data.
