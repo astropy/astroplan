@@ -30,7 +30,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     Parameters
     ----------
-    target: `~astroplan.FixedTarget`
+    target : `~astroplan.FixedTarget`
         The celestial body of interest.
 
     observer: `~astroplan.Observer`
@@ -53,15 +53,15 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         A dictionary of keywords passed into `matplotlib.pyplot.scatter`
         to set plotting styles.
 
-    north_to_east_ccw: bool, optional.
+    north_to_east_ccw : bool, optional.
         True by default, meaning that azimuth is shown increasing
         counter-clockwise (CCW), or with North at top, East at left, etc.
         To show azimuth increasing clockwise (CW), set to False.
 
-    grid: bool, optional.
+    grid : bool, optional.
         True by default, meaning that grid is drawn.
 
-    az_label_offset: `~astropy.units.degree`, optional.
+    az_label_offset : `~astropy.units.degree`, optional.
         DANGER: It is not recommended that you change the default behavior,
         as to do so makes it seem as if N/E/S/W are being decoupled from the
         definition of azimuth (North from az = 0 deg., East from az = 90 deg.,
@@ -177,7 +177,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     for chunk in range(0, 7):
         label_angle = (az_label_offset*(1/u.deg)) + (chunk*45.0)
         while label_angle >= 360.0:
-            label_angle = label_angle - 360.0
+            label_angle -= 360.0
         if chunk == 0:
             theta_labels.append('N ' + '\n' + str(label_angle) + degree_sign
                                 + ' Az')
