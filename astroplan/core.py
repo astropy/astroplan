@@ -1811,12 +1811,13 @@ class NonFixedTarget(Target):
 
     Currently only some celestial objects are supported in this class.
     """
-    def __init__(self, coord_function=None, name=None):
+    def __init__(self, coord_function=None, name=None, constant_kwargs=None):
         """
         TODO: Docstring.
         """
         self.name = name.lower() if name is not None else name
         self.coord_function = coord_function
+        self.constant_kwargs = constant_kwargs
 
     @classmethod
     def from_function(cls, coord_function, name=None):
@@ -1839,6 +1840,9 @@ class NonFixedTarget(Target):
         -------
         A `~astropy.coordinates.SkyCoord` object as specified by the parameters.
         """
+        if self.constant_kwargs is not None:
+            for key in self.constant_kwargs:
+                kwargs[key] = self.constant_kwargs[key]
         return self.coord_function(*args, **kwargs)
 
 class Constraint(object):
