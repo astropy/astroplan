@@ -17,15 +17,16 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     """
     Plots target positions in the sky with respect to the observer's location.
 
-    If an ax object already exists, plots an additional target position mapped
-    on top.
-    Otherwise, creates a new ax object with a sky plot.
+    If a `matplotlib.axes.Axes` object already exists, plots an additional
+    target position on top.
+    Otherwise, creates a new `Axes` object with a sky plot.
 
-    Can pass in a scalar `Time` object (e.g., Time('2000-1-1')) or a non-scalar
-    one (e.g., Time(['2000-1-1'])) to get plot at one instanct in time.
-    If pass in `Time` objects with multiple instances of time
-    (e.g., Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])), target's position
-    will be shown at each of these times.
+    Can pass in a scalar `astropy.time.Time` object (e.g., `Time('2000-1-1')`)
+    or an array of length one (e.g., `Time(['2000-1-1'])`) to get plot at one
+    instance in time.
+    If pass in an `astropy.time.Time` object with multiple instances of time
+    (e.g., `Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])`), target's
+    position will be shown at each of these times.
 
     Parameters
     ----------
@@ -36,17 +37,17 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        If pass in a Time object with just one instance in time, whether it be
-        a scalar or an array (i.e., Time('2000-1-1'), Time(['2000-1-1']),
-        [Time('2000-1-1')]), `plot_sky` will return plot at one instance in
-        time.
-        If pass in a Time object with multiple instances in time (e.g.,
-        Time(['2000-1-1', '2000-1-2'])) will show positions plotted at the
-        exact times specified.
+        If pass in an `astropy.time.Time` object with just one instance in time,
+        whether it be a scalar or an array (e.g., `Time('2000-1-1')`,
+        `Time(['2000-1-1'])`, `[Time('2000-1-1')]`), `plot_sky` will return plot
+        at one instance in time.
+        If pass in an `astropy.time.Time` object with multiple instances in time
+        (e.g., `Time(['2000-1-1', '2000-1-2'])`) will show positions plotted at
+        the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
-        The axes object to be drawn on.
-        If None, use the current axes (`matplotlib.pyplot.gca`).
+        The `Axes` object to be drawn on.
+        If None, uses the current `Axes`.
 
     style_kwargs : dict or Empty, optional.
         A dictionary of keywords passed into `matplotlib.pyplot.scatter`
@@ -71,7 +72,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     Returns
     -------
-    An `Axes` object (ax) with a map of the sky.
+    An `matplotlib.axes.Axes` object (ax) with a map of the sky.
 
     Notes
     -----
