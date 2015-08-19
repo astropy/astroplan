@@ -16,3 +16,7 @@ try:
     del PYTEST_HEADER_MODULES['h5py']
 except NameError:  # needed to support Astropy < 1.0
     pass
+
+# Mock FixedTarget.from_name class method for tests without remote data
+from astroplan.core import FixedTarget
+FixedTarget.from_name = FixedTarget._fixed_target_from_name_mock

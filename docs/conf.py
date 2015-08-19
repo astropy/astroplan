@@ -174,3 +174,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
+# Mock FixedTarget.from_name class method for tests without remote data
+from astroplan.core import FixedTarget
+FixedTarget.from_name = FixedTarget._fixed_target_from_name_mock

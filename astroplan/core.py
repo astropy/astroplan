@@ -925,7 +925,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
+        >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_rise_time = keck.target_rise_time(time, target, which="next")
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time)) # doctest: +FLOAT_CMP
@@ -977,7 +977,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
+        >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_set_time = keck.target_set_time(time, target, which="next")
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time)) # doctest: +FLOAT_CMP
@@ -1022,7 +1022,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
+        >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_transit_time = keck.target_meridian_transit_time(time, target,
         ...                                                        which="next")
@@ -1068,7 +1068,7 @@ class Observer(object):
         >>> from astroplan import Observer, FixedTarget
         >>> from astropy.time import Time
         >>> time = Time("2001-02-03 04:05:06")
-        >>> target = FixedTarget.from_name("Rigel")  # doctest: +REMOTE_DATA
+        >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
         ...                                                                which="next")
@@ -1587,8 +1587,8 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
-        >>> aldebaran = FixedTarget.from_name("Aldebaran") # doctest: +REMOTE_DATA
-        >>> vega = FixedTarget.from_name("Vega")           # doctest: +REMOTE_DATA
+        >>> aldebaran = FixedTarget.from_name("Aldebaran")
+        >>> vega = FixedTarget.from_name("Vega")
         >>> apo.target_is_up(time, aldebaran)
         True
         >>> apo.target_is_up(time, [aldebaran, vega])
@@ -1719,7 +1719,7 @@ class FixedTarget(Target):
     for the coordinates of Sirius by name:
 
     >>> from astroplan import FixedTarget
-    >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
+    >>> sirius = FixedTarget.from_name("Sirius")
     """
     def __init__(self, coord, name=None, **kwargs):
         """
@@ -1757,7 +1757,7 @@ class FixedTarget(Target):
         Examples
         --------
         >>> from astroplan import FixedTarget
-        >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
+        >>> sirius = FixedTarget.from_name("Sirius")
         >>> sirius.coord                              # doctest: +FLOAT_CMP
         <SkyCoord (ICRS): (ra, dec) in deg
             (101.28715533, -16.71611586)>
@@ -1788,11 +1788,31 @@ class FixedTarget(Target):
         fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
+    @classmethod
+    def _fixed_target_from_name_mock(cls, name):
+        """
+        Mock method to replace `FixedTarget.from_name` in tests.
+        """
+        if name.lower() == "rigel":
+            return cls(coord=SkyCoord(78.63446707*u.deg, -8.20163837*u.deg),
+                       name=name)
+        elif name.lower() == "sirius":
+            return cls(coord=SkyCoord(101.28715533*u.deg, -16.71611586*u.deg),
+                       name=name)
+        elif name.lower() == "vega":
+            return cls(coord=SkyCoord(279.23473479*u.deg, 38.78368896*u.deg),
+                       name=name)
+        elif name.lower() == "aldebaran":
+            return cls(coord=SkyCoord(68.98016279*u.deg, 16.50930235*u.deg),
+                       name=name)
+        else:
+            raise ValueError("Target named {} not in mocked FixedTarget "
+                             "method".format(name))
+
 class NonFixedTarget(Target):
     """
     Placeholder for future function.
     """
-
 
 class Constraint(object):
     """
