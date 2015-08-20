@@ -139,14 +139,15 @@ def test_moon_illumination():
     lco = Observer.at_site("LCO")
     # At these times, moon illuminations are:
     # [ 0.99946328  0.46867661  0.05379006]
+
     constraint = MoonIlluminationConstraint(min=0.2, max=0.8)
-    is_constraint_met = constraint(times, lco, None)
+    is_constraint_met = [constraint(time, lco, None) for time in times]
     assert np.all(is_constraint_met == [False, True, False])
 
     constraint = MoonIlluminationConstraint(min=0.2)
-    is_constraint_met = constraint(times, lco, None)
+    is_constraint_met = [constraint(time, lco, None) for time in times]
     assert np.all(is_constraint_met == [True, True, False])
 
     constraint = MoonIlluminationConstraint(max=0.8)
-    is_constraint_met = constraint(times, lco, None)
+    is_constraint_met = [constraint(time, lco, None) for time in times]
     assert np.all(is_constraint_met == [False, True, True])

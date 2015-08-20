@@ -334,7 +334,7 @@ class MoonIlluminationConstraint(Constraint):
                             time_resolution=DEFAULT_TIME_RESOLUTION):
         times = time_grid_from_range(time_range,
                                      time_resolution=time_resolution)
-        illumination = np.array(moon_illumination(time_range,
+        illumination = np.array(moon_illumination(times,
                                                   observer.location))
         if self.min is None and self.max is not None:
             mask = self.max > illumination
