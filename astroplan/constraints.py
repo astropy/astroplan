@@ -72,8 +72,10 @@ class Constraint(object):
 
         Parameters
         ----------
-        time_range : `~astropy.time.Time` with length=2
-            Time range on which to compute these constraints
+        time_range : `~astropy.time.Time`
+            Lower and upper time bounds on which to compute the constraints.
+            If input is a scalar time, will only compute at that time (no
+            range).
 
         targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
             Target or list of targets
@@ -292,8 +294,10 @@ def is_always_observable(constraints, time_range, targets, observer,
     constraints : list or `~astroplan.constraints.Constraint`
         Observational constraint(s)
 
-    time_range : `~astropy.time.Time` with length=2
-        Time range on which to compute these constraints
+    time_range : `~astropy.time.Time`
+            Lower and upper time bounds on which to compute the constraints.
+            If input is a scalar time, will only compute at that time (no
+            range).
 
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
@@ -332,8 +336,10 @@ def is_observable(constraints, time_range, targets, observer,
     constraints : list or `~astroplan.constraints.Constraint`
         Observational constraint(s)
 
-    time_range : `~astropy.time.Time` with length=2
-        Time range on which to compute these constraints
+    time_range : `~astropy.time.Time`
+        Lower and upper time bounds on which to compute the constraints.
+        If input is a scalar time, will only compute at that time (no
+        range).
 
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
