@@ -61,7 +61,6 @@ def test_compare_airmass_constraint_and_observer():
     time_ranges = [Time([time, time+1*u.hour]) + offset
                    for offset in np.arange(0, 400, 100)*u.day]
     for time_range in time_ranges:
-        print(time_range)
         subaru = Observer.at_site("Subaru")
         targets = [vega, rigel, polaris]
 
@@ -79,7 +78,6 @@ def test_compare_airmass_constraint_and_observer():
 
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
-    time_range = Time([time, time+1*u.min])
     apo = Observer.at_site("APO")
     sun = get_sun(time)
     one_deg_away = SkyCoord(ra=sun.ra, dec=sun.dec+1*u.deg)
@@ -87,7 +85,7 @@ def test_sun_separation():
     twenty_deg_away = SkyCoord(ra=sun.ra+20*u.deg, dec=sun.dec)
 
     constraint = SunSeparation(min=2*u.deg, max=10*u.deg)
-    is_constraint_met = constraint(time_range, apo, [one_deg_away,
-                                                     five_deg_away,
-                                                     twenty_deg_away])
+    is_constraint_met = constraint(time, apo, [one_deg_away,
+                                               five_deg_away,
+                                               twenty_deg_away])
     assert np.all(is_constraint_met == [[False], [True], [False]])
