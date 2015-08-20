@@ -11,12 +11,14 @@ import numpy as np
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import get_sun, Angle
+from .moon import get_moon, moon_illumination
+from astropy.coordinates.angle_utilities import angular_separation
 
 DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
-           "SunSeparationConstraint"]
+           "SunSeparationConstraint", "MoonSeparationConstraint"]
 
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
@@ -257,7 +259,7 @@ class AtNightConstraint(Constraint):
 
 class SunSeparationConstraint(Constraint):
     """
-    Constrain the sun to be a distance away from target.
+    Constrain the distance between the Sun and some targets.
     """
     def __init__(self, min=None, max=None):
         self.min = min
@@ -280,8 +282,45 @@ class SunSeparationConstraint(Constraint):
                     (solar_separation < self.max))
         else:
             raise ValueError("No max and/or min specified in "
-                             "SunSeparation.")
+                             "SunSeparationConstraint.")
         return mask
+
+class MoonSeparationConstraint(Constraint):
+    """
+    Constrain the distance between the Earth's moon and some targets.
+    """
+    def __init__(self, min=None, max=None):
+        self.min = min
+        self.max = max
+
+    def _compute_constraint(self, time_range, observer, targets,
+                            time_resolution=DEFAULT_TIME_RESOLUTION):
+        times = time_grid_from_range(time_range,
+                                     time_resolution=time_resolution)
+        moon = get_moon(times, observer.location, observer.pressure)
+        targets = [target.coord if hasattr(target, 'coord') else target
+                   for target in targets]
+
+        moon_separation = Angle([angular_separation(moon.spherical.lon,
+                                                    moon.spherical.lat,
+                                                    target.spherical.lon,
+                                                    target.spherical.lat)
+                                 for target in targets])
+        # The line below should have worked, but needs a workaround.
+        # TODO: once bug has been fixed, replace workaround with simpler version.
+#        moon_separation = Angle([moon.separation(target) for target in targets])
+        if self.min is None and self.max is not None:
+            mask = self.max > moon_separation
+        elif self.max is None and self.min is not None:
+            mask = self.min < moon_separation
+        elif self.min is not None and self.max is not None:
+            mask = ((self.min < moon_separation) &
+                    (moon_separation < self.max))
+        else:
+            raise ValueError("No max and/or min specified in "
+                             "MoonSeparationConstraint.")
+        return mask
+
 
 def is_always_observable(constraints, time_range, targets, observer,
                          time_resolution=DEFAULT_TIME_RESOLUTION):
