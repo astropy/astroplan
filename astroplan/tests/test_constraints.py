@@ -3,12 +3,12 @@ from __future__ import (absolute_import, division, print_function,
 
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNight,
                            is_observable, is_always_observable,
-                           time_grid_from_range)
+                           time_grid_from_range, SunSeparation)
 from ..core import Observer, FixedTarget
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, get_sun
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -77,4 +77,17 @@ def test_compare_airmass_constraint_and_observer():
 
         assert all(always_from_observer == always_from_constraint)
 
+def test_sun_separation():
+    time = Time('2003-04-05 06:07:08')
+    time_range = Time([time, time+1*u.min])
+    apo = Observer.at_site("APO")
+    sun = get_sun(time)
+    one_deg_away = SkyCoord(ra=sun.ra, dec=sun.dec+1*u.deg)
+    five_deg_away = SkyCoord(ra=sun.ra+5*u.deg, dec=sun.dec)
+    twenty_deg_away = SkyCoord(ra=sun.ra+20*u.deg, dec=sun.dec)
 
+    constraint = SunSeparation(min=2*u.deg, max=10*u.deg)
+    is_constraint_met = constraint(time_range, apo, [one_deg_away,
+                                                     five_deg_away,
+                                                     twenty_deg_away])
+    assert np.all(is_constraint_met == [[False], [True], [False]])

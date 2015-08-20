@@ -15,7 +15,8 @@ from astropy.coordinates import get_sun, Angle
 DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNight",
-           "is_observable", "is_always_observable", "time_grid_from_range"]
+           "is_observable", "is_always_observable", "time_grid_from_range",
+           "SunSeparation"]
 
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
