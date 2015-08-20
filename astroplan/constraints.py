@@ -18,7 +18,8 @@ DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
-           "SunSeparationConstraint", "MoonSeparationConstraint"]
+           "SunSeparationConstraint", "MoonSeparationConstraint",
+           "MoonIlluminationConstraint"]
 
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
@@ -321,6 +322,31 @@ class MoonSeparationConstraint(Constraint):
                              "MoonSeparationConstraint.")
         return mask
 
+class MoonIlluminationConstraint(Constraint):
+    """
+    Constrain the fractional illumation of the Earth's moon.
+    """
+    def __init__(self, min=None, max=None):
+        self.min = min
+        self.max = max
+
+    def _compute_constraint(self, time_range, observer, targets,
+                            time_resolution=DEFAULT_TIME_RESOLUTION):
+        times = time_grid_from_range(time_range,
+                                     time_resolution=time_resolution)
+        illumination = np.array(moon_illumination(time_range,
+                                                  observer.location))
+        if self.min is None and self.max is not None:
+            mask = self.max > illumination
+        elif self.max is None and self.min is not None:
+            mask = self.min < illumination
+        elif self.min is not None and self.max is not None:
+            mask = ((self.min < illumination) &
+                    (illumination < self.max))
+        else:
+            raise ValueError("No max and/or min specified in "
+                             "MoonSeparationConstraint.")
+        return mask
 
 def is_always_observable(constraints, time_range, targets, observer,
                          time_resolution=DEFAULT_TIME_RESOLUTION):

@@ -4,13 +4,13 @@ from __future__ import (absolute_import, division, print_function,
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable,
                            time_grid_from_range, SunSeparationConstraint,
-                           MoonSeparationConstraint)
+                           MoonSeparationConstraint, MoonIlluminationConstraint)
 from ..core import Observer, FixedTarget
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun
-from ..moon import get_moon
+from ..moon import get_moon, moon_illumination
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -133,3 +133,20 @@ def test_moon_separation():
                                                five_deg_away,
                                                twenty_deg_away])
     assert np.all(is_constraint_met == [[False], [True], [True]])
+
+def test_moon_illumination():
+    times = Time(["2015-08-29 18:35", "2015-09-05 18:35", "2015-09-15 18:35"])
+    lco = Observer.at_site("LCO")
+    # At these times, moon illuminations are:
+    # [ 0.99946328  0.46867661  0.05379006]
+    constraint = MoonIlluminationConstraint(min=0.2, max=0.8)
+    is_constraint_met = constraint(times, lco, None)
+    assert np.all(is_constraint_met == [False, True, False])
+
+    constraint = MoonIlluminationConstraint(min=0.2)
+    is_constraint_met = constraint(times, lco, None)
+    assert np.all(is_constraint_met == [True, True, False])
+
+    constraint = MoonIlluminationConstraint(max=0.8)
+    is_constraint_met = constraint(times, lco, None)
+    assert np.all(is_constraint_met == [False, True, True])
