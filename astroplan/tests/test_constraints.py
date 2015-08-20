@@ -1,9 +1,9 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNight,
+from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable,
-                           time_grid_from_range, SunSeparation)
+                           time_grid_from_range, SunSeparationConstraint)
 from ..core import Observer, FixedTarget
 import numpy as np
 import astropy.units as u
@@ -29,10 +29,10 @@ def test_at_night_basic():
         observer_is_night_any = any(observer_is_night)
         observer_is_night_all = all(observer_is_night)
 
-        assert all(is_observable(AtNight(), time_range, targets, subaru) ==
+        assert all(is_observable(AtNightConstraint(), time_range, targets, subaru) ==
                    len(targets)*[observer_is_night_any])
 
-        assert all(is_always_observable(AtNight(), time_range, targets, subaru) ==
+        assert all(is_always_observable(AtNightConstraint(), time_range, targets, subaru) ==
                    len(targets)*[observer_is_night_all])
 
 def test_compare_altitude_constraint_and_observer():
@@ -84,7 +84,7 @@ def test_sun_separation():
     five_deg_away = SkyCoord(ra=sun.ra+5*u.deg, dec=sun.dec)
     twenty_deg_away = SkyCoord(ra=sun.ra+20*u.deg, dec=sun.dec)
 
-    constraint = SunSeparation(min=2*u.deg, max=10*u.deg)
+    constraint = SunSeparationConstraint(min=2*u.deg, max=10*u.deg)
     is_constraint_met = constraint(time, apo, [one_deg_away,
                                                five_deg_away,
                                                twenty_deg_away])

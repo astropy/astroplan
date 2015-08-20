@@ -14,9 +14,9 @@ from astropy.coordinates import get_sun, Angle
 
 DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
-__all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNight",
+__all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
-           "SunSeparation"]
+           "SunSeparationConstraint"]
 
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
@@ -189,7 +189,7 @@ class AirmassConstraint(AltitudeConstraint):
                              "AirmassConstraint.")
         return mask
 
-class AtNight(Constraint):
+class AtNightConstraint(Constraint):
     """
     Constrain the Sun to be below ``horizon``.
     """
@@ -253,7 +253,7 @@ class AtNight(Constraint):
         mask = solar_altitude < self.max_solar_altitude
         return mask
 
-class SunSeparation(Constraint):
+class SunSeparationConstraint(Constraint):
     """
     Constrain the sun to be a distance away from target.
     """
