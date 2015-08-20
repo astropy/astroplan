@@ -8,6 +8,19 @@
 Observing the Summer Triangle
 *****************************
 
+Contents
+========
+
+* :ref:`summer_triangle-defining_objects`
+
+* :ref:`summer_triangle-observable`
+
+* :ref:`summer_triangle-optimal_observation`
+
+* :ref:`summer_triangle-sky_charts`
+
+.. _summer_triangle-defining_objects:
+
 Defining Objects
 ================
 
@@ -52,6 +65,10 @@ pick 2AM local time, which is noon UTC during the summer::
     from astropy.time import Time
 
     time = Time('2015-06-16 12:00:00')
+
+:ref:`Return to Top <summer_triangle_tutorial>`
+
+.. _summer_triangle-observable:
 
 Observable?
 ===========
@@ -121,7 +138,7 @@ This is '2015-06-15 18:49:12.610' US/Hawaii.
     >>> sunrise_tonight.iso
     '2015-06-16 15:47:36.466'
 
-This is '2015-06-15 05:47:36.466' US/Hawaii.
+This is '2015-06-16 05:47:36.466' US/Hawaii.
 
 Sunset and sunrise check out, so now we define the limits of our observation
 window:
@@ -143,6 +160,10 @@ So, our targets will be visible (as we've defined it above) from
 our observation goals, this window of time may be good enough for preliminary
 planning, or we may want to optimize our observational conditions.  If the
 latter is the case, go on to Optimal Observation Time.
+
+:ref:`Return to Top <summer_triangle_tutorial>`
+
+.. _summer_triangle-optimal_observation:
 
 Optimal Observation Time
 ========================
@@ -206,8 +227,8 @@ can make a plot::
     plot_airmass(vega, subaru, time)
     plot_airmass(deneb, subaru, time)
 
-    # Note that you don't need the ax commands below to produce the plot.
-    # They reduce the plot size for the documentation.
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
     ax = plt.gca()
     box = ax.get_position()
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height * 0.8])
@@ -353,3 +374,103 @@ Looks like the Moon will be below the horizon during the entire time--but what
 if it wasn't?
 
 INSERT SECTION FOR PHASES, PERCENT ILLUMINATION, ETC.
+
+:ref:`Return to Top <summer_triangle_tutorial>`
+
+.. _summer_triangle-sky_charts:
+
+Sky Charts
+==========
+
+Now that we've determined the best times to observe our targets on the night in
+question, let's take a look at the positions of our objects in the sky.
+
+We can use `plot_sky` as a sanity check on our target's positions or even just
+to better visualize our observation run.
+
+Let's take the `start` and `end` of the time window we determined
+:ref:`earlier <summer_triangle-observable>` (using the most basic definition
+of "visible" targets, above the horizon when the sun is down), and see where our
+targets lay in the sky::
+
+    from astroplan.plots import plot_sky
+    import matplotlib.pyplot as plt
+
+    plot_sky(altair, subaru, start)
+    plot_sky(vega, subaru, start)
+    plot_sky(deneb, subaru, start)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+    plot_sky(altair, subaru, end)
+    plot_sky(vega, subaru, end)
+    plot_sky(deneb, subaru, end)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. plot::
+
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation
+    from pytz import timezone
+    from astroplan import Observer
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    subaru = Observer(name='Subaru Telescope',
+                   location=location,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    from astropy.coordinates import SkyCoord
+    from astroplan import FixedTarget
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
+    vega = FixedTarget(name='Vega', coord=coordinates)
+
+    coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
+    deneb = FixedTarget(name='Deneb', coord=coordinates)
+
+    from astropy.time import Time
+
+    time = Time('2015-06-16 12:00:00')
+
+    start = Time('2015-06-16 06:23:40.991')
+    end = Time('2015-06-16 15:47:36.466')
+
+    from astroplan.plots import plot_sky
+    import matplotlib.pyplot as plt
+
+    plot_sky(altair, subaru, start)
+    plot_sky(vega, subaru, start)
+    plot_sky(deneb, subaru, start)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+    plot_sky(altair, subaru, end)
+    plot_sky(vega, subaru, end)
+    plot_sky(deneb, subaru, end)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()

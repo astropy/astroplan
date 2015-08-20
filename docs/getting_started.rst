@@ -65,4 +65,5 @@ Doing More
 ==========
 
 Now that you know the basics of working with `astroplan`, check out our
-:ref:`tutorials` page for detailed examples.
+:ref:`tutorials` page for detailed examples and the :ref:`api` for usage
+examples.

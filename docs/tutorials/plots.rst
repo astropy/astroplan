@@ -434,6 +434,12 @@ Vega and Deneb.  To plot a map of the sky::
     plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
     plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
 
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
@@ -493,6 +499,12 @@ Vega and Deneb.  To plot a map of the sky::
     plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
     plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
 
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
@@ -549,6 +561,12 @@ Say I want to know how Altair moves in the sky over a 9-hour period::
     observe_time = observe_time + np.linspace(-4, 5, 10)*u.hour
 
     plot_sky(altair, observer, observe_time)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
@@ -648,6 +666,12 @@ direction in which azimuth increases via the *north_to_east_ccw* option::
              style_kwargs=guide_style)
     plot_sky(altair, observer, observe_time, north_to_east_ccw=False)
 
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
@@ -709,6 +733,12 @@ A positive offset is in the same direction as azimuth increase (see the
     plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
              az_label_offset=180.0*u.deg)
     plot_sky(altair, observer, observe_time, az_label_offset=180.0*u.deg)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
@@ -777,6 +807,12 @@ You can turn off the grid lines by setting the *grid* option to *False*::
     plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
              grid=False)
     plot_sky(altair, observer, observe_time, grid=False)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
@@ -903,6 +939,13 @@ make multiple plots::
 
     my_ax = plot_sky(polaris, observer, observe_time)
     plot_sky(altair, observer, observe_time, my_ax, style_kwargs=altair_style)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
     plt.legend(loc='center left', bbox_to_anchor=(1.3, 0.5))
     # Note that this plt.show (or another action, such as saving a figure) is
     # critical in maintaining two separate plots.
@@ -910,6 +953,13 @@ make multiple plots::
 
     other_ax = plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
     plot_sky(deneb, observer, observe_time, other_ax, style_kwargs=deneb_style)
+
+    # Note that you don't need this code block to produce the plot.
+    # It reduces the plot size for the documentation.
+    ax = plt.gca()
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
+
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
