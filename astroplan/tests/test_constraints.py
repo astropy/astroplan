@@ -3,12 +3,14 @@ from __future__ import (absolute_import, division, print_function,
 
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable,
-                           time_grid_from_range, SunSeparationConstraint)
+                           time_grid_from_range, SunSeparationConstraint,
+                           MoonSeparationConstraint)
 from ..core import Observer, FixedTarget
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun
+from ..moon import get_moon
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -89,3 +91,45 @@ def test_sun_separation():
                                                five_deg_away,
                                                twenty_deg_away])
     assert np.all(is_constraint_met == [[False], [True], [False]])
+
+    constraint = SunSeparationConstraint(max=10*u.deg)
+    is_constraint_met = constraint(time, apo, [one_deg_away,
+                                               five_deg_away,
+                                               twenty_deg_away])
+    assert np.all(is_constraint_met == [[True], [True], [False]])
+
+    constraint = SunSeparationConstraint(min=2*u.deg)
+    is_constraint_met = constraint(time, apo, [one_deg_away,
+                                               five_deg_away,
+                                               twenty_deg_away])
+    assert np.all(is_constraint_met == [[False], [True], [True]])
+
+def test_moon_separation():
+    time = Time('2003-04-05 06:07:08')
+    apo = Observer.at_site("APO")
+    altaz_frame = apo.altaz(time)
+    moon = get_moon(time, apo.location, apo.pressure)
+    one_deg_away = SkyCoord(az=moon.az, alt=moon.alt+1*u.deg, frame=altaz_frame)
+    five_deg_away = SkyCoord(az=moon.az+5*u.deg, alt=moon.alt,
+                             frame=altaz_frame)
+    twenty_deg_away = SkyCoord(az=moon.az+20*u.deg, alt=moon.alt,
+                               frame=altaz_frame)
+
+    constraint = MoonSeparationConstraint(min=2*u.deg, max=10*u.deg)
+    is_constraint_met = constraint(time, apo, [one_deg_away,
+                                               five_deg_away,
+                                               twenty_deg_away])
+    assert np.all(is_constraint_met == [[False], [True], [False]])
+
+
+    constraint = MoonSeparationConstraint(max=10*u.deg)
+    is_constraint_met = constraint(time, apo, [one_deg_away,
+                                               five_deg_away,
+                                               twenty_deg_away])
+    assert np.all(is_constraint_met == [[True], [True], [False]])
+
+    constraint = MoonSeparationConstraint(min=2*u.deg)
+    is_constraint_met = constraint(time, apo, [one_deg_away,
+                                               five_deg_away,
+                                               twenty_deg_away])
+    assert np.all(is_constraint_met == [[False], [True], [True]])
