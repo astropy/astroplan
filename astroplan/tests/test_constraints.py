@@ -4,13 +4,15 @@ from __future__ import (absolute_import, division, print_function,
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable,
                            time_grid_from_range, SunSeparationConstraint,
-                           MoonSeparationConstraint, MoonIlluminationConstraint)
+                           MoonSeparationConstraint, MoonIlluminationConstraint,
+                           LocalTimeConstraint)
 from ..core import Observer, FixedTarget
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun
-from ..moon import get_moon, moon_illumination
+from ..moon import get_moon
+import pytz
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -151,3 +153,56 @@ def test_moon_illumination():
     constraint = MoonIlluminationConstraint(max=0.8)
     is_constraint_met = [constraint(time, lco, None) for time in times]
     assert np.all(is_constraint_met == [False, True, True])
+
+def test_local_time_constraint_utc():
+    time = Time('2001-02-03 04:05:06')
+    subaru = Observer.at_site("Subaru")
+    constraint = LocalTimeConstraint(min="23:50", max="04:08")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [True]
+
+    constraint = LocalTimeConstraint(min="00:02", max="04:03")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [False]
+
+    constraint = LocalTimeConstraint(min="03:08", max="05:35")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [True]
+
+def test_local_time_constraint_hawaii():
+    # Define timezone in LocalTimeConstraint.__init__
+    hawaii = pytz.timezone("US/Hawaii")
+    time = hawaii.localize(Time('2001-02-03 04:05:06').datetime)
+    subaru = Observer.at_site("Subaru")
+    constraint = LocalTimeConstraint(min="23:50", max="04:08",
+                                     timezone="US/Hawaii")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [True]
+
+    constraint = LocalTimeConstraint(min="00:02", max="04:03",
+                                     timezone="US/Hawaii")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [False]
+
+    constraint = LocalTimeConstraint(min="03:08", max="05:35",
+                                     timezone="US/Hawaii")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [True]
+
+def test_local_time_constraint_hawaii_tz_on_observer():
+    # Define timezone in Observer.timezone
+    hawaii = pytz.timezone("US/Hawaii")
+    time = hawaii.localize(Time('2001-02-03 04:05:06').datetime)
+    subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+    constraint = LocalTimeConstraint(min="23:50", max="04:08")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [True]
+
+    constraint = LocalTimeConstraint(min="00:02", max="04:03")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [False]
+
+    constraint = LocalTimeConstraint(min="03:08", max="05:35")
+    is_constraint_met = constraint(time, subaru, None)
+    assert is_constraint_met == [True]
+

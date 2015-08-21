@@ -13,13 +13,18 @@ import astropy.units as u
 from astropy.coordinates import get_sun, Angle
 from .moon import get_moon, moon_illumination
 from astropy.coordinates.angle_utilities import angular_separation
+import datetime
+from astropy.extern.six import string_types
+import pytz
 
 DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint"]
+           "MoonIlluminationConstraint", "LocalTimeConstraint"]
+
+ROOT_DATE_STR = "2000-01-01 "
 
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
@@ -55,6 +60,9 @@ class Constraint(object):
 
     def __call__(self, time_range, observer, targets,
                  time_resolution=DEFAULT_TIME_RESOLUTION):
+
+        if not isinstance(time_range, Time):
+            time_range = Time(time_range)
         cons = self._compute_constraint(time_range, observer, targets,
                                         time_resolution=time_resolution)
         return cons
@@ -206,6 +214,12 @@ class AtNightConstraint(Constraint):
         max_solar_altitude : `~astropy.units.Quantity`
             Define "night" as when the sun is below ``max_solar_altitude``.
             Default is zero degrees altitude.
+
+        force_pressure_zero : bool (optional)
+            Force the pressure to zero for solar altitude calculations. This
+            avoids errors in the altitude of the Sun that can occur when the
+            Sun is below the horizon and the corrections for atmospheric
+            refraction return nonsense values. Default is `True`.
         """
         self.max_solar_altitude = max_solar_altitude
         self.force_pressure_zero = force_pressure_zero
@@ -263,6 +277,16 @@ class SunSeparationConstraint(Constraint):
     Constrain the distance between the Sun and some targets.
     """
     def __init__(self, min=None, max=None):
+        """
+        Parameters
+        ----------
+        min : `~astropy.units.Quantity` or `None` (optional)
+            Minimum acceptable separation between Sun and target. `None`
+            indicates no limit.
+        max : `~astropy.units.Quantity` or `None` (optional)
+            Minimum acceptable separation between Sun and target. `None`
+            indicates no limit.
+        """
         self.min = min
         self.max = max
 
@@ -291,6 +315,16 @@ class MoonSeparationConstraint(Constraint):
     Constrain the distance between the Earth's moon and some targets.
     """
     def __init__(self, min=None, max=None):
+        """
+        Parameters
+        ----------
+        min : `~astropy.units.Quantity` or `None` (optional)
+            Minimum acceptable separation between moon and target. `None`
+            indicates no limit.
+        max : `~astropy.units.Quantity` or `None` (optional)
+            Minimum acceptable separation between moon and target. `None`
+            indicates no limit.
+        """
         self.min = min
         self.max = max
 
@@ -324,9 +358,19 @@ class MoonSeparationConstraint(Constraint):
 
 class MoonIlluminationConstraint(Constraint):
     """
-    Constrain the fractional illumation of the Earth's moon.
+    Constrain the fractional illumination of the Earth's moon.
     """
     def __init__(self, min=None, max=None):
+        """
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination. `None` indicates no
+            limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination. `None` indicates no
+            limit.
+        """
         self.min = min
         self.max = max
 
@@ -346,6 +390,122 @@ class MoonIlluminationConstraint(Constraint):
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
+        return mask
+
+def time_string_to_datetime(time_string, root_date=ROOT_DATE_STR):
+    """
+    Convert a string time in hours(/minutes(/seconds)) to a `~datetime.datetime`
+    on an arbitrary day.
+
+    Parameters
+    ----------
+    time_string : string
+        String input for time. Can be in format "%H", "%H:%M", "%H:%M:%S". See
+        documentation for `~datetime.datetime.strptime` for details on how the
+        time will be parsed.
+
+    root_date : string (optional)
+        Date used to make a complete datetime even though this function is only
+        given the time in hours(/minutes(/seconds)). This date is arbitrary for
+        the calculations in the `constraints` module.
+
+    Returns
+    -------
+    dt : `~datetime.datetime`
+    """
+    formats = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d %H']
+    for fmt in formats:
+        try:
+            dt = datetime.datetime.strptime(root_date + time_string, fmt)
+            return dt
+
+        except ValueError as e:
+            continue
+        raise e
+
+class LocalTimeConstraint(Constraint):
+    """
+    Constrain the observable hours.
+    """
+    def __init__(self, min=None, max=None, timezone=None):
+        """
+        Parameters
+        ----------
+        min : string
+            Earliest local time in hour(:minute(:second)) format, on a 24 hour
+            scale. `None` indicates no limit.
+
+        max : string
+            Latest local time in hour(:minute(:second)) format, on a 24 hour
+            scale. `None` indicates no limit.
+
+        timezone : {string, `datetime.tzinfo`, `None`}(optional)
+            The local timezone to assume. If a string, it will be passed through
+            `pytz.timezone()` to produce the timezone object. If `None`, the
+            `timezone` attribute on the `Observer` object will be used as the
+            "local time zone" (which defaults to UTC).
+
+        Examples
+        --------
+
+        Constrain the observations to targets that are observable between
+        23:50 and 04:08 local time:
+
+        >>> import pytz
+        >>> from astroplan import Observer
+        >>> from astroplan.constraints import LocalTimeConstraint
+        >>> from astropy.time import Time
+        >>> hawaii = pytz.timezone("US/Hawaii")
+        >>> time = hawaii.localize(Time('2001-02-03 04:05:06').datetime) # Local time in Hawaii
+        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+        >>> constraint = LocalTimeConstraint(min="23:50", max="04:08") # bound times between 23:50 and 04:08 local Hawaiian time
+        """
+        self.min = min
+        self.max = max
+        self.init_timezone = timezone
+
+    def _compute_constraint(self, time_range, observer, targets,
+                            time_resolution=DEFAULT_TIME_RESOLUTION):
+
+        if self.init_timezone is not None:
+            if isinstance(self.init_timezone, datetime.tzinfo):
+                timezone = self.init_timezone
+            elif isinstance(self.init_timezone, string_types):
+                timezone = pytz.timezone(self.init_timezone)
+        else:
+            timezone = observer.timezone
+
+        absolute_lower_time_limit = datetime.datetime(2000, 1, 1, 0, 0, 0)
+        absolute_upper_time_limit = datetime.datetime(2000, 1, 1, 23, 59, 59)
+
+        if self.min is None:
+            self.min = absolute_lower_time_limit
+        if max is None:
+            self.max = absolute_upper_time_limit
+
+        # Convert string "HH:MM:SS" to a datetime like "2000-01-01 HH:MM:SS"
+        min_dt_local = timezone.localize(time_string_to_datetime(self.min))
+        max_dt_local = timezone.localize(time_string_to_datetime(self.max))
+
+        # Convert those datetime boundaries to UTC time boundaries
+        min_dt_utc = time_string_to_datetime(min_dt_local.astimezone(pytz.utc).strftime("%H:%M:%S"))
+        max_dt_utc = time_string_to_datetime(max_dt_local.astimezone(pytz.utc).strftime("%H:%M:%S"))
+
+        times = time_grid_from_range(Time(time_range),
+                                     time_resolution=time_resolution).datetime
+
+        ROOT_DATE_STR = "2000-01-01 "
+        times_same_day = [datetime.datetime.strptime(ROOT_DATE_STR +
+                                                     date.strftime("%H:%M:%S"),
+                                                     "%Y-%m-%d %H:%M:%S")
+                          for date in times]
+
+        # If time limits occur on same day:
+        if min_dt_utc < max_dt_utc:
+            mask = [min_dt_utc < t < max_dt_utc for t in times_same_day]
+        # If time boundaries straddle midnight:
+        else:
+            mask = [(min_dt_utc < t) or (t < max_dt_utc) for t in times_same_day]
         return mask
 
 def is_always_observable(constraints, time_range, targets, observer,
