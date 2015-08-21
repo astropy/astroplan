@@ -11,20 +11,11 @@ import datetime
 from astropy.time import Time
 import pytz
 import numpy as np
-################################################################################
-# TODO: Temporary solution to IERS tables problems
-from astropy.utils.data import download_file
-from astropy.utils import iers
-
-iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
-                                                      cache=True))
-################################################################################
-
-
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .sites import get_site
 from .moon import get_moon, moon_illumination, moon_phase_angle
+from .utils import get_recent_IERS_A_table
 import warnings
 
 from abc import ABCMeta, abstractmethod
@@ -36,6 +27,9 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "AboveAirmass", "MAGIC_TIME"]
 
 #__doctest_requires__ = {'*': ['scipy.integrate']}
+
+from astropy.utils import iers
+iers.IERS.iers_table = get_recent_IERS_A_table()
 
 MAGIC_TIME = Time(-999, format='jd')
 
