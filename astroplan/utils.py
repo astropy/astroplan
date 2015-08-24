@@ -5,6 +5,9 @@ from __future__ import (absolute_import, division, print_function,
 from .exceptions import OldEarthRotationDataWarning
 from astropy.time import Time
 import astropy.units as u
+from astropy.utils.data import get_pkg_data_filename, download_file
+from astropy.utils import iers
+import os
 
 try:
     # Python 3
@@ -17,9 +20,6 @@ import warnings
 
 __all__ = ["get_recent_IERS_A_table"]
 
-from astropy.utils.data import download_file, clear_download_cache
-from astropy.utils import iers
-
 def get_recent_IERS_A_table(warn_update=7*u.day):
     """
     Update the IERS Bulletin A table for accurate astropy calculations near
@@ -29,8 +29,8 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
     the Earth's orientation. A warning will be raised if the tables used are
     more than ``warn_update`` old.
     """
-    table_path = download_file(iers.IERS_A_URL, cache=True, show_progress=False)
-    table = iers.IERS_A.open(table_path)
+    local_iers_a_path = get_pkg_data_filename('data/iers_bulletin_a.txt')
+    table = iers.IERS_A.open(local_iers_a_path)
 
     # Use polar motion flag to identify last observation before predictions
     index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
@@ -38,23 +38,24 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
                                     format='mjd')
     time_since_last_update = Time.now() - time_of_last_observation
 
-    # If the IERS bulletin is more than 7 days old, try to download it fresh:
+    # If the IERS bulletin is more than 7 days old, try to download a fresh one.
+    # Note that this doesn't ensure that the file that you download will be
+    # newer, it just ensures that you've tried to download the latest copy.
     if warn_update < time_since_last_update:
         try:
-            table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
-                                                   cache=False,
-                                                   show_progress=False))
-            clear_download_cache(table_path)
-            table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
-                                                   cache=True,
-                                                   show_progress=False))
+            path_to_tmp_file = download_file(iers.IERS_A_URL, cache=False,
+                                             show_progress=False)
+            os.remove(local_iers_a_path)
+            os.rename(path_to_tmp_file, local_iers_a_path)
+            table = iers.IERS_A.open(local_iers_a_path)
 
         except URLError:
-            warning_msg = ("Your local copy of the IERS Bulletin A table is {} days "
-                           "old, and astroplan can not connect to the internet to "
-                           "download the latest copy. Earth rotation calculations will "
-                           "not be as precise as possible until you reconnect to the "
-                           "internet and access the IERS Bulletin A table again. "
-                           "").format(time_since_last_update.to(u.day))
+            warning_msg = ("Your local copy of the IERS Bulletin A table is "
+                           "{:.1f} days old, and the internet can not be "
+                           "accessed to download the latest copy. Earth "
+                           "rotation calculations will not be as precise as "
+                           "possible until you reconnect to the internet and "
+                           "attempt to access the IERS Bulletin A table again. "
+                           "").format(time_since_last_update.to(u.day).value)
             warnings.warn(warning_msg, OldEarthRotationDataWarning)
     return table
