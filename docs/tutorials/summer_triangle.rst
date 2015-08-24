@@ -4,6 +4,17 @@
 
 .. doctest-skip-all
 
+.. todo::
+
+    Add section on moon phases, illumination fraction, etc.
+
+    Replace target construction with easier site name function.
+
+    Update with constraints when available?
+
+    Rise/set times currently return altitudes just below the horizon by a few
+    arcseconds.  Need to clarify this and fix sky plot examples.
+
 *****************************
 Observing the Summer Triangle
 *****************************
@@ -370,10 +381,7 @@ targets will be visible (again--as defined at the beginning of this tutorial):
     −42∘24′06.7653′′ −37∘52′10.4174′′ −32∘50′59.3228′′ −27∘27′24.8625′′
     −21∘46′34.5241′′ −15∘52′15.6116′′ −9∘47′16.3944′′ −2∘11′39.571′′]
 
-Looks like the Moon will be below the horizon during the entire time--but what
-if it wasn't?
-
-INSERT SECTION FOR PHASES, PERCENT ILLUMINATION, ETC.
+Looks like the Moon will be below the horizon during the entire time.
 
 :ref:`Return to Top <summer_triangle_tutorial>`
 
@@ -396,16 +404,19 @@ targets lay in the sky::
     from astroplan.plots import plot_sky
     import matplotlib.pyplot as plt
 
-    plot_sky(altair, subaru, start)
+    altair_style = {'color': 'r'}
+    deneb_style = {'color': 'g'}
+
+    plot_sky(altair, subaru, start, style_kwargs=altair_style)
     plot_sky(vega, subaru, start)
-    plot_sky(deneb, subaru, start)
+    plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
-    plot_sky(altair, subaru, end)
+    plot_sky(altair, subaru, end, style_kwargs=altair_style)
     plot_sky(vega, subaru, end)
-    plot_sky(deneb, subaru, end)
+    plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
@@ -441,17 +452,19 @@ targets lay in the sky::
 
     from astropy.time import Time
 
-    time = Time('2015-06-16 12:00:00')
-
-    start = Time('2015-06-16 06:23:40.991')
+    # Here we need to add a second to our start time so that all objects show up.
+    start = Time('2015-06-16 06:23:40.991') + 1 * u.second
     end = Time('2015-06-16 15:47:36.466')
 
     from astroplan.plots import plot_sky
     import matplotlib.pyplot as plt
 
-    plot_sky(altair, subaru, start)
+    altair_style = {'color': 'r'}
+    deneb_style = {'color': 'g'}
+
+    plot_sky(altair, subaru, start, style_kwargs=altair_style)
     plot_sky(vega, subaru, start)
-    plot_sky(deneb, subaru, start)
+    plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -462,9 +475,9 @@ targets lay in the sky::
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
-    plot_sky(altair, subaru, end)
+    plot_sky(altair, subaru, end, style_kwargs=altair_style)
     plot_sky(vega, subaru, end)
-    plot_sky(deneb, subaru, end)
+    plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -473,4 +486,67 @@ targets lay in the sky::
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+We can also show how our targets move over time during the night in question::
+
+    time_window = start + (end - start) * np.linspace(0, 1, 10) * u.hour
+
+    plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
+    plot_sky(vega, subaru, time_window)
+    plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.show()
+
+.. plot::
+
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation
+    from pytz import timezone
+    from astroplan import Observer
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    subaru = Observer(name='Subaru Telescope',
+                   location=location,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Mauna Kea, Hawaii")
+
+    from astropy.coordinates import SkyCoord
+    from astroplan import FixedTarget
+
+    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    altair = FixedTarget(name='Altair', coord=coordinates)
+
+    coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
+    vega = FixedTarget(name='Vega', coord=coordinates)
+
+    coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
+    deneb = FixedTarget(name='Deneb', coord=coordinates)
+
+    from astropy.time import Time
+    from astroplan.plots import plot_sky
+    import matplotlib.pyplot as plt
+
+    # Here we need to add a second to our start time so that all objects show up.
+    start = Time('2015-06-16 06:23:40.991') + 1 * u.second
+    end = Time('2015-06-16 15:47:36.466')
+
+    time_window = start + (end - start) * np.linspace(0, 1, 10)
+
+    altair_style = {'color': 'r'}
+    deneb_style = {'color': 'g'}
+
+    plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
+    plot_sky(vega, subaru, time_window)
+    plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
+
+    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+
+    plt.tight_layout()
+
     plt.show()
