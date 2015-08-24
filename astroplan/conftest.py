@@ -17,6 +17,7 @@ try:
 except NameError:  # needed to support Astropy < 1.0
     pass
 
-# Mock FixedTarget.from_name class method for tests without remote data
-from astroplan.core import FixedTarget
-FixedTarget.from_name = FixedTarget._fixed_target_from_name_mock
+# Make appropriate substitutions to mock internet querying methods
+# within the tests
+from .utils import _mock_remote_data
+_mock_remote_data()

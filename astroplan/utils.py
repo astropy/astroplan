@@ -2,9 +2,9 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-__all__ = []
+__all__ = ["_mock_remote_data"]
 
-# Nothing here for now.
-# We could remove this file, but usually sooner or later there
-# will be some `utils` helper functions that could go here,
-# so keeping it for now.
+def _mock_remote_data():
+    # Mock FixedTarget.from_name class method for tests without remote data
+    from astroplan.core import FixedTarget
+    FixedTarget.from_name = FixedTarget._fixed_target_from_name_mock
