@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 from .exceptions import OldEarthRotationDataWarning
 from astropy.time import Time
 import astropy.units as u
+
 try:
     # Python 3
     from urllib.error import URLError
@@ -16,7 +17,7 @@ import warnings
 
 __all__ = ["get_recent_IERS_A_table"]
 
-from astropy.utils.data import download_file
+from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 
 def get_recent_IERS_A_table(warn_update=7*u.day):
@@ -28,8 +29,8 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
     the Earth's orientation. A warning will be raised if the tables used are
     more than ``warn_update`` old.
     """
-    table = iers.IERS_A.open(download_file(iers.IERS_A_URL, cache=True,
-                                           show_progress=False))
+    table_path = download_file(iers.IERS_A_URL, cache=True, show_progress=False)
+    table = iers.IERS_A.open(table_path)
 
     # Use polar motion flag to identify last observation before predictions
     index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
@@ -43,6 +44,11 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
             table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
                                                    cache=False,
                                                    show_progress=False))
+            clear_download_cache(table_path)
+            table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
+                                                   cache=True,
+                                                   show_progress=False))
+
         except URLError:
             warning_msg = ("Your local copy of the IERS Bulletin A table is {} days "
                            "old, and astroplan can not connect to the internet to "
