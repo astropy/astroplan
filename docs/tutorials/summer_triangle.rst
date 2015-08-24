@@ -15,6 +15,8 @@
     Rise/set times currently return altitudes just below the horizon by a few
     arcseconds.  Need to clarify this and fix sky plot examples.
 
+    Show users how to create/use Time objects in their own timezone.
+
 *****************************
 Observing the Summer Triangle
 *****************************
