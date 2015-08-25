@@ -270,7 +270,7 @@ def test_parallactic_angle():
     lon = -155.471999*u.deg
     elevation = 4160.0 * u.m
     location = EarthLocation.from_geodetic(lon, lat, elevation)
-    time = Time('2015-01-01 00:00:00')
+    time = Time('2005-01-01 00:00:00')
     LST = time.sidereal_time('mean', longitude=lon)
     desired_HA_1 = 3*u.hourangle
     desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
@@ -283,8 +283,8 @@ def test_parallactic_angle():
     q12 = obs.parallactic_angle(time, [target1, target2])
 
     # Get values from PyEphem for comparison from print_pyephem_parallactic_angle()
-    pyephem_q1 = 46.54610060782033*u.deg
-    pyephem_q2 = -65.51818282032019*u.deg
+    pyephem_q1 = 46.6695520328*u.deg
+    pyephem_q2 = -65.4592354276*u.deg
 
     assert_allclose(q1.to(u.degree).value, pyephem_q1, atol=1)
     assert_allclose(q2.to(u.degree).value, pyephem_q2, atol=1)
@@ -293,7 +293,7 @@ def test_parallactic_angle():
     # http://irtfweb.ifa.hawaii.edu/cgi-bin/spex/parangle.cgi to produce
 
     SpeX_q1 = 46.7237968 # deg
-    SpeX_q2 = -65.428924 # deg
+    SpeX_q2 = -65.4289246 # deg
 
     assert_allclose(q1.to(u.degree).value, SpeX_q1, atol=0.1)
     assert_allclose(q2.to(u.degree).value, SpeX_q2, atol=0.1)
@@ -304,7 +304,7 @@ def test_parallactic_angle():
 def print_pyephem_parallactic_angle():
     lat = 19.826218*u.deg
     lon = -155.471999*u.deg
-    time = Time('2015-01-01 00:00:00')
+    time = Time('2005-01-01 00:00:00')
     LST = time.sidereal_time('mean', longitude=lon)
     desired_HA_1 = 3*u.hourangle
     desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
@@ -327,9 +327,6 @@ def print_pyephem_parallactic_angle():
     pyephem_target2.compute(obs)
     pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
     print(pyephem_q1, pyephem_q2)
-
-    assert (obs.astropy_to_local_time(obs.local_to_astropy_time(dt)).replace(
-            tzinfo=None) == dt)
 
 def test_sunrise_sunset_equator():
     """
