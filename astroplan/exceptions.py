@@ -13,3 +13,7 @@ class TargetAlwaysUpWarning(AstropyWarning):
 class TargetNeverUpWarning(AstropyWarning):
     """Target never rises above horizon"""
     pass
+
+class OldEarthRotationDataWarning(AstropyWarning):
+    """Using old Earth rotation data from IERS"""
+    pass
