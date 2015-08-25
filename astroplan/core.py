@@ -1793,12 +1793,15 @@ class FixedTarget(Target):
         """
         Mock method to replace `FixedTarget.from_name` in tests.
         """
-        stars = {"rigel":(78.63446707*u.deg, -8.20163837*u.deg),
-                 "sirius":(101.28715533*u.deg, -16.71611586*u.deg),
-                 "vega":(279.23473479*u.deg, 38.78368896*u.deg),
-                 "aldebaran":(68.98016279*u.deg, 16.50930235*u.deg)}
+        stars = {
+            "rigel": {"ra": 78.63446707*u.deg, "dec": -8.20163837*u.deg},
+            "sirius": {"ra": 101.28715533*u.deg, "dec": -16.71611586*u.deg},
+            "vega": {"ra": 279.23473479*u.deg, "dec": 38.78368896*u.deg},
+            "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg}
+        }
+
         if name.lower() in stars:
-            return cls(coord=SkyCoord(*stars[name.lower()]),
+            return cls(coord=SkyCoord(**stars[name.lower()]),
                        name=name)
         else:
             raise ValueError("Target named {} not in mocked FixedTarget "
