@@ -5,7 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 from .exceptions import OldEarthRotationDataWarning
 from astropy.time import Time
 import astropy.units as u
-from astropy.utils.data import get_pkg_data_filename, download_file
+from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 import os
 
@@ -20,6 +20,17 @@ import warnings
 
 __all__ = ["get_recent_IERS_A_table"]
 
+def _get_IERS_A_on_install():
+    """
+    Download the IERS Bulletin A and cache it, meant to be run on install.
+    """
+    try:
+        download_file(iers.IERS_A_URL, cache=True, show_progress=True)
+    except URLError as e:
+        raise Exception("Tried to access {} to download the IERS Bulletin A "
+                        "and failed. Astroplan requires access to the internet "
+                        "during installation.".format(iers.IERS_A_URL))
+
 def get_recent_IERS_A_table(warn_update=7*u.day):
     """
     Update the IERS Bulletin A table for accurate astropy calculations near
@@ -29,7 +40,8 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
     the Earth's orientation. A warning will be raised if the tables used are
     more than ``warn_update`` old.
     """
-    local_iers_a_path = get_pkg_data_filename('data/iers_bulletin_a.txt')
+    local_iers_a_path = download_file(iers.IERS_A_URL, cache=True,
+                                      show_progress=False)
     table = iers.IERS_A.open(local_iers_a_path)
 
     # Use polar motion flag to identify last observation before predictions
@@ -43,7 +55,8 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
     # newer, it just ensures that you've tried to download the latest copy.
     if warn_update < time_since_last_update:
         try:
-            path_to_tmp_file = download_file(iers.IERS_A_URL, cache=False,
+            clear_download_cache(iers.IERS_A_URL)
+            path_to_tmp_file = download_file(iers.IERS_A_URL, cache=True,
                                              show_progress=False)
             os.remove(local_iers_a_path)
             os.rename(path_to_tmp_file, local_iers_a_path)

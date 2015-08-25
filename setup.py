@@ -19,6 +19,7 @@ from astropy_helpers.setup_helpers import (
     register_commands, adjust_compiler, get_debug_option, get_package_info)
 from astropy_helpers.git_helpers import get_git_devstr
 from astropy_helpers.version_helpers import generate_version_py
+from astroplan.utils import _get_IERS_A_on_install
 
 # Get some values from the setup.cfg
 from distutils import config
@@ -56,6 +57,16 @@ if not RELEASE:
 # modify distutils' behavior.
 cmdclassd = register_commands(PACKAGENAME, VERSION, RELEASE)
 
+# Modify the installer class to run IERS Bulletin A downloader
+original_install_class = cmdclassd['install']
+class AstroplanInstaller(original_install_class):
+    # Subclass the default, as defined by astropy affiliated package template,
+    # to run the IERS Bulletin A downloader.
+    def run(self):
+        original_install_class.run(self)
+        _get_IERS_A_on_install()
+cmdclassd['install'] = AstroplanInstaller
+
 # Adjust the compiler in case the default on this platform is to use a
 # broken one.
 adjust_compiler(PACKAGENAME)
@@ -67,7 +78,6 @@ generate_version_py(PACKAGENAME, VERSION, RELEASE,
 # Treat everything in scripts except README.rst as a script to be installed
 scripts = [fname for fname in glob.glob(os.path.join('scripts', '*'))
            if os.path.basename(fname) != 'README.rst']
-
 
 # Get configuration information from all of the various subpackages.
 # See the docstring for setup_helpers.update_package_files for more
