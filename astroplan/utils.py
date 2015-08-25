@@ -26,7 +26,7 @@ def _get_IERS_A_on_install():
     """
     try:
         download_file(iers.IERS_A_URL, cache=True, show_progress=True)
-    except URLError as e:
+    except URLError:
         raise Exception("Tried to access {} to download the IERS Bulletin A "
                         "and failed. Astroplan requires access to the internet "
                         "during installation.".format(iers.IERS_A_URL))
@@ -55,11 +55,12 @@ def get_recent_IERS_A_table(warn_update=7*u.day):
     # newer, it just ensures that you've tried to download the latest copy.
     if warn_update < time_since_last_update:
         try:
+            # Try downloading once, no caching, to see if internet accessible
+            download_file(iers.IERS_A_URL, cache=False, show_progress=False)
+            # If accessible, delete current version and cache new one
             clear_download_cache(iers.IERS_A_URL)
             path_to_tmp_file = download_file(iers.IERS_A_URL, cache=True,
                                              show_progress=False)
-            os.remove(local_iers_a_path)
-            os.rename(path_to_tmp_file, local_iers_a_path)
             table = iers.IERS_A.open(local_iers_a_path)
 
         except URLError:
