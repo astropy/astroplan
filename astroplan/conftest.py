@@ -16,3 +16,8 @@ try:
     del PYTEST_HEADER_MODULES['h5py']
 except NameError:  # needed to support Astropy < 1.0
     pass
+
+# Make appropriate substitutions to mock internet querying methods
+# within the tests
+from .utils import _mock_remote_data
+_mock_remote_data()

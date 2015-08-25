@@ -110,7 +110,35 @@ class Observer(object):
     A container class for information about an observer's location and
     environment.
 
-    TODO: write this docstring
+    Examples
+    --------
+    We can create an observer at Subaru Observatory in Hawaii two ways. First,
+    locations for some observatories are stored in astroplan, and these can be
+    accessed by name, like so:
+
+    >>> from astroplan import Observer
+    >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+
+    To find out which observatories can be accessed by name, check out
+    `~astroplan.get_site_names`.
+
+    Next, you can initialize an observer by specifying the location with
+    `~astropy.coordinates.EarthLocation`:
+
+    >>> from astropy.coordinates import EarthLocation
+    >>> import astropy.units as u
+    >>> location = EarthLocation.from_geodetic(-155.4761*u.deg, 19.825*u.deg,
+    ...                                        4139*u.m)
+    >>> subaru = Observer(location=location, name="Subaru", timezone="US/Hawaii")
+
+    You can also create an observer without an
+    `~astropy.coordinates.EarthLocation`:
+
+    >>> from astroplan import Observer
+    >>> import astropy.units as u
+    >>> subaru = Observer(longitude=-155.4761*u.deg, latitude=19.825*u.deg,
+    ...                   elevation=0*u.m, name="Subaru", timezone="US/Hawaii")
+
     """
     @u.quantity_input(elevation=u.m)
     def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
@@ -276,6 +304,17 @@ class Observer(object):
             Localized datetime, where the timezone of the datetime is
             set by the ``timezone`` keyword argument of the
             `~astroplan.Observer` constructor.
+
+        Examples
+        --------
+        Convert an astropy time to a localized `~datetime.datetime`:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+        >>> astropy_time = Time('1999-12-31 06:00:00')
+        >>> print(subaru.astropy_time_to_datetime(astropy_time))
+        1999-12-30 20:00:00-10:00
         """
 
         if not astropy_time.isscalar:
@@ -303,6 +342,24 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Astropy time object (no timezone information preserved).
+
+        Examples
+        --------
+        Convert a localized `~datetime.datetime` to a `~astropy.time.Time`
+        object. Non-localized datetimes are assumed to be UTC.
+        <Time object: scale='utc' format='datetime' value=1999-12-31 06:00:00>
+
+        >>> from astroplan import Observer
+        >>> import datetime
+        >>> import pytz
+        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+        >>> hi_date_time = datetime.datetime(2005, 6, 21, 20, 0, 0, 0)
+        >>> subaru.datetime_to_astropy_time(hi_date_time)
+        <Time object: scale='utc' format='datetime' value=2005-06-22 06:00:00>
+        >>> utc_date_time = datetime.datetime(2005, 6, 22, 6, 0, 0, 0,
+        ...                                   tzinfo=pytz.timezone("UTC"))
+        >>> subaru.datetime_to_astropy_time(utc_date_time)
+        <Time object: scale='utc' format='datetime' value=2005-06-22 06:00:00>
         """
 
         if hasattr(date_time, '__iter__'):
@@ -395,6 +452,28 @@ class Observer(object):
             If ``target`` is `None`, returns `~astropy.coordinates.AltAz` frame.
             If ``target`` is not `None`, returns the ``target`` transformed to
             the `~astropy.coordinates.AltAz` frame.
+
+        Examples
+        --------
+        Create an instance of the `~astropy.coordinates.AltAz` frame for an
+        observer at Apache Point Observatory at a particular time:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> from astropy.coordinates import SkyCoord
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time('2001-02-03 04:05:06')
+        >>> target = SkyCoord(0*u.deg, 0*u.deg)
+        >>> altaz_frame = apo.altaz(time)
+
+        Now transform the target's coordinates to the alt/az frame:
+
+        >>> target_altaz = target.transform_to(altaz_frame)
+
+        Alternatively, construct an alt/az frame and transform the target to
+        that frame all in one step:
+
+        >>> target_altaz = apo.altaz(time, target)
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -495,6 +574,7 @@ class Observer(object):
             Number of degrees above/below actual horizon to use
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
+
         Returns
         -------
         Returns the lower and upper limits on the time and altitudes
@@ -837,6 +917,19 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Rise time of target
+
+        Examples
+        --------
+        Calculate the rise time of Rigel at Keck Observatory:
+
+        >>> from astroplan import Observer, FixedTarget
+        >>> from astropy.time import Time
+        >>> time = Time("2001-02-03 04:05:06")
+        >>> target = FixedTarget.from_name("Rigel")
+        >>> keck = Observer.at_site("Keck")
+        >>> rigel_rise_time = keck.target_rise_time(time, target, which="next")
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time)) # doctest: +FLOAT_CMP
+        ISO: 2001-02-04 00:51:23.330, JD: 2451944.53569
         """
         return self._determine_which_event(self._calc_riseset,
                                            dict(time=time, target=target,
@@ -876,6 +969,19 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Set time of target.
+
+        Examples
+        --------
+        Calculate the set time of Rigel at Keck Observatory:
+
+        >>> from astroplan import Observer, FixedTarget
+        >>> from astropy.time import Time
+        >>> time = Time("2001-02-03 04:05:06")
+        >>> target = FixedTarget.from_name("Rigel")
+        >>> keck = Observer.at_site("Keck")
+        >>> rigel_set_time = keck.target_set_time(time, target, which="next")
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time)) # doctest: +FLOAT_CMP
+        ISO: 2001-02-03 12:29:34.768, JD: 2451944.02054
         """
         return self._determine_which_event(self._calc_riseset,
                                            dict(time=time, target=target,
@@ -908,6 +1014,20 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Transit time of target
+
+        Examples
+        --------
+        Calculate the meridian transit time of Rigel at Keck Observatory:
+
+        >>> from astroplan import Observer, FixedTarget
+        >>> from astropy.time import Time
+        >>> time = Time("2001-02-03 04:05:06")
+        >>> target = FixedTarget.from_name("Rigel")
+        >>> keck = Observer.at_site("Keck")
+        >>> rigel_transit_time = keck.target_meridian_transit_time(time, target,
+        ...                                                        which="next")
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_transit_time)) # doctest: +FLOAT_CMP
+        ISO: 2001-02-03 06:42:26.863, JD: 2451943.77948
         """
         return self._determine_which_event(self._calc_transit,
                                            dict(time=time, target=target,
@@ -940,6 +1060,21 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Antitransit time of target
+
+        Examples
+        --------
+        Calculate the meridian anti-transit time of Rigel at Keck Observatory:
+
+        >>> from astroplan import Observer, FixedTarget
+        >>> from astropy.time import Time
+        >>> time = Time("2001-02-03 04:05:06")
+        >>> target = FixedTarget.from_name("Rigel")
+        >>> keck = Observer.at_site("Keck")
+        >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
+        ...                                                                which="next")
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +FLOAT_CMP
+        ISO: 2001-02-03 18:40:29.761, JD: 2451944.27812
+
         """
         return self._determine_which_event(self._calc_transit,
                                            dict(time=time, target=target,
@@ -976,6 +1111,18 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Time of sunrise
+
+        Examples
+        --------
+        Calculate the time of the previous sunrise at Apache Point Observatory:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time('2001-02-03 04:05:06')
+        >>> sun_rise = apo.sun_rise_time(time, which="previous")
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +FLOAT_CMP
+        ISO: 2001-02-02 14:02:50.554, JD: 2451943.08531
         """
         return self.target_rise_time(time, get_sun(time), which, horizon)
 
@@ -1009,6 +1156,18 @@ class Observer(object):
         -------
         `~astropy.time.Time`
             Time of sunset
+
+        Examples
+        --------
+        Calculate the time of the next sunset at Apache Point Observatory:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time('2001-02-03 04:05:06')
+        >>> sun_set = apo.sun_set_time(time, which="next")
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +FLOAT_CMP
+        ISO: 2001-02-04 00:35:42.102, JD: 2451944.52479
         """
         return self.target_set_time(time, get_sun(time), which, horizon)
 
@@ -1239,7 +1398,7 @@ class Observer(object):
 
     def moon_illumination(self, time):
         """
-        Calculate the illuminated fraction of the moon
+        Calculate the illuminated fraction of the moon.
 
         Parameters
         ----------
@@ -1261,6 +1420,18 @@ class Observer(object):
         -------
         float
             Fraction of lunar surface illuminated
+
+        Examples
+        --------
+        How much of the lunar surface is illuminated at 2015-08-29 18:35 UTC,
+        which we happen to know is the time of a full moon?
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time("2015-08-29 18:35")
+        >>> apo.moon_illumination(time) # doctest: +SKIP
+        array([ 0.99972487])
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -1271,7 +1442,7 @@ class Observer(object):
         """
         Calculate lunar orbital phase.
 
-        For example, phase=0 is "new", phase=1 is "full".
+        For example, phase=2*pi is "new", phase=0 is "full".
 
         Parameters
         ----------
@@ -1288,6 +1459,24 @@ class Observer(object):
         sun : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the sun at time ``time``. If `None`, will calculate
             the position of the Sun with `~astropy.coordinates.get_sun`.
+
+        Returns
+        -------
+        moon_phase_angle : float
+            Orbital phase angle of the moon where 2*pi corresponds to new moon,
+            zero corresponds to full moon.
+
+        Examples
+        --------
+        Calculate the phase of the moon at 2015-08-29 18:35 UTC. Near zero
+        radians corresponds to a nearly full moon.
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site('APO')
+        >>> time = Time('2015-08-29 18:35')
+        >>> apo.moon_phase(time) # doctest: +SKIP
+        <Quantity [ 0.03317537] rad>
         """
         if time is not None and not isinstance(time, Time):
             time = Time(time)
@@ -1313,6 +1502,19 @@ class Observer(object):
         -------
         altaz : `~astropy.coordinates.SkyCoord`
             Position of the moon transformed to altitude and azimuth
+
+        Examples
+        --------
+        Calculate the altitude and azimuth of the moon at Apache Point
+        Observatory:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time("2015-08-29 18:35")
+        >>> altaz_moon = apo.moon_altaz(time)
+        >>> print("alt: {0.alt}, az: {0.az}".format(altaz_moon)) # doctest: +FLOAT_CMP
+        alt: -64.1659594407 deg, az: 345.360401117 deg
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -1370,16 +1572,36 @@ class Observer(object):
 
         return_altaz : bool (optional)
             Also return the '~astropy.coordinates.AltAz' coordinate.
+
+        Returns
+        -------
+        observable : boolean
+            True if ``target`` is above ``horizon`` at ``time``, else False.
+
+        Examples
+        --------
+        Are Aldebaran and Vega above the horizon at Apache Point Observatory
+        at 2015-08-29 18:35 UTC?
+
+        >>> from astroplan import Observer, FixedTarget
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time("2015-08-29 18:35")
+        >>> aldebaran = FixedTarget.from_name("Aldebaran")
+        >>> vega = FixedTarget.from_name("Vega")
+        >>> apo.target_is_up(time, aldebaran)
+        True
+        >>> apo.target_is_up(time, [aldebaran, vega])
+        [True, False]
         """
         if not isinstance(time, Time):
             time = Time(time)
 
         altaz = self.altaz(time, target)
         if _target_is_vector(target):
-            observable = [alt > horizon for alt in altaz.alt]
+            observable = [bool(alt > horizon) for alt in altaz.alt]
         else:
-            altitudes = altaz.alt
-            observable = altitudes > horizon
+            observable = bool(altaz.alt > horizon)
 
         if not return_altaz:
             return observable
@@ -1411,20 +1633,33 @@ class Observer(object):
         -------
         sun_below_horizon : bool
             `True` if sun is below ``horizon`` at ``time``, else `False`.
+
+        Examples
+        --------
+        Is it "nighttime" (i.e. is the Sun below ``horizon``) at Apache Point
+        Observatory at 2015-08-29 18:35 UTC?
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time("2015-08-29 18:35")
+        >>> apo.is_night(time)
+        False
         """
         if not isinstance(time, Time):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-        return solar_altitude < horizon
+        return bool(solar_altitude < horizon)
 
 class Target(object):
     """
+    Abstract base class for target objects.
+
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as ``FixedTarget`` or ``NonFixedTarget``.
-
-    Would need to import six, abc to make this a metaclass?
+    subclasses such as `~astroplan.core.FixedTarget` or
+    `~astroplan.core.NonFixedTarget`.
     """
     __metaclass__ = ABCMeta
 
@@ -1467,11 +1702,35 @@ class Target(object):
 
 class FixedTarget(Target):
     """
-    An object that is "fixed" with respect to the celestial sphere.
+    Coordinates and metadata for an object that is "fixed" with respect to the
+    celestial sphere.
+
+    Examples
+    --------
+    Create a `~astroplan.FixedTarget` object for Sirius:
+
+    >>> from astroplan import FixedTarget
+    >>> from astropy.coordinates import SkyCoord
+    >>> import astropy.units as u
+    >>> sirius_coord = SkyCoord(ra=101.28715533*u.deg, dec=16.71611586*u.deg)
+    >>> sirius = FixedTarget(coord=sirius_coord, name="Sirius")
+
+    Create an equivalent `~astroplan.FixedTarget` object for Sirius by querying
+    for the coordinates of Sirius by name:
+
+    >>> from astroplan import FixedTarget
+    >>> sirius = FixedTarget.from_name("Sirius")
     """
     def __init__(self, coord, name=None, **kwargs):
         """
-        TODO: Docstring.
+        Parameters
+        ----------
+        coord : `~astropy.coordinates.SkyCoord`
+            Coordinate of the target
+
+        name : str (optional)
+            Name of the target, used for plotting and representing the target
+            as a string
         """
         if not (hasattr(coord, 'transform_to') and
                 hasattr(coord, 'represent_as')):
@@ -1485,6 +1744,23 @@ class FixedTarget(Target):
         """
         Initialize a `FixedTarget` by querying for a name, using the machinery
         in `~astropy.coordinates.SkyCoord.from_name`.
+
+        Parameters
+        ----------
+        query_name : str
+            Name of the target used to query for coordinates.
+
+        name : string or `None`
+            Name of the target to use within astroplan. If `None`, query_name
+            is used as ``name``.
+
+        Examples
+        --------
+        >>> from astroplan import FixedTarget
+        >>> sirius = FixedTarget.from_name("Sirius")
+        >>> sirius.coord                              # doctest: +FLOAT_CMP
+        <SkyCoord (ICRS): (ra, dec) in deg
+            (101.28715533, -16.71611586)>
         """
         # Allow manual override for name keyword so that the target name can
         # be different from the query name, otherwise assume name=queryname.
@@ -1512,11 +1788,26 @@ class FixedTarget(Target):
         fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
+    @classmethod
+    def _fixed_target_from_name_mock(cls, name):
+        """
+        Mock method to replace `FixedTarget.from_name` in tests.
+        """
+        stars = {"rigel":(78.63446707*u.deg, -8.20163837*u.deg),
+                 "sirius":(101.28715533*u.deg, -16.71611586*u.deg),
+                 "vega":(279.23473479*u.deg, 38.78368896*u.deg),
+                 "aldebaran":(68.98016279*u.deg, 16.50930235*u.deg)}
+        if name.lower() in stars:
+            return cls(coord=SkyCoord(*stars[name.lower()]),
+                       name=name)
+        else:
+            raise ValueError("Target named {} not in mocked FixedTarget "
+                             "method".format(name))
+
 class NonFixedTarget(Target):
     """
     Placeholder for future function.
     """
-
 
 class Constraint(object):
     """
