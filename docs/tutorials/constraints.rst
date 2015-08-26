@@ -105,4 +105,4 @@ tabular form:
        Rigel           False             False
      Regulus           False             False
 
-Now we can see which targets are observable! 
+Now we can see which targets are observable!
