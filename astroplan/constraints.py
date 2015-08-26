@@ -226,14 +226,23 @@ class AtNightConstraint(Constraint):
 
     @classmethod
     def twilight_civil(cls, **kwargs):
+        """
+        Consider nighttime as time between civil twilights (-6 degrees).
+        """
         return cls(max_solar_altitude=-6*u.deg, **kwargs)
 
     @classmethod
     def twilight_nautical(cls, **kwargs):
+        """
+        Consider nighttime as time between nautical twilights (-12 degrees).
+        """
         return cls(max_solar_altitude=-12*u.deg, **kwargs)
 
     @classmethod
     def twilight_astronomical(cls, **kwargs):
+        """
+        Consider nighttime as time between astronomical twilights (-18 degrees).
+        """
         return cls(max_solar_altitude=-18*u.deg, **kwargs)
 
     def _get_solar_altitudes(self, time_range, observer, targets,
