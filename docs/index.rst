@@ -14,7 +14,7 @@ observations.
 
 .. warning::
 
-    We're still in development, so the `astroplan` API may change.  
+    We're still in development, so the `astroplan` API may change.
     `Astropy`_, `PyEphem`_ or `Skyfield`_ are good options if you're looking
     for a more stable package.
 
@@ -54,8 +54,7 @@ News
 ====
 
 * ???: Astroplan **0.1** release
-* May - August 2015: Initial package implemented by Jazmin Berlanga and Brett Morris
-  in `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`.
+* May - August 2015: Initial package implemented by `Jazmin Berlanga Medina <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/jberlanga/5707702298738688>`_ and `Brett Morris <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_ in `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`_.
 
 .. _astroplan_docs:
 
