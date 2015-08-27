@@ -420,7 +420,6 @@ class LocalTimeConstraint(Constraint):
 
         Examples
         --------
-
         Constrain the observations to targets that are observable between
         23:50 and 04:08 local time:
 
@@ -506,7 +505,7 @@ def is_always_observable(constraints, time_range, targets, observer,
     time_resolution : `~astropy.units.Quantity` (optional)
         Determine whether constraints are met between test times in
         ``time_range`` by checking constraint at linearly-spaced times separated
-         by ``time_resolution``. Default is 0.5 hours.
+        by ``time_resolution``. Default is 0.5 hours.
 
     Returns
     -------
@@ -548,7 +547,7 @@ def is_observable(constraints, time_range, targets, observer,
     time_resolution : `~astropy.units.Quantity` (optional)
         Determine whether constraints are met between test times in
         ``time_range`` by checking constraint at linearly-spaced times separated
-         by ``time_resolution``. Default is 0.5 hours.
+        by ``time_resolution``. Default is 0.5 hours.
 
     Returns
     -------
