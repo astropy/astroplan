@@ -11,7 +11,7 @@ from .exceptions import OldEarthOrientationDataWarning
 from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
                                 _open_shelve)
 
-__all__ = ["_mock_remote_data", "get_IERS_A_or_workaround", "download_IERS_A"]
+__all__ = ["get_IERS_A_or_workaround", "download_IERS_A"]
 
 IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   "download an up-to-date IERS Bulletin A table. To do so, run:"
