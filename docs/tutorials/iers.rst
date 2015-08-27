@@ -27,9 +27,11 @@ last solar noon are constantly becoming offset from one another with
 stochastic changes in Earth's moment of inertia and slowly acting tidal forces.
 
 For this reason, there is a time system that keeps track of seconds like an
-atomic clock, UTC, and one that matches up with the Earth's rotation, UT1. The
-difference between UT1 and UTC is constantly changing as the Earth's rotation
-changes and as leap seconds get added to UTC to compensate.
+atomic clock, TAI, a more commonly used one that works like an atomic clock
+with a varying offset of some integer number of seconds, UTC, and one that
+matches up with the Earth's rotation, UT1. The difference between UT1 and UTC is
+constantly changing as the Earth's rotation changes and as leap seconds get
+added to UTC to compensate.
 
 In order to accurately predict the apparent position of a celestial object from
 the Earth, for example in altitude and azimuth coordinates, one needs to know
