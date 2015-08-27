@@ -65,7 +65,8 @@ def IERS_A_in_cache():
         warnings.warn(CacheMissingWarning(msg + e.__class__.__name__ + estr))
         return False
     with _open_shelve(urlmapfn, True) as url2hash:
-        if url_key in url2hash:
+        # TODO: try to figure out how to test this in the unicode case
+        if str(url_key) in url2hash:
             return True
     return False
 
