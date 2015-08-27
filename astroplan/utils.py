@@ -69,7 +69,7 @@ def IERS_A_in_cache():
             return True
     return False
 
-def _get_IERS_A_table(warn_update=7*u.day):
+def _get_IERS_A_table(warn_update=14*u.day):
     """
     Grab the locally cached copy of the IERS Bulletin A table. Check to see
     if it's up to date, and warn the user if it is not.
@@ -85,7 +85,7 @@ def _get_IERS_A_table(warn_update=7*u.day):
                                         format='mjd')
         time_since_last_update = Time.now() - time_of_last_observation
 
-        # If the IERS bulletin is more than 7 days old, warn user
+        # If the IERS bulletin is more than `warn_update` days old, warn user
         if warn_update < time_since_last_update:
             warnmsg = ("Your version of the IERS Bulletin A is {:.1f} days "
                        "old. ".format(time_since_last_update.to(u.day).value) +
