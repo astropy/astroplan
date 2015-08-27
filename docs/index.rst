@@ -35,7 +35,7 @@ with potential optional dependencies including Matplotlib and PyEphem (or Skyfie
 Links
 =====
 
-* `Code, feature requests, bug reports, pull requests <https://github.com/astroplanners/astroplan>`_
+* `Code, feature requests, bug reports, pull requests <https://github.com/astropy/astroplan>`_
 * `Questions <http://groups.google.com/group/astropy>`_
 * `Docs <https://astroplan.readthedocs.org/>`_
 
@@ -46,8 +46,10 @@ License: BSD-3
 News
 ====
 
-* April 28, 2015: **astroplan** repo set up
-* May/June 2015: API proposal posted on GitHub.
+* ???: Astroplan **0.1** release
+* May - August 2015: Initial package implemented by Jazmin Berlanga and Brett Morris
+  in `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`.
+
 
 .. _astroplan_docs:
 

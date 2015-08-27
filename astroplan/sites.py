@@ -5,7 +5,7 @@ Observatory Database, and are stored in astroplan/data/observatories.json.
 Longitudes are listed with positive to the West.
 
 Additions and corrections to the observatory list can be submitted via Pull
-Request to the [astroplan GitHub repository](https://github.com/astroplanners/astroplan).
+Request to the [astroplan GitHub repository](https://github.com/astropy/astroplan).
 
 """
 

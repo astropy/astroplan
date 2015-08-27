@@ -36,7 +36,7 @@ You can install the stable version of astroplan with::
 Alternatively, you can install the latest developer version of astroplan by
 cloning the git repository::
 
-    git clone https://github.com/astroplanners/astroplan
+    git clone https://github.com/astropy/astroplan
 
 ...then installing the package with::
 
