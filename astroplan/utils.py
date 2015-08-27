@@ -115,5 +115,5 @@ def download_IERS_A(show_progress=True):
     local_iers_a_path = download_file(iers.IERS_A_URL, cache=True,
                                       show_progress=show_progress)
     # Undo monkey patch set up by get_IERS_A_or_workaround
-    iers.IERS.iers_table = local_iers_a_path
+    iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
     Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
