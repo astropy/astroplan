@@ -11,15 +11,6 @@ import datetime
 from astropy.time import Time
 import pytz
 import numpy as np
-################################################################################
-# TODO: Temporary solution to IERS tables problems
-from astropy.utils.data import download_file
-from astropy.utils import iers
-
-iers.IERS.iers_table = iers.IERS_A.open(download_file(iers.IERS_A_URL,
-                                                      cache=True))
-################################################################################
-
 
 from astropy.extern.six import string_types
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
