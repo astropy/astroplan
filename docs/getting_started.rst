@@ -7,14 +7,17 @@ Getting Started
 General Guidelines
 ==================
 
-`Astroplan` is based on `Astropy`_ and was built around the creation of "objects"
-that contain all the information needed to perform certain tasks.
+`astroplan` is based on `Astropy`_ and was built around the creation of
+"objects" that contain all the information needed to perform certain tasks.
 
 You, the user, will create and manipulate these objects to plan your
-observation.  Don't worry--it's easier than it sounds!
+observation.
 
-For instance, a `Target` object contains all the data associated with observing
-targets--RA, Dec, etc.::
+For instance, an `astroplan.Target` object contains information associated with
+targets, such as right ascension, declination, etc.
+
+Celestial bodies such as stars (which are "fixed" on the celestial sphere) are
+initiated via an `astroplan.FixedTarget` object::
 
     from astropy.coordinates import SkyCoord
     from astroplan import FixedTarget
@@ -22,9 +25,18 @@ targets--RA, Dec, etc.::
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
 
-Similarly, an `Observer` object has longitude/latitude coordinates of the
-observatory or telescope where you are planning on making your observations,
-as well as elevation and other location information::
+Similarly, an `astroplan.Observer` object contains information about the
+observatory, telescope or place where you are observing, such as
+longitude, latitude, elevation and other optional parameters.
+
+You can initiate an `Observer` object via the `astroplan.get_site` function,
+which accesses our built-in sites list (see `astroplan.get_site_names`)::
+
+    from astroplan import get_site
+
+    observer = get_site('subaru')
+
+Or you can specify your own location parameters::
 
     import astropy.units as u
     from astropy.coordinates import EarthLocation
@@ -45,21 +57,17 @@ as well as elevation and other location information::
                    description="Subaru Telescope on Mauna Kea, Hawaii")
 
 `Astroplan` makes heavy use of certain pieces of `Astropy` machinery, such as
-the representation of dates/times in `Time` objects (note that without these
-are in UTC by default)::
+the representation of dates/times in `astropy.time.Time`-compatible objects
+(note that these are in the UTC timezone by default)::
 
     from astropy.time import Time
 
     time = Time(['2015-06-16 06:00:00'])
 
-To access an object attribute or to manipulate an object, you will generally
-issue a command such as::
-
-    right_ascension = altair.ra
-
-or::
-
-    p_angle = observer.parallactic_angle(time, altair)
+Since `astroplan` objects are Python objects at their core, manipulating them or
+accessing some attribute will follow Python conventions.  See Python
+documentation on `objects <https://docs.python.org/2/tutorial/classes.html#instance-objects>`_
+for more information.
 
 Doing More
 ==========

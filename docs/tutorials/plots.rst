@@ -66,7 +66,7 @@ Below are general guidelines for working with time-dependent plots in
 
 .. seealso::
 
-    ???? `astroplan.Observer.altaz.secz` ?????
+    `astropy.coordinates.AltAz.secz`
 
     `astroplan.Observer.parallactic_angle`
 
@@ -141,7 +141,7 @@ which you want to see an airmass plotted.  Therefore, an array
 `astropy.time.Time` object is necessary.
 
 To quickly populate an `astropy.time.Time` object with many instances of time,
-use `Numpy`_ and `astropy.units`.
+use `Numpy`_ and `astropy.units`.  See example below.
 
 Centering the window at some time
 +++++++++++++++++++++++++++++++++
