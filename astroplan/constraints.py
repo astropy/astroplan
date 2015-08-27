@@ -473,11 +473,11 @@ class LocalTimeConstraint(Constraint):
 
         # If time limits occur on same day:
         if self.min < self.max:
-            mask = [min_time < t < max_time for t in times]
+            mask = [min_time < t.time() < max_time for t in times]
 
         # If time boundaries straddle midnight:
         else:
-            mask = [(t > min_time) or (t < max_time) for t in times]
+            mask = [(t.time() > min_time) or (t.time() < max_time) for t in times]
 
         return mask
 
