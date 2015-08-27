@@ -79,10 +79,6 @@ astropy's IERS machinery:
     import astropy.units as u
     from astropy.time import Time
 
-    # Make the plots pretty
-    import seaborn as sns
-    sns.set(context='talk')
-
     # Download and cache the IERS Bulletins A and B  using astropy's machinery
     # (reminder: astroplan has its own function for this: `download_IERS_A`)
     from astropy.utils.iers import (IERS_A, IERS_A_URL, IERS_B, IERS_B_URL,
@@ -91,7 +87,7 @@ astropy's IERS machinery:
     iers_a = IERS_A.open(download_file(IERS_A_URL, cache=True))
     iers_b = IERS_B.open(download_file(IERS_B_URL, cache=True))
 
-    # Get a range of times to plot from 1990-2020
+    # Get a range of times to plot from 1990-2022
     time_range = Time("1990-01-01") + np.arange(0, 30, 0.2)*u.year
 
     # Calculate the difference between UTC and UT1 at those times,
@@ -110,10 +106,9 @@ astropy's IERS machinery:
     ax.axhline(0, color='gray', ls='--', lw=2)
 
     ax.plot_date(time_range.plot_date,
-                 DUT1_a, '-', label='IERS Bulletin A + extrapolation')
+                 DUT1_a, '-', lw=2, label='IERS Bulletin A + extrapolation')
     ax.plot_date(time_range.plot_date[measurements_from_b],
-                 DUT1_b[measurements_from_b], 'r--', label='IERS Bulletin B')
-
+                 DUT1_b[measurements_from_b], 'r--', lw=2, label='IERS Bulletin B')
     ax.set(xlabel='Year', ylabel='UT1-UTC [seconds]')
     ax.legend(loc='upper right')
     plt.show()
