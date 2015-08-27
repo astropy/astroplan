@@ -55,6 +55,7 @@ def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
         return Time(np.arange(time_range[0].jd, time_range[1].jd,
                               time_resolution.to(u.day).value), format='jd')
 
+@abstractmethod
 class Constraint(object):
     """
     Abstract class for objects defining observational constraints.
@@ -133,9 +134,10 @@ class AltitudeConstraint(Constraint):
     """
     Constrain the altitude of the target.
 
-    Note: this will misbehave if you try to constrain negative altitudes, as
-    the `~astropy.coordinates.AltAz` frame tends to mishandle negative
-    altitudes.
+    .. note::
+        This will misbehave if you try to constrain negative altitudes, as
+        the `~astropy.coordinates.AltAz` frame tends to mishandle negative
+        altitudes.
     """
     def __init__(self, min=None, max=None):
         """
@@ -170,13 +172,16 @@ class AirmassConstraint(AltitudeConstraint):
     """
     Constrain the airmass of a target.
 
-    The airmass is approximated by the secant of the zenith angle.
+    In the current implementation the airmass is approximated by the secant of
+    the zenith angle.
     """
     def __init__(self, max=None, min=None):
         """
-        Note: the ``max`` and ``min`` arguments appear in the order (max, min)
-        in this initializer to support the common case for users who care about
-        the upper limit on the airmass (``max``) and not the lower limit.
+        .. note::
+            The ``max`` and ``min`` arguments appear in the order (max, min)
+            in this initializer to support the common case for users who care
+            about the upper limit on the airmass (``max``) and not the lower
+            limit.
 
         Parameters
         ----------
@@ -185,6 +190,13 @@ class AirmassConstraint(AltitudeConstraint):
 
         min : float or `None`
             Minimum airmass of the target. `None` indicates no limit.
+
+        Examples
+        --------
+        To create a constraint that requires the airmass be "better than 2",
+        i.e. at a higher altitude than airmass=2::
+
+            AirmassConstraint(2)
         """
         self.min = min
         self.max = max
