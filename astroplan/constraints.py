@@ -6,16 +6,21 @@ an observer.
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
+# Standard library
 from abc import ABCMeta, abstractmethod
-import numpy as np
+import datetime
+
+# Third-party
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import get_sun, Angle
-from .moon import get_moon, moon_illumination
 from astropy.coordinates.angle_utilities import angular_separation
-import datetime
 from astropy.extern.six import string_types
-import pytz
+import numpy as np
+
+# Package
+from .moon import get_moon, moon_illumination
 
 DEFAULT_TIME_RESOLUTION = 0.5*u.hour
 
