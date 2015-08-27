@@ -24,8 +24,6 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint"]
 
-ROOT_DATE_STR = "2000-01-01 "
-
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
     """
@@ -401,58 +399,19 @@ class MoonIlluminationConstraint(Constraint):
                              "MoonSeparationConstraint.")
         return mask
 
-def time_string_to_datetime(time_string, root_date=ROOT_DATE_STR):
-    """
-    Convert a string time in hours(/minutes(/seconds)) to a `~datetime.datetime`
-    on an arbitrary day.
-
-    Parameters
-    ----------
-    time_string : string
-        String input for time. Can be in format "%H", "%H:%M", "%H:%M:%S". See
-        documentation for `~datetime.datetime.strptime` for details on how the
-        time will be parsed.
-
-    root_date : string (optional)
-        Date used to make a complete datetime even though this function is only
-        given the time in hours(/minutes(/seconds)). This date is arbitrary for
-        the calculations in the `constraints` module.
-
-    Returns
-    -------
-    dt : `~datetime.datetime`
-    """
-    formats = ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:%M', '%Y-%m-%d %H']
-    for fmt in formats:
-        try:
-            dt = datetime.datetime.strptime(root_date + time_string, fmt)
-            return dt
-
-        except ValueError as e:
-            continue
-        raise e
-
 class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.
     """
-    def __init__(self, min=None, max=None, timezone=None):
+    def __init__(self, min=None, max=None):
         """
         Parameters
         ----------
-        min : string
-            Earliest local time in hour(:minute(:second)) format, on a 24 hour
-            scale. `None` indicates no limit.
+        min : `~datetime.time`
+            Earliest local time. `None` indicates no limit.
 
-        max : string
-            Latest local time in hour(:minute(:second)) format, on a 24 hour
-            scale. `None` indicates no limit.
-
-        timezone : {string, `datetime.tzinfo`, `None`}(optional)
-            The local timezone to assume. If a string, it will be passed through
-            `pytz.timezone()` to produce the timezone object. If `None`, the
-            `timezone` attribute on the `Observer` object will be used as the
-            "local time zone" (which defaults to UTC).
+        max : `~datetime.time`
+            Latest local time. `None` indicates no limit.
 
         Examples
         --------
@@ -460,61 +419,61 @@ class LocalTimeConstraint(Constraint):
         Constrain the observations to targets that are observable between
         23:50 and 04:08 local time:
 
-        >>> import pytz
         >>> from astroplan import Observer
         >>> from astroplan.constraints import LocalTimeConstraint
-        >>> from astropy.time import Time
-        >>> hawaii = pytz.timezone("US/Hawaii")
-        >>> time = hawaii.localize(Time('2001-02-03 04:05:06').datetime) # Local time in Hawaii
+        >>> import datetime as dt
         >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
-        >>> constraint = LocalTimeConstraint(min="23:50", max="04:08") # bound times between 23:50 and 04:08 local Hawaiian time
+        >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8)) # bound times between 23:50 and 04:08 local Hawaiian time
         """
+
         self.min = min
         self.max = max
-        self.init_timezone = timezone
+
+        if self.min is None and self.max is None:
+            raise ValueError("You must at least supply either a minimum or a maximum time.")
+
+        if self.min is not None:
+            if not isinstance(self.min, datetime.time):
+                raise TypeError("Time limits must be specified as datetime.time objects.")
+
+        if self.max is not None:
+            if not isinstance(self.max, datetime.time):
+                raise TypeError("Time limits must be specified as datetime.time objects.")
 
     def _compute_constraint(self, time_range, observer, targets,
                             time_resolution=DEFAULT_TIME_RESOLUTION):
 
-        if self.init_timezone is not None:
-            if isinstance(self.init_timezone, datetime.tzinfo):
-                timezone = self.init_timezone
-            elif isinstance(self.init_timezone, string_types):
-                timezone = pytz.timezone(self.init_timezone)
-        else:
+        # get timezone from time objects, or from observer
+        if self.min is not None:
+            timezone = self.min.tzinfo
+
+        elif self.max is not None:
+            timezone = self.max.tzinfo
+
+        if timezone is None:
             timezone = observer.timezone
 
-        absolute_lower_time_limit = datetime.datetime(2000, 1, 1, 0, 0, 0)
-        absolute_upper_time_limit = datetime.datetime(2000, 1, 1, 23, 59, 59)
+        if self.min is not None:
+            min_time = self.min
+        else:
+            min_time = self.min = datetime.time(0, 0, 0)
 
-        if self.min is None:
-            self.min = absolute_lower_time_limit
-        if max is None:
-            self.max = absolute_upper_time_limit
-
-        # Convert string "HH:MM:SS" to a datetime like "2000-01-01 HH:MM:SS"
-        min_dt_local = timezone.localize(time_string_to_datetime(self.min))
-        max_dt_local = timezone.localize(time_string_to_datetime(self.max))
-
-        # Convert those datetime boundaries to UTC time boundaries
-        min_dt_utc = time_string_to_datetime(min_dt_local.astimezone(pytz.utc).strftime("%H:%M:%S"))
-        max_dt_utc = time_string_to_datetime(max_dt_local.astimezone(pytz.utc).strftime("%H:%M:%S"))
+        if self.max is not None:
+            max_time = self.max
+        else:
+            max_time = datetime.time(23, 59, 59)
 
         times = time_grid_from_range(Time(time_range),
                                      time_resolution=time_resolution).datetime
 
-        ROOT_DATE_STR = "2000-01-01 "
-        times_same_day = [datetime.datetime.strptime(ROOT_DATE_STR +
-                                                     date.strftime("%H:%M:%S"),
-                                                     "%Y-%m-%d %H:%M:%S")
-                          for date in times]
-
         # If time limits occur on same day:
-        if min_dt_utc < max_dt_utc:
-            mask = [min_dt_utc < t < max_dt_utc for t in times_same_day]
+        if self.min < self.max:
+            mask = [min_time < t < max_time for t in times]
+
         # If time boundaries straddle midnight:
         else:
-            mask = [(min_dt_utc < t) or (t < max_dt_utc) for t in times_same_day]
+            mask = [(t > min_time) or (t < max_time) for t in times]
+
         return mask
 
 def is_always_observable(constraints, time_range, targets, observer,
