@@ -16,6 +16,7 @@ from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import get_sun, Angle
 from astropy.coordinates.angle_utilities import angular_separation
+from astropy import table
 from astropy.extern.six import string_types
 import numpy as np
 
@@ -575,3 +576,69 @@ def is_observable(constraints, time_range, targets, observer,
                                                       time_resolution=time_resolution)
                                           for constraint in constraints])
     return np.any(contraint_arr, axis=1)
+
+def observability_table(constraints, time_range, targets, observer,
+                        time_resolution=DEFAULT_TIME_RESOLUTION):
+    """
+    Creates a table with information about observablity for all  the ``targets``
+    over the requeisted ``time_range``, given the constraints in
+    ``constraints_list`` for ``observer``.
+
+    Parameters
+    ----------
+    constraints : list or `~astroplan.constraints.Constraint`
+        Observational constraint(s)
+
+    time_range : `~astropy.time.Time`
+        Lower and upper time bounds on which to compute the constraints.
+        If input is a scalar time, will only compute at that time (no
+        range).
+
+    targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target or list of targets
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    time_resolution : `~astropy.units.Quantity` (optional)
+        Determine whether constraints are met between test times in
+        ``time_range`` by checking constraint at linearly-spaced times separated
+        by ``time_resolution``. Default is 0.5 hours.
+
+    Returns
+    -------
+    observability_table : `~astropy.table.Table`
+        A Table containing the observability information for each of the
+        ``targets``. The table contains four columns with information about the
+        target and it's observability: ``'target name'``, ``'ever observable'``,
+        ``'always observable'``, and ``'fraction of time observable'``.  It also
+        contains metadata entries ``'times'`` (with an array of all the times),
+        ``'observer'`` (the `~astroplan.Observer` object), and ``'constraints'``
+        (containing the supplied ``constraints``).
+    """
+    if not hasattr(constraints, '__len__'):
+        constraints = [constraints]
+
+    contraint_arr = np.logical_and.reduce([constraint(time_range, observer,
+                                                      targets,
+                                                      time_resolution=time_resolution)
+                                          for constraint in constraints])
+
+    colnames = ['target name', 'ever observable', 'always observable',
+                'fraction of time observable']
+
+    target_names = [target.name for target in targets]
+    ever_obs = np.any(contraint_arr, axis=1)
+    always_obs = np.all(contraint_arr, axis=1)
+    frac_obs = np.sum(contraint_arr, axis=1) / contraint_arr.shape[1]
+
+    tab = table.Table(names=colnames, data=[target_names, ever_obs, always_obs, frac_obs])
+
+    tab.meta['times'] = time_grid_from_range(Time(time_range), time_resolution=time_resolution).datetime
+    tab.meta['observer'] = observer
+    tab.meta['constraints'] = constraints
+
+    return tab
+
+
+

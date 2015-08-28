@@ -2,7 +2,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
-                           is_observable, is_always_observable,
+                           is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            LocalTimeConstraint)
@@ -39,6 +39,34 @@ def test_at_night_basic():
 
         assert all(is_always_observable(AtNightConstraint(), time_range, targets, subaru) ==
                    len(targets)*[observer_is_night_all])
+
+def test_observability_table():
+    subaru = Observer.at_site("Subaru")
+    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']), # 1 day
+                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])] # 1 hr
+    targets = [vega, rigel, polaris]
+
+    time_range = Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06'])
+    constraints = [AtNightConstraint(), AirmassConstraint(3)]
+
+    obstab = observability_table(constraints, time_range, targets, subaru)
+
+    assert len(obstab) == 3
+    assert np.all(obstab['target name'] == ['Vega', 'Rigel', 'Polaris'])
+
+    assert 'times' in obstab.meta
+    assert 'observer' in obstab.meta
+    assert 'constraints' in obstab.meta
+    assert len(obstab.meta['constraints']) == 2
+
+    np.testing.assert_allclose(obstab['fraction of time observable'], np.array([21, 22, 15])/48)
+
+    #now compare to is_observable and is_always_observable
+    is_obs = is_observable(constraints, time_range, targets, subaru)
+    np.testing.assert_allclose(obstab['ever observable'], is_obs)
+    all_obs = is_always_observable(constraints, time_range, targets, subaru)
+    np.testing.assert_allclose(obstab['always observable'], all_obs)
+
 
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
