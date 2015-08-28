@@ -6,16 +6,22 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  Angle, Latitude, Longitude,
                                  UnitSphericalRepresentation, SphericalRepresentation)
 
-import astropy.units as u
+# Standard library
+from abc import ABCMeta, abstractmethod
 import datetime
-from astropy.time import Time
 import pytz
+import warnings
+
+# Third-party
+import astropy.units as u
+from astropy.time import Time
 import numpy as np
 from astropy.extern.six import string_types
+
+# This package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .sites import get_site
 from .moon import get_moon, moon_illumination, moon_phase_angle
-import warnings
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget", "MAGIC_TIME"]
 
