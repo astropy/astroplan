@@ -58,7 +58,8 @@ First, we define our `Observer` object::
                    description="Subaru Telescope on Mauna Kea, Hawaii")
 
 Then, we define our `Target` objects (`FixedTarget`'s in this case, since the
-Summer Triangle is "fixed" with respect to the celestial sphere)::
+Summer Triangle is fixed with respect to the celestial sphere if we ignore the
+relatively small proper motion)::
 
     from astropy.coordinates import SkyCoord
     from astroplan import FixedTarget
@@ -72,7 +73,7 @@ Summer Triangle is "fixed" with respect to the celestial sphere)::
     coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
     deneb = FixedTarget(name='Deneb', coord=coordinates)
 
-We also have to define a `Time` (in UTC) at which we wish to observe.  Here, I
+We also have to define a `Time` (in UTC) at which we wish to observe.  Here, we
 pick 2AM local time, which is noon UTC during the summer::
 
     from astropy.time import Time
@@ -103,7 +104,7 @@ is down?
 
 ...They are!
 
-Let's also pretend I'm not sure if the Sun is down at this time:
+What if we weren't sure if the Sun is down at this time:
 
 .. code-block:: python
 
@@ -142,7 +143,7 @@ indeed those for tonight):
     >>> sunset_tonight.iso
     '2015-06-16 04:59:12.610'
 
-This is '2015-06-15 18:49:12.610' US/Hawaii.
+This is 2015-06-15 18:49:12.610 in the Hawaii time zone (that's where Subaru is).
 
 .. code-block:: python
 
@@ -151,7 +152,7 @@ This is '2015-06-15 18:49:12.610' US/Hawaii.
     >>> sunrise_tonight.iso
     '2015-06-16 15:47:36.466'
 
-This is '2015-06-16 05:47:36.466' US/Hawaii.
+Or 2015-06-16 05:47:36.466 Hawaii time.
 
 Sunset and sunrise check out, so now we define the limits of our observation
 window:
@@ -169,7 +170,7 @@ window:
     '2015-06-16 15:47:36.466'
 
 So, our targets will be visible (as we've defined it above) from
-'2015-06-15 20:23:40.991' to '2015-06-16 05:47:36.466' US/Hawaii.  Depending on
+2015-06-15 20:23:40.991 to 2015-06-16 05:47:36.466 Hawaii time.  Depending on
 our observation goals, this window of time may be good enough for preliminary
 planning, or we may want to optimize our observational conditions.  If the
 latter is the case, go on to Optimal Observation Time.
@@ -188,7 +189,7 @@ Airmass
 -------
 
 To get a general idea of our targets' airmass on the night of observation, we
-can make a plot::
+can plot it over the course of the night (for more on plotting see :doc:`plots`)::
 
     from astroplan.plots import plot_airmass
     import matplotlib.pyplot as plt
@@ -254,9 +255,8 @@ We want a minimum airmass when observing, and it looks like sometime between
 be the best time to observe all three targets.
 
 However, if we want to define a more specific time window based on airmass, we
-can calculate this quantity directly.
-
-To get airmass measurements, we have to go through the `altaz` frame:
+can calculate this quantity directly. To get airmass measurements, we need to
+use the ``AltAz`` frame:
 
 .. code-block:: python
 
@@ -269,11 +269,17 @@ To get airmass measurements, we have to go through the `altaz` frame:
     >>> subaru.altaz(time, deneb).secz
     1.1677464
 
+Behind the scenes here, ``subaru.altaz(time, altair)`` is actually creating an
+`astropy.coordinates.AltAz` object in the `AltAz` frame, so if you know how to
+work with `astropy.coordinates` objects, you can do lots more than just
+computing airmass.
+
 Parallactic Angle
 -----------------
 
 To get a general idea of our targets' parallactic angle on the night of
-observation, we can make a plot::
+observation, we can make another plot (again, see :doc:`plots` for more on
+customizing plots and the like)::
 
     from astroplan.plots import plot_parallactic
 
@@ -327,30 +333,39 @@ observation, we can make a plot::
     plt.legend(loc=2)
     plt.show()
 
-We can also calculate this quantity directly:
+We can also calculate the parallactic angle directly:
 
 .. code-block:: python
 
     >>> subaru.parallactic_angle(time, altair)
-    −0.640582rad
+    <Angle -0.6405821008131366 rad>
 
     >>> subaru.parallactic_angle(time, vega)
-    −0.465298rad
+    <Angle -0.46529763909549615 rad>
 
     >>> subaru.parallactic_angle(time, deneb)
-    0.729871rad
+    <Angle 0.7298709840493603 rad>
+
+The `~astropy.coordinates.Angle` objects resulting from the calls to
+``parallactic_angle()`` are subclasses of the `astropy.units.Quantity` class, so
+they can do everything a `~astropy.units.Quantity` can do - basically they work
+like numbers with attached units, an keep track of units so you don't have to.
+For more on the many things you can do with these, take a look at the `astropy`
+documentation or tutorials.  For now the  most useful thing is to know is that
+``angle.degree``,``angle.hourangle``, and  ``angle.radian`` give you back Python
+floats (or `numpy` arrays) for the angle in degrees, hours, or radians.
 
 The Moon
 --------
 
 If you need to take the Moon into account when observing, you may want to know
-when it rises, sets, what phase its in, etc.
-
-Let's first find out if the Moon is out during the time we defined earlier:
+when it rises, sets, what phase it's in, etc. Let's first find out if the Moon
+is out during the time we defined earlier:
 
 .. warning::
 
-    *moon_rise_time* and *moon_set_time* have not yet been implemented.
+    ``moon_rise_time()`` and ``moon_set_time()`` have not yet been implemented,
+    but hopefully will be in the next version of astroplan.
 
 .. code-block:: python
 
