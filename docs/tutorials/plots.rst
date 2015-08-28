@@ -11,14 +11,17 @@ Plotting with Astroplan
 ***********************
 
 `astroplan` currently has convenience functions for making three different types
-of plots: airmass vs time, parallactic angle vs time and sky charts.  While
-`astroplan` requires `Matplotlib`_, the use of additional plotting packages
-(such as `Seaborn`) is neither explicitly prohibited or supported.
+of plots: airmass vs time, parallactic angle vs time and sky charts. This
+plotting functionality in `astroplan` requires `Matplotlib`_ (although non-
+plotting functionality will work even without `Matplotlib`_ ).  The use of
+additional plotting packages (like `Seaborn
+<http://stanford.edu/~mwaskom/software/seaborn/>`_) is not explicitly prevented,
+but may or may not actually work.
 
-All `astroplan` plots return a `matplotlib.axes.Axes` object (often referred
-to as `ax`).  You can further manipulate the returned `ax` object (including
-using it as input for an `astroplan` plotting function, see examples below)
-or you can simply display/print the plot.
+All `astroplan` plots return a `matplotlib.axes.Axes` object (which by
+convention is assigned to the name `ax` in these tutorials).  You can further
+manipulate the returned `ax` object, including using it as input for more
+`astroplan` plotting functions, or you can simply display/print the plot.
 
 Contents
 ========
@@ -30,7 +33,8 @@ Contents
 .. warning::
 
     All examples here assume you know how to and have already constructed
-    `astroplan.Observer` and `astroplan.FixedTarget` objects.
+    `astroplan.Observer` and `astroplan.FixedTarget` objects.  If this is not
+    the case, you may want to start with the :doc:`summer_triangle` tutorial.
 
 
 .. _plots_time_dependent:
