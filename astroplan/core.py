@@ -1779,7 +1779,7 @@ class FixedTarget(Target):
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
     @classmethod
-    def _fixed_target_from_name_mock(cls, name):
+    def _fixed_target_from_name_mock(cls, query_name, name=None):
         """
         Mock method to replace `FixedTarget.from_name` in tests.
         """
@@ -1787,15 +1787,16 @@ class FixedTarget(Target):
             "rigel": {"ra": 78.63446707*u.deg, "dec": -8.20163837*u.deg},
             "sirius": {"ra": 101.28715533*u.deg, "dec": -16.71611586*u.deg},
             "vega": {"ra": 279.23473479*u.deg, "dec": 38.78368896*u.deg},
-            "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg}
+            "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg},
+            "polaris": {"ra": 37.95456067*u.deg, "dec": 89.26410897*u.deg}
         }
 
-        if name.lower() in stars:
-            return cls(coord=SkyCoord(**stars[name.lower()]),
-                       name=name)
+        if query_name.lower() in stars:
+            return cls(coord=SkyCoord(**stars[query_name.lower()]),
+                       name=query_name)
         else:
             raise ValueError("Target named {} not in mocked FixedTarget "
-                             "method".format(name))
+                             "method".format(query_name))
 
 class NonFixedTarget(Target):
     """

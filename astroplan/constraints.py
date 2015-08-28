@@ -21,39 +21,12 @@ import numpy as np
 
 # Package
 from .moon import get_moon, moon_illumination
-
-DEFAULT_TIME_RESOLUTION = 0.5*u.hour
+from .utils import time_grid_from_range
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint"]
-
-@u.quantity_input(time_resolution=u.hour)
-def time_grid_from_range(time_range, time_resolution=DEFAULT_TIME_RESOLUTION):
-    """
-    Get linearly-spaced sequence of times.
-
-    Parameters
-    ----------
-    time_range : `~astropy.time.Time`
-        Lower and upper bounds on time sequence. If a scalar time is input,
-        make the input time the lower limit on the time sequence, and the
-        upper bound one attosecond later than the input time.
-
-    time_resolution : `~astropy.units.quantity` (optional)
-        Time-grid spacing
-
-    Returns
-    -------
-    times : `~astropy.time.Time`
-        Linearly-spaced sequence of times
-    """
-    if time_range.isscalar:
-        return Time([time_range])
-    else:
-        return Time(np.arange(time_range[0].jd, time_range[1].jd,
-                              time_resolution.to(u.day).value), format='jd')
 
 @abstractmethod
 class Constraint(object):
@@ -62,21 +35,26 @@ class Constraint(object):
     """
     __metaclass__ = ABCMeta
 
-    def __call__(self, time_range, observer, targets,
-                 time_resolution=DEFAULT_TIME_RESOLUTION):
+    def __call__(self, observer, targets, times=None,
+                 time_range=None, time_grid_resolution=0.5*u.hour):
 
-        if not isinstance(time_range, Time):
-            time_range = Time(time_range)
-        cons = self._compute_constraint(time_range, observer, targets,
-                                        time_resolution=time_resolution)
+        if times is None and time_range is not None:
+            times = time_grid_from_range(time_range,
+                                         time_resolution=time_grid_resolution)
+        elif not isinstance(times, Time):
+            times = Time(times)
+
+        if times.isscalar:
+            times = Time([times])
+
+        cons = self._compute_constraint(times, observer, targets)
         return cons
 
-    def _compute_constraint(self, time_range, observer, targets):
+    def _compute_constraint(self, times, observer, targets):
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
 
-    def _get_altaz(self, time_range, observer, targets,
-                   time_resolution=DEFAULT_TIME_RESOLUTION,
+    def _get_altaz(self, times, observer, targets,
                    force_zero_pressure=False):
         """
         Calculate alt/az for ``target`` at times linearly spaced between
@@ -87,10 +65,8 @@ class Constraint(object):
 
         Parameters
         ----------
-        time_range : `~astropy.time.Time`
-            Lower and upper time bounds on which to compute the constraints.
-            If input is a scalar time, will only compute at that time (no
-            range).
+        times : `~astropy.time.Time`
+            Array of times on which to test the constraint
 
         targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
             Target or list of targets
@@ -110,9 +86,6 @@ class Constraint(object):
         """
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
-
-        times = time_grid_from_range(time_range,
-                                     time_resolution=time_resolution)
 
         # convert times, targets to tuple for hashing
         aakey = (tuple(times.jd), tuple(targets))
@@ -158,11 +131,9 @@ class AltitudeConstraint(Constraint):
         else:
             self.max = max
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
+    def _compute_constraint(self, times, observer, targets):
 
-        cached_altaz = self._get_altaz(time_range, observer, targets,
-                                       time_resolution=time_resolution)
+        cached_altaz = self._get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
         lowermask = self.min < altaz.alt
         uppermask = altaz.alt < self.max
@@ -201,10 +172,8 @@ class AirmassConstraint(AltitudeConstraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
-        cached_altaz = self._get_altaz(time_range, observer, targets,
-                                       time_resolution=time_resolution)
+    def _compute_constraint(self, times, observer, targets):
+        cached_altaz = self._get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
         if self.min is None and self.max is not None:
             mask = altaz.secz < self.max
@@ -260,13 +229,9 @@ class AtNightConstraint(Constraint):
         """
         return cls(max_solar_altitude=-18*u.deg, **kwargs)
 
-    def _get_solar_altitudes(self, time_range, observer, targets,
-                             time_resolution=DEFAULT_TIME_RESOLUTION):
+    def _get_solar_altitudes(self, times, observer, targets):
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
-
-        times = time_grid_from_range(time_range,
-                                     time_resolution=time_resolution)
 
         aakey = (tuple(times.jd), 'sun')
 
@@ -288,10 +253,8 @@ class AtNightConstraint(Constraint):
 
         return observer._altaz_cache[aakey]
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
-        sun_altaz = self._get_solar_altitudes(time_range, observer, targets,
-                                              time_resolution=time_resolution)
+    def _compute_constraint(self, times, observer, targets):
+        sun_altaz = self._get_solar_altitudes(times, observer, targets)
         solar_altitude = sun_altaz['altitude']
         mask = solar_altitude < self.max_solar_altitude
         return mask
@@ -314,10 +277,7 @@ class SunSeparationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
-        times = time_grid_from_range(time_range,
-                                     time_resolution=time_resolution)
+    def _compute_constraint(self, times, observer, targets):
         sun = get_sun(times)
         targets = [target.coord if hasattr(target, 'coord') else target
                    for target in targets]
@@ -352,10 +312,7 @@ class MoonSeparationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
-        times = time_grid_from_range(time_range,
-                                     time_resolution=time_resolution)
+    def _compute_constraint(self, times, observer, targets):
         moon = get_moon(times, observer.location, observer.pressure)
         targets = [target.coord if hasattr(target, 'coord') else target
                    for target in targets]
@@ -398,10 +355,7 @@ class MoonIlluminationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
-        times = time_grid_from_range(time_range,
-                                     time_resolution=time_resolution)
+    def _compute_constraint(self, times, observer, targets):
         illumination = np.array(moon_illumination(times,
                                                   observer.location))
         if self.min is None and self.max is not None:
@@ -456,8 +410,7 @@ class LocalTimeConstraint(Constraint):
             if not isinstance(self.max, datetime.time):
                 raise TypeError("Time limits must be specified as datetime.time objects.")
 
-    def _compute_constraint(self, time_range, observer, targets,
-                            time_resolution=DEFAULT_TIME_RESOLUTION):
+    def _compute_constraint(self, times, observer, targets):
 
         # get timezone from time objects, or from observer
         if self.min is not None:
@@ -479,21 +432,19 @@ class LocalTimeConstraint(Constraint):
         else:
             max_time = datetime.time(23, 59, 59)
 
-        times = time_grid_from_range(Time(time_range),
-                                     time_resolution=time_resolution).datetime
-
         # If time limits occur on same day:
         if self.min < self.max:
-            mask = [min_time < t.time() < max_time for t in times]
+            mask = [min_time < t.datetime.time() < max_time for t in times]
 
         # If time boundaries straddle midnight:
         else:
-            mask = [(t.time() > min_time) or (t.time() < max_time) for t in times]
+            mask = [(t.datetime.time() > min_time) or
+                    (t.datetime.time() < max_time) for t in times]
 
         return mask
 
-def is_always_observable(constraints, time_range, targets, observer,
-                         time_resolution=DEFAULT_TIME_RESOLUTION):
+def is_always_observable(constraints, observer, targets, times=None,
+                         time_range=None, time_grid_resolution=0.5*u.hour):
     """
     Are the ``targets`` always observable throughout ``time_range`` given
     constraints in ``constraints_list`` for ``observer``?
@@ -503,21 +454,25 @@ def is_always_observable(constraints, time_range, targets, observer,
     constraints : list or `~astroplan.constraints.Constraint`
         Observational constraint(s)
 
-    time_range : `~astropy.time.Time`
-            Lower and upper time bounds on which to compute the constraints.
-            If input is a scalar time, will only compute at that time (no
-            range).
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
 
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
 
-    observer : `~astroplan.Observer`
-        The observer who has constraints ``constraints``
+    times : `~astropy.time.Time` (optional)
+        Array of times on which to test the constraint
+
+    time_range : `~astropy.time.Time` (optional)
+        Lower and upper bounds on time sequence, with spacing
+        ``time_resolution``. This will be passed as the first argument into
+        `~astroplan.utils.time_grid_from_range`.
 
     time_resolution : `~astropy.units.Quantity` (optional)
-        Determine whether constraints are met between test times in
-        ``time_range`` by checking constraint at linearly-spaced times separated
-        by ``time_resolution``. Default is 0.5 hours.
+        If ``time_range`` is specified, determine whether constraints are met
+        between test times in ``time_range`` by checking constraint at
+        linearly-spaced times separated by ``time_resolution``. Default is 0.5
+        hours.
 
     Returns
     -------
@@ -528,14 +483,15 @@ def is_always_observable(constraints, time_range, targets, observer,
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
-    contraint_arr = np.logical_and.reduce([constraint(time_range, observer,
-                                                      targets,
-                                                      time_resolution=time_resolution)
-                                          for constraint in constraints])
+    applied_constraints = [constraint(observer, targets, times=times,
+                                      time_range=time_range,
+                                      time_grid_resolution=time_grid_resolution)
+                           for constraint in constraints]
+    contraint_arr = np.logical_and.reduce(applied_constraints)
     return np.all(contraint_arr, axis=1)
 
-def is_observable(constraints, time_range, targets, observer,
-                  time_resolution=DEFAULT_TIME_RESOLUTION):
+def is_observable(constraints, observer, targets, times=None,
+                  time_range=None, time_grid_resolution=0.5*u.hour):
     """
     Are the ``targets`` observable during ``time_range`` given constraints in
     ``constraints_list`` for ``observer``?
@@ -545,21 +501,25 @@ def is_observable(constraints, time_range, targets, observer,
     constraints : list or `~astroplan.constraints.Constraint`
         Observational constraint(s)
 
-    time_range : `~astropy.time.Time`
-        Lower and upper time bounds on which to compute the constraints.
-        If input is a scalar time, will only compute at that time (no
-        range).
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
 
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
 
-    observer : `~astroplan.Observer`
-        The observer who has constraints ``constraints``
+    times : `~astropy.time.Time` (optional)
+        Array of times on which to test the constraint
+
+    time_range : `~astropy.time.Time` (optional)
+        Lower and upper bounds on time sequence, with spacing
+        ``time_resolution``. This will be passed as the first argument into
+        `~astroplan.utils.time_grid_from_range`.
 
     time_resolution : `~astropy.units.Quantity` (optional)
-        Determine whether constraints are met between test times in
-        ``time_range`` by checking constraint at linearly-spaced times separated
-        by ``time_resolution``. Default is 0.5 hours.
+        If ``time_range`` is specified, determine whether constraints are met
+        between test times in ``time_range`` by checking constraint at
+        linearly-spaced times separated by ``time_resolution``. Default is 0.5
+        hours.
 
     Returns
     -------
@@ -570,14 +530,15 @@ def is_observable(constraints, time_range, targets, observer,
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
-    contraint_arr = np.logical_and.reduce([constraint(time_range, observer,
-                                                      targets,
-                                                      time_resolution=time_resolution)
-                                          for constraint in constraints])
+    applied_constraints = [constraint(observer, targets, times=times,
+                                      time_range=time_range,
+                                      time_grid_resolution=time_grid_resolution)
+                           for constraint in constraints]
+    contraint_arr = np.logical_and.reduce(applied_constraints)
     return np.any(contraint_arr, axis=1)
 
-def observability_table(constraints, time_range, targets, observer,
-                        time_resolution=DEFAULT_TIME_RESOLUTION):
+def observability_table(constraints, observer, targets, times=None,
+                        time_range=None, time_grid_resolution=0.5*u.hour):
     """
     Creates a table with information about observablity for all  the ``targets``
     over the requeisted ``time_range``, given the constraints in
@@ -588,21 +549,25 @@ def observability_table(constraints, time_range, targets, observer,
     constraints : list or `~astroplan.constraints.Constraint`
         Observational constraint(s)
 
-    time_range : `~astropy.time.Time`
-        Lower and upper time bounds on which to compute the constraints.
-        If input is a scalar time, will only compute at that time (no
-        range).
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
 
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
 
-    observer : `~astroplan.Observer`
-        The observer who has constraints ``constraints``
+    times : `~astropy.time.Time` (optional)
+        Array of times on which to test the constraint
+
+    time_range : `~astropy.time.Time` (optional)
+        Lower and upper bounds on time sequence, with spacing
+        ``time_resolution``. This will be passed as the first argument into
+        `~astroplan.utils.time_grid_from_range`.
 
     time_resolution : `~astropy.units.Quantity` (optional)
-        Determine whether constraints are met between test times in
-        ``time_range`` by checking constraint at linearly-spaced times separated
-        by ``time_resolution``. Default is 0.5 hours.
+        If ``time_range`` is specified, determine whether constraints are met
+        between test times in ``time_range`` by checking constraint at
+        linearly-spaced times separated by ``time_resolution``. Default is 0.5
+        hours.
 
     Returns
     -------
@@ -618,10 +583,11 @@ def observability_table(constraints, time_range, targets, observer,
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
-    contraint_arr = np.logical_and.reduce([constraint(time_range, observer,
-                                                      targets,
-                                                      time_resolution=time_resolution)
-                                          for constraint in constraints])
+    applied_constraints = [constraint(observer, targets, times=times,
+                                      time_range=time_range,
+                                      time_grid_resolution=time_grid_resolution)
+                           for constraint in constraints]
+    contraint_arr = np.logical_and.reduce(applied_constraints)
 
     colnames = ['target name', 'ever observable', 'always observable',
                 'fraction of time observable']
@@ -633,7 +599,11 @@ def observability_table(constraints, time_range, targets, observer,
 
     tab = table.Table(names=colnames, data=[target_names, ever_obs, always_obs, frac_obs])
 
-    tab.meta['times'] = time_grid_from_range(Time(time_range), time_resolution=time_resolution).datetime
+    if times is None and time_range is not None:
+        times = time_grid_from_range(time_range,
+                                     time_resolution=time_grid_resolution)
+
+    tab.meta['times'] = times.datetime
     tab.meta['observer'] = observer
     tab.meta['constraints'] = constraints
 

@@ -33,10 +33,12 @@ def test_at_night_basic():
         observer_is_night_any = any(observer_is_night)
         observer_is_night_all = all(observer_is_night)
 
-        assert all(is_observable(AtNightConstraint(), time_range, targets, subaru) ==
+        assert all(is_observable(AtNightConstraint(), subaru, targets,
+                                 time_range=time_range) ==
                    len(targets)*[observer_is_night_any])
 
-        assert all(is_always_observable(AtNightConstraint(), time_range, targets, subaru) ==
+        assert all(is_always_observable(AtNightConstraint(), subaru, targets,
+                                        time_range=time_range) ==
                    len(targets)*[observer_is_night_all])
 
 def test_observability_table():
@@ -48,7 +50,8 @@ def test_observability_table():
     time_range = Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06'])
     constraints = [AtNightConstraint(), AirmassConstraint(3)]
 
-    obstab = observability_table(constraints, time_range, targets, subaru)
+    obstab = observability_table(constraints, subaru, targets,
+                                 time_range=time_range)
 
     assert len(obstab) == 3
     assert np.all(obstab['target name'] == ['Vega', 'Rigel', 'Polaris'])
@@ -58,12 +61,14 @@ def test_observability_table():
     assert 'constraints' in obstab.meta
     assert len(obstab.meta['constraints']) == 2
 
-    np.testing.assert_allclose(obstab['fraction of time observable'], np.array([21, 22, 15])/48)
+    np.testing.assert_allclose(obstab['fraction of time observable'],
+                               np.array([21, 22, 15])/48)
 
     #now compare to is_observable and is_always_observable
-    is_obs = is_observable(constraints, time_range, targets, subaru)
+    is_obs = is_observable(constraints, subaru, targets, time_range=time_range)
     np.testing.assert_allclose(obstab['ever observable'], is_obs)
-    all_obs = is_always_observable(constraints, time_range, targets, subaru)
+    all_obs = is_always_observable(constraints, subaru, targets,
+                                   time_range=time_range)
     np.testing.assert_allclose(obstab['always observable'], all_obs)
 
 def test_compare_altitude_constraint_and_observer():
@@ -84,7 +89,8 @@ def test_compare_altitude_constraint_and_observer():
         # is_always_observable and AltitudeConstraint
         always_from_constraint = is_always_observable(AltitudeConstraint(min_alt,
                                                                          max_alt),
-                                                      time_range, targets, subaru)
+                                                      subaru, targets,
+                                                      time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
 def test_compare_airmass_constraint_and_observer():
@@ -103,7 +109,8 @@ def test_compare_airmass_constraint_and_observer():
         # Check if each target meets altitude constraints using
         # is_always_observable and AirmassConstraint
         always_from_constraint = is_always_observable(AirmassConstraint(max_airmass),
-                                                      time_range, targets, subaru)
+                                                      subaru, targets,
+                                                      time_range=time_range)
 
         assert all(always_from_observer == always_from_constraint)
 
@@ -116,21 +123,18 @@ def test_sun_separation():
     twenty_deg_away = SkyCoord(ra=sun.ra+20*u.deg, dec=sun.dec)
 
     constraint = SunSeparationConstraint(min=2*u.deg, max=10*u.deg)
-    is_constraint_met = constraint(time, apo, [one_deg_away,
-                                               five_deg_away,
-                                               twenty_deg_away])
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[False], [True], [False]])
 
     constraint = SunSeparationConstraint(max=10*u.deg)
-    is_constraint_met = constraint(time, apo, [one_deg_away,
-                                               five_deg_away,
-                                               twenty_deg_away])
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[True], [True], [False]])
 
     constraint = SunSeparationConstraint(min=2*u.deg)
-    is_constraint_met = constraint(time, apo, [one_deg_away,
-                                               five_deg_away,
-                                               twenty_deg_away])
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[False], [True], [True]])
 
 def test_moon_separation():
@@ -145,22 +149,19 @@ def test_moon_separation():
                                frame=altaz_frame)
 
     constraint = MoonSeparationConstraint(min=2*u.deg, max=10*u.deg)
-    is_constraint_met = constraint(time, apo, [one_deg_away,
-                                               five_deg_away,
-                                               twenty_deg_away])
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[False], [True], [False]])
 
 
     constraint = MoonSeparationConstraint(max=10*u.deg)
-    is_constraint_met = constraint(time, apo, [one_deg_away,
-                                               five_deg_away,
-                                               twenty_deg_away])
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[True], [True], [False]])
 
     constraint = MoonSeparationConstraint(min=2*u.deg)
-    is_constraint_met = constraint(time, apo, [one_deg_away,
-                                               five_deg_away,
-                                               twenty_deg_away])
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[False], [True], [True]])
 
 def test_moon_illumination():
@@ -170,30 +171,30 @@ def test_moon_illumination():
     # [ 0.99946328  0.46867661  0.05379006]
 
     constraint = MoonIlluminationConstraint(min=0.2, max=0.8)
-    is_constraint_met = [constraint(time, lco, None) for time in times]
+    is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [False, True, False])
 
     constraint = MoonIlluminationConstraint(min=0.2)
-    is_constraint_met = [constraint(time, lco, None) for time in times]
+    is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [True, True, False])
 
     constraint = MoonIlluminationConstraint(max=0.8)
-    is_constraint_met = [constraint(time, lco, None) for time in times]
+    is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [False, True, True])
 
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru")
     constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
-    is_constraint_met = constraint(time, subaru, None)
+    is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
     constraint = LocalTimeConstraint(min=dt.time(0,2), max=dt.time(4,3))
-    is_constraint_met = constraint(time, subaru, None)
+    is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [False]
 
     constraint = LocalTimeConstraint(min=dt.time(3,8), max=dt.time(5,35))
-    is_constraint_met = constraint(time, subaru, None)
+    is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
 def test_local_time_constraint_hawaii_tz():
@@ -201,14 +202,14 @@ def test_local_time_constraint_hawaii_tz():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
     constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
-    is_constraint_met = constraint(time, subaru, None)
+    is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
     constraint = LocalTimeConstraint(min=dt.time(0,2), max=dt.time(4,3))
-    is_constraint_met = constraint(time, subaru, None)
+    is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [False]
 
     constraint = LocalTimeConstraint(min=dt.time(3,8), max=dt.time(5,35))
-    is_constraint_met = constraint(time, subaru, None)
+    is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
