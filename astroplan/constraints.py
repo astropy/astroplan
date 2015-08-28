@@ -47,10 +47,10 @@ class Constraint(object):
         if times.isscalar:
             times = Time([times])
 
-        cons = self._compute_constraint(times, observer, targets)
+        cons = self.compute_constraint(times, observer, targets)
         return cons
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
 
@@ -131,7 +131,7 @@ class AltitudeConstraint(Constraint):
         else:
             self.max = max
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
 
         cached_altaz = self._get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
@@ -172,7 +172,7 @@ class AirmassConstraint(AltitudeConstraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
         cached_altaz = self._get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
         if self.min is None and self.max is not None:
@@ -253,7 +253,7 @@ class AtNightConstraint(Constraint):
 
         return observer._altaz_cache[aakey]
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
         sun_altaz = self._get_solar_altitudes(times, observer, targets)
         solar_altitude = sun_altaz['altitude']
         mask = solar_altitude < self.max_solar_altitude
@@ -277,7 +277,7 @@ class SunSeparationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
         sun = get_sun(times)
         targets = [target.coord if hasattr(target, 'coord') else target
                    for target in targets]
@@ -312,7 +312,7 @@ class MoonSeparationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
         moon = get_moon(times, observer.location, observer.pressure)
         targets = [target.coord if hasattr(target, 'coord') else target
                    for target in targets]
@@ -355,7 +355,7 @@ class MoonIlluminationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
         illumination = np.array(moon_illumination(times,
                                                   observer.location))
         if self.min is None and self.max is not None:
@@ -410,7 +410,7 @@ class LocalTimeConstraint(Constraint):
             if not isinstance(self.max, datetime.time):
                 raise TypeError("Time limits must be specified as datetime.time objects.")
 
-    def _compute_constraint(self, times, observer, targets):
+    def compute_constraint(self, times, observer, targets):
 
         # get timezone from time objects, or from observer
         if self.min is not None:
