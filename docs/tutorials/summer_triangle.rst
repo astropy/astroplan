@@ -1,5 +1,3 @@
-:orphan:
-
 .. _summer_triangle_tutorial:
 
 .. doctest-skip-all

@@ -1,5 +1,3 @@
-:orphan:
-
 .. include:: ../references.txt
 
 .. _plots:
