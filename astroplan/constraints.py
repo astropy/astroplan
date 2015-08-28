@@ -91,15 +91,17 @@ class Constraint(object):
         aakey = (tuple(times.jd), tuple(targets))
 
         if aakey not in observer._altaz_cache:
-            if force_zero_pressure:
-                observer_old_pressure = observer.pressure
-                observer.pressure = 0
+            try:
+                if force_zero_pressure:
+                    observer_old_pressure = observer.pressure
+                    observer.pressure = 0
 
-            altaz = observer.altaz(times, targets)
-            observer._altaz_cache[aakey] = dict(times=times,
-                                                altaz=altaz)
-            if force_zero_pressure:
-                observer.pressure = observer_old_pressure
+                altaz = observer.altaz(times, targets)
+                observer._altaz_cache[aakey] = dict(times=times,
+                                                    altaz=altaz)
+            finally:
+                if force_zero_pressure:
+                    observer.pressure = observer_old_pressure
 
         return observer._altaz_cache[aakey]
 
@@ -236,20 +238,22 @@ class AtNightConstraint(Constraint):
         aakey = (tuple(times.jd), 'sun')
 
         if aakey not in observer._altaz_cache:
-            if self.force_pressure_zero:
-                observer_old_pressure = observer.pressure
-                observer.pressure = 0
+            try:
+                if self.force_pressure_zero:
+                    observer_old_pressure = observer.pressure
+                    observer.pressure = 0
 
-            # Broadcast the solar altitudes for the number of targets:
-            altaz = observer.altaz(times, get_sun(times))
-            altitude = altaz.alt
-            altitude.resize(1, len(altitude))
-            altitude = altitude + np.zeros((len(targets), 1))
+                # Broadcast the solar altitudes for the number of targets:
+                altaz = observer.altaz(times, get_sun(times))
+                altitude = altaz.alt
+                altitude.resize(1, len(altitude))
+                altitude = altitude + np.zeros((len(targets), 1))
 
-            observer._altaz_cache[aakey] = dict(times=times,
-                                                altitude=altitude)
-            if self.force_pressure_zero:
-                observer.pressure = observer_old_pressure
+                observer._altaz_cache[aakey] = dict(times=times,
+                                                    altitude=altitude)
+            finally:
+                if self.force_pressure_zero:
+                    observer.pressure = observer_old_pressure
 
         return observer._altaz_cache[aakey]
 
