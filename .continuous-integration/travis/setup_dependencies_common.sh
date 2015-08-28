@@ -18,7 +18,8 @@ then
 fi
 
 # CORE DEPENDENCIES
-conda install --yes pytest Cython jinja2 psutil
+conda install --yes pytest Cython jinja2 psutil pytz
+pip install pytest-mpl
 
 # NUMPY
 if [[ $NUMPY_VERSION == dev ]]
@@ -30,32 +31,35 @@ else
   export CONDA_INSTALL="conda install --yes python=$PYTHON_VERSION numpy=$NUMPY_VERSION"
 fi
 
+# ASTROPY
+if [[ $ASTROPY_VERSION == dev ]]
+then
+  pip install git+http://github.com/astropy/astropy.git
+else
+  $CONDA_INSTALL astropy=$ASTROPY_VERSION
+fi
+
 # Now set up shortcut to conda install command to make sure the Python and Numpy
 # versions are always explicitly specified.
 
 # OPTIONAL DEPENDENCIES
 if $OPTIONAL_DEPS
 then
-  $CONDA_INSTALL scipy h5py matplotlib pyyaml scikit-image pandas
-  pip install beautifulsoup4
+  # Note: nose is required to run the matplotlib image comparison tests
+  $CONDA_INSTALL matplotlib nose
+  pip install pyephem
 fi
 
 # DOCUMENTATION DEPENDENCIES
 # build_sphinx needs sphinx as well as matplotlib and wcsaxes (for plot_directive). 
-# Note that this matplotlib will *not* work with py 3.x, but our sphinx build is
-# currently 2.7, so that's fine
 if [[ $SETUP_CMD == build_sphinx* ]]
 then
-  $CONDA_INSTALL Sphinx=1.2.2 Pygments matplotlib
+  $CONDA_INSTALL Sphinx Pygments matplotlib
   pip install wcsaxes
 fi
 
 # COVERAGE DEPENDENCIES
-# cpp-coveralls must be installed first.  It installs two identical
-# scripts: 'cpp-coveralls' and 'coveralls'.  The latter will overwrite
-# the script installed by 'coveralls', unless it's installed first.
-if [[ $SETUP_CMD == 'test --coverage' ]]
+if [[ $SETUP_CMD == 'test -V --coverage' ]]
 then
-  pip install cpp-coveralls;
   pip install coverage coveralls;
 fi

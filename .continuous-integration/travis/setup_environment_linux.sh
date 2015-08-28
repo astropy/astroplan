@@ -7,8 +7,5 @@ chmod +x miniconda.sh
 export PATH=/home/travis/miniconda/bin:$PATH
 conda update --yes conda
 
-# Installation of non-Python dependencies for documentation is now
-# in .travis.yml
-
 # Install Python dependencies
 source "$( dirname "${BASH_SOURCE[0]}" )"/setup_dependencies_common.sh
