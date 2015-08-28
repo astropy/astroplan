@@ -9,26 +9,32 @@ Observation Planning (`astroplan`)
 What is astroplan?
 ==================
 
-**astroplan** is an open source Python package that helps astronomers plan
+**astroplan** is an open source Python package to help astronomers plan
 observations.
 
 .. warning::
 
-    We're still in development, so the `astroplan` API may change.
-    `Astropy`_, `PyEphem`_ or `Skyfield`_ are good options if you're looking
-    for a more stable package.
+    This release should be considered a "preview", as Astroplan is still under
+    heavy development.  Most importantly for users, this means the `astroplan`
+    API may change substantially in future versions. Consider using `Astropy`_,
+    `PyEphem`_ and/or `Skyfield`_ if you're looking for some of the
+    functionality here but what to use more mature packages.
 
-Our aim is to make astroplan a flexible toolbox for observation planning and
-scheduling.  We want astroplan to be easy for Python and observing beginners
-to pick up, but powerful enough for observatories preparing nightly and
-long-term schedules.
+The goal of astroplan is to make a flexible toolbox for observation planning and
+scheduling.  When complete, the goal is to be easy for Python beginners and new
+observers to to pick up, but powerful enough for observatories preparing nightly
+and long-term schedules.
+
 
 Features:
 
-* `Astropy`_ powered!
 * Calculate locations, rise/set times, ... of targets for a given observer
-* Built-in plotting functions (airmass, parallactic angle, sky maps)
-* Ability to take multiple constraints into account (i.e., airmass, moon, etc.) when determining visibility of objects.
+  location.
+* Built-in convenience functions for standard observation planning plots
+  (airmass, parallactic angle, sky maps).
+* Determining observability of sets of targets given an arbitrary set of
+  constraints (i.e., airmass, moon, etc.).
+* `Astropy`_ powered!
 
 Links
 =====
@@ -39,16 +45,7 @@ Links
 
 License: BSD-3
 
-.. _astroplan_news:
 
-News
-====
-
-* August 28, 2015: Astroplan **0.1** release
-* May - August 2015: Initial package implemented by
-  `Jazmin Berlanga Medina <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/jberlanga/5707702298738688>`_ and
-  `Brett Morris <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_ in
-  `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`_.
 
 .. _astroplan_docs:
 
@@ -62,3 +59,22 @@ General Documentation
    getting_started
    tutorials/index
    api
+
+
+.. _astroplan_authors:
+
+Authors
+=======
+
+Maintainers
+-----------
+* `Jazmin Berlanga Medina, including contributions from Google Summer of Code 2015 <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/jberlanga/5707702298738688>`_
+* `Brett Morris, including contributions from Google Summer of Code 2015 <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_
+
+Contributors
+------------
+* Christoph Deil
+* Eric Jeschke
+* Adrian Price-Whelan
+* Erik Tollerud
+
