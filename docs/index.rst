@@ -16,9 +16,9 @@ observations.
 
     This release should be considered a "preview", as Astroplan is still under
     heavy development.  Most importantly for users, this means the `astroplan`
-    API may change substantially in future versions. Consider using `Astropy`_,
-    `PyEphem`_ and/or `Skyfield`_ if you're looking for some of the
-    functionality here but want to use more mature packages.
+    API may change suddenly and without warning, like the weather. Consider
+    using `Astropy`_, `PyEphem`_ and/or `Skyfield`_ if you're looking for some
+    of the functionality here but want to use more mature packages.
 
 The goal of astroplan is to make a flexible toolbox for observation planning and
 scheduling.  When complete, the goal is to be easy for Python beginners and new
@@ -28,24 +28,27 @@ and long-term schedules.
 
 Features:
 
-* Calculate locations, rise/set times, ... of targets for a given observer
-  location.
-* Built-in convenience functions for standard observation planning plots
-  (airmass, parallactic angle, sky maps).
+* Calculate rise/set/meridian transit times, alt/az positions for targets at
+  observatories anywhere on Earth
+* Built-in plotting convenience functions for standard observation planning
+  plots (airmass, parallactic angle, sky maps).
 * Determining observability of sets of targets given an arbitrary set of
-  constraints (i.e., airmass, moon, etc.).
+  constraints (i.e., altitude, airmass, moon separation/illumination, etc.).
 * `Astropy`_ powered!
 
 Links
 =====
 
-* `Code, feature requests, bug reports, pull requests <https://github.com/astropy/astroplan>`_
-* `Questions <http://groups.google.com/group/astropy>`_
 * `Docs <https://astroplan.readthedocs.org/>`_
+* `Source code <https://github.com/astropy/astroplan>`_
+* `Issues <https://github.com/astropy/astroplan/issues>`_
 
 License: BSD-3
 
+News
+====
 
+* September 2015: Astroplan **0.1** release
 
 .. _astroplan_docs:
 
