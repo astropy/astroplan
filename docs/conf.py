@@ -143,7 +143,7 @@ man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
 
 
-## -- Options for the edit_on_github extension ----------------------------------------
+# -- Options for the edit_on_github extension ----------------------------------
 
 if eval(setup_cfg.get('edit_on_github')):
     extensions += ['astropy_helpers.sphinx.ext.edit_on_github']
@@ -179,3 +179,6 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # within the tests
 from astroplan.utils import _mock_remote_data
 _mock_remote_data()
+
+# Add additional Sphinx extensions:
+extensions += ['matplotlib.sphinxext.plot_directive']
