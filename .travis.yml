@@ -75,6 +75,14 @@ before_install:
     - export PATH=/home/travis/miniconda/bin:$PATH
     - conda update --yes conda
 
+    # Make sure that interactive matplotlib backends work
+    - export DISPLAY=:99.0
+    - sh -e /etc/init.d/xvfb start
+
+    # Make sure matplotlib uses PyQT not PySide
+    - export QT_API=pyqt
+
+
 install:
 
     # CONDA
@@ -83,7 +91,7 @@ install:
 
     # CORE DEPENDENCIES
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2; fi
-    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist nose pytest-mpl; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytz; fi
 
     # ASTROPY
@@ -98,7 +106,8 @@ install:
     # - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION ... ; fi
     # - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL ...; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pyephem; fi
-    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL skyfield; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL matplotlib; fi
+
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that
     # this matplotlib will *not* work with py 3.x, but our sphinx build is
