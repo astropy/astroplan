@@ -597,7 +597,12 @@ def observability_table(constraints, time_range, targets, observer,
     -------
     observability_table : `~astropy.table.Table`
         A Table containing the observability information for each of the
-        ``targets``. The table contains
+        ``targets``. The table contains four columns with information about the
+        target and it's observability: ``'target name'``, ``'ever observable'``,
+        ``'always observable'``, and ``'fraction of time observable'``.  It also
+        contains metadata entries ``'times'`` (with an array of all the times),
+        ``'observer'`` (the `~astroplan.Observer` object), and ``'constraints'``
+        (containing the supplied ``constraints``).
     """
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
