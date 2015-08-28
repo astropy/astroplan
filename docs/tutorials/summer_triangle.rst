@@ -377,10 +377,10 @@ We could also look at the Moon's alt/az coordinates:
 
 .. code-block:: python
 
-    >>> subaru.moon_altaz(time).alt
+    >>> print(subaru.moon_altaz(time).alt)
     −45∘05′18.2435′′
 
-    >>> subaru.moon_altaz(time).az
+    >>> print(subaru.moon_altaz(time).az)
     34∘35′57.5413′′
 
 It looks like the Moon is well below the horizon at the time we picked before,
