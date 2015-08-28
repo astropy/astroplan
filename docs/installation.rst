@@ -13,18 +13,17 @@ Requirements
 supported) as well as the following packages:
 
 * `Numpy`_
-* `Matplotlib`_
 * `Astropy`_
 * `pytz`_
-
-First-time Python users may want to consider an all-in-one Python installation
-package, such as the `Anaconda Python Distribution
-<http://continuum.io/downloads>`_ which provides all of the above dependencies.
 
 Optional packages:
 
 * `PyEphem`_
-* `Skyfield`_
+* `Matplotlib`_
+
+First-time Python users may want to consider an all-in-one Python installation
+package, such as the `Anaconda Python Distribution
+<http://continuum.io/downloads>`_ which provides all of the above dependencies.
 
 Installation
 ============

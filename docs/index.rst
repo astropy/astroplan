@@ -26,18 +26,9 @@ long-term schedules.
 Features:
 
 * `Astropy`_ powered!
-* Ability to take multiple constraints into account (i.e., airmass, moon, etc.) when determining visibility of objects.
+* Calculate locations, rise/set times, ... of targets for a given observer
 * Built-in plotting functions (airmass, parallactic angle, sky maps)
-
-We anticipate that **astroplan** will have the following required dependencies:
-
-* Python 2.7 or 3.3+ (Python 2.6 and 3.2 or earlier are not supported.)
-* Numpy
-* Astropy
-* pytz
-
-with potential optional dependencies including Matplotlib and PyEphem
-(or Skyfield).
+* Ability to take multiple constraints into account (i.e., airmass, moon, etc.) when determining visibility of objects.
 
 Links
 =====
@@ -53,8 +44,11 @@ License: BSD-3
 News
 ====
 
-* ???: Astroplan **0.1** release
-* May - August 2015: Initial package implemented by `Jazmin Berlanga Medina <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/jberlanga/5707702298738688>`_ and `Brett Morris <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_ in `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`_.
+* August 28, 2015: Astroplan **0.1** release
+* May - August 2015: Initial package implemented by
+  `Jazmin Berlanga Medina <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/jberlanga/5707702298738688>`_ and
+  `Brett Morris <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_ in
+  `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`_.
 
 .. _astroplan_docs:
 
@@ -62,9 +56,9 @@ General Documentation
 =====================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   installation.rst
-   getting_started.rst
-   tutorials.rst
-   api.rst
+   installation
+   getting_started
+   tutorials/index
+   api

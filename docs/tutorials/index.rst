@@ -1,5 +1,3 @@
-.. include: tutorials/
-
 .. _tutorials:
 
 *********
@@ -15,8 +13,11 @@ Is there something you think we should add here?  Consider
 `posting an issue <https://github.com/astroplanners/astroplan/issues>`_ on
 GitHub or becoming a project contributor.
 
-:ref:`Observing the Summer Triangle <summer_triangle_tutorial>`
-===============================================================
+We currently have the following tutorials:
 
-:ref:`Plotting with Astroplan <plots>`
-==================================================
+.. toctree::
+   :maxdepth: 1
+
+   summer_triangle
+   plots
+   iers
