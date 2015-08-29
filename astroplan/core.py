@@ -26,6 +26,7 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
            "AboveAirmass", "MAGIC_TIME"]
 
+# TODO __doctest_requires__ = {'*': ['scipy.integrate']}
 __doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
 
 MAGIC_TIME = Time(-999, format='jd')
