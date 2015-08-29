@@ -20,13 +20,12 @@ import warnings
 
 from abc import ABCMeta, abstractmethod
 
-import numpy as np
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
            "AboveAirmass", "MAGIC_TIME"]
 
-# TODO __doctest_requires__ = {'*': ['scipy.integrate']}
+# TODO: remove this statement once the moon is implemented without pyephem
 __doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
 
 MAGIC_TIME = Time(-999, format='jd')
