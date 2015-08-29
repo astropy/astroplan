@@ -26,9 +26,10 @@ __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
            "Constraint", "TimeWindow", "AltitudeRange",
            "AboveAirmass", "MAGIC_TIME"]
 
-#__doctest_requires__ = {'*': ['scipy.integrate']}
+__doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
 
 MAGIC_TIME = Time(-999, format='jd')
+
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
@@ -95,6 +96,7 @@ def list_FixedTarget_to_SkyCoord(list_of_FixedTargets):
                   UnitSphericalRepresentation),
                   representation=UnitSphericalRepresentation)
     return sc
+
 
 class Observer(object):
     """
