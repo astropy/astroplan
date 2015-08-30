@@ -50,12 +50,14 @@ matrix:
           env: PYTHON_VERSION=3.4 SETUP_CMD='build_sphinx -w'  OPTIONAL_DEPS=true
 
         # Try all python versions with the latest numpy
+        # TODO: add the `--open-files` option back once this issue has been resolved:
+        # https://github.com/astropy/astroplan/pull/83#issuecomment-136129489
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test -V --open-files'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test -V'
         - os: linux
-          env: PYTHON_VERSION=3.3 SETUP_CMD='test -V --open-files'
+          env: PYTHON_VERSION=3.3 SETUP_CMD='test -V'
         - os: linux
-          env: PYTHON_VERSION=3.4 SETUP_CMD='test -V --open-files'
+          env: PYTHON_VERSION=3.4 SETUP_CMD='test -V'
 
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
