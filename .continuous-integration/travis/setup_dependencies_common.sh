@@ -21,6 +21,12 @@ fi
 conda install --yes pytest Cython jinja2 psutil pytz
 pip install pytest-mpl
 
+# For now testing requires matplotlib and pytest-mpl
+# TODO: make this optional if possible
+# https://github.com/astropy/astroplan/issues/86
+# https://github.com/astropy/astroplan/pull/83
+conda install --yes matplotlib nose pytest-mpl
+
 # NUMPY
 if [[ $NUMPY_VERSION == dev ]]
 then
