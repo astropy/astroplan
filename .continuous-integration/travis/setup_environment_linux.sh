@@ -9,3 +9,8 @@ conda update --yes conda
 
 # Install Python dependencies
 source "$( dirname "${BASH_SOURCE[0]}" )"/setup_dependencies_common.sh
+
+# This is needed to make matplotlib plot testing work
+export DISPLAY=:99.0
+sh -e /etc/init.d/xvfb start
+export QT_API=pyqt
