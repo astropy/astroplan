@@ -138,7 +138,7 @@ indeed those for tonight):
     >>> sunset_tonight.iso
     '2015-06-16 04:59:11.267'
 
-This is '2015-06-15 18:49:11.267' in the Hawaii time zone (that's where Subaru
+This is '2015-06-15 18:59:11.267' in the Hawaii time zone (that's where Subaru
 is).
 
 .. code-block:: python

@@ -53,21 +53,21 @@ These take, at minimum, `astroplan.Observer`, `astroplan.FixedTarget` and
 
 Airmass vs time plots are made the following way:
 
-.. doctest-skip::
+.. code-block:: python
 
     >>> from astroplan.plots import plot_airmass
 
-    >>> plot_airmass(target, observer, time)
+    >>> plot_airmass(target, observer, time) # doctest: +SKIP
 
 .. _plots_parallactic:
 
 Parallactic angle vs time plots are made the following way:
 
-.. doctest-skip::
+.. code-block:: python
 
     >>> from astroplan.plots import plot_airmass
 
-    >>> plot_parallactic(target, observer, time)
+    >>> plot_parallactic(target, observer, time) # doctest: +SKIP
 
 Below are general guidelines for working with time-dependent plots in
 `astroplan`.  Examples use airmass but apply to parallactic angle as well.
