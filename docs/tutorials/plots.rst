@@ -53,7 +53,7 @@ These take, at minimum, `astroplan.Observer`, `astroplan.FixedTarget` and
 
 Airmass vs time plots are made the following way:
 
-.. code-block:: python
+.. doctest-skip::
 
     >>> from astroplan.plots import plot_airmass
 
@@ -63,7 +63,7 @@ Airmass vs time plots are made the following way:
 
 Parallactic angle vs time plots are made the following way:
 
-.. code-block:: python
+.. doctest-skip::
 
     >>> from astroplan.plots import plot_airmass
 
