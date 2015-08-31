@@ -1,7 +1,5 @@
 .. _summer_triangle_tutorial:
 
-.. doctest-skip-all
-
 .. todo::
 
     Add section on moon phases, illumination fraction, etc.
@@ -38,45 +36,38 @@ Defining Objects
 Say we want to look at the Summer Triangle (Altair, Deneb, and Vega) using the
 Subaru Telescope.
 
-First, we define our `Observer` object::
+First, we define our `Observer` object:
 
-    import astropy.units as u
-    from astropy.coordinates import EarthLocation
-    from pytz import timezone
-    from astroplan import Observer
+.. code-block:: python
 
-    longitude = '-155d28m48.900s'
-    latitude = '+19d49m42.600s'
-    elevation = 4163 * u.m
-    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+    >>> from astroplan import Observer
 
-    subaru = Observer(name='Subaru Telescope',
-                   location=location,
-                   timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+    >>> subaru = Observer.at_site('subaru')
 
 Then, we define our `Target` objects (`FixedTarget`'s in this case, since the
 Summer Triangle is fixed with respect to the celestial sphere if we ignore the
-relatively small proper motion)::
+relatively small proper motion):
 
-    from astropy.coordinates import SkyCoord
-    from astroplan import FixedTarget
+.. code-block:: python
 
-    coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
-    altair = FixedTarget(name='Altair', coord=coordinates)
+    >>> from astropy.coordinates import SkyCoord
+    >>> from astroplan import FixedTarget
 
-    coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
-    vega = FixedTarget(name='Vega', coord=coordinates)
+    >>> coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
+    >>> altair = FixedTarget(name='Altair', coord=coordinates)
 
-    coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
-    deneb = FixedTarget(name='Deneb', coord=coordinates)
+    >>> coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
+    >>> vega = FixedTarget(name='Vega', coord=coordinates)
+
+    >>> coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
+    >>> deneb = FixedTarget(name='Deneb', coord=coordinates)
 
 We also have to define a `Time` (in UTC) at which we wish to observe.  Here, we
 pick 2AM local time, which is noon UTC during the summer::
 
-    from astropy.time import Time
+    >>> from astropy.time import Time
 
-    time = Time('2015-06-16 12:00:00')
+    >>> time = Time('2015-06-16 12:00:00')
 
 :ref:`Return to Top <summer_triangle_tutorial>`
 
@@ -92,13 +83,13 @@ is down?
 .. code-block:: python
 
     >>> subaru.target_is_up(time, altair)
-    array(True, dtype=bool)
+    True
 
     >>> subaru.target_is_up(time, vega)
-    array(True, dtype=bool)
+    True
 
     >>> subaru.target_is_up(time, deneb)
-    array(True, dtype=bool)
+    True
 
 ...They are!
 
@@ -115,21 +106,27 @@ However, we may want to find a window of time for tonight during which all
 three of our targets are above the horizon *and* the Sun is below the horizon
 (let's worry about light pollution from the Moon later).
 
-Let's define the window of time during which all targets are above the horizon::
+Let's define the window of time during which all targets are above the horizon.
+Note that because of the precision limitations of rise/set calculations
+(altitudes at these times won't equal precisely zero, but will be off by a few
+arc seconds), we'll manually adjust rise/set times by a few minutes.
 
-    altair_rise = subaru.target_rise_time(time, altair)
-    altair_set = subaru.target_set_time(time, altair)
+.. code-block:: python
 
-    vega_rise = subaru.target_rise_time(time, vega)
-    vega_set = subaru.target_set_time(time, vega)
+    >>> import numpy as np
+    >>> import astropy.units as u
 
-    deneb_rise = subaru.target_rise_time(time, deneb)
-    deneb_set = subaru.target_set_time(time, deneb)
+    >>> altair_rise = subaru.target_rise_time(time, altair) + 5*u.minute
+    >>> altair_set = subaru.target_set_time(time, altair) - 5*u.minute
 
-    import numpy as np
+    >>> vega_rise = subaru.target_rise_time(time, vega) + 5*u.minute
+    >>> vega_set = subaru.target_set_time(time, vega) - 5*u.minute
 
-    all_up_start = np.max([altair_rise, vega_rise, deneb_rise])
-    all_up_end = np.min([altair_set, vega_set, deneb_set])
+    >>> deneb_rise = subaru.target_rise_time(time, deneb) + 5*u.minute
+    >>> deneb_set = subaru.target_set_time(time, deneb) - 5*u.minute
+
+    >>> all_up_start = np.max([altair_rise, vega_rise, deneb_rise])
+    >>> all_up_end = np.min([altair_set, vega_set, deneb_set])
 
 Now, let's find sunset and sunrise for tonight (and confirm that they are
 indeed those for tonight):
@@ -139,18 +136,19 @@ indeed those for tonight):
     >>> sunset_tonight = subaru.sun_set_time(time, which='nearest')
 
     >>> sunset_tonight.iso
-    '2015-06-16 04:59:12.610'
+    '2015-06-16 04:59:11.267'
 
-This is 2015-06-15 18:49:12.610 in the Hawaii time zone (that's where Subaru is).
+This is '2015-06-15 18:49:11.267' in the Hawaii time zone (that's where Subaru
+is).
 
 .. code-block:: python
 
     >>> sunrise_tonight = subaru.sun_rise_time(time, which='nearest')
 
     >>> sunrise_tonight.iso
-    '2015-06-16 15:47:36.466'
+    '2015-06-16 15:47:35.822'
 
-Or 2015-06-16 05:47:36.466 Hawaii time.
+This is '2015-06-16 05:47:35.822' Hawaii time.
 
 Sunset and sunrise check out, so now we define the limits of our observation
 window:
@@ -158,18 +156,16 @@ window:
 .. code-block:: python
 
     >>> start = np.max([sunset_tonight, all_up_start])
-
     >>> start.iso
-    '2015-06-16 06:23:40.991'
+    '2015-06-16 06:28:40.126'
 
     >>> end = np.min([sunrise_tonight, all_up_end])
-
     >>> end.iso
-    '2015-06-16 15:47:36.466'
+    '2015-06-16 15:47:35.822'
 
 So, our targets will be visible (as we've defined it above) from
-2015-06-15 20:23:40.991 to 2015-06-16 05:47:36.466 Hawaii time.  Depending on
-our observation goals, this window of time may be good enough for preliminary
+'2015-06-15 20:28:40.126' to '2015-06-16 05:47:35.822' Hawaii time.  Depending
+on our observation goals, this window of time may be good enough for preliminary
 planning, or we may want to optimize our observational conditions.  If the
 latter is the case, go on to the Optimal Observation Time section (immediately
 below).
@@ -468,9 +464,8 @@ targets lay in the sky::
 
     from astropy.time import Time
 
-    # Here we need to add a second to our start time so that all objects show up.
-    start = Time('2015-06-16 06:23:40.991') + 1 * u.second
-    end = Time('2015-06-16 15:47:36.466')
+    start = Time('2015-06-16 06:28:40.126')
+    end = Time('2015-06-16 15:47:35.822')
 
     from astroplan.plots import plot_sky
     import matplotlib.pyplot as plt
@@ -548,9 +543,8 @@ We can also show how our targets move over time during the night in question::
     from astroplan.plots import plot_sky
     import matplotlib.pyplot as plt
 
-    # Here we need to add a second to our start time so that all objects show up.
-    start = Time('2015-06-16 06:23:40.991') + 1 * u.second
-    end = Time('2015-06-16 15:47:36.466')
+    start = Time('2015-06-16 06:28:40.126')
+    end = Time('2015-06-16 15:47:35.822')
 
     time_window = start + (end - start) * np.linspace(0, 1, 10)
 
