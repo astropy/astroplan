@@ -98,7 +98,7 @@ What if we weren't sure if the Sun is down at this time:
 .. code-block:: python
 
     >>> subaru.is_night(time)
-    array([ True], dtype=bool)
+    True
 
 ...It is!
 
@@ -184,17 +184,19 @@ Airmass
 -------
 
 To get a general idea of our targets' airmass on the night of observation, we
-can plot it over the course of the night (for more on plotting see :doc:`plots`)::
+can plot it over the course of the night (for more on plotting see :doc:`plots`):
 
-    from astroplan.plots import plot_airmass
-    import matplotlib.pyplot as plt
+.. code-block:: python
 
-    plot_airmass(altair, subaru, time)
-    plot_airmass(vega, subaru, time)
-    plot_airmass(deneb, subaru, time)
+    >>> from astroplan.plots import plot_airmass
+    >>> import matplotlib.pyplot as plt
 
-    plt.legend(loc=1, bbox_to_anchor=(1, 1))
-    plt.show()
+    >>> plot_airmass(altair, subaru, time)
+    >>> plot_airmass(vega, subaru, time)
+    >>> plot_airmass(deneb, subaru, time)
+
+    >>> plt.legend(loc=1, bbox_to_anchor=(1, 1))
+    >>> plt.show()
 
 .. plot::
 
@@ -256,13 +258,13 @@ use the ``AltAz`` frame:
 .. code-block:: python
 
     >>> subaru.altaz(time, altair).secz
-    1.030256
+    <Quantity 1.0302347952130682>
 
     >>> subaru.altaz(time, vega).secz
-    1.0690128
+    <Quantity 1.0690421636016616>
 
     >>> subaru.altaz(time, deneb).secz
-    1.1677464
+    <Quantity 1.167753811648361>
 
 Behind the scenes here, ``subaru.altaz(time, altair)`` is actually creating an
 `astropy.coordinates.AltAz` object in the `AltAz` frame, so if you know how to
@@ -274,16 +276,19 @@ Parallactic Angle
 
 To get a general idea of our targets' parallactic angle on the night of
 observation, we can make another plot (again, see :doc:`plots` for more on
-customizing plots and the like)::
+customizing plots and the like):
 
-    from astroplan.plots import plot_parallactic
+.. code-block:: python
 
-    plot_parallactic(altair, subaru, time)
-    plot_parallactic(vega, subaru, time)
-    plot_parallactic(deneb, subaru, time)
+    >>> import matplotlib.pyplot as plt
+    >>> from astroplan.plots import plot_parallactic
 
-    plt.legend(loc=2)
-    plt.show()
+    >>> plot_parallactic(altair, subaru, time)
+    >>> plot_parallactic(vega, subaru, time)
+    >>> plot_parallactic(deneb, subaru, time)
+
+    >>> plt.legend(loc=2)
+    >>> plt.show()
 
 .. plot::
 
@@ -333,18 +338,19 @@ We can also calculate the parallactic angle directly:
 .. code-block:: python
 
     >>> subaru.parallactic_angle(time, altair)
-    <Angle -0.6405821008131366 rad>
+    <Angle -0.6404957821112053 rad>
 
     >>> subaru.parallactic_angle(time, vega)
-    <Angle -0.46529763909549615 rad>
+    <Angle -0.46542183982024 rad>
 
     >>> subaru.parallactic_angle(time, deneb)
-    <Angle 0.7298709840493603 rad>
+    <Angle 0.7297067855978494 rad>
 
 The `~astropy.coordinates.Angle` objects resulting from the calls to
 ``parallactic_angle()`` are subclasses of the `astropy.units.Quantity` class, so
 they can do everything a `~astropy.units.Quantity` can do - basically they work
 like numbers with attached units, and keep track of units so you don't have to.
+
 For more on the many things you can do with these, take a look at the `astropy`
 documentation or tutorials.  For now the  most useful thing is to know is that
 ``angle.degree``,``angle.hourangle``, and  ``angle.radian`` give you back Python
@@ -372,11 +378,11 @@ We could also look at the Moon's alt/az coordinates:
 
 .. code-block:: python
 
-    >>> print(subaru.moon_altaz(time).alt)
-    −45∘05′18.2435′′
+    >>> subaru.moon_altaz(time).alt
+    <Latitude -45.08860929634166 deg>
 
-    >>> print(subaru.moon_altaz(time).az)
-    34∘35′57.5413′′
+    >>> subaru.moon_altaz(time).az
+    <Longitude 34.605498354422686 deg>
 
 It looks like the Moon is well below the horizon at the time we picked before,
 but we should check to see if it will be out during the window of time our
@@ -387,11 +393,12 @@ targets will be visible (again--as defined at the beginning of this tutorial):
     >>> visible_time = start + (end - start)*np.linspace(0, 1, 20)
 
     >>> subaru.moon_altaz(visible_time).alt
-    [−24∘15′08.8308′′ −29∘49′04.6286′′ −35∘03′43.449′′ −39∘53′16.0653′′
-    −44∘09′59.8904′′ −47∘44′08.5089′′ −50∘24′19.9784′′ −51∘59′18.4053′′
-    −52∘20′53.9214′′ −51∘27′04.0998′′ −49∘22′46.0578′′ −46∘17′54.7431′′
-    −42∘24′06.7653′′ −37∘52′10.4174′′ −32∘50′59.3228′′ −27∘27′24.8625′′
-    −21∘46′34.5241′′ −15∘52′15.6116′′ −9∘47′16.3944′′ −2∘11′39.571′′]
+    <Latitude [-25.21127325,-30.68088873,-35.82145644,-40.53415037,
+               -44.68898859,-48.12296182,-50.64971858,-52.08946099,
+               -52.31849772,-51.31548444,-49.17038499,-46.04862654,
+               -42.13887599,-37.61479774,-32.61875342,-27.26048709,
+               -21.62215227,-15.76463668, -9.73313141, -2.19408792] deg>
+
 
 Looks like the Moon will be below the horizon during the entire time.
 
@@ -405,33 +412,35 @@ Sky Charts
 Now that we've determined the best times to observe our targets on the night in
 question, let's take a look at the positions of our objects in the sky.
 
-We can use `plot_sky` as a sanity check on our target's positions or even just
-to better visualize our observation run.
+We can use `astroplan.plots.plot_sky` as a sanity check on our target's
+positions or even just to better visualize our observation run.
 
 Let's take the `start` and `end` of the time window we determined
 :ref:`earlier <summer_triangle-observable>` (using the most basic definition
 of "visible" targets, above the horizon when the sun is down), and see where our
-targets lay in the sky::
+targets lay in the sky:
 
-    from astroplan.plots import plot_sky
-    import matplotlib.pyplot as plt
+.. code-block:: python
 
-    altair_style = {'color': 'r'}
-    deneb_style = {'color': 'g'}
+    >>> from astroplan.plots import plot_sky
+    >>> import matplotlib.pyplot as plt
 
-    plot_sky(altair, subaru, start, style_kwargs=altair_style)
-    plot_sky(vega, subaru, start)
-    plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
+    >>> altair_style = {'color': 'r'}
+    >>> deneb_style = {'color': 'g'}
 
-    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    plt.show()
+    >>> plot_sky(altair, subaru, start, style_kwargs=altair_style)
+    >>> plot_sky(vega, subaru, start)
+    >>> plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
 
-    plot_sky(altair, subaru, end, style_kwargs=altair_style)
-    plot_sky(vega, subaru, end)
-    plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
+    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    >>> plt.show()
 
-    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    plt.show()
+    >>> plot_sky(altair, subaru, end, style_kwargs=altair_style)
+    >>> plot_sky(vega, subaru, end)
+    >>> plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
+
+    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    >>> plt.show()
 
 .. plot::
 
@@ -501,14 +510,14 @@ targets lay in the sky::
 
 We can also show how our targets move over time during the night in question::
 
-    time_window = start + (end - start) * np.linspace(0, 1, 10) * u.hour
+    >>> time_window = start + (end - start) * np.linspace(0, 1, 10)
 
-    plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
-    plot_sky(vega, subaru, time_window)
-    plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
+    >>> plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
+    >>> plot_sky(vega, subaru, time_window)
+    >>> plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
 
-    plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
-    plt.show()
+    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    >>> plt.show()
 
 .. plot::
 
