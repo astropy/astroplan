@@ -18,7 +18,7 @@ observations.
     heavy development.  Most importantly for users, this means the `astroplan`
     API may change substantially in future versions. Consider using `Astropy`_,
     `PyEphem`_ and/or `Skyfield`_ if you're looking for some of the
-    functionality here but what to use more mature packages.
+    functionality here but want to use more mature packages.
 
 The goal of astroplan is to make a flexible toolbox for observation planning and
 scheduling.  When complete, the goal is to be easy for Python beginners and new

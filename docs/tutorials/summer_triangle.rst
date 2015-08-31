@@ -171,7 +171,8 @@ So, our targets will be visible (as we've defined it above) from
 2015-06-15 20:23:40.991 to 2015-06-16 05:47:36.466 Hawaii time.  Depending on
 our observation goals, this window of time may be good enough for preliminary
 planning, or we may want to optimize our observational conditions.  If the
-latter is the case, go on to Optimal Observation Time.
+latter is the case, go on to the Optimal Observation Time section (immediately
+below).
 
 :ref:`Return to Top <summer_triangle_tutorial>`
 
@@ -347,7 +348,7 @@ We can also calculate the parallactic angle directly:
 The `~astropy.coordinates.Angle` objects resulting from the calls to
 ``parallactic_angle()`` are subclasses of the `astropy.units.Quantity` class, so
 they can do everything a `~astropy.units.Quantity` can do - basically they work
-like numbers with attached units, an keep track of units so you don't have to.
+like numbers with attached units, and keep track of units so you don't have to.
 For more on the many things you can do with these, take a look at the `astropy`
 documentation or tutorials.  For now the  most useful thing is to know is that
 ``angle.degree``,``angle.hourangle``, and  ``angle.radian`` give you back Python
