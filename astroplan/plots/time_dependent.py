@@ -93,7 +93,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
 
-    observe_timezone = 'UTC'
+    observe_timezone = ''
 
     # Plot data.
     ax.plot_date(time.plot_date, airmass, **style_kwargs)
@@ -193,7 +193,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
 
-    observe_timezone = 'UTC'
+    observe_timezone = ''
 
     # Plot data.
     ax.plot_date(time.plot_date, p_angle, **style_kwargs)

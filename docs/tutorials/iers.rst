@@ -1,6 +1,6 @@
-:orphan:
-
 .. doctest-skip-all
+
+.. _iers:
 
 **********************************
 Using and updating IERS Bulletin A

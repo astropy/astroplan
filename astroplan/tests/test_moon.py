@@ -2,12 +2,22 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import pytest
+
 from ..core import Observer
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
 import astropy.units as u
 from numpy.testing import assert_allclose
 
+try:
+    import ephem
+    HAS_PYEPHEM = True
+except ImportError:
+    HAS_PYEPHEM = False
+
+
+@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_illumination():
     time = Time(['1990-01-01 00:00:00', '1990-03-01 06:00:00',
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
@@ -26,6 +36,7 @@ def test_illumination():
 
     assert_allclose(illumination1, pyephem_illumination, atol=0.05)
 
+
 def print_pyephem_illumination():
     """
     To run, use:
@@ -35,7 +46,6 @@ def print_pyephem_illumination():
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
 
-    import ephem
     moon = ephem.Moon()
     pe_obs = ephem.Observer()
     pe_obs.lat = location.latitude.to(u.degree).to_string(sep=':')

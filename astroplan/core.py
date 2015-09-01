@@ -25,9 +25,11 @@ from .moon import get_moon, moon_illumination, moon_phase_angle
 
 __all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget", "MAGIC_TIME"]
 
-#__doctest_requires__ = {'*': ['scipy.integrate']}
+# TODO: remove this statement once the moon is implemented without pyephem
+__doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
 
 MAGIC_TIME = Time(-999, format='jd')
+
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
@@ -94,6 +96,7 @@ def list_FixedTarget_to_SkyCoord(list_of_FixedTargets):
                   UnitSphericalRepresentation),
                   representation=UnitSphericalRepresentation)
     return sc
+
 
 class Observer(object):
     """

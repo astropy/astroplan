@@ -9,28 +9,32 @@ Observation Planning (`astroplan`)
 What is astroplan?
 ==================
 
-**astroplan** is an open source Python package that helps astronomers plan
+**astroplan** is an open source Python package to help astronomers plan
 observations.
 
-We're just getting started, so for now check out `Astropy`_, `PyEphem`_ or
-`Skyfield`_.
+.. warning::
 
-**astroplan** is a flexible toolbox for observation planning and scheduling,
-and is appropriate for astronomers at all skill levels.
-It's also great for observatories preparing long-term or nightly schedules,
-since **astroplan** can consider multiple constraints (i.e., airmass, moon,
-slew speeds, etc.)
+    This release should be considered a "preview", as Astroplan is still under
+    heavy development.  Most importantly for users, this means the `astroplan`
+    API may change substantially in future versions. Consider using `Astropy`_,
+    `PyEphem`_ and/or `Skyfield`_ if you're looking for some of the
+    functionality here but want to use more mature packages.
 
-We anticipate that **astroplan** will have the following required dependencies:
+The goal of astroplan is to make a flexible toolbox for observation planning and
+scheduling.  When complete, the goal is to be easy for Python beginners and new
+observers to to pick up, but powerful enough for observatories preparing nightly
+and long-term schedules.
 
-* Python 2.7 or 3.3+ (Python 2.6 and 3.2 or earlier are not supported.)
-* Numpy
-* Astropy
-* pytz
 
-with potential optional dependencies including Matplotlib and PyEphem (or Skyfield).
+Features:
 
-**A first version is expected to roll out in late August 2015.**
+* Calculate locations, rise/set times, ... of targets for a given observer
+  location.
+* Built-in convenience functions for standard observation planning plots
+  (airmass, parallactic angle, sky maps).
+* Determining observability of sets of targets given an arbitrary set of
+  constraints (i.e., airmass, moon, etc.).
+* `Astropy`_ powered!
 
 Links
 =====
@@ -41,24 +45,36 @@ Links
 
 License: BSD-3
 
-.. _astroplan_news:
-
-News
-====
-
-* ???: Astroplan **0.1** release
-* May - August 2015: Initial package implemented by Jazmin Berlanga and Brett Morris
-  in `GSoC 2015 <https://www.google-melange.com/gsoc/homepage/google/gsoc2015>`.
 
 
 .. _astroplan_docs:
 
-General documentation
+General Documentation
 =====================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   installation.rst
-   getting_started.rst
-   api.rst
+   installation
+   getting_started
+   tutorials/index
+   api
+
+
+.. _astroplan_authors:
+
+Authors
+=======
+
+Maintainers
+-----------
+* `Jazmin Berlanga Medina, including contributions from Google Summer of Code 2015 <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/jberlanga/5707702298738688>`_
+* `Brett Morris, including contributions from Google Summer of Code 2015 <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_
+
+Contributors
+------------
+* Christoph Deil
+* Eric Jeschke
+* Adrian Price-Whelan
+* Erik Tollerud
+
