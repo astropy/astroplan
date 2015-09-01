@@ -45,11 +45,6 @@ Links
 
 License: BSD-3
 
-News
-====
-
-* September 2015: Astroplan **0.1** release
-
 .. _astroplan_docs:
 
 General Documentation
