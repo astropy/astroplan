@@ -6,6 +6,17 @@
 Defining Observing Constraints
 ******************************
 
+Contents
+========
+
+* :ref:`constraints-built_in_constraints`
+* :ref:`constraints-user_defined_constraints`
+
+.. _constraints-built_in_constraints:
+
+Built-In Constraints
+====================
+
 Frequently, we have a long list of targets that we want to observe, and we need
 to know which ones are observable given a set of constraints imposed on our
 observations by a wide range of limitations. For example, your telescope may
@@ -106,3 +117,122 @@ tabular form:
      Regulus           False             False
 
 Now we can see which targets are observable!
+
+.. _constraints-user_defined_constraints:
+
+User-Defined Constraints
+========================
+
+There are many possible constraints that you could find useful which have not
+been implemented (yet) in astroplan. This example will walk you through creating
+your own constraint which will be compatible with the tools in the `constraints`
+module.
+
+We will begin by reading the text file of stellar coordinates defined in the
+example above, and define an observer at Subaru::
+
+    from astroplan import Observer, FixedTarget
+    from astropy.time import Time
+    subaru = Observer.at_site("Subaru")
+    time_range = Time(["2015-08-01 06:00", "2015-08-01 12:00"])
+
+    # Read in the table of targets
+    from astropy.io import ascii
+    target_table = ascii.read('targets.txt')
+
+    # Create astroplan.FixedTarget objects for each one in the table
+    from astropy.coordinates import SkyCoord
+    import astropy.units as u
+    targets = [FixedTarget(coord=SkyCoord(ra=ra*u.deg, dec=dec*u.deg), name=name)
+               for name, ra, dec in target_table]
+
+In the above example, you may have noticed that constraints are assembled by
+making a list of calls to the initializers for classes like `AltitudeConstraint`
+and `AirmassConstraint`. Each of those constraint classes is subclassed from
+the abstract `Constraint` class, and the custom constraint that we're going to
+write must be as well.
+
+In this example, let's design our constraint to ensure that all targets must be
+within some number of degrees from Vega – we'll call it
+`VegaSeparationConstraint`. Two methods, `__init__` and `compute_constraint`
+must be written for our constraint to work:
+
+* The `__init__` method will accept the minimum and maximum acceptable separations
+  a target could have from Vega.
+
+* We'll also define a method `compute_constraints` which takes three arguments:
+  an array of times to test, an `Observer` object, and one or a list of
+  `FixedTarget` objects. `compute_constraints` will return a matrix of
+  booleans that describe whether or not each target meets the constraints.
+  The super class `Constraint` has a `__call__` method which will run your
+  custom class's `compute_constraints` method when you check if a target is
+  observable using `is_observable` or `is_always_observable`.
+
+Here's our `VegaSeparationConstraint` implementation::
+
+    from astroplan import Constraint, is_observable
+    from astropy.coordinates import Angle
+
+    class VegaSeparationConstraint(Constraint):
+        """
+        Constraint the separation from Vega
+        """
+        def __init__(self, min=None, max=None):
+            """
+            min : `~astropy.units.Quantity` or `None` (optional)
+                Minimum acceptable separation between Vega and target. `None`
+                indicates no limit.
+            max : `~astropy.units.Quantity` or `None` (optional)
+                Minimum acceptable separation between Vega and target. `None`
+                indicates no limit.
+            """
+            self.min = min
+            self.max = max
+
+        def compute_constraint(self, times, observer, targets):
+
+            # Vega's position is essentially unchanging, but if it were to be a
+            # moving target, we would need an array of coordinates for Vega as a
+            # function of time. Here we'll simulate that behavior with multiple
+            # copies of the Vega coordinate
+            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
+            vega = SkyCoord(len(times)*[vega])
+
+            # If `targets` is a FixedTarget object, get the SkyCoord
+            target_coords = SkyCoord([target.coord if hasattr(target, 'coord')
+                                      else target for target in targets])
+
+            # Calculate separation between target and vega
+            vega_separation = Angle([vega.separation(target)
+                                     for target in target_coords])
+
+            # If a maximum is specified but no minimum
+            if self.min is None and self.max is not None:
+                mask = vega_separation < self.max
+
+            # If a minimum is specified but no maximum
+            elif self.max is None and self.min is not None:
+                mask = self.min < vega_separation
+
+            # If both a minimum and a maximum are specified
+            elif self.min is not None and self.max is not None:
+                mask = ((self.min < vega_separation) & (vega_separation < self.max))
+
+            # Otherwise, raise an error
+            else:
+                raise ValueError("No max and/or min specified in "
+                                 "VegaSeparationConstraint.")
+
+            # Return the boolean mask
+            return mask
+
+Then as in the earlier example, we can call our constraint::
+
+    constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
+    observability = is_observable(constraints, subaru, targets,
+                                  time_range=time_range)
+    # observability is: [False False  True False False False]
+
+The resulting list of booleans indicates that the only target separated by
+5 and 30 degrees from Vega is Albireo. Following this pattern, you can design
+arbitrarily complex criteria for constraints.

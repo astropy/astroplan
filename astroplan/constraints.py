@@ -26,7 +26,7 @@ from .utils import time_grid_from_range
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint"]
+           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint"]
 
 @abstractmethod
 class Constraint(object):
