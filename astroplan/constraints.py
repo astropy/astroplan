@@ -26,7 +26,59 @@ from .utils import time_grid_from_range
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint"]
+           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
+           "observability_table"]
+
+def _get_altaz(times, observer, targets,
+               force_zero_pressure=False):
+    """
+    Calculate alt/az for ``target`` at times linearly spaced between
+    the two times in ``time_range`` with grid spacing ``time_resolution``
+    for ``observer``.
+
+    Cache the result on the ``observer`` object.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint
+
+    targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target or list of targets
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    time_resolution : `~astropy.units.Quantity` (optional)
+        Set the time resolution in calculations of the altitude/azimuth
+
+    Returns
+    -------
+    altaz_dict : dict
+        Dictionary containing two key-value pairs. (1) 'times' contains the
+        times for the alt/az computations, (2) 'altaz' contains the
+        corresponding alt/az coordinates at those times.
+    """
+    if not hasattr(observer, '_altaz_cache'):
+        observer._altaz_cache = {}
+
+    # convert times, targets to tuple for hashing
+    aakey = (tuple(times.jd), tuple(targets))
+
+    if aakey not in observer._altaz_cache:
+        try:
+            if force_zero_pressure:
+                observer_old_pressure = observer.pressure
+                observer.pressure = 0
+
+            altaz = observer.altaz(times, targets)
+            observer._altaz_cache[aakey] = dict(times=times,
+                                                altaz=altaz)
+        finally:
+            if force_zero_pressure:
+                observer.pressure = observer_old_pressure
+
+    return observer._altaz_cache[aakey]
 
 @abstractmethod
 class Constraint(object):
@@ -53,57 +105,6 @@ class Constraint(object):
     def compute_constraint(self, times, observer, targets):
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
-
-    def _get_altaz(self, times, observer, targets,
-                   force_zero_pressure=False):
-        """
-        Calculate alt/az for ``target`` at times linearly spaced between
-        the two times in ``time_range`` with grid spacing ``time_resolution``
-        for ``observer``.
-
-        Cache the result on the ``observer`` object.
-
-        Parameters
-        ----------
-        times : `~astropy.time.Time`
-            Array of times on which to test the constraint
-
-        targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
-            Target or list of targets
-
-        observer : `~astroplan.Observer`
-            The observer who has constraints ``constraints``
-
-        time_resolution : `~astropy.units.Quantity` (optional)
-            Set the time resolution in calculations of the altitude/azimuth
-
-        Returns
-        -------
-        altaz_dict : dict
-            Dictionary containing two key-value pairs. (1) 'times' contains the
-            times for the alt/az computations, (2) 'altaz' contains the
-            corresponding alt/az coordinates at those times.
-        """
-        if not hasattr(observer, '_altaz_cache'):
-            observer._altaz_cache = {}
-
-        # convert times, targets to tuple for hashing
-        aakey = (tuple(times.jd), tuple(targets))
-
-        if aakey not in observer._altaz_cache:
-            try:
-                if force_zero_pressure:
-                    observer_old_pressure = observer.pressure
-                    observer.pressure = 0
-
-                altaz = observer.altaz(times, targets)
-                observer._altaz_cache[aakey] = dict(times=times,
-                                                    altaz=altaz)
-            finally:
-                if force_zero_pressure:
-                    observer.pressure = observer_old_pressure
-
-        return observer._altaz_cache[aakey]
 
 class AltitudeConstraint(Constraint):
     """
@@ -135,7 +136,7 @@ class AltitudeConstraint(Constraint):
 
     def compute_constraint(self, times, observer, targets):
 
-        cached_altaz = self._get_altaz(times, observer, targets)
+        cached_altaz = _get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
         lowermask = self.min < altaz.alt
         uppermask = altaz.alt < self.max
@@ -175,7 +176,7 @@ class AirmassConstraint(AltitudeConstraint):
         self.max = max
 
     def compute_constraint(self, times, observer, targets):
-        cached_altaz = self._get_altaz(times, observer, targets)
+        cached_altaz = _get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
         if self.min is None and self.max is not None:
             mask = altaz.secz < self.max
@@ -328,6 +329,7 @@ class MoonSeparationConstraint(Constraint):
                                  for target in targets])
         # The line below should have worked, but needs a workaround.
         # TODO: once bug has been fixed, replace workaround with simpler version.
+        # Relevant PR: https://github.com/astropy/astropy/issues/4033
 #        moon_separation = Angle([moon.separation(target) for target in targets])
         if self.min is None and self.max is not None:
             mask = self.max > moon_separation
@@ -415,6 +417,8 @@ class LocalTimeConstraint(Constraint):
                 raise TypeError("Time limits must be specified as datetime.time objects.")
 
     def compute_constraint(self, times, observer, targets):
+
+        timezone = None
 
         # get timezone from time objects, or from observer
         if self.min is not None:

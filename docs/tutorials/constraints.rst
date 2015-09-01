@@ -22,7 +22,7 @@ to know which ones are observable given a set of constraints imposed on our
 observations by a wide range of limitations. For example, your telescope may
 only point over a limited range of altitudes, your targets are only useful
 in a range of airmasses, and they must be separated from the moon by some
-large angle. The `astroplan.constraints` module is here to help!
+large angle. The `constraints` module is here to help!
 
 Say we're planning to observe from Subaru Observatory in Hawaii on August 1,
 2015 from 06:00-12:00 UTC. First, let's set up an `astroplan.Observer` object::
@@ -70,7 +70,9 @@ code below.
   we'll also call the `astroplan.constraints.AtNightConstraint` class. We're
   not terribly worried about sky brightness for these bright stars, so we'll
   define "night" times as those between civil twilights by using the class
-  method `AtNightConstraint.twilight_civil`::
+  method `~astroplan.AtNightConstraint.twilight_civil`:
+
+.. code-block:: python
 
     from astroplan import (AltitudeConstraint, AirmassConstraint,
                            AtNightConstraint)
@@ -81,10 +83,10 @@ This list of constraints can now be applied to our target list to determine
 whether:
 
 * the targets are observable given the constraints at *any* times in the time
-  range, using `astroplan.constraints.is_observable`,
+  range, using `astroplan.is_observable`,
 
 * the targets are observable given the constraints at *all* times in the time
-  range, using `astroplan.constraints.is_always_observable`::
+  range, using `astroplan.is_always_observable`::
 
     from astroplan import is_observable, is_always_observable
     # Are targets *ever* observable in the time range?
@@ -99,24 +101,38 @@ tabular form:
 
     >>> from astropy.table import Table
     >>> import numpy as np
-    >>> observability_array = np.array([[t.name, ever, always]  for t, ever, always in
-    ...                                 zip(targets, ever_observable, always_observable)])
-    >>> observability_table = Table(observability_array,
-    ...                             names=('Target', 'Ever Observable',
-    ...                                    'Always Observable'))
+    >>> observability_table = Table()
+    >>> observability_table['targets'] = [target.name for target in targets]
+    >>> observability_table['ever_observable'] = ever_observable
+    >>> observability_table['always_observable'] = always_observable
     >>> print(observability_table)
     <Table length=6>
-     Target  Ever Observable Always Observable
-    unicode7     unicode7         unicode7
-    -------- --------------- -----------------
-     Polaris            True              True
-        Vega            True              True
-     Albireo            True             False
-       Algol            True             False
-       Rigel           False             False
-     Regulus           False             False
+    targets ever_observable always_observable
+      str7        bool             bool
+    ------- --------------- -----------------
+    Polaris            True              True
+       Vega            True              True
+    Albireo            True             False
+      Algol            True             False
+      Rigel           False             False
+    Regulus           False             False
 
-Now we can see which targets are observable!
+Now we can see which targets are observable! You can also use the
+`astroplan.observability_table` method to do the same calculations and store the
+results in a table, all in one step::
+
+    >>> from astroplan import observability_table
+    >>> table = observability_table(constraints, subaru, targets, time_range=time_range)
+    >>> print(table)
+    target name ever observable always observable fraction of time observable
+    ----------- --------------- ----------------- ---------------------------
+        Polaris            True              True                         1.0
+           Vega            True              True                         1.0
+        Albireo            True             False              0.833333333333
+          Algol            True             False              0.166666666667
+          Rigel           False             False                         0.0
+        Regulus           False             False                         0.0
+
 
 .. _constraints-user_defined_constraints:
 
@@ -128,8 +144,8 @@ been implemented (yet) in astroplan. This example will walk you through creating
 your own constraint which will be compatible with the tools in the `constraints`
 module.
 
-We will begin by reading the text file of stellar coordinates defined in the
-example above, and define an observer at Subaru::
+We will begin by defining an observer at Subaru and reading the text file of
+stellar coordinates defined in the example above::
 
     from astroplan import Observer, FixedTarget
     from astropy.time import Time
@@ -147,13 +163,13 @@ example above, and define an observer at Subaru::
                for name, ra, dec in target_table]
 
 In the above example, you may have noticed that constraints are assembled by
-making a list of calls to the initializers for classes like `AltitudeConstraint`
-and `AirmassConstraint`. Each of those constraint classes is subclassed from
-the abstract `Constraint` class, and the custom constraint that we're going to
-write must be as well.
+making a list of calls to the initializers for classes like
+`astroplan.AltitudeConstraint` and `astroplan.AirmassConstraint`. Each of those
+constraint classes is subclassed from the abstract `Constraint` class, and the
+custom constraint that we're going to write must be as well.
 
 In this example, let's design our constraint to ensure that all targets must be
-within some number of degrees from Vega – we'll call it
+within some angular separation from Vega – we'll call it
 `VegaSeparationConstraint`. Two methods, `__init__` and `compute_constraint`
 must be written for our constraint to work:
 
@@ -161,12 +177,13 @@ must be written for our constraint to work:
   a target could have from Vega.
 
 * We'll also define a method `compute_constraints` which takes three arguments:
-  an array of times to test, an `Observer` object, and one or a list of
-  `FixedTarget` objects. `compute_constraints` will return a matrix of
-  booleans that describe whether or not each target meets the constraints.
+  an array of times to test, an `astroplan.Observer` object, and one or a list
+  of `astroplan.FixedTarget` objects. `compute_constraints` will return a matrix
+  of booleans that describe whether or not each target meets the constraints.
   The super class `Constraint` has a `__call__` method which will run your
   custom class's `compute_constraints` method when you check if a target is
-  observable using `is_observable` or `is_always_observable`.
+  observable using `astroplan.is_observable` or
+  `astroplan.is_always_observable`.
 
 Here's our `VegaSeparationConstraint` implementation::
 

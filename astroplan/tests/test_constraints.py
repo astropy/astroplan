@@ -213,3 +213,89 @@ def test_local_time_constraint_hawaii_tz():
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
+def test_docs_example():
+    # Test the example in astroplan/docs/tutorials/constraints.rst
+    target_table_string = """# name ra_degrees dec_degrees
+    Polaris 37.95456067 89.26410897
+    Vega 279.234734787 38.783688956
+    Albireo 292.68033548 27.959680072
+    Algol 47.042218553 40.955646675
+    Rigel 78.634467067 -8.201638365
+    Regulus 152.092962438 11.967208776"""
+
+    from astroplan import Observer, FixedTarget
+    from astropy.time import Time
+    subaru = Observer.at_site("Subaru")
+    time_range = Time(["2015-08-01 06:00", "2015-08-01 12:00"])
+
+    # Read in the table of targets
+    from astropy.io import ascii
+    target_table = ascii.read(target_table_string)
+
+    # Create astroplan.FixedTarget objects for each one in the table
+    from astropy.coordinates import SkyCoord
+    import astropy.units as u
+    targets = [FixedTarget(coord=SkyCoord(ra=ra*u.deg, dec=dec*u.deg), name=name)
+               for name, ra, dec in target_table]
+
+    from astroplan import Constraint, is_observable
+    from astropy.coordinates import Angle
+
+    class VegaSeparationConstraint(Constraint):
+        """
+        Constraint the separation from Vega
+        """
+        def __init__(self, min=None, max=None):
+            """
+            min : `~astropy.units.Quantity` or `None` (optional)
+                Minimum acceptable separation between Vega and target. `None`
+                indicates no limit.
+            max : `~astropy.units.Quantity` or `None` (optional)
+                Minimum acceptable separation between Vega and target. `None`
+                indicates no limit.
+            """
+            self.min = min
+            self.max = max
+
+        def compute_constraint(self, times, observer, targets):
+
+            # Vega's position is essentially unchanging, but if it were to be a
+            # moving target, we would need an array of coordinates for Vega as a
+            # function of time. Here we'll simulate that behavior with multiple
+            # copies of the Vega coordinate
+            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
+            vega = SkyCoord(len(times)*[vega])
+
+            # If `targets` is a FixedTarget object, get the SkyCoord
+            target_coords = SkyCoord([target.coord if hasattr(target, 'coord')
+                                      else target for target in targets])
+
+            # Calculate separation between target and vega
+            vega_separation = Angle([vega.separation(target)
+                                     for target in target_coords])
+
+            # If a maximum is specified but no minimum
+            if self.min is None and self.max is not None:
+                mask = vega_separation < self.max
+
+            # If a minimum is specified but no maximum
+            elif self.max is None and self.min is not None:
+                mask = self.min < vega_separation
+
+            # If both a minimum and a maximum are specified
+            elif self.min is not None and self.max is not None:
+                mask = ((self.min < vega_separation) & (vega_separation < self.max))
+
+            # Otherwise, raise an error
+            else:
+                raise ValueError("No max and/or min specified in "
+                                 "VegaSeparationConstraint.")
+
+            # Return the boolean mask
+            return mask
+
+    constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
+    observability = is_observable(constraints, subaru, targets,
+                                  time_range=time_range)
+
+    assert all(observability == [False, False, True, False, False, False])
