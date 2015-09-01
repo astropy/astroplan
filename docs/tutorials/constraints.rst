@@ -88,10 +88,10 @@ whether:
 
     from astroplan import is_observable, is_always_observable
     # Are targets *ever* observable in the time range?
-    ever_observable = is_observable(constraints, time_range, targets, subaru)
+    ever_observable = is_observable(constraints, subaru, targets, time_range=time_range)
 
     # Are targets *always* observable in the time range?
-    always_observable = is_always_observable(constraints, time_range, targets, subaru)
+    always_observable = is_always_observable(constraints, subaru, targets, time_range=time_range)
 
 These two functions will return boolean arrays which tell you whether or not
 each target is observable given your constraints. Let's print these results in
