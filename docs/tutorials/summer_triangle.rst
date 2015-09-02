@@ -40,7 +40,7 @@ Defining Objects
 Say we want to look at the Summer Triangle (Altair, Deneb, and Vega) using the
 Subaru Telescope.
 
-First, we define our `Observer` object:
+First, we define our `~astroplan.Observer` object:
 
 .. code-block:: python
 
@@ -48,9 +48,9 @@ First, we define our `Observer` object:
 
     >>> subaru = Observer.at_site('subaru')
 
-Then, we define our `Target` objects (`FixedTarget`'s in this case, since the
-Summer Triangle is fixed with respect to the celestial sphere if we ignore the
-relatively small proper motion):
+Then, we define our `~astroplan.Target` objects (`~astroplan.FixedTarget`'s
+in this case, since the Summer Triangle is fixed with respect to the
+celestial sphere if we ignore the relatively small proper motion):
 
 .. code-block:: python
 
@@ -66,8 +66,9 @@ relatively small proper motion):
     >>> coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
     >>> deneb = FixedTarget(name='Deneb', coord=coordinates)
 
-We also have to define a `Time` (in UTC) at which we wish to observe.  Here, we
-pick 2AM local time, which is noon UTC during the summer::
+We also have to define a `~astropy.time.Time` (in UTC) at which we wish to
+observe.  Here, we pick 2AM local time, which is noon UTC during the
+summer::
 
     >>> from astropy.time import Time
 
@@ -271,10 +272,10 @@ use the ``AltAz`` frame:
     >>> subaru.altaz(time, deneb).secz # doctest: +SKIP
     <Quantity 1.167753811648361>
 
-Behind the scenes here, ``subaru.altaz(time, altair)`` is actually creating an
-`astropy.coordinates.AltAz` object in the `AltAz` frame, so if you know how to
-work with `astropy.coordinates` objects, you can do lots more than just
-computing airmass.
+Behind the scenes here, ``subaru.altaz(time, altair)`` is actually creating
+an `~astropy.coordinates.AltAz` object in the ``AltAz`` frame, so if you
+know how to work with `~astropy.coordinates` objects, you can do lots more
+than just computing airmass.
 
 Parallactic Angle
 -----------------
@@ -352,14 +353,16 @@ We can also calculate the parallactic angle directly:
     <Angle 0.7297067855978494 rad>
 
 The `~astropy.coordinates.Angle` objects resulting from the calls to
-``parallactic_angle()`` are subclasses of the `astropy.units.Quantity` class, so
-they can do everything a `~astropy.units.Quantity` can do - basically they work
-like numbers with attached units, and keep track of units so you don't have to.
+``parallactic_angle()`` are subclasses of the `~astropy.units.Quantity`
+class, so they can do everything a `~astropy.units.Quantity` can do -
+basically they work like numbers with attached units, and keep track of
+units so you don't have to.
 
-For more on the many things you can do with these, take a look at the `astropy`
-documentation or tutorials.  For now the  most useful thing is to know is that
-``angle.degree``,``angle.hourangle``, and  ``angle.radian`` give you back Python
-floats (or `numpy` arrays) for the angle in degrees, hours, or radians.
+For more on the many things you can do with these, take a look at the
+`Astropy`_ documentation or tutorials.  For now the most useful thing is to
+know is that ``angle.degree``, ``angle.hourangle``, and ``angle.radian``
+give you back Python floats (or `numpy` arrays) for the angle in degrees,
+hours, or radians.
 
 The Moon
 --------
@@ -417,10 +420,10 @@ Sky Charts
 Now that we've determined the best times to observe our targets on the night in
 question, let's take a look at the positions of our objects in the sky.
 
-We can use `astroplan.plots.plot_sky` as a sanity check on our target's
+We can use `~astroplan.plots.plot_sky` as a sanity check on our target's
 positions or even just to better visualize our observation run.
 
-Let's take the `start` and `end` of the time window we determined
+Let's take the ``start`` and ``end`` of the time window we determined
 :ref:`earlier <summer_triangle-observable>` (using the most basic definition
 of "visible" targets, above the horizon when the sun is down), and see where our
 targets lay in the sky:

@@ -20,18 +20,18 @@ to know which ones are observable given a set of constraints imposed on our
 observations by a wide range of limitations. For example, your telescope may
 only point over a limited range of altitudes, your targets are only useful
 in a range of airmasses, and they must be separated from the moon by some
-large angle. The `constraints` module is here to help!
+large angle. The ``constraints`` module is here to help!
 
 Say we're planning to observe from Subaru Observatory in Hawaii on August 1,
-2015 from 06:00-12:00 UTC. First, let's set up an `astroplan.Observer` object::
+2015 from 06:00-12:00 UTC. First, let's set up an `~astroplan.Observer` object::
 
     from astroplan import Observer, FixedTarget
     from astropy.time import Time
     subaru = Observer.at_site("Subaru")
     time_range = Time(["2015-08-01 06:00", "2015-08-01 12:00"])
 
-We're keeping a list of targets in a text file called `targets.txt`, which looks
-like this::
+We're keeping a list of targets in a text file called ``targets.txt``, which
+looks like this::
 
     # name ra_degrees dec_degrees
     Polaris 37.95456067 89.26410897
@@ -42,7 +42,7 @@ like this::
     Regulus 152.092962438 11.967208776
 
 We'll read in this list of targets using `astropy.table`, and create a list
-of `astroplan.FixedTarget` objects out of them::
+of `~astroplan.FixedTarget` objects out of them::
 
     # Read in the table of targets
     from astropy.table import Table
@@ -59,13 +59,13 @@ code below.
 
 * Our observations with Subaru can only occur between altitudes of ~10-80
   degrees, which we can define using the
-  `astroplan.constraints.AltitudeConstraint` class.
+  `~astroplan.constraints.AltitudeConstraint` class.
 
 * We place an upper limit on the airmass of each target during observations
-  using the `astroplan.constraints.AirmassConstraint` class.
+  using the `~astroplan.constraints.AirmassConstraint` class.
 
 * Since we're optical observers, we only want to observe targets at night, so
-  we'll also call the `astroplan.constraints.AtNightConstraint` class. We're
+  we'll also call the `~astroplan.constraints.AtNightConstraint` class. We're
   not terribly worried about sky brightness for these bright stars, so we'll
   define "night" times as those between civil twilights by using the class
   method `~astroplan.AtNightConstraint.twilight_civil`:
@@ -81,10 +81,10 @@ This list of constraints can now be applied to our target list to determine
 whether:
 
 * the targets are observable given the constraints at *any* times in the time
-  range, using `astroplan.is_observable`,
+  range, using `~astroplan.is_observable`,
 
 * the targets are observable given the constraints at *all* times in the time
-  range, using `astroplan.is_always_observable`::
+  range, using `~astroplan.is_always_observable`::
 
     from astroplan import is_observable, is_always_observable
     # Are targets *ever* observable in the time range?
@@ -116,8 +116,8 @@ tabular form:
     Regulus           False             False
 
 Now we can see which targets are observable! You can also use the
-`astroplan.observability_table` method to do the same calculations and store the
-results in a table, all in one step::
+`~astroplan.observability_table` method to do the same calculations and
+store the results in a table, all in one step::
 
     >>> from astroplan import observability_table
     >>> table = observability_table(constraints, subaru, targets, time_range=time_range)
@@ -131,7 +131,7 @@ results in a table, all in one step::
           Rigel           False             False                         0.0
         Regulus           False             False                         0.0
 
-Let's sanity-check these results using `astroplan.plots.plot_sky` to plot
+Let's sanity-check these results using `~astroplan.plots.plot_sky` to plot
 the positions of the targets throughout the time range:
 
 .. plot::
@@ -190,10 +190,10 @@ never rise above those limits within the time range.
 User-Defined Constraints
 ========================
 
-There are many possible constraints that you could find useful which have not
-been implemented (yet) in astroplan. This example will walk you through creating
-your own constraint which will be compatible with the tools in the `constraints`
-module.
+There are many possible constraints that you could find useful which have
+not been implemented (yet) in astroplan. This example will walk you through
+creating your own constraint which will be compatible with the tools in the
+``constraints`` module.
 
 We will begin by defining an observer at Subaru and reading the text file of
 stellar coordinates defined in the example above::
@@ -215,28 +215,29 @@ stellar coordinates defined in the example above::
 
 In the above example, you may have noticed that constraints are assembled by
 making a list of calls to the initializers for classes like
-`astroplan.AltitudeConstraint` and `astroplan.AirmassConstraint`. Each of those
-constraint classes is subclassed from the abstract `Constraint` class, and the
-custom constraint that we're going to write must be as well.
+`~astroplan.AltitudeConstraint` and `~astroplan.AirmassConstraint`. Each of
+those constraint classes is subclassed from the abstract
+`~astroplan.Constraint` class, and the custom constraint that we're going to
+write must be as well.
 
-In this example, let's design our constraint to ensure that all targets must be
-within some angular separation from Vega – we'll call it
-`VegaSeparationConstraint`. Two methods, `__init__` and `compute_constraint`
-must be written for our constraint to work:
+In this example, let's design our constraint to ensure that all targets must
+be within some angular separation from Vega – we'll call it
+``VegaSeparationConstraint``. Two methods, ``__init__`` and
+``compute_constraint`` must be written for our constraint to work:
 
-* The `__init__` method will accept the minimum and maximum acceptable separations
+* The ``__init__`` method will accept the minimum and maximum acceptable separations
   a target could have from Vega.
 
-* We'll also define a method `compute_constraints` which takes three arguments:
-  an array of times to test, an `astroplan.Observer` object, and one or a list
-  of `astroplan.FixedTarget` objects. `compute_constraints` will return a matrix
-  of booleans that describe whether or not each target meets the constraints.
-  The super class `Constraint` has a `__call__` method which will run your
-  custom class's `compute_constraints` method when you check if a target is
-  observable using `astroplan.is_observable` or
-  `astroplan.is_always_observable`.
+* We'll also define a method ``compute_constraints`` which takes three
+  arguments: an array of times to test, an `~astroplan.Observer` object, and
+  one or a list of `~astroplan.FixedTarget` objects. ``compute_constraints``
+  will return a matrix of booleans that describe whether or not each target
+  meets the constraints.  The super class `~astroplan.Constraint` has a
+  ``__call__`` method which will run your custom class's
+  ``compute_constraints`` method when you check if a target is observable
+  using `~astroplan.is_observable` or `~astroplan.is_always_observable`.
 
-Here's our `VegaSeparationConstraint` implementation::
+Here's our ``VegaSeparationConstraint`` implementation::
 
     from astroplan import Constraint, is_observable
     from astropy.coordinates import Angle
