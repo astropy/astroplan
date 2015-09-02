@@ -2,7 +2,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -94,6 +93,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         N/E/S/W are being decoupled from the definition of azimuth
         (North from az = 0 deg., East from az = 90 deg., etc.).
     """
+    import matplotlib.pyplot as plt
 
     # Set up axes & plot styles if needed.
     if ax is None:

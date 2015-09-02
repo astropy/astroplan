@@ -2,7 +2,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import matplotlib.pyplot as plt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -66,6 +65,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         1) Timezones?
         2) Dark plot option.
     """
+    import matplotlib.pyplot as plt
 
     # Set up plot axes and style if needed.
     if ax is None:
@@ -164,6 +164,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         1) dark_plot style
         2) observe_timezone -- update with info from observer?
     """
+    import matplotlib.pyplot as plt
 
     # Set up plot axes and style if needed.
     if ax is None:
