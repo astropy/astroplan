@@ -100,8 +100,12 @@ class Constraint(object):
         if times.isscalar:
             times = Time([times])
 
-        targets = [FixedTarget(coord=target) if isinstance(target, SkyCoord)
-                   else target for target in targets]
+        if hasattr(targets, '__len__'):
+            targets = [FixedTarget(coord=target) if isinstance(target, SkyCoord)
+                       else target for target in targets]
+        else:
+            if isinstance(targets, SkyCoord):
+                targets = FixedTarget(coord=targets)
 
         cons = self.compute_constraint(times, observer, targets)
         return cons
