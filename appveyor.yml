@@ -13,11 +13,10 @@ environment:
 
   matrix:
 
-      # We test Python 2.6 and 3.4 because 2.6 is most likely to have issues in
-      # Python 2 (if 2.6 passes, 2.7 virtually always passes) and Python 3.4 is
-      # the latest Python 3 release.
+      # Note that we don't support Python 2.6 in astroplan,
+      # so we test Python 2.7 (whereas Astropy tests on 2.6)
 
-      - PYTHON_VERSION: "2.6"
+      - PYTHON_VERSION: "2.7"
         NUMPY_VERSION: "1.9.1"
       - PYTHON_VERSION: "3.4"
         NUMPY_VERSION: "1.9.1"
@@ -41,6 +40,7 @@ install:
 
     # Install specified version of numpy and dependencies
     - "conda install -q --yes numpy=%NUMPY_VERSION% pytest Cython scipy astropy beautiful-soup jinja2 pyyaml"
+    - "conda install -q --yes numpy=%NUMPY_VERSION% matplotlib nose pytz"
     - "pip install pytest-mpl"
 
 # Not a .NET project, we build SunPy in the install step instead
@@ -48,4 +48,3 @@ build: false
 
 test_script:
   - "%CMD_IN_ENV% python setup.py test"
-
