@@ -4,3 +4,5 @@
 .. _Numpy: http://www.numpy.org
 .. _Matplotlib: http://www.matplotlib.org
 .. _pytz: https://pypi.python.org/pypi/pytz/
+.. _pytest-mpl: https://pypi.python.org/pypi/pytest-mpl
+.. _Nose: https://nose.readthedocs.org
