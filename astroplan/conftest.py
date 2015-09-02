@@ -21,3 +21,14 @@ except NameError:  # needed to support Astropy < 1.0
 # within the tests
 from .utils import _mock_remote_data
 _mock_remote_data()
+
+def pytest_configure(config):
+    try:
+        import matplotlib
+        HAS_MATPLOTLIB = True
+    except ImportError:
+        HAS_MATPLOTLIB = False
+
+    if HAS_MATPLOTLIB and config.pluginmanager.hasplugin('mpl'):
+            config.option.mpl = True
+            config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
