@@ -8,14 +8,18 @@
 
     Update with constraints when available?
 
-    Rise/set times currently return altitudes just below the horizon by a few
-    arcseconds.  Need to clarify this and fix sky plot examples.
-
     Show users how to create/use Time objects in their own timezone.
 
 *****************************
 Observing the Summer Triangle
 *****************************
+
+.. note::
+
+    Your calculated rise/set and other times may differ slightly from those in
+    this tutorial, on the order of ~1 second.  This is a normal variance in
+    precision due to several factors, including varying :ref:`IERS tables <iers>`
+    and machine architecture.
 
 Contents
 ========
@@ -135,7 +139,7 @@ indeed those for tonight):
 
     >>> sunset_tonight = subaru.sun_set_time(time, which='nearest')
 
-    >>> sunset_tonight.iso
+    >>> sunset_tonight.iso # doctest: +SKIP
     '2015-06-16 04:59:11.267'
 
 This is '2015-06-15 18:59:11.267' in the Hawaii time zone (that's where Subaru
