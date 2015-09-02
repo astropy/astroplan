@@ -278,20 +278,14 @@ def test_docs_example():
 
         def compute_constraint(self, times, observer, targets):
 
-            # Vega's position is essentially unchanging, but if it were to be a
-            # moving target, we would need an array of coordinates for Vega as a
-            # function of time. Here we'll simulate that behavior with multiple
-            # copies of the Vega coordinate
-            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
-            vega = SkyCoord(len(times)*[vega])
-
-            # If `targets` is a FixedTarget object, get the SkyCoord
-            target_coords = SkyCoord([target.coord if hasattr(target, 'coord')
-                                      else target for target in targets])
+            # Vega's coordinate must be non-scalar for the dimensions
+            # to work out properly when combined with other constraints which
+            # test multiple times
+            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
 
             # Calculate separation between target and vega
-            vega_separation = Angle([vega.separation(target)
-                                     for target in target_coords])
+            vega_separation = Angle([vega.separation(target.coord)
+                                     for target in targets])
 
             # If a maximum is specified but no minimum
             if self.min is None and self.max is not None:
@@ -310,7 +304,8 @@ def test_docs_example():
                 raise ValueError("No max and/or min specified in "
                                  "VegaSeparationConstraint.")
 
-            # Return the boolean mask
+            # Return an array that is True where the target is observable and
+            # False where it is not
             return mask
 
     constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]

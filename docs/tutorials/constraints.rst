@@ -1,5 +1,3 @@
-:orphan:
-
 .. doctest-skip-all
 
 ******************************
@@ -14,8 +12,8 @@ Contents
 
 .. _constraints-built_in_constraints:
 
-Built-In Constraints
-====================
+Introduction to Built-In Constraints
+====================================
 
 Frequently, we have a long list of targets that we want to observe, and we need
 to know which ones are observable given a set of constraints imposed on our
@@ -43,12 +41,12 @@ like this::
     Rigel 78.634467067 -8.201638365
     Regulus 152.092962438 11.967208776
 
-We'll read in this list of targets using `astropy.io.ascii`, and create a list
+We'll read in this list of targets using `astropy.table`, and create a list
 of `astroplan.FixedTarget` objects out of them::
 
     # Read in the table of targets
-    from astropy.io import ascii
-    target_table = ascii.read('targets.txt')
+    from astropy.table import Table
+    target_table = Table.read('targets.txt', format='ascii')
 
     # Create astroplan.FixedTarget objects for each one in the table
     from astropy.coordinates import SkyCoord
@@ -133,6 +131,59 @@ results in a table, all in one step::
           Rigel           False             False                         0.0
         Regulus           False             False                         0.0
 
+Let's sanity-check these results using `astroplan.plots.plot_sky` to plot
+the positions of the targets throughout the time range:
+
+.. plot::
+
+    from astroplan.plots import plot_sky
+    from astroplan import Observer, FixedTarget
+
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    from astropy.time import Time
+    from astropy.coordinates import SkyCoord
+    import astropy.units as u
+
+
+    # Get grid of times within the time_range limits
+    from astroplan import time_grid_from_range
+    time_range = Time(["2015-08-01 06:00", "2015-08-01 12:00"])
+    time_grid = time_grid_from_range(time_range)
+
+    subaru = Observer.at_site("Subaru")
+
+    target_table_string = """# name ra_degrees dec_degrees
+    Polaris 37.95456067 89.26410897
+    Vega 279.234734787 38.783688956
+    Albireo 292.68033548 27.959680072
+    Algol 47.042218553 40.955646675
+    Rigel 78.634467067 -8.201638365
+    Regulus 152.092962438 11.967208776"""
+    # Read in the table of targets
+    from astropy.io import ascii
+    target_table = ascii.read(target_table_string)
+    targets = [FixedTarget(coord=SkyCoord(ra=ra*u.deg, dec=dec*u.deg), name=name)
+               for name, ra, dec in target_table]
+
+    plt.figure(figsize=(6,6))
+    cmap = cm.Set1             # Cycle through this colormap
+
+    for i, target in enumerate(targets):
+        ax = plot_sky(target, subaru, time_grid,
+                      style_kwargs=dict(color=cmap(float(i)/len(targets)),
+                                        label=target.name))
+
+    legend = ax.legend(loc='lower center')
+    legend.get_frame().set_facecolor('w')
+    plt.show()
+
+We can see that Vega is in the sweet spot in altitude and azimuth for this
+time range and is always observable. Albireo is not always observable given
+these criteria because it rises above 80 degrees altitude. Polaris hardly moves
+and is therefore always observable, and Algol starts out observable but sets
+below the lower altitude limit, and then the airmass limit. Rigel and Regulus
+never rise above those limits within the time range.
 
 .. _constraints-user_defined_constraints:
 
@@ -208,20 +259,14 @@ Here's our `VegaSeparationConstraint` implementation::
 
         def compute_constraint(self, times, observer, targets):
 
-            # Vega's position is essentially unchanging, but if it were to be a
-            # moving target, we would need an array of coordinates for Vega as a
-            # function of time. Here we'll simulate that behavior with multiple
-            # copies of the Vega coordinate
-            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
-            vega = SkyCoord(len(times)*[vega])
-
-            # If `targets` is a FixedTarget object, get the SkyCoord
-            target_coords = SkyCoord([target.coord if hasattr(target, 'coord')
-                                      else target for target in targets])
+            # Vega's coordinate must be non-scalar for the dimensions
+            # to work out properly when combined with other constraints which
+            # test multiple times
+            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
 
             # Calculate separation between target and vega
-            vega_separation = Angle([vega.separation(target)
-                                     for target in target_coords])
+            vega_separation = Angle([vega.separation(target.coord)
+                                     for target in targets])
 
             # If a maximum is specified but no minimum
             if self.min is None and self.max is not None:
@@ -240,15 +285,17 @@ Here's our `VegaSeparationConstraint` implementation::
                 raise ValueError("No max and/or min specified in "
                                  "VegaSeparationConstraint.")
 
-            # Return the boolean mask
+            # Return an array that is True where the target is observable and
+            # False where it is not
             return mask
 
 Then as in the earlier example, we can call our constraint::
 
-    constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
-    observability = is_observable(constraints, subaru, targets,
-                                  time_range=time_range)
-    # observability is: [False False  True False False False]
+    >>> constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
+    >>> observability = is_observable(constraints, subaru, targets,
+    ...                               time_range=time_range)
+    >>> print(observability)
+    [False False  True False False False]
 
 The resulting list of booleans indicates that the only target separated by
 5 and 30 degrees from Vega is Albireo. Following this pattern, you can design

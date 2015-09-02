@@ -14,7 +14,7 @@ import datetime
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, Angle
+from astropy.coordinates import get_sun, Angle, SkyCoord
 from astropy.coordinates.angle_utilities import angular_separation
 from astropy import table
 import numpy as np
@@ -22,6 +22,7 @@ import numpy as np
 # Package
 from .moon import get_moon, moon_illumination
 from .utils import time_grid_from_range
+from .core import FixedTarget
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -98,6 +99,9 @@ class Constraint(object):
 
         if times.isscalar:
             times = Time([times])
+
+        targets = [FixedTarget(coord=target) if isinstance(target, SkyCoord)
+                   else target for target in targets]
 
         cons = self.compute_constraint(times, observer, targets)
         return cons
