@@ -18,15 +18,15 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     """
     Plots target positions in the sky with respect to the observer's location.
 
-    If a `matplotlib.axes.Axes` object already exists, plots an additional
+    If a `~matplotlib.axes.Axes` object already exists, plots an additional
     target position on top.
-    Otherwise, creates a new `Axes` object with a sky plot.
+    Otherwise, creates a new `~matplotlib.axes.Axes` object with a sky plot.
 
-    Can pass in a scalar `astropy.time.Time` object (e.g., `Time('2000-1-1')`)
-    or an array of length one (e.g., `Time(['2000-1-1'])`) to get plot at one
+    Can pass in a scalar `~astropy.time.Time` object (e.g. ``Time('2000-1-1')``)
+    or an array of length one (e.g. ``Time(['2000-1-1'])``) to get plot at one
     instance in time.
-    If pass in an `astropy.time.Time` object with multiple instances of time
-    (e.g., `Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])`), target's
+    If pass in an `~astropy.time.Time` object with multiple instances of time
+    (e.g. ``Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])``), target's
     position will be shown at each of these times.
 
     Parameters
@@ -38,20 +38,20 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        If pass in an `astropy.time.Time` object with just one instance in time,
-        whether it be a scalar or an array (e.g., `Time('2000-1-1')`,
-        `Time(['2000-1-1'])`, `[Time('2000-1-1')]`), `plot_sky` will return plot
-        at one instance in time.
-        If pass in an `astropy.time.Time` object with multiple instances in time
-        (e.g., `Time(['2000-1-1', '2000-1-2'])`) will show positions plotted at
-        the exact times specified.
+        If pass in an `~astropy.time.Time` object with just one instance in
+        time, whether it be a scalar or an array (e.g. ``Time('2000-1-1')``,
+        ``Time(['2000-1-1'])``, ``[Time('2000-1-1')]``),
+        `~astroplan.plots.plot_sky` will return plot at one instance in
+        time.  If pass in an `~astropy.time.Time` object with multiple
+        instances in time (e.g. ``Time(['2000-1-1', '2000-1-2'])``) will
+        show positions plotted at the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
-        The `Axes` object to be drawn on.
-        If None, uses the current `Axes`.
+        The `~matplotlib.axes.Axes` object to be drawn on.
+        If None, uses the current `~matplotlib.axes.Axes`.
 
-    style_kwargs : dict or Empty, optional.
-        A dictionary of keywords passed into `matplotlib.pyplot.scatter`
+    style_kwargs : dict or None, optional.
+        A dictionary of keywords passed into `~matplotlib.pyplot.scatter`
         to set plotting styles.
 
     north_to_east_ccw : bool, optional.
@@ -62,38 +62,38 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     grid : bool, optional.
         True by default, meaning that grid is drawn.
 
-    az_label_offset : `~astropy.units.degree`, optional.
+    az_label_offset : ``~astropy.units.degree``, optional.
         DANGER: It is not recommended that you change the default behavior,
         as to do so makes it seem as if N/E/S/W are being decoupled from the
         definition of azimuth (North from az = 0 deg., East from az = 90 deg.,
         etc.).
         An offset for azimuth labels from the North label.  A positive
         offset will increase in the same direction as azimuth
-        (see `north_to_east_ccw` option).
+        (see ``north_to_east_ccw`` option).
 
     Returns
     -------
-    An `matplotlib.axes.Axes` object (ax) with a map of the sky.
+    An `~matplotlib.axes.Axes` object (ax) with a map of the sky.
 
     Notes
     -----
-    Using `astropy.time.Time` objects:
-        See Astropy documentation for more details.
+    Using `~astropy.time.Time` objects:
+        See `Astropy`_ documentation for more details.
 
     Coordinate defaults:
 
         Altazimuth (local horizon) coordinate system.  North is always at top
         of plot, South is always at the bottom, E/W can be right or left
-        depending on the `north_to_east_cw` option.
+        depending on the ``north_to_east_cw`` option.
 
         Altitude: 90 degrees (zenith) is at plot origin (center) and 0 degrees
         (horizon) is at plot edge.  This cannot be changed by user.
 
         Azimuth: 0 degrees is at North (top of plot), 90 degrees at East, etc.
-        DANGER: Azimuth labels can be changed by user via the `az_label_offset`
-        option, but it is not recommended, as to do so makes it seem as if
-        N/E/S/W are being decoupled from the definition of azimuth
-        (North from az = 0 deg., East from az = 90 deg., etc.).
+        DANGER: Azimuth labels can be changed by user via the
+        ``az_label_offset`` option, but it is not recommended, as to do so
+        makes it seem as if N/E/S/W are being decoupled from the definition
+        of azimuth (North from az = 0 deg., East from az = 90 deg., etc.).
     """
     import matplotlib.pyplot as plt
 

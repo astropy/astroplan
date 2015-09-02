@@ -10,9 +10,6 @@ infuriating.
 
 * Code: https://github.com/astropy/astroplan
 * Docs: https://astroplan.readthedocs.org/
-
-.. _Matplotlib: http://www.matplotlib.org
-.. _pytz: https://pypi.python.org/pypi/pytz/
 """
 
 # Affiliated packages may add whatever they like to this file, but

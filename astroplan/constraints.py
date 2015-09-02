@@ -30,6 +30,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
            "observability_table"]
 
+
 def _get_altaz(times, observer, targets,
                force_zero_pressure=False):
     """
@@ -81,6 +82,7 @@ def _get_altaz(times, observer, targets,
 
     return observer._altaz_cache[aakey]
 
+
 @abstractmethod
 class Constraint(object):
     """
@@ -113,6 +115,7 @@ class Constraint(object):
     def compute_constraint(self, times, observer, targets):
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
+
 
 class AltitudeConstraint(Constraint):
     """
@@ -149,6 +152,7 @@ class AltitudeConstraint(Constraint):
         lowermask = self.min < altaz.alt
         uppermask = altaz.alt < self.max
         return lowermask & uppermask
+
 
 class AirmassConstraint(AltitudeConstraint):
     """
@@ -196,6 +200,7 @@ class AirmassConstraint(AltitudeConstraint):
             raise ValueError("No max and/or min specified in "
                              "AirmassConstraint.")
         return mask
+
 
 class AtNightConstraint(Constraint):
     """
@@ -272,6 +277,7 @@ class AtNightConstraint(Constraint):
         mask = solar_altitude < self.max_solar_altitude
         return mask
 
+
 class SunSeparationConstraint(Constraint):
     """
     Constrain the distance between the Sun and some targets.
@@ -306,6 +312,7 @@ class SunSeparationConstraint(Constraint):
             raise ValueError("No max and/or min specified in "
                              "SunSeparationConstraint.")
         return mask
+
 
 class MoonSeparationConstraint(Constraint):
     """
@@ -351,6 +358,7 @@ class MoonSeparationConstraint(Constraint):
                              "MoonSeparationConstraint.")
         return mask
 
+
 class MoonIlluminationConstraint(Constraint):
     """
     Constrain the fractional illumination of the Earth's moon.
@@ -383,6 +391,7 @@ class MoonIlluminationConstraint(Constraint):
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
         return mask
+
 
 class LocalTimeConstraint(Constraint):
     """
@@ -459,6 +468,7 @@ class LocalTimeConstraint(Constraint):
 
         return mask
 
+
 def is_always_observable(constraints, observer, targets, times=None,
                          time_range=None, time_grid_resolution=0.5*u.hour):
     """
@@ -482,7 +492,7 @@ def is_always_observable(constraints, observer, targets, times=None,
     time_range : `~astropy.time.Time` (optional)
         Lower and upper bounds on time sequence, with spacing
         ``time_resolution``. This will be passed as the first argument into
-        `~astroplan.utils.time_grid_from_range`.
+        `~astroplan.time_grid_from_range`.
 
     time_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
@@ -505,6 +515,7 @@ def is_always_observable(constraints, observer, targets, times=None,
                            for constraint in constraints]
     contraint_arr = np.logical_and.reduce(applied_constraints)
     return np.all(contraint_arr, axis=1)
+
 
 def is_observable(constraints, observer, targets, times=None,
                   time_range=None, time_grid_resolution=0.5*u.hour):
@@ -529,7 +540,7 @@ def is_observable(constraints, observer, targets, times=None,
     time_range : `~astropy.time.Time` (optional)
         Lower and upper bounds on time sequence, with spacing
         ``time_resolution``. This will be passed as the first argument into
-        `~astroplan.utils.time_grid_from_range`.
+        `~astroplan.time_grid_from_range`.
 
     time_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
@@ -577,7 +588,7 @@ def observability_table(constraints, observer, targets, times=None,
     time_range : `~astropy.time.Time` (optional)
         Lower and upper bounds on time sequence, with spacing
         ``time_resolution``. This will be passed as the first argument into
-        `~astroplan.utils.time_grid_from_range`.
+        `~astroplan.time_grid_from_range`.
 
     time_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
