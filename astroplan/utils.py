@@ -11,7 +11,8 @@ from .exceptions import OldEarthOrientationDataWarning
 from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
                                 _open_shelve)
 
-__all__ = ["get_IERS_A_or_workaround", "download_IERS_A"]
+__all__ = ["get_IERS_A_or_workaround", "download_IERS_A",
+           "time_grid_from_range"]
 
 IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   "download an up-to-date IERS Bulletin A table. To do so, run:"
@@ -117,3 +118,24 @@ def download_IERS_A(show_progress=True):
     # Undo monkey patch set up by get_IERS_A_or_workaround
     iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
     Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+
+@u.quantity_input(time_resolution=u.hour)
+def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
+    """
+    Get linearly-spaced sequence of times.
+
+    Parameters
+    ----------
+    time_range : `~astropy.time.Time` (length = 2)
+        Lower and upper bounds on time sequence.
+
+    time_resolution : `~astropy.units.quantity` (optional)
+        Time-grid spacing
+
+    Returns
+    -------
+    times : `~astropy.time.Time`
+        Linearly-spaced sequence of times
+    """
+    return Time(np.arange(time_range[0].jd, time_range[1].jd,
+                          time_resolution.to(u.day).value), format='jd')

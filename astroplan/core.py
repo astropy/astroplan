@@ -6,24 +6,24 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  Angle, Latitude, Longitude,
                                  UnitSphericalRepresentation, SphericalRepresentation)
 
-import astropy.units as u
+# Standard library
+from abc import ABCMeta, abstractmethod
 import datetime
-from astropy.time import Time
 import pytz
-import numpy as np
+import warnings
 
+# Third-party
+import astropy.units as u
+from astropy.time import Time
+import numpy as np
 from astropy.extern.six import string_types
+
+# This package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .sites import get_site
 from .moon import get_moon, moon_illumination, moon_phase_angle
-import warnings
 
-from abc import ABCMeta, abstractmethod
-
-
-__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget",
-           "Constraint", "TimeWindow", "AltitudeRange",
-           "AboveAirmass", "MAGIC_TIME"]
+__all__ = ["Observer", "Target", "FixedTarget", "NonFixedTarget", "MAGIC_TIME"]
 
 # TODO: remove this statement once the moon is implemented without pyephem
 __doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
@@ -1782,7 +1782,7 @@ class FixedTarget(Target):
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
     @classmethod
-    def _fixed_target_from_name_mock(cls, name):
+    def _fixed_target_from_name_mock(cls, query_name, name=None):
         """
         Mock method to replace `FixedTarget.from_name` in tests.
         """
@@ -1790,96 +1790,18 @@ class FixedTarget(Target):
             "rigel": {"ra": 78.63446707*u.deg, "dec": -8.20163837*u.deg},
             "sirius": {"ra": 101.28715533*u.deg, "dec": -16.71611586*u.deg},
             "vega": {"ra": 279.23473479*u.deg, "dec": 38.78368896*u.deg},
-            "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg}
+            "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg},
+            "polaris": {"ra": 37.95456067*u.deg, "dec": 89.26410897*u.deg}
         }
 
-        if name.lower() in stars:
-            return cls(coord=SkyCoord(**stars[name.lower()]),
-                       name=name)
+        if query_name.lower() in stars:
+            return cls(coord=SkyCoord(**stars[query_name.lower()]),
+                       name=query_name)
         else:
             raise ValueError("Target named {} not in mocked FixedTarget "
-                             "method".format(name))
+                             "method".format(query_name))
 
 class NonFixedTarget(Target):
     """
     Placeholder for future function.
     """
-
-class Constraint(object):
-    """
-    An object containing observational constraints.
-
-    A Constraints object is used in conjunction with a Target
-    and an Observer object (via the apply_constraints method) to find out
-    if a particular target is visible to the observer.
-    """
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def apply_constraints(self, target, observer, constraint_list):
-        """
-        Returns information on a target's visibility.
-
-        Finds out if a Target is observable by an Observer given a list
-        of Constraint objects.  The list must contain at least one
-        Constraint object.
-
-        Parameters
-        ----------
-        target : WHAT TYPE IS Target OBJECT ?
-
-        constraint_list : WHAT TYPE IS constraint_list ? `numpy.array` ??
-        """
-        raise NotImplementedError
-
-
-class TimeWindow(Constraint):
-    """
-    An object containing start and end times for an observation.
-    """
-
-    def __init__(self, start, end):
-        """
-        Initializes a TimeWindow object.
-
-        Parameters
-        ----------
-        start : STRING OR astropy.time OBJECT ?
-
-        end : STRING OR astropy.time OBJECT ?
-        """
-        raise NotImplementedError
-
-
-class AltitudeRange(Constraint):
-    """
-    An object containing upper and lower altitude limits.
-    """
-
-    def __init__(self, low, high):
-        """
-        Initializes an AltitudeRange object.
-
-        Parameters
-        ----------
-        low : `~astropy.units.Quantity`
-
-        high : `~astropy.units.Quantity`
-        """
-        raise NotImplementedError
-
-
-class AboveAirmass(Constraint):
-    """
-    An object containing an airmass lower limit.
-    """
-
-    def __init__(self, low):
-        """
-        Initializes an AboveAirmass object.
-
-        Parameters
-        ----------
-        low : float
-        """
-        raise NotImplementedError

@@ -25,5 +25,6 @@ if not _ASTROPY_SETUP_:
     from .exceptions import *
     from .sites import *
     from .moon import *
+    from .constraints import *
 
     get_IERS_A_or_workaround()
