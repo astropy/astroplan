@@ -9,7 +9,8 @@ Installation
 Requirements
 ============
 
-**astroplan** requires Python 2.7 or 3.3+ (2.6 and 3.2 or earlier are not
+**astroplan** works on Linux, Mac OS X and Windows.
+It requires Python 2.7 or 3.3+ (2.6 and 3.2 or earlier are not
 supported) as well as the following packages:
 
 * `Numpy`_

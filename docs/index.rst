@@ -75,4 +75,3 @@ Contributors
 * Eric Jeschke
 * Adrian Price-Whelan
 * Erik Tollerud
-
