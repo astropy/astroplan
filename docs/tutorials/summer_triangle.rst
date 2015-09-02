@@ -111,6 +111,7 @@ three of our targets are above the horizon *and* the Sun is below the horizon
 (let's worry about light pollution from the Moon later).
 
 Let's define the window of time during which all targets are above the horizon.
+
 Note that because of the precision limitations of rise/set calculations
 (altitudes at these times won't equal precisely zero, but will be off by a few
 arc seconds), we'll manually adjust rise/set times by a few minutes.
@@ -149,7 +150,7 @@ is).
 
     >>> sunrise_tonight = subaru.sun_rise_time(time, which='nearest')
 
-    >>> sunrise_tonight.iso
+    >>> sunrise_tonight.iso # doctest: +SKIP
     '2015-06-16 15:47:35.822'
 
 This is '2015-06-16 05:47:35.822' Hawaii time.
@@ -160,11 +161,11 @@ window:
 .. code-block:: python
 
     >>> start = np.max([sunset_tonight, all_up_start])
-    >>> start.iso
+    >>> start.iso # doctest: +SKIP
     '2015-06-16 06:28:40.126'
 
     >>> end = np.min([sunrise_tonight, all_up_end])
-    >>> end.iso
+    >>> end.iso # doctest: +SKIP
     '2015-06-16 15:47:35.822'
 
 So, our targets will be visible (as we've defined it above) from
