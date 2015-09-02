@@ -25,10 +25,11 @@ _mock_remote_data()
 def pytest_configure(config):
     try:
         import matplotlib
-        HAS_MATPLOTLIB = True
+        import nose  # needed for the matplotlib testing tools
+        HAS_MATPLOTLIB_AND_NOSE = True
     except ImportError:
-        HAS_MATPLOTLIB = False
+        HAS_MATPLOTLIB_AND_NOSE = False
 
-    if HAS_MATPLOTLIB and config.pluginmanager.hasplugin('mpl'):
+    if HAS_MATPLOTLIB_AND_NOSE and config.pluginmanager.hasplugin('mpl'):
             config.option.mpl = True
             config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
