@@ -1,18 +1,26 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import datetime as dt
+import pytest
 
+import numpy as np
+import astropy.units as u
+from astropy.time import Time
+from astropy.coordinates import SkyCoord, get_sun
+
+from ..moon import get_moon
+from ..core import Observer, FixedTarget
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            LocalTimeConstraint)
-from ..core import Observer, FixedTarget
-import numpy as np
-import astropy.units as u
-from astropy.time import Time
-from astropy.coordinates import SkyCoord, get_sun
-from ..moon import get_moon
-import datetime as dt
+
+try:
+    import ephem
+    HAS_PYEPHEM = True
+except ImportError:
+    HAS_PYEPHEM = False
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -40,6 +48,7 @@ def test_at_night_basic():
         assert all(is_always_observable(AtNightConstraint(), subaru, targets,
                                         time_range=time_range) ==
                    len(targets)*[observer_is_night_all])
+
 
 def test_observability_table():
     subaru = Observer.at_site("Subaru")
@@ -71,6 +80,7 @@ def test_observability_table():
                                    time_range=time_range)
     np.testing.assert_allclose(obstab['always observable'], all_obs)
 
+
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
     time_ranges = [Time([time, time+1*u.hour]) + offset
@@ -93,6 +103,7 @@ def test_compare_altitude_constraint_and_observer():
                                                       time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
+
 def test_compare_airmass_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
     time_ranges = [Time([time, time+1*u.hour]) + offset
@@ -113,6 +124,7 @@ def test_compare_airmass_constraint_and_observer():
                                                       time_range=time_range)
 
         assert all(always_from_observer == always_from_constraint)
+
 
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
@@ -137,6 +149,8 @@ def test_sun_separation():
                                          twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[False], [True], [True]])
 
+
+@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_moon_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -164,6 +178,8 @@ def test_moon_separation():
                                          twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [[False], [True], [True]])
 
+
+@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_moon_illumination():
     times = Time(["2015-08-29 18:35", "2015-09-05 18:35", "2015-09-15 18:35"])
     lco = Observer.at_site("LCO")
@@ -182,6 +198,7 @@ def test_moon_illumination():
     is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [False, True, True])
 
+
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru")
@@ -196,6 +213,7 @@ def test_local_time_constraint_utc():
     constraint = LocalTimeConstraint(min=dt.time(3,8), max=dt.time(5,35))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
+
 
 def test_local_time_constraint_hawaii_tz():
     # Define timezone in Observer.timezone
@@ -212,6 +230,7 @@ def test_local_time_constraint_hawaii_tz():
     constraint = LocalTimeConstraint(min=dt.time(3,8), max=dt.time(5,35))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
+
 
 def test_docs_example():
     # Test the example in astroplan/docs/tutorials/constraints.rst
