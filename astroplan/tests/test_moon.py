@@ -2,12 +2,11 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import pytest
-
 from ..core import Observer
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
 import astropy.units as u
+from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
 
 try:

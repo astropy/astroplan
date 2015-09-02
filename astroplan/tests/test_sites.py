@@ -5,7 +5,7 @@ from ..core import Observer
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.coordinates import Latitude, Longitude, EarthLocation
 import astropy.units as u
-import pytest
+from astropy.tests.helper import pytest
 import json
 
 def test_get_site():

@@ -10,7 +10,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 import datetime
-import pytest
+from astropy.tests.helper import pytest
 
 from ..sites import get_site
 from ..core import (FixedTarget, Observer, list_FixedTarget_to_SkyCoord,
