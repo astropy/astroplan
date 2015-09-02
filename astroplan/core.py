@@ -1681,7 +1681,10 @@ class Target(object):
         """
         if isinstance(self, FixedTarget):
             return self.coord.ra
-        raise NotImplementedError()
+        if isinstance(self. NonFixedTarget):
+            raise ValueError("NonFixedTarget objects require a time and/or "
+                             "other specifications to calculate a position. "
+                             "Did you mean to do NonFixedTarget.at(args).ra?")
 
     @property
     def dec(self):
@@ -1690,8 +1693,10 @@ class Target(object):
         """
         if isinstance(self, FixedTarget):
             return self.coord.dec
-        raise NotImplementedError()
-
+        if isinstance(self. NonFixedTarget):
+            raise ValueError("NonFixedTarget objects require a time and/or "
+                             "other specifications to calculate a position. "
+                             "Did you mean to do NonFixedTarget.at(args).dec?")
 
 class FixedTarget(Target):
     """
@@ -1802,8 +1807,59 @@ class FixedTarget(Target):
 
 class NonFixedTarget(Target):
     """
-    Placeholder for future function.
+    An object that is not "fixed" with respect to the celestial sphere.
+
+    A NonFixedTarget object holds a function that computes the coordinates
+    of the object at various points in time.
+
+    NonFixedTarget objects can at present be initialized only by the
+    ``NonFixedTarget.from_name`` class method.
     """
+    def __init__(self, coord_function=None, name=None, constant_kwargs=None):
+        """
+        TODO: Docstring.
+        """
+        self.name = name.lower() if name is not None else name
+        self.coord_function = coord_function
+        self.constant_kwargs = constant_kwargs
+
+    @classmethod
+    def from_function(cls, coord_function, name=None):
+        """
+        Initialize a `~astropy.NonFixedTarget` by passing in a function that
+        computes a `~astropy.coordinates.SkyCoord` for the target object.
+
+        Parameters
+        ----------
+        coord_function : function
+            This function takes some input parameters and outputs a
+            `~astropy.coordinates.SkyCoord` for the object at one instance
+            in time
+
+        name : str (optional)
+            Name of the object
+        """
+        return cls(coord_function=coord_function, name=name)
+
+    def at(self, *args, **kwargs):
+        """
+        Get a `~astropy.coordinates.SkyCoord` object for the
+        `~astroplan.NonFixedTarget` at a given time, and/or other parameters.
+
+        Parameters
+        ----------
+        All arguments and keyword arguments passed to already-specified
+        ``self.coord_function``.
+
+        Returns
+        -------
+        `~astropy.coordinates.SkyCoord`
+            Specified by passing the arguments to ``self.coord_function``.
+        """
+        if self.constant_kwargs is not None:
+            for key in self.constant_kwargs:
+                kwargs[key] = self.constant_kwargs[key]
+        return self.coord_function(*args, **kwargs)
 
 class Constraint(object):
     """

@@ -2,10 +2,10 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz)
+                                 AltAz, get_sun)
 import astropy.units as u
 from astropy.time import Time
-from astropy.tests.helper import remote_data
+from astropy.tests.helper import remote_data, assert_quantity_allclose
 import numpy as np
 from numpy.testing import assert_allclose
 import pytz
@@ -14,7 +14,8 @@ import pytest
 
 from ..sites import get_site
 from ..core import (FixedTarget, Observer, list_FixedTarget_to_SkyCoord,
-                    MAGIC_TIME)
+                    MAGIC_TIME, NonFixedTarget)
+from ..moon import get_moon
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 try:
@@ -70,6 +71,31 @@ def test_FixedTarget_from_name():
     # Make sure separation is small
     assert polaris_from_name.coord.separation(polaris_from_SIMBAD) < 1*u.arcsec
 
+def test_NonFixedTarget_sun():
+    time = Time("1995-08-31 02:03:04")
+    sun = NonFixedTarget(coord_function=get_sun, name="Sun")
+    sun_skycoord_nft = sun.at(time)
+
+    sun_skycoord_getsun = get_sun(time)
+    tolerance = 0.1*u.arcsec
+    assert_quantity_allclose(sun_skycoord_nft.ra, sun_skycoord_getsun.ra,
+                             atol=tolerance)
+    assert_quantity_allclose(sun_skycoord_nft.dec, sun_skycoord_getsun.dec,
+                             atol=tolerance)
+
+def test_NonFixedTarget_moon():
+    time = Time("1995-08-31 02:03:04")
+    location = get_site("Subaru")
+    pressure = 0*u.bar
+    moon = NonFixedTarget(coord_function=get_moon, name="Moon")
+    moon_skycoord_nft = moon.at(time, location, pressure)
+
+    moon_skycoord_getmoon = get_moon(time, location, pressure)
+    tolerance = 0.1*u.arcsec
+    assert_quantity_allclose(moon_skycoord_nft.alt, moon_skycoord_getmoon.alt,
+                             atol=tolerance)
+    assert_quantity_allclose(moon_skycoord_nft.az, moon_skycoord_getmoon.az,
+                             atol=tolerance)
 
 def test_Observer_altaz():
     """
