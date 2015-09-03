@@ -1620,3 +1620,72 @@ class Observer(object):
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
         return bool(solar_altitude < horizon)
+
+    def local_sidereal_time(self, time, kind='apparent', model=None):
+        """
+        Convert ``time`` to local sidereal time for observer.
+
+        This is a thin wrapper around the `~astropy.time.Time.sidereal_time`
+        method.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
+
+        kind : {'mean', 'apparent'} (optional)
+            Passed to the ``kind`` argument of
+            `~astropy.time.Time.sidereal_time`
+
+        model : str or `None`; optional
+            Passed to the ``model`` argument of
+            `~astropy.time.Time.sidereal_time`
+
+        Returns
+        -------
+
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        return time.sidereal_time(kind, longitude=self.location.longitude,
+                                  model=model)
+
+    def target_hour_angle(self, time, target):
+        """
+        Calculate the local hour angle of ``target`` at ``time``.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object)
+
+        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+            Target celestial object(s)
+
+        Returns
+        -------
+        hour_angle : `~astropy.coordinates.Angle`
+            The hour angle of the target at ``time``
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        if _target_is_vector(target):
+            coords = [t.coord if hasattr(t, 'coord') else t
+                      for t in target]
+
+            hour_angle = Longitude([self.local_sidereal_time(time) - coord.ra
+                                    for coord in coords])
+
+        else:
+            coord = target.coord if hasattr(target, 'coord') else target
+            hour_angle = Longitude(self.local_sidereal_time(time) - coord.ra)
+
+        return hour_angle
