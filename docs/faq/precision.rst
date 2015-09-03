@@ -2,9 +2,9 @@
 
 .. _precision:
 
-*********
-Precision
-*********
+**************************************************************
+Why is my target above/below the horizon at the rise/set time?
+**************************************************************
 
 Rise/set/meridian transit calculations in `astroplan` are designed to be fast
 while achieving a precision comparable to what can be predicted given the
