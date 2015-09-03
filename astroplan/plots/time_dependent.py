@@ -7,6 +7,8 @@ import astropy.units as u
 from astropy.time import Time
 import warnings
 
+from ..exceptions import PlotWarning
+
 __all__ = ['plot_airmass', 'plot_parallactic']
 
 
@@ -81,7 +83,9 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     if time.isscalar:
         time = time + np.linspace(-12, 12, 100)*u.hour
     elif len(time) == 1:
-        warnings.warn('You used a Time array of length 1.  Use a scalar or a list with length > 1.')
+        warnings.warn('You used a Time array of length 1.  You probably meant '
+                      'to use a scalar. (Or maybe a list with length > 1?).',
+                      PlotWarning)
 
     # Calculate airmass
     airmass = observer.altaz(time, target).secz
@@ -180,7 +184,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
     if time.isscalar:
         time = time + np.linspace(-12, 12, 100)*u.hour
     elif len(time) == 1:
-        warnings.warn('You used a Time array of length 1.  Use a scalar or a list with length > 1.')
+        warnings.warn('You used a Time array of length 1.  You probably meant '
+                      'to use a scalar. (Or maybe a list with length > 1?).',
+                      PlotWarning)
 
     # Calculate parallactic angle.
     p_angle = observer.parallactic_angle(time, target)

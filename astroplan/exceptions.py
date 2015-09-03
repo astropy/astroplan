@@ -5,7 +5,8 @@ from __future__ import (absolute_import, division, print_function,
 from astropy.utils.exceptions import AstropyWarning
 
 __all__ = ["TargetAlwaysUpWarning", "TargetNeverUpWarning",
-           "OldEarthOrientationDataWarning"]
+           "OldEarthOrientationDataWarning", "PlotWarning",
+           "PlotBelowHorizonWarning"]
 
 class TargetAlwaysUpWarning(AstropyWarning):
     """Target is circumpolar"""
@@ -17,4 +18,12 @@ class TargetNeverUpWarning(AstropyWarning):
 
 class OldEarthOrientationDataWarning(AstropyWarning):
     """Using old Earth rotation data from IERS"""
+    pass
+
+class PlotWarning(AstropyWarning):
+    """Warnings dealing with the plotting aspects of astroplan"""
+    pass
+
+class PlotBelowHorizonWarning(PlotWarning):
+    """Warning for when something is hidden on a plot because it's below the horizon"""
     pass
