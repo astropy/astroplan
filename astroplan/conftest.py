@@ -36,22 +36,21 @@ def pytest_runtest_setup(item):
     # Make appropriate substitutions to mock internet querying methods
     # within the tests
     if item.get_marker('remote_data'):
-        1/0
+        # a no-op if the last one was remote-data
+        _unmock_remote_data()
     else:
-        2/0
-    _mock_remote_data()
-
-def pytest_runtest_teardown(item, nextitem):
-    #
-    _unmock_remote_data()
+        # a no-op if the last one was not remote-data
+        _mock_remote_data()
 
 
 def _mock_remote_data():
     # Mock FixedTarget.from_name class method for tests without remote data
     from .target import FixedTarget
 
-    FixedTarget._real_from_name = FixedTarget.from_name
-    FixedTarget.from_name = FixedTarget._from_name_mock
+    if not hasattr(FixedTarget, '_real_from_name'):
+        FixedTarget._real_from_name = FixedTarget.from_name
+        FixedTarget.from_name = FixedTarget._from_name_mock
+    #otherwise already mocked
 
 def _unmock_remote_data():
     # undo _mock_remote_data
