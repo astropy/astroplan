@@ -225,8 +225,8 @@ class Observer(object):
         """
         Initialize an `~astroplan.observer.Observer` object with a site name.
 
-        Extra keyword arguments are passed to the `~astroplan.core.Observer`
-        constructor (see `~astroplan.core.Observer` for available keyword
+        Extra keyword arguments are passed to the `~astroplan.Observer`
+        constructor (see `~astroplan.Observer` for available keyword
         arguments).
 
         Parameters

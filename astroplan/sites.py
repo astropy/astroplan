@@ -82,7 +82,7 @@ def get_site(site_name):
 
 def get_site_names(full_list=True):
     """
-    Get list of names of observatories for use with `~astroplan.core.get_site`.
+    Get list of names of observatories for use with `~astroplan.get_site`.
 
     Parameters
     ----------
