@@ -8,19 +8,22 @@ __all__ = ["TargetAlwaysUpWarning", "TargetNeverUpWarning",
            "OldEarthOrientationDataWarning", "PlotWarning",
            "PlotBelowHorizonWarning"]
 
-class TargetAlwaysUpWarning(AstropyWarning):
+class AstroplanWarning(AstropyWarning):
+    """Superclass for warnings used by astroplan"""
+
+class TargetAlwaysUpWarning(AstroplanWarning):
     """Target is circumpolar"""
     pass
 
-class TargetNeverUpWarning(AstropyWarning):
+class TargetNeverUpWarning(AstroplanWarning):
     """Target never rises above horizon"""
     pass
 
-class OldEarthOrientationDataWarning(AstropyWarning):
+class OldEarthOrientationDataWarning(AstroplanWarning):
     """Using old Earth rotation data from IERS"""
     pass
 
-class PlotWarning(AstropyWarning):
+class PlotWarning(AstroplanWarning):
     """Warnings dealing with the plotting aspects of astroplan"""
     pass
 
