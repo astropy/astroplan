@@ -148,9 +148,10 @@ class FixedTarget(Target):
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
     @classmethod
-    def _fixed_target_from_name_mock(cls, query_name, name=None):
+    def _from_name_mock(cls, query_name, name=None):
         """
-        Mock method to replace `FixedTarget.from_name` in tests.
+        Mock method to replace `FixedTarget.from_name` in tests without
+        internet connection.
         """
         stars = {
             "rigel": {"ra": 78.63446707*u.deg, "dec": -8.20163837*u.deg},

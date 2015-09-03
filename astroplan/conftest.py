@@ -17,10 +17,8 @@ try:
 except NameError:  # needed to support Astropy < 1.0
     pass
 
-# Make appropriate substitutions to mock internet querying methods
-# within the tests
-from .utils import _mock_remote_data
-_mock_remote_data()
+
+
 
 def pytest_configure(config):
     try:
@@ -33,3 +31,33 @@ def pytest_configure(config):
     if HAS_MATPLOTLIB_AND_NOSE and config.pluginmanager.hasplugin('mpl'):
             config.option.mpl = True
             config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
+
+def pytest_runtest_setup(item):
+    # Make appropriate substitutions to mock internet querying methods
+    # within the tests
+    if item.get_marker('remote_data'):
+        1/0
+    else:
+        2/0
+    _mock_remote_data()
+
+def pytest_runtest_teardown(item, nextitem):
+    #
+    _unmock_remote_data()
+
+
+def _mock_remote_data():
+    # Mock FixedTarget.from_name class method for tests without remote data
+    from .target import FixedTarget
+
+    FixedTarget._real_from_name = FixedTarget.from_name
+    FixedTarget.from_name = FixedTarget._from_name_mock
+
+def _unmock_remote_data():
+    # undo _mock_remote_data
+    from .target import FixedTarget
+
+    if hasattr(FixedTarget, '_real_from_name'):
+        FixedTarget.from_name = FixedTarget._real_from_name
+        del FixedTarget._real_from_name
+    #otherwise assume it's already correct
