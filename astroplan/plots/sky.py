@@ -7,6 +7,8 @@ import astropy.units as u
 from astropy.time import Time
 import warnings
 
+from ..exceptions import PlotBelowHorizonWarning
+
 __all__ = ['plot_sky']
 
 
@@ -126,10 +128,10 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     az_plot = None
     for alt in range(0, len(altitude)):
         if altitude[alt] > 91.0:
-            msg = 'Warning: Target "{0}" is below the horizon at time: {1}'
-            warnings.warn(
-                msg.format(target_name if target_name else 'Unknown Name',
-                           time[alt]))
+            msg = 'Target "{0}" is below the horizon at time: {1}'
+            msg = msg.format(target_name if target_name else 'Unknown Name',
+                             time[alt])
+            warnings.warn(msg, PlotBelowHorizonWarning)
         else:
             if az_plot is None:
                 az_plot = np.array([azimuth[alt]])
