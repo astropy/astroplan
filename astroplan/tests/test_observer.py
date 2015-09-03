@@ -13,7 +13,8 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz)
+                                 AltAz, Angle)
+from astropy.tests.helper import assert_quantity_allclose
 
 # Package
 from ..sites import get_site
@@ -1156,3 +1157,33 @@ def vectorize_timing(n_targets):
     obs.target_rise_time(t, target_list)
     end = time()
     return end-start
+
+def test_local_sidereal_time():
+    time = Time('2005-02-03 00:00:00')
+    location = EarthLocation.from_geodetic(10*u.deg, 40*u.deg, 0*u.m)
+    obs = Observer(location=location)
+    # test sidereal time
+    astroplan_lst = obs.local_sidereal_time(time)
+    # Compute this with print_pyephem_lst()
+    pyephem_lst = 2.5005375428099104*u.rad
+    assert_quantity_allclose(pyephem_lst, astroplan_lst, atol=0.01*u.deg)
+
+def print_pyephem_lst():
+    time = Time('2005-02-03 00:00:00')
+    pe_apo = ephem.Observer()
+    pe_apo.lat = '40:00:00'
+    pe_apo.lon = '10:00:00'
+    pe_apo.elev = 0
+    pe_apo.date = time.datetime
+    pe_lst = Angle(pe_apo.sidereal_time(), unit=u.rad)
+    return pe_lst
+
+def test_hour_angle():
+    # TODO: Add tests for different targets/times with tools other than PyEphem
+    time = Time('2005-02-03 00:00:00')
+    location = EarthLocation.from_geodetic(10*u.deg, 40*u.deg, 0*u.m)
+    obs = Observer(location=location)
+    vernal_eq = FixedTarget(SkyCoord(ra=0*u.deg, dec=0*u.deg))
+    hour_angle = obs.target_hour_angle(time, vernal_eq)
+    lst = obs.local_sidereal_time(time)
+    assert_quantity_allclose(hour_angle, lst, atol=0.001*u.deg)
