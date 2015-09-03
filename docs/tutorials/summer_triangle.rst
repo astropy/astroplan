@@ -196,7 +196,7 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
     >>> from astroplan.plots import plot_airmass
     >>> import matplotlib.pyplot as plt
 
-    >>> plot_airmass(altair, subaru, time)
+    >>> plot_airmass(altair, subaru, time) # doctest: +SKIP
     >>> plot_airmass(vega, subaru, time)
     >>> plot_airmass(deneb, subaru, time)
 
