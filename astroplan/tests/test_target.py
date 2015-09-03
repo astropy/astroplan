@@ -8,7 +8,7 @@ from astropy.tests.helper import remote_data
 from astropy.coordinates import SkyCoord
 
 # Package
-from ..core import FixedTarget
+from ..target import FixedTarget
 
 @remote_data
 def test_FixedTarget_from_name():

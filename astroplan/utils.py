@@ -24,7 +24,7 @@ BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
 
 def _mock_remote_data():
     # Mock FixedTarget.from_name class method for tests without remote data
-    from astroplan.core import FixedTarget
+    from astroplan.target import FixedTarget
     FixedTarget.from_name = FixedTarget._fixed_target_from_name_mock
 
 def _low_precision_utc_to_ut1(self, jd1, jd2):

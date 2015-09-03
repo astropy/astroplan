@@ -9,7 +9,8 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun
 
 from ..moon import get_moon
-from ..core import Observer, FixedTarget
+from ..observer import Observer
+from ..target import FixedTarget
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,

@@ -17,8 +17,8 @@ class Target(object):
 
     This is an abstract base class -- you can't instantiate
     examples of this class, but must work with one of its
-    subclasses such as `~astroplan.core.FixedTarget` or
-    `~astroplan.core.NonFixedTarget`.
+    subclasses such as `~astroplan.target.FixedTarget` or
+    `~astroplan.target.NonFixedTarget`.
     """
     __metaclass__ = ABCMeta
 

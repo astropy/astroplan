@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 from ..sites import get_site, add_site, new_site_info_to_json
-from ..core import Observer
+from ..observer import Observer
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.coordinates import Latitude, Longitude, EarthLocation
 import astropy.units as u

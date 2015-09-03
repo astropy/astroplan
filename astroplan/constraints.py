@@ -22,7 +22,7 @@ import numpy as np
 # Package
 from .moon import get_moon, moon_illumination
 from .utils import time_grid_from_range
-from .core import FixedTarget
+from .target import FixedTarget
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",

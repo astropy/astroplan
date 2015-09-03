@@ -2,7 +2,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from ..core import Observer
+from ..observer import Observer
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
 import astropy.units as u

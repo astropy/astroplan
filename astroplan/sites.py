@@ -47,7 +47,7 @@ def get_site(site_name):
     """
     Return an `~astropy.coordinates.EarthLocation` object for known observatory.
 
-    Use `~astroplan.core.get_site_names` to see a list of available
+    Use `~astroplan.get_site_names` to see a list of available
     observatories.
 
     Parameters

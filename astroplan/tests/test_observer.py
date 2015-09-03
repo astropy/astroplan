@@ -17,7 +17,8 @@ from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
 
 # Package
 from ..sites import get_site
-from ..core import (FixedTarget, Observer, MAGIC_TIME)
+from ..observer import Observer, MAGIC_TIME
+from ..target import FixedTarget
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 try:
@@ -341,7 +342,7 @@ def print_pyephem_sunrise_sunset():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_sunrise_sunset as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -416,7 +417,7 @@ def print_pyephem_vega_rise_set():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_vega_rise_set as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_vega_rise_set as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -505,7 +506,7 @@ def print_pyephem_vega_sirius_rise_set():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_vega_sirius_rise_set as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_vega_sirius_rise_set as f; f()'
     """
     lat = '47:36:34.92'
     lon = '122:19:59.16'
@@ -588,7 +589,7 @@ def print_pyephem_sunrise_sunset_equator_civil_twilight():
     on the equator.
 
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -672,7 +673,7 @@ def test_twilight_convenience_funcs():
 def print_pyephem_twilight_convenience_funcs():
     """
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_twilight_convenience_funcs as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_twilight_convenience_funcs as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -805,7 +806,7 @@ def print_pyephem_solar_transit_noon():
     on the equator.
 
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_transit_noon as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_transit_noon as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -875,7 +876,7 @@ def print_pyephem_vega_sirius_transit():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_vega_sirius_transit as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_vega_sirius_transit as f; f()'
     """
     lat = '47:36:34.92'
     lon = '122:19:59.16'
@@ -1091,7 +1092,7 @@ def test_moon_altaz():
 def print_pyephem_moon_altaz():
     """
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_moon_altaz as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_moon_altaz as f; f()'
     """
     time = Time('2012-06-21 03:00:00')
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)

@@ -223,7 +223,7 @@ class Observer(object):
     @classmethod
     def at_site(cls, site_name, **kwargs):
         """
-        Initialize an `~astroplan.core.Observer` object with a site name.
+        Initialize an `~astroplan.observer.Observer` object with a site name.
 
         Extra keyword arguments are passed to the `~astroplan.core.Observer`
         constructor (see `~astroplan.core.Observer` for available keyword
@@ -237,7 +237,7 @@ class Observer(object):
 
         Returns
         -------
-        `~astroplan.core.Observer`
+        `~astroplan.observer.Observer`
             Observer object.
 
         Examples
