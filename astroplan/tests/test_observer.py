@@ -8,7 +8,7 @@ import datetime
 # Third-party
 import astropy.units as u
 from astropy.time import Time
-from astropy.tests.helper import pytest, remote_data
+from astropy.tests.helper import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 import pytz
@@ -17,8 +17,7 @@ from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
 
 # Package
 from ..sites import get_site
-from ..core import (FixedTarget, Observer, list_FixedTarget_to_SkyCoord,
-                    MAGIC_TIME)
+from ..core import (FixedTarget, Observer, MAGIC_TIME)
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 try:
@@ -56,7 +55,7 @@ def test_Observer_constructor_location():
                                             'different answer from passing in '
                                             'an EarthLocation directly')
 
-    def test_Observer_altaz():
+def test_Observer_altaz():
     """
     Check that the altitude/azimuth computed by `Observer.altaz` is similar
     to the result from PyEphem when pressure = 0 (no atmosphere) for Vega at
