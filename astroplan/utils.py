@@ -28,10 +28,6 @@ IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
 
 BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
 
-def _mock_remote_data():
-    # Mock FixedTarget.from_name class method for tests without remote data
-    from astroplan.target import FixedTarget
-    FixedTarget.from_name = FixedTarget._fixed_target_from_name_mock
 
 def _low_precision_utc_to_ut1(self, jd1, jd2):
     """
@@ -145,3 +141,27 @@ def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     """
     return Time(np.arange(time_range[0].jd, time_range[1].jd,
                           time_resolution.to(u.day).value), format='jd')
+
+def _mock_remote_data():
+    """
+    Mock FixedTarget.from_name class method for tests without remote data
+
+    Actually called in conftest.py
+    """
+    from .target import FixedTarget
+
+    if not hasattr(FixedTarget, '_real_from_name'):
+        FixedTarget._real_from_name = FixedTarget.from_name
+        FixedTarget.from_name = FixedTarget._from_name_mock
+    #otherwise already mocked
+
+def _unmock_remote_data():
+    """
+    undo _mock_remote_data
+    """
+    from .target import FixedTarget
+
+    if hasattr(FixedTarget, '_real_from_name'):
+        FixedTarget.from_name = FixedTarget._real_from_name
+        del FixedTarget._real_from_name
+    #otherwise assume it's already correct

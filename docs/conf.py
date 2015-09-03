@@ -176,9 +176,12 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
 
 # Make appropriate substitutions to mock internet querying methods
-# within the tests
-from astroplan.utils import _mock_remote_data
-_mock_remote_data()
+# within the tests.
+# Currently this is not needed because of the content of the tests, but we leave
+# it here in case it's needed again in the future.  BUT beware of:
+# https://github.com/astropy/astroplan/issues/96
+#from astroplan.utils import _mock_remote_data
+#_mock_remote_data()
 
 # Add additional Sphinx extensions:
 extensions += ['matplotlib.sphinxext.plot_directive']
