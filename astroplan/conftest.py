@@ -7,6 +7,10 @@ from astropy.tests.pytest_plugins import *
 # also save a copy of the astropy hooks so we can use them below when overriding
 from astropy.tests import pytest_plugins as astropy_pytest_plugins
 
+import warnings
+from .utils import _mock_remote_data, _unmock_remote_data
+from .exceptions import OldEarthOrientationDataWarning
+
 ## Uncomment the following line to treat all DeprecationWarnings as
 ## exceptions
 enable_deprecations_as_exceptions()
@@ -26,6 +30,9 @@ def pytest_configure(config):
         # sure ought to be true right now, but always possible it will change in
         # future versions of astropy
         astropy_pytest_plugins.pytest_configure(config)
+
+    warnings.simplefilter('always', category=OldEarthOrientationDataWarning)
+
     try:
         import matplotlib
         import nose  # needed for the matplotlib testing tools
@@ -38,8 +45,6 @@ def pytest_configure(config):
             config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
 
 def pytest_runtest_setup(item):
-    from .utils import _mock_remote_data, _unmock_remote_data
-
     if hasattr(astropy_pytest_plugins, 'pytest_runtest_setup'):
         # sure ought to be true right now, but always possible it will change in
         # future versions of astropy
