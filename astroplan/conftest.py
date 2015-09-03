@@ -9,7 +9,7 @@ from astropy.tests import pytest_plugins as astropy_pytest_plugins
 
 import warnings
 from .utils import _mock_remote_data, _unmock_remote_data
-from .exceptions import OldEarthOrientationDataWarning
+from .exceptions import AstroplanWarning
 
 ## Uncomment the following line to treat all DeprecationWarnings as
 ## exceptions
@@ -31,7 +31,8 @@ def pytest_configure(config):
         # future versions of astropy
         astropy_pytest_plugins.pytest_configure(config)
 
-    warnings.simplefilter('always', category=OldEarthOrientationDataWarning)
+    #make sure astroplan warnings always appear so we can test when they show up
+    warnings.simplefilter('always', category=AstroplanWarning)
 
     try:
         import matplotlib
