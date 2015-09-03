@@ -39,8 +39,8 @@ Features:
 Links
 =====
 
-* `Docs <https://astroplan.readthedocs.org/>`_
 * `Source code <https://github.com/astropy/astroplan>`_
+* `Docs <https://astroplan.readthedocs.org/>`_
 * `Issues <https://github.com/astropy/astroplan/issues>`_
 
 License: BSD-3
@@ -56,8 +56,8 @@ General Documentation
    installation
    getting_started
    tutorials/index
+   faq/index
    api
-
 
 .. _astroplan_authors:
 

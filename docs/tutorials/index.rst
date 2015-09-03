@@ -21,5 +21,4 @@ We currently have the following tutorials:
 
    summer_triangle
    plots
-   iers
    constraints
