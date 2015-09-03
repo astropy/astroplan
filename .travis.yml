@@ -63,15 +63,9 @@ matrix:
         # build (with latest numpy). We also note the code coverage on Python
         # 2.7.
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test -V --coverage' OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage' OPTIONAL_DEPS=true
         - os: linux
-          env: PYTHON_VERSION=3.4 SETUP_CMD='test -V' OPTIONAL_DEPS=true
-
-        # Also try with remote-data option (and do optional_deps in case there's overlap there)
-        - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
-        - os: linux
-          env: PYTHON_VERSION=3.4 SETUP_CMD='test --remote-data-V' OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=3.4 SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
 
         # Try older numpy versions
         - os: linux
