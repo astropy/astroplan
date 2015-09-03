@@ -20,13 +20,6 @@ fi
 # CORE DEPENDENCIES
 conda install --yes pytest Cython jinja2 psutil pytz
 
-# For now testing requires matplotlib and pytest-mpl
-# TODO: make this optional if possible
-# https://github.com/astropy/astroplan/issues/86
-# https://github.com/astropy/astroplan/pull/83
-conda install --yes matplotlib nose
-pip install pytest-mpl
-
 # NUMPY
 if [[ $NUMPY_VERSION == dev ]]
 then
@@ -53,7 +46,7 @@ if $OPTIONAL_DEPS
 then
   # Note: nose is required to run the matplotlib image comparison tests
   $CONDA_INSTALL matplotlib nose
-  pip install pyephem
+  pip install pyephem pytest-mpl
 fi
 
 # DOCUMENTATION DEPENDENCIES
