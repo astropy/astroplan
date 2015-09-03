@@ -10,12 +10,11 @@ import warnings
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  Angle, Latitude, Longitude,
                                  UnitSphericalRepresentation)
+from astropy.extern.six import string_types
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
 import pytz
-
-from astropy.extern.six import string_types
 
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
