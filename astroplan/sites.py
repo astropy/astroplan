@@ -12,9 +12,12 @@ Request to the [astroplan GitHub repository](https://github.com/astropy/astropla
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.utils.data import get_pkg_data_contents
+# Standard library
 from difflib import get_close_matches
 import json
+
+# Third-party
+from astropy.utils.data import get_pkg_data_contents
 from astropy.coordinates import EarthLocation
 import astropy.units as u
 
@@ -47,7 +50,7 @@ def get_site(site_name):
     """
     Return an `~astropy.coordinates.EarthLocation` object for known observatory.
 
-    Use `~astroplan.core.get_site_names` to see a list of available
+    Use `~astroplan.get_site_names` to see a list of available
     observatories.
 
     Parameters
@@ -79,7 +82,7 @@ def get_site(site_name):
 
 def get_site_names(full_list=True):
     """
-    Get list of names of observatories for use with `~astroplan.core.get_site`.
+    Get list of names of observatories for use with `~astroplan.get_site`.
 
     Parameters
     ----------

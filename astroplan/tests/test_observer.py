@@ -1,20 +1,24 @@
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz)
+# Standard library
+import datetime
+
+# Third-party
 import astropy.units as u
 from astropy.time import Time
-from astropy.tests.helper import remote_data
+from astropy.tests.helper import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 import pytz
-import datetime
-from astropy.tests.helper import pytest
+from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
+                                 AltAz)
 
+# Package
 from ..sites import get_site
-from ..core import (FixedTarget, Observer, list_FixedTarget_to_SkyCoord,
-                    MAGIC_TIME)
+from ..observer import Observer, MAGIC_TIME
+from ..target import FixedTarget
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 try:
@@ -22,7 +26,6 @@ try:
     HAS_PYEPHEM = True
 except ImportError:
     HAS_PYEPHEM = False
-
 
 def test_Observer_constructor_location():
     """
@@ -52,24 +55,6 @@ def test_Observer_constructor_location():
                                             'elevation keywords gave a '
                                             'different answer from passing in '
                                             'an EarthLocation directly')
-
-
-@remote_data
-def test_FixedTarget_from_name():
-    """
-    Check that resolving target names with the `SkyCoord.from_name` constructor
-    to produce a `FixedTarget` accurately resolves the coordinates of Polaris.
-    """
-
-    # Resolve coordinates with SkyCoord.from_name classmethod
-    polaris_from_name = FixedTarget.from_name('Polaris')
-    polaris_from_name = FixedTarget.from_name('Polaris', name='Target 1')
-    # Coordinates grabbed from SIMBAD
-    polaris_from_SIMBAD = SkyCoord('02h31m49.09456s', '+89d15m50.7923s')
-
-    # Make sure separation is small
-    assert polaris_from_name.coord.separation(polaris_from_SIMBAD) < 1*u.arcsec
-
 
 def test_Observer_altaz():
     """
@@ -204,21 +189,6 @@ def test_rise_set_transit_nearest_vector():
     assert transit_vector[1] == mira_trans
     assert transit_vector[2] == sirius_trans
 
-
-def test_list_FT_to_SC():
-    # Test conversion of FixedTargets to vector SkyCoord
-    vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
-    capella = SkyCoord(79.17232794*u.deg, 45.99799147*u.deg)
-    sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
-    sc_list = [vega, capella, sirius]
-
-    ft_list = [FixedTarget(coord=sc) for sc in sc_list]
-    vector_sc = list_FixedTarget_to_SkyCoord(ft_list)
-    assert sc_list[0].separation(vector_sc[0]) < 0.1*u.arcsec
-    assert sc_list[1].separation(vector_sc[1]) < 0.1*u.arcsec
-    assert sc_list[2].separation(vector_sc[2]) < 0.1*u.arcsec
-
-
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
                       target_coords):
     """
@@ -241,7 +211,6 @@ def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
     pyephem_azimuth = Longitude(np.degrees(pyephem_target.az)*u.degree)
     print(pyephem_altitude, pyephem_azimuth)
 
-
 def test_Observer_timezone_parser():
     lat = '+19:00:00'
     lon = '-155:00:00'
@@ -258,23 +227,6 @@ def test_Observer_timezone_parser():
                                             'and instances of pytz.timezone')
 
     assert obs2.timezone == obs3.timezone, ('Default timezone should be UTC')
-
-
-def test_FixedTarget_ra_dec():
-    """
-    Confirm that FixedTarget.ra and FixedTarget.dec are the same as the
-    right ascension and declination stored in the FixedTarget.coord variable -
-    which is a SkyCoord
-    """
-
-    vega_coords = SkyCoord('18h36m56.33635s', '+38d47m01.2802s')
-    vega = FixedTarget(vega_coords, name='Vega')
-    assert vega.coord == vega_coords, 'Store coordinates directly'
-    assert vega.coord.ra == vega_coords.ra == vega.ra, ('Retrieve RA from '
-                                                        'SkyCoord')
-    assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
-                                                           'SkyCoord')
-
 
 def test_parallactic_angle():
     """
@@ -390,7 +342,7 @@ def print_pyephem_sunrise_sunset():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_sunrise_sunset as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -465,7 +417,7 @@ def print_pyephem_vega_rise_set():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_vega_rise_set as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_vega_rise_set as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -554,7 +506,7 @@ def print_pyephem_vega_sirius_rise_set():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_vega_sirius_rise_set as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_vega_sirius_rise_set as f; f()'
     """
     lat = '47:36:34.92'
     lon = '122:19:59.16'
@@ -637,7 +589,7 @@ def print_pyephem_sunrise_sunset_equator_civil_twilight():
     on the equator.
 
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_sunrise_sunset_equator_civil_twilight as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -721,7 +673,7 @@ def test_twilight_convenience_funcs():
 def print_pyephem_twilight_convenience_funcs():
     """
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_twilight_convenience_funcs as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_twilight_convenience_funcs as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -854,7 +806,7 @@ def print_pyephem_solar_transit_noon():
     on the equator.
 
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_transit_noon as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_transit_noon as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
@@ -924,7 +876,7 @@ def print_pyephem_vega_sirius_transit():
     """
     To run:
 
-    python -c 'from astroplan.tests.test_core import print_pyephem_vega_sirius_transit as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_vega_sirius_transit as f; f()'
     """
     lat = '47:36:34.92'
     lon = '122:19:59.16'
@@ -1140,7 +1092,7 @@ def test_moon_altaz():
 def print_pyephem_moon_altaz():
     """
     To run:
-    python -c 'from astroplan.tests.test_core import print_pyephem_moon_altaz as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_moon_altaz as f; f()'
     """
     time = Time('2012-06-21 03:00:00')
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
