@@ -8,6 +8,7 @@ the position of the moon using PyEphem, awaiting solutions to the astropy issue
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+# Third-party
 import numpy as np
 from astropy.time import Time
 from astropy.coordinates import (SkyCoord, get_sun, AltAz, Angle)

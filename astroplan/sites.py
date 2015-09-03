@@ -12,9 +12,12 @@ Request to the [astroplan GitHub repository](https://github.com/astropy/astropla
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from astropy.utils.data import get_pkg_data_contents
+# Standard library
 from difflib import get_close_matches
 import json
+
+# Third-party
+from astropy.utils.data import get_pkg_data_contents
 from astropy.coordinates import EarthLocation
 import astropy.units as u
 

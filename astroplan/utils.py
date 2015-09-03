@@ -1,15 +1,21 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+
+# Standard library
 import warnings
+
+# Third-party
 import numpy as np
 from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 from astropy.time import Time
 import astropy.units as u
-from .exceptions import OldEarthOrientationDataWarning
 from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
                                 _open_shelve)
+
+# Package
+from .exceptions import OldEarthOrientationDataWarning
 
 __all__ = ["get_IERS_A_or_workaround", "download_IERS_A",
            "time_grid_from_range"]
