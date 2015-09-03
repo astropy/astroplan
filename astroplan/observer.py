@@ -1646,7 +1646,8 @@ class Observer(object):
 
         Returns
         -------
-
+        `~astropy.coordinates.Longitude`
+            Local sidereal time.
         """
         if not isinstance(time, Time):
             time = Time(time)

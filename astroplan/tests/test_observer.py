@@ -1166,7 +1166,7 @@ def test_local_sidereal_time():
     astroplan_lst = obs.local_sidereal_time(time)
     # Compute this with print_pyephem_lst()
     pyephem_lst = 2.5005375428099104*u.rad
-    assert_quantity_allclose(pyephem_lst, astroplan_lst, atol=0.01*u.deg)
+    assert_quantity_allclose(astroplan_lst, pyephem_lst, atol=0.01*u.deg)
 
 def print_pyephem_lst():
     time = Time('2005-02-03 00:00:00')
