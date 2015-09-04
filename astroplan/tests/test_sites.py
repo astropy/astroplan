@@ -1,5 +1,6 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from .. import sites
 from ..sites import get_site, add_site, new_site_info_to_json
 from ..observer import Observer
 from astropy.tests.helper import assert_quantity_allclose
@@ -38,6 +39,8 @@ def test_add_site():
     add_site(new_site_name, new_site_location)
     retrieved_location = get_site(new_site_name)
     assert retrieved_location == new_site_location
+    del sites._site_names[sites._site_names.index(new_site_name)]
+    del sites._site_db[new_site_name.lower()]
 
 def test_Observer_classmethod():
     site_name = 'kpno'
