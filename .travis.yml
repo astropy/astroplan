@@ -104,5 +104,5 @@ script:
 
 after_success:
     - if [[ $SETUP_CMD == 'test --remote-data -V --coverage' ]]; then
-        coveralls --merge=c-coveralls.json --rcfile='astroplan/tests/coveragerc';
+        coveralls --rcfile='astroplan/tests/coveragerc';
       fi
