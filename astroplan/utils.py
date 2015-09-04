@@ -147,26 +147,43 @@ def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     return Time(np.arange(time_range[0].jd, time_range[1].jd,
                           time_resolution.to(u.day).value), format='jd')
 
+
 def _mock_remote_data():
     """
-    Mock FixedTarget.from_name class method for tests without remote data
+    Apply mocks (i.e. monkey-patches) to avoid the need for internet access
+    for certain things.
 
-    Actually called in conftest.py
+    This is currently called in `astroplan/conftest.py` when the tests are run
+    and the `--remote-data` option isn't used.
+
+    The way this setup works is that for functionality that usuasally requires
+    internet access, but has mocks in place, it is possible to write the test
+    without adding a `@remote_data` decorator, and `py.test` will do the right
+    thing when running the tests:
+
+    1. Access the internet and use the normal code if `--remote-data` is used
+    2. Not access the internet and use the mock code if `--remote-data` is not used
+
+    Both of these cases are tested on travis-ci.
+
+    Currently only `FixedTarget.from_name` is mocked.
     """
     from .target import FixedTarget
 
     if not hasattr(FixedTarget, '_real_from_name'):
         FixedTarget._real_from_name = FixedTarget.from_name
         FixedTarget.from_name = FixedTarget._from_name_mock
-    #otherwise already mocked
+    # otherwise already mocked
+
 
 def _unmock_remote_data():
     """
     undo _mock_remote_data
+    currently unused
     """
     from .target import FixedTarget
 
     if hasattr(FixedTarget, '_real_from_name'):
         FixedTarget.from_name = FixedTarget._real_from_name
         del FixedTarget._real_from_name
-    #otherwise assume it's already correct
+    # otherwise assume it's already correct

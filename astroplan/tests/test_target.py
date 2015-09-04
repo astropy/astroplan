@@ -4,13 +4,12 @@ from __future__ import (absolute_import, division, print_function,
 
 # Third-party
 import astropy.units as u
-from astropy.tests.helper import remote_data
 from astropy.coordinates import SkyCoord
 
 # Package
 from ..target import FixedTarget
 
-@remote_data
+
 def test_FixedTarget_from_name():
     """
     Check that resolving target names with the `SkyCoord.from_name` constructor
@@ -25,6 +24,7 @@ def test_FixedTarget_from_name():
 
     # Make sure separation is small
     assert polaris_from_name.coord.separation(polaris_from_SIMBAD) < 1*u.arcsec
+
 
 def test_FixedTarget_ra_dec():
     """
