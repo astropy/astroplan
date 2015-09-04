@@ -18,18 +18,17 @@ import warnings
 from .utils import _mock_remote_data, _unmock_remote_data
 from .exceptions import AstroplanWarning
 
-## Uncomment the following line to treat all DeprecationWarnings as
-## exceptions
+# Comment out this line to avoid deprecation warnings being raised as exceptions
 enable_deprecations_as_exceptions()
 
-## Uncomment and customize the following lines to add/remove entries
-## from the list of packages for which version numbers are displayed
-## when running the tests
-try:
-    PYTEST_HEADER_MODULES['pyephem'] = 'pyephem'
-    del PYTEST_HEADER_MODULES['h5py']
-except NameError:  # needed to support Astropy < 1.0
-    pass
+# Define list of packages for which to display version numbers in the test log
+PYTEST_HEADER_MODULES['astropy'] = 'astropy'
+PYTEST_HEADER_MODULES['pytz'] = 'pytz'
+PYTEST_HEADER_MODULES['pyephem'] = 'pyephem'
+PYTEST_HEADER_MODULES['matplotlib'] = 'matplotlib'
+PYTEST_HEADER_MODULES['nose'] = 'nose'
+PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest-mpl'
+del PYTEST_HEADER_MODULES['h5py']
 
 
 def pytest_configure(config):
@@ -38,9 +37,11 @@ def pytest_configure(config):
         # future versions of astropy
         astropy_pytest_plugins.pytest_configure(config)
 
-    #make sure astroplan warnings always appear so we can test when they show up
+    # make sure astroplan warnings always appear so we can test when they show up
     warnings.simplefilter('always', category=AstroplanWarning)
 
+    # activate image comparison tests only if the dependencies needed are installed:
+    # matplotlib, nose, pytest-mpl
     try:
         import matplotlib
         import nose  # needed for the matplotlib testing tools
@@ -55,23 +56,6 @@ def pytest_configure(config):
         # config.option.mpl = True
         # config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
 
-def pytest_runtest_setup(item):
-    """
-    This overrides the tests so that if they are marked ``remote_data`` they get
-    run without any mocking of functions, but if they are not, then the mocking
-    happens.  This means that functionality that uses mock data should have both
-    a ``remote_data`` test *and* a separate one that is not ``remote_data``.
-    """
-    if hasattr(astropy_pytest_plugins, 'pytest_runtest_setup'):
-        # sure ought to be true right now, but always possible it will change in
-        # future versions of astropy
-        astropy_pytest_plugins.pytest_runtest_setup(item)
-
-    # Make appropriate substitutions to mock internet querying methods
-    # within the tests
-    if item.get_marker('remote_data'):
-        # a no-op if the last one was remote-data
-        _unmock_remote_data()
-    else:
-        # a no-op if the last one was not remote-data
+    # Activate remote data mocking if the `--remote-data` option isn't used:
+    if not config.getoption('remote_data'):
         _mock_remote_data()
