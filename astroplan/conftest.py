@@ -49,8 +49,11 @@ def pytest_configure(config):
         HAS_MATPLOTLIB_AND_NOSE = False
 
     if HAS_MATPLOTLIB_AND_NOSE and config.pluginmanager.hasplugin('mpl'):
-            config.option.mpl = True
-            config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
+        pass
+        # TODO: turn image comparison tests back on once this issue is figured out:
+        # https://github.com/astropy/astroplan/pull/104#issuecomment-137734007
+        # config.option.mpl = True
+        # config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
 
 def pytest_runtest_setup(item):
     """
