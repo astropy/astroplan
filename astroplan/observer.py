@@ -28,6 +28,7 @@ __doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
 
 MAGIC_TIME = Time(-999, format='jd')
 
+
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
     Generate a nearly linearly spaced grid of time durations.
@@ -144,8 +145,8 @@ class Observer(object):
             The ambient temperature.
 
         timezone : str or `datetime.tzinfo` (optional)
-            The local timezone to assume. If a string, it will be passed through
-            `pytz.timezone()` to produce the timezone object.
+            The local timezone to assume. If a string, it will be passed
+            through ``pytz.timezone()`` to produce the timezone object.
 
         description : str (optional)
             A short description of the telescope, observatory or observing
@@ -233,7 +234,7 @@ class Observer(object):
         ----------
         site_name : str
             Observatory name, must be resolvable with
-            `~astroplan.sites.get_site`.
+            `~astroplan.get_site`.
 
         Returns
         -------
@@ -260,7 +261,9 @@ class Observer(object):
         Convert the `~astropy.time.Time` object ``astropy_time`` to a
         localized `~datetime.datetime` object.
 
-        Timezones localized with `~pytz`.
+        Timezones localized with `pytz`_.
+
+        .. _pytz: https://pypi.python.org/pypi/pytz/
 
         Parameters
         ----------
@@ -300,7 +303,7 @@ class Observer(object):
         Convert the `~datetime.datetime` object ``date_time`` to a
         `~astropy.time.Time` object.
 
-        Timezones localized with `~pytz`. If the ``date_time`` is naive, the
+        Timezones localized with `pytz`_. If the ``date_time`` is naive, the
         implied timezone is the ``timezone`` structure of ``self``.
 
         Parameters
@@ -1379,7 +1382,7 @@ class Observer(object):
 
         moon : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.moon.get_moon`.
+            the position of the moon with `~astroplan.get_moon`.
 
         sun : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the sun at time ``time``. If `None`, will calculate
@@ -1423,7 +1426,7 @@ class Observer(object):
 
         moon : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.moon.get_moon`.
+            the position of the moon with `~astroplan.get_moon`.
 
         sun : `~astropy.coordinates.SkyCoord` or `None` (default)
             Position of the sun at time ``time``. If `None`, will calculate

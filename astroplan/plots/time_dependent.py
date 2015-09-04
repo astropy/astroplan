@@ -16,18 +16,18 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     """
     Plots airmass as a function of time for a given target.
 
-    If a `matplotlib.axes.Axes` object already exists, an additional airmass
-    plot will be "stacked" on it.
-    Otherwise, creates a new `matplotlib.axes.Axes` object and plots airmass on
-    top of that.
+    If a `~matplotlib.axes.Axes` object already exists, an additional
+    airmass plot will be "stacked" on it.  Otherwise, creates a new
+    `~matplotlib.axes.Axes` object and plots airmass on top of that.
 
-    When a scalar `astropy.time.Time` object is passed in (e.g.,
-    `Time('2000-1-1')`), the resulting plot will use a 24-hour window centered
-    on the time indicated, with airmass sampled at regular intervals throughout.
+    When a scalar `~astropy.time.Time` object is passed in (e.g.,
+    ``Time('2000-1-1')``), the resulting plot will use a 24-hour window
+    centered on the time indicated, with airmass sampled at regular
+    intervals throughout.
     However, the user can control the exact number and frequency of airmass
-    calculations used by passing in a non-scalar `astropy.time.Time` object. For
-    instance, `Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])` will result in
-    a plot with only two airmass measurements.
+    calculations used by passing in a non-scalar `~astropy.time.Time`
+    object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1
+    23:30:00'])`` will result in a plot with only two airmass measurements.
 
     Parameters
     ----------
@@ -38,29 +38,29 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        If scalar (e.g., `Time('2000-1-1')`), will result in plotting target
+        If scalar (e.g., ``Time('2000-1-1')``), will result in plotting target
         airmasses once an hour over a 24-hour window.
-        If non-scalar (e.g., `Time(['2000-1-1'])`, `[Time('2000-1-1')]`,
-        `Time(['2000-1-1', '2000-1-2'])`),
+        If non-scalar (e.g., ``Time(['2000-1-1'])``, ``[Time('2000-1-1')]``,
+        ``Time(['2000-1-1', '2000-1-2'])``),
         will result in plotting data at the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
-        The `Axes` object to be drawn on.
-        If None, uses the current `Axes`.
+        The `~matplotlib.axes.Axes` object to be drawn on.
+        If None, uses the current ``Axes``.
 
-    style_kwargs : dict or Empty, optional.
-        A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
+    style_kwargs : dict or None, optional.
+        A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
         to set plotting styles.
 
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
-        An `Axes` object with added airmass vs. time plot.
+        An ``Axes`` object with added airmass vs. time plot.
 
     Notes
     -----
     y-axis is inverted and shows airmasses between 1.0 and 3.0 by default.
-    If user wishes to change these, use `ax.\<set attribute\>` before drawing
+    If user wishes to change these, use ``ax.\<set attribute\>`` before drawing
     or saving plot:
 
     TODO:
@@ -123,17 +123,17 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
     """
     Plots parallactic angle as a function of time for a given target.
 
-    If a `matplotlib.axes.Axes` object already exists, an additional parallactic
-    angle plot will be "stacked" on it.
-    Otherwise, creates a new `Axes` object and plots on top of that.
+    If a `~matplotlib.axes.Axes` object already exists, an additional
+    parallactic angle plot will be "stacked" on it.  Otherwise, creates a
+    new `~matplotlib.axes.Axes` object and plots on top of that.
 
-    When a scalar `astropy.time.Time` object is passed in (e.g.,
-    `Time('2000-1-1')`), the resulting plot will use a 24-hour window centered
-    on the time indicated, with parallactic angle sampled at regular intervals
-    throughout.
+    When a scalar `~astropy.time.Time` object is passed in (e.g.,
+    ``Time('2000-1-1')``), the resulting plot will use a 24-hour window
+    centered on the time indicated, with parallactic angle sampled at
+    regular intervals throughout.
     However, the user can control the exact number and frequency of parallactic
-    angle calculations used by passing in a non-scalar `astropy.time.Time`
-    object. For instance, `Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])`
+    angle calculations used by passing in a non-scalar `~astropy.time.Time`
+    object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])``
     will result in a plot with only two parallactic angle measurements.
 
     Parameters
@@ -145,24 +145,24 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
-        If scalar (e.g., `Time('2000-1-1')`), will result in plotting target
+        If scalar (e.g., ``Time('2000-1-1')``), will result in plotting target
         parallactic angle once an hour over a 24-hour window.
-        If non-scalar (e.g., `Time(['2000-1-1'])`, `[Time('2000-1-1')]`,
-        `Time(['2000-1-1', '2000-1-2'])`),
+        If non-scalar (e.g., ``Time(['2000-1-1'])``, ``[Time('2000-1-1')]``,
+        ``Time(['2000-1-1', '2000-1-2'])``),
         will result in plotting data at the exact times specified.
 
     ax : `~matplotlib.axes.Axes` or None, optional.
-        The `Axes` object to be drawn on.
-        If None, uses the current `Axes`.
+        The ``Axes`` object to be drawn on.
+        If None, uses the current ``Axes``.
 
-    style_kwargs : dict or Empty, optional.
-        A dictionary of keywords passed into `matplotlib.pyplot.plot_date`
+    style_kwargs : dict or None, optional.
+        A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
         to set plotting styles.
 
     Returns
     -------
     ax :  `~matplotlib.axes.Axes`
-        An `Axes` object with added parallactic angle vs. time plot.
+        An ``Axes`` object with added parallactic angle vs. time plot.
 
     TODO:
         1) dark_plot style

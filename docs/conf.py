@@ -185,3 +185,5 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 
 # Add additional Sphinx extensions:
 extensions += ['matplotlib.sphinxext.plot_directive']
+
+nitpicky = True

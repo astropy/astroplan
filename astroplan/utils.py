@@ -41,6 +41,7 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return np.zeros(self.shape)
 
+
 def get_IERS_A_or_workaround():
     """
     Get the cached IERS Bulletin A table if one exists. If one does not exist,
@@ -52,6 +53,7 @@ def get_IERS_A_or_workaround():
         iers.IERS.iers_table = _get_IERS_A_table()
     else:
         Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
+
 
 def IERS_A_in_cache():
     """
@@ -72,6 +74,7 @@ def IERS_A_in_cache():
         if str(url_key) in url2hash:
             return True
     return False
+
 
 def _get_IERS_A_table(warn_update=14*u.day):
     """
@@ -99,13 +102,14 @@ def _get_IERS_A_table(warn_update=14*u.day):
     else:
         raise OSError("No IERS A table has been downloaded.")
 
+
 def download_IERS_A(show_progress=True):
     """
     Download and cache the IERS Bulletin A table.
 
     If one is already cached, download a new one and overwrite the old. Store
     table in the astropy cache, and undo the monkey patching done by
-    `~astroplan.utils.get_IERS_A_or_workaround`.
+    `~astroplan.get_IERS_A_or_workaround`.
 
     Parameters
     ----------
@@ -120,6 +124,7 @@ def download_IERS_A(show_progress=True):
     # Undo monkey patch set up by get_IERS_A_or_workaround
     iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
     Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+
 
 @u.quantity_input(time_resolution=u.hour)
 def time_grid_from_range(time_range, time_resolution=0.5*u.hour):

@@ -16,9 +16,9 @@ additional plotting packages (like `Seaborn
 <http://stanford.edu/~mwaskom/software/seaborn/>`_) is not explicitly prevented,
 but may or may not actually work.
 
-All `astroplan` plots return a `matplotlib.axes.Axes` object (which by
-convention is assigned to the name `ax` in these tutorials).  You can further
-manipulate the returned `ax` object, including using it as input for more
+All `astroplan` plots return a `~matplotlib.axes.Axes` object (which by
+convention is assigned to the name ``ax`` in these tutorials).  You can further
+manipulate the returned ``ax`` object, including using it as input for more
 `astroplan` plotting functions, or you can simply display/print the plot.
 
 Contents
@@ -48,8 +48,8 @@ that have a time-based axis as "time-dependent".
 * Airmass vs. Time
 * Parallactic Angle vs. Time
 
-These take, at minimum, `astroplan.Observer`, `astroplan.FixedTarget` and
-`astropy.time.Time` objects as input.
+These take, at minimum, `~astroplan.Observer`, `~astroplan.FixedTarget` and
+`~astropy.time.Time` objects as input.
 
 .. _plots_airmass:
 
@@ -86,9 +86,9 @@ Making a quick plot
 Any plot function in `astroplan` with a time-based axis will allow you to make
 a quick plot over a 24-hour period.
 
-After constructing `astroplan.Observer` and `astroplan.FixedTarget` objects,
-construct a `astropy.time.Time` object with a single instance in time and issue
-the plotting command.
+After constructing `~astroplan.Observer` and `~astroplan.FixedTarget`
+objects, construct a `~astropy.time.Time` object with a single instance in
+time and issue the plotting command.
 
 .. code-block:: python
 
@@ -135,7 +135,7 @@ the plotting command.
     plt.show()
 
 As you can see, the 24-hour plot is centered on the *time* input.  You can also
-use array `astropy.time.Time` objects for these quick plots--they just
+use array `~astropy.time.Time` objects for these quick plots--they just
 can't contain more than one instance in time.
 
 For example, these are acceptable *time* inputs::
@@ -152,10 +152,10 @@ Specifying a time window
 If you want to see airmass plotted over a window that is not 24 hours long or
 you want to control the precision of the plot, you must specify every time for
 which you want to see an airmass plotted.  Therefore, an array
-`astropy.time.Time` object is necessary.
+`~astropy.time.Time` object is necessary.
 
-To quickly populate an `astropy.time.Time` object with many instances of time,
-use `Numpy`_ and `astropy.units`.  See example below.
+To quickly populate an `~astropy.time.Time` object with many instances of time,
+use `Numpy`_ and `~astropy.units`.  See example below.
 
 Centering the window at some time
 +++++++++++++++++++++++++++++++++
@@ -217,7 +217,7 @@ Specify start and end times
 +++++++++++++++++++++++++++
 
 If you know the start and end times of your observation run, you can use a
-`astropy.time.TimeDelta` object to create an array for time input::
+`~astropy.time.TimeDelta` object to create an array for time input::
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -273,8 +273,9 @@ Plotting a quantity for multiple targets
 ----------------------------------------
 
 If you want to plot airmass information for multiple targets, simply reissue
-the `plot_airmass` command, using a different `FixedTarget` object as input this
-time. Repeat until you have as many targets on the plot as you wish::
+the `~astroplan.plots.plot_airmass` command, using a different
+`~astroplan.FixedTarget` object as input this time. Repeat until you have as
+many targets on the plot as you wish::
 
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
@@ -333,18 +334,18 @@ time. Repeat until you have as many targets on the plot as you wish::
     plt.legend(shadow=True, loc=2)
     plt.show()
 
-When you're ready to make a different plot, use `ax.cla()` to clear the current
-`matplotlib.axes.Axes` object.
+When you're ready to make a different plot, use ``ax.cla()`` to clear the
+current `~matplotlib.axes.Axes` object.
 
 .. _plots_style:
 
 Changing style options
 ----------------------
 
-The default line for time-dependent plots is solid and the default label (should
-you choose to display a legend) is the name contained in the `Target` object.
-You can change the *linestyle*, *color*, *label* and other plotting properties
-by setting the *style_kwargs* option.
+The default line for time-dependent plots is solid and the default label
+(should you choose to display a legend) is the name contained in the
+`~astroplan.Target` object.  You can change the *linestyle*, *color*,
+*label* and other plotting properties by setting the *style_kwargs* option.
 
 .. code-block:: python
 
@@ -417,8 +418,9 @@ Many users planning an observation run will want to see the positions of targets
 with respect to their local horizon, as well as the positions of familiar stars
 or other objects to act as guides.
 
-`plot_sky` allows you to plot the positions of targets at a single instance or
-over some window of time.  You make this plot the following way:
+`~astroplan.plots.plot_sky` allows you to plot the positions of targets at a
+single instance or over some window of time. You make this plot the
+following way:
 
 .. code-block:: python
 
@@ -428,15 +430,17 @@ over some window of time.  You make this plot the following way:
 
 .. warning::
 
-    Note that the *time* input for `plot_sky` has to either be an array of
-    `astropy.time.Time` objects or has to be an `astropy.time.Time` object
-    containing an array of times--in other words, it **cannot** be scalar.  See
-    `astropy`'s documentation for more details.
+    Note that the time input for `~astroplan.plots.plot_sky` has to either
+    be an array of `~astropy.time.Time` objects or has to be an
+    `~astropy.time.Time` object containing an array of times--in other
+    words, it **cannot** be scalar.  See the `Astropy`_ documentation for more
+    details.
 
 .. warning::
 
-    `plot_sky` currently produces polar plots in altitude/azimuth coordinates
-    only.  Plots are centered on the observer's zenith.
+    `~astroplan.plots.plot_sky` currently produces polar plots in
+    altitude/azimuth coordinates only.  Plots are centered on the observer's
+    zenith.
 
 .. seealso::
 
@@ -445,15 +449,15 @@ over some window of time.  You make this plot the following way:
 Making a plot for one instance in time
 --------------------------------------
 
-After constructing your `astroplan.Observer` and `astroplan.FixedTarget`
+After constructing your `~astroplan.Observer` and `~astroplan.FixedTarget`
 objects, construct a time input using an array of length 1.
 
-That is, either an `astropy.time.Time` object with an array containing one time
-value (e.g., ``Time(['2000-1-1'])``) or an array containing one scalar
-`astropy.time.Time` object (e.g., ``[Time('2000-1-1')]``).
+That is, either an `~astropy.time.Time` object with an array containing one
+time value (e.g., ``Time(['2000-1-1'])``) or an array containing one scalar
+`~astropy.time.Time` object (e.g., ``[Time('2000-1-1')]``).
 
-Let's say that you created `astroplan.FixedTarget` objects for Polaris, Altair,
-Vega and Deneb.  To plot a map of the sky:
+Let's say that you created `~astroplan.FixedTarget` objects for Polaris,
+Altair, Vega and Deneb. To plot a map of the sky:
 
 .. code-block:: python
 
@@ -477,10 +481,10 @@ Vega and Deneb.  To plot a map of the sky:
 
 .. warning::
 
-    Since `plot_sky` uses `matplotlib.pyplot.scatter` (which gives the same
-    color to different plots made on the same set of axes), you have to specify
-    the color for each target via a style dictionary if you don't want all
-    targets to have the same color.
+    Since `~astroplan.plots.plot_sky` uses `~matplotlib.pyplot.scatter`
+    (which gives the same color to different plots made on the same set of
+    axes), you have to specify the color for each target via a style
+    dictionary if you don't want all targets to have the same color.
 
 .. plot::
 
@@ -608,16 +612,16 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.show()
 
-For more examples on how to populate time objects, see `astropy.time.Time`
+For more examples on how to populate time objects, see `~astropy.time.Time`
 documentation, or :ref:`plots_time_window`.
 
 .. warning::
 
     Note that in the case of an object being under the horizon (or having
-    negative altitude) at any of the times in your *time* input, `plot_sky`
-    will warn you.  Your object(s) will not show up on the plot for those
-    particular times, but any positions above the horizon will still be plotted
-    as normal.
+    negative altitude) at any of the times in your *time* input,
+    `~astroplan.plots.plot_sky` will warn you.  Your object(s) will not show
+    up on the plot for those particular times, but any positions above the
+    horizon will still be plotted as normal.
 
 Customizing your sky plot
 -------------------------
@@ -628,11 +632,11 @@ much the same way you tweak any `Matplotlib`_ plot.
 Setting style options
 +++++++++++++++++++++
 
-The default marker for `plot_sky` is a circle and the default label (should you
-choose to display a legend) is the name contained in the `astroplan.Target`
-object.  You can change the *marker*, *color*, *label* and other plotting
-properties by setting the *style_kwargs* option, in the same way shown for the
-:ref:`time-dependent plots <plots_style>`.
+The default marker for `~astroplan.plots.plot_sky` is a circle and the
+default label (should you choose to display a legend) is the name contained
+in the `~astroplan.Target` object.  You can change the *marker*, *color*,
+*label* and other plotting properties by setting the *style_kwargs* option,
+in the same way shown for the :ref:`time-dependent plots <plots_style>`.
 
 One situation in which this is particularly useful is the plotting of guide
 positions, such as a few familiar stars or any body used in calibrating your
@@ -793,9 +797,9 @@ A positive offset is in the same direction as azimuth increase (see the
 
     The *az_label_offset* option does not rotate the actual positions on the
     plot, but simply the theta grid labels (which are drawn regardless of
-    gridline presence).  Since labels are drawn with every call to `plot_sky`,
-    we recommend you use the same *az_label_offset* argument for every target on
-    the same plot.
+    gridline presence).  Since labels are drawn with every call to
+    `~astroplan.plots.plot_sky`, we recommend you use the same
+    *az_label_offset* argument for every target on the same plot.
 
     It is not advised that most users change this option, as it may **appear**
     that your alt/az data does not coincide with the definition of altazimuth
@@ -869,15 +873,15 @@ You can turn off the grid lines by setting the *grid* option to *False*:
 
 .. warning::
 
-    Since grids are redrawn with every call to `plot_sky`, you must set
-    `grid=False` for every target in the same plot.
+    Since grids are redrawn with every call to `~astroplan.plots.plot_sky`,
+    you must set ``grid=False`` for every target in the same plot.
 
 Other tweaks
 ++++++++++++
 
 You can easily change other plot attributes by acting on the returned
 `matplotlib.axes.Axes` object or via `matplotlib.pyplot` calls (e.g.,
-`plt.figure`, `plt.rc`, etc.).
+``plt.figure``, ``plt.rc``, etc.).
 
 For instance, you can increase the size of your plot and its font:
 
@@ -901,22 +905,23 @@ For instance, you can increase the size of your plot and its font:
 Miscellaneous
 +++++++++++++
 
-The easiest way to reuse the `matplotlib.axes.Axes` object that is the base of
+The easiest way to reuse the `~matplotlib.axes.Axes` object that is the base of
 your plots is to just let `astroplan`'s plotting functions take care of it in
 the background.  You do, however, have the option of explicitly passing in a
 named axis, assuming that you have created the appropriate type for the
 particular plot you want.
 
-We can explicitly give a name to the `matplotlib.axes.Axes` object returned
-by `plot_sky` when plotting Polaris and reuse it to plot Altair:
+We can explicitly give a name to the `~matplotlib.axes.Axes` object returned
+by `~astroplan.plots.plot_sky` when plotting Polaris and reuse it to plot
+Altair:
 
 .. code-block:: python
 
     >>> my_ax = plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
     >>> plot_sky(altair, observer, observe_time, my_ax)
 
-We can also create a `matplotlib.axes.Axes` object entirely outside of
-`plot_sky`, then pass it in:
+We can also create a `~matplotlib.axes.Axes` object entirely outside of
+`~astroplan.plots.plot_sky`, then pass it in:
 
 .. code-block:: python
 

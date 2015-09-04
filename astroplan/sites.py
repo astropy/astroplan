@@ -27,6 +27,7 @@ __all__ = ['get_site', 'get_site_names', 'add_site']
 _site_db = None
 _site_names = []
 
+
 def _load_sites():
     """
     Load observatory database from astroplan/data/observatories.json
@@ -45,6 +46,7 @@ def _load_sites():
         _site_db[db[site]['name'].lower()] = location
         for alias in db[site]['aliases']:
             _site_db[alias.lower()] = location
+
 
 def get_site(site_name):
     """
@@ -79,6 +81,7 @@ def get_site(site_name):
         raise KeyError(errmsg)
 
     return _site_db[site_name.lower()]
+
 
 def get_site_names(full_list=True):
     """
@@ -127,6 +130,7 @@ def add_site(site_name, location):
         raise KeyError('The site "{}" already exists at (longitude,latitude,'
                        'elevation)={}'.format(site_name,
                                      _site_db[site_name.lower()].to_geodetic()))
+
 
 def new_site_info_to_json(short_name, location, aliases, source):
     """
