@@ -1641,8 +1641,8 @@ class Observer(object):
             `~astropy.time.Time.sidereal_time`
 
         model : str or `None`; optional
-            Passed to the ``model`` argument of
-            `~astropy.time.Time.sidereal_time`
+            The precession/nutation model to assume - see
+            `~astropy.time.Time.sidereal_time` for more details.
 
         Returns
         -------
@@ -1673,7 +1673,7 @@ class Observer(object):
         Returns
         -------
         hour_angle : `~astropy.coordinates.Angle`
-            The hour angle of the target at ``time``
+            The hour angle(s) of the target(s) at ``time``
         """
         if not isinstance(time, Time):
             time = Time(time)
