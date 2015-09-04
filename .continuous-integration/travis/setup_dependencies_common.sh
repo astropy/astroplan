@@ -58,7 +58,7 @@ then
 fi
 
 # COVERAGE DEPENDENCIES
-if [[ $SETUP_CMD == 'test -V --coverage' ]]
+if [[ $SETUP_CMD == 'test --remote-data -V --coverage' ]]
 then
   pip install coverage coveralls;
 fi
