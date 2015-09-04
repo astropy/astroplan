@@ -116,7 +116,7 @@ script:
     - if [[ $MAIN_CMD == 'test installed' ]]; then
         python setup.py install;
         cd /tmp;
-        python -c 'import astroplan; import sys; sys.exit(astroplan.test())'';
+        python -c 'import astroplan; import sys; sys.exit(astroplan.test())';
       fi
 
 
