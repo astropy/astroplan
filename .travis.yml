@@ -59,6 +59,14 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=3.4 SETUP_CMD='test -V'
 
+        # Try running tests from an installed version via the `astroplan.test()` function
+        # Because of the way this travis config file is written this is a bit cryptic.
+        # - $MAIN_CMD is used to trigger this case in the install section below
+        # - $SETUP_CMD is used to communicate which dependencies should be installed
+        - os: linux
+          env: PYTHON_VERSION=3.4 $MAIN_CMD='test installed' SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
+
+
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
         # 2.7.
@@ -100,7 +108,17 @@ install:
     - source .continuous-integration/travis/setup_environment_$TRAVIS_OS_NAME.sh
 
 script:
-    - $MAIN_CMD $SETUP_CMD
+    - if [[ $MAIN_CMD == 'python setup.py' ]]; then
+        $MAIN_CMD $SETUP_CMD;
+      fi
+
+    # Check if install and testing via `astroplan.test()` works
+    - if [[ $MAIN_CMD == 'test installed' ]]; then
+        python setup.py install;
+        cd /tmp;
+        python -c 'import astroplan; import sys; sys.exit(astroplan.test())'';
+      fi
+
 
 after_success:
     - if [[ $SETUP_CMD == 'test --remote-data -V --coverage' ]]; then
