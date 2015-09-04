@@ -36,9 +36,9 @@ def _load_sites():
     _site_db = dict()
     db = json.loads(get_pkg_data_contents('data/observatories.json'))
     for site in db:
-        location = EarthLocation.from_geodetic(db[site]['longitude'],
-                                   db[site]['latitude'],
-                                   db[site]['elevation_meters'])
+        location = EarthLocation.from_geodetic(db[site]['longitude']*u.Unit(db[site]['longitude_unit']),
+                                   db[site]['latitude']*u.Unit(db[site]['latitude_unit']),
+                                   db[site]['elevation']*u.Unit(db[site]['elevation_unit']))
         _site_names.append(db[site]['name'])
         _site_names.append(site)
 
@@ -183,9 +183,12 @@ def new_site_info_to_json(short_name, location, aliases, source):
             "aliases": [
                 "UW Drumheller Fountain Telescope"
             ],
-            "elevation_meters": 9.999999999832553,
-            "latitude": "47d39m13.3416s",
-            "longitude": "-122d18m27.7308s",
+            "elevation": 9.999999999832553,
+            "latitude": 47.6501,
+            "longitude": -122.3076,
+            "elevation_unit": "meter",
+            "latitude_unit": "degree",
+            "longitude_unit": "degree",
             "name": "My Fake Telescope",
             "source": "Brett Morris, personal communication"
         }
@@ -209,9 +212,12 @@ def new_site_info_to_json(short_name, location, aliases, source):
 
     output_dict = {short_name :
                         dict(name=short_name,
-                             longitude=location.longitude.to_string(unit=u.deg),
-                             latitude=location.latitude.to_string(unit=u.deg),
-                             elevation_meters=location.height.to(u.m).value,
+                             longitude=location.longitude.degree,
+                             latitude=location.latitude.degree,
+                             longitude_unit="degree",
+                             latitude_unit="degree",
+                             elevation=location.height.to(u.m).value,
+                             elevation_unit="meter",
                              aliases=aliases,
                              source=source)}
     return json.dumps(output_dict, indent=4, sort_keys=True)

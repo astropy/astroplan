@@ -65,14 +65,15 @@ def test_new_site_info_to_json():
     new_site_json = new_site_info_to_json(short_name, location, aliases, source)
     new_site = json.loads(new_site_json)
 
+    ns = new_site[short_name]
     assert_quantity_allclose(Longitude(lon_str),
-                             Longitude(new_site[short_name]["longitude"]),
+                             Longitude(ns["longitude"]*u.Unit(ns["longitude_unit"])),
                              atol=0.001*u.deg)
     assert_quantity_allclose(Latitude(lat_str),
-                             Latitude(new_site[short_name]["latitude"]),
+                             Latitude(ns["latitude"]*u.Unit(ns["latitude_unit"])),
                              atol=0.001*u.deg)
     assert_quantity_allclose(elevation,
-                             new_site[short_name]["elevation_meters"]*u.m,
+                             new_site[short_name]["elevation"]*u.Unit(ns["elevation_unit"]),
                              atol=1*u.m)
     assert short_name == new_site[short_name]['name']
     assert aliases == new_site[short_name]['aliases']
