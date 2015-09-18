@@ -367,5 +367,18 @@
         "aliases": [
             "Observatorio Astronomico Nacional, San Pedro Martir"
         ]
+    },
+    "mro": {
+        "aliases": [
+            "Manastash Ridge Observatory"
+        ],
+        "elevation": 1198,
+        "elevation_unit": "meter",
+        "latitude": 46.9528,
+        "latitude_unit": "degree",
+        "longitude": -120.7278,
+        "longitude_unit": "degree",
+        "name": "mro",
+        "source": "MRO website"
     }
 }
