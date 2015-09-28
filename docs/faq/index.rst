@@ -15,3 +15,4 @@ new issue.
    iers
    precision
    contribute
+   addobservatory
