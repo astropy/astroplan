@@ -55,6 +55,7 @@ if [[ $SETUP_CMD == build_sphinx* ]]
 then
   $CONDA_INSTALL Sphinx Pygments matplotlib
   pip install wcsaxes
+  pip intall sphinx_rtd_theme
 fi
 
 # COVERAGE DEPENDENCIES
@@ -63,6 +64,6 @@ then
   # TODO can use latest version of coverage (4.0) once
   # https://github.com/astropy/astropy/issues/4175 is addressed in
   # astropy release version.
-  pip install coverage==3.7.1;
-  pip install coveralls;
+  pip install coverage==3.7.1
+  pip install coveralls
 fi
