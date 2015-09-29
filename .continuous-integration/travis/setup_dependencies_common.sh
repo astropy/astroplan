@@ -53,8 +53,7 @@ fi
 # build_sphinx needs sphinx as well as matplotlib and wcsaxes (for plot_directive). 
 if [[ $SETUP_CMD == build_sphinx* ]]
 then
-  $CONDA_INSTALL matplotlib
-  pip install sphinx_rtd_theme
+  $CONDA_INSTALL matplotlib sphinx_rtd_theme
   pip install wcsaxes
 fi
 
