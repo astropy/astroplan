@@ -60,5 +60,9 @@ fi
 # COVERAGE DEPENDENCIES
 if [[ $SETUP_CMD == 'test --remote-data -V --coverage' ]]
 then
-  pip install coverage coveralls;
+  # TODO can use latest version of coverage (4.0) once
+  # https://github.com/astropy/astropy/issues/4175 is addressed in
+  # astropy release version.
+  pip install coverage==3.7.1;
+  pip install coveralls;
 fi
