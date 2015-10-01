@@ -380,16 +380,16 @@
         "longitude_unit": "degree",
         "name": "mro",
         "source": "MRO website"
-    }
+   },
     "SALT": {
         "source" : "SALT website",
         "elevation": 1700, 
         "name": "South African Large Telescope", 
         "longitude_unit": "degree", 
         "latitude_unit": "degree", 
-        "latitude": 20.810499, 
+        "latitude": -32.376006, 
         "elevation_unit": "meter", 
-        "longitude": 32.561633, 
+        "longitude": -20.810678, 
         "aliases": [
             "South African Large Telescope"
         ]
