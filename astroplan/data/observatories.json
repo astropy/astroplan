@@ -381,8 +381,8 @@
         "name": "mro",
         "source": "MRO website"
     }
-        "SALT" : {
-        "source" : "",
+    "SALT" : {
+        "source" : "SALT website",
         "elevation": 1700, 
         "name": "South African Large Telescope", 
         "longitude_unit": "degree", 
