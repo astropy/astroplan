@@ -6,10 +6,11 @@ from __future__ import (absolute_import, division, print_function,
 from abc import ABCMeta
 
 # Third-party
+from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 
-__all__ = ["Target", "FixedTarget", "NonFixedTarget"]
+__all__ = ["Target", "FixedTarget", "NonFixedTarget", "EclipsingFixedTarget"]
 
 class Target(object):
     """
@@ -172,3 +173,58 @@ class NonFixedTarget(Target):
     """
     Placeholder for future function.
     """
+
+class EclipsingFixedTarget(FixedTarget):
+    """
+    Fixed targets that exhibit periodic eclipses.
+    """
+    def __init__(self, coord, name=None, period=None, epoch=None,
+                 duration=None):
+        """
+        Parameters
+        ----------
+        coord : `~astropy.coordinates.SkyCoord`
+            Coordinate of the target
+
+        name : str (optional)
+            Name of the target, used for plotting and representing the target
+            as a string
+
+        epoch : `~astropy.time.Time`
+            Time at middle of primary eclipse
+
+        period : `~astropy.units.Quantity`
+            Period between eclipses
+
+        duration : `~astropy.units.Quantity`
+            Duration of eclipse
+        """
+        if not (hasattr(coord, 'transform_to') and
+                hasattr(coord, 'represent_as')):
+            raise TypeError('`coord` must be a coordinate object.')
+
+        self.name = name
+        self.coord = coord
+        self.period = period
+        self.duration = duration
+        self.epoch = epoch
+
+    def mid_eclipse_time(self, time, which='nearest'):
+        if not isinstance(time, Time):
+            time = Time(time)
+        phase_at_time = abs(time - self.epoch).to(u.day) % self.period
+        next_eclipse = time + (self.period - phase_at_time)
+        previous_eclipse = time - phase_at_time
+
+        if which == 'next':
+            return next_eclipse
+        elif which == 'previous':
+            return previous_eclipse
+        elif which == 'nearest':
+            if abs(next_eclipse - time) < abs(previous_eclipse - time):
+                return next_eclipse
+            else:
+                return previous_eclipse
+        else:
+            raise ValueError('"which" kwarg must be "next", "previous" or '
+                             '"nearest".')

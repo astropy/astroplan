@@ -5,9 +5,11 @@ from __future__ import (absolute_import, division, print_function,
 # Third-party
 import astropy.units as u
 from astropy.coordinates import SkyCoord
+from astropy.time import Time
+from astropy.tests.helper import assert_quantity_allclose
 
 # Package
-from ..target import FixedTarget
+from ..target import FixedTarget, EclipsingFixedTarget
 
 
 def test_FixedTarget_from_name():
@@ -40,3 +42,30 @@ def test_FixedTarget_ra_dec():
                                                         'SkyCoord')
     assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
                                                            'SkyCoord')
+
+def test_eclipsing():
+    # Source: http://exoplanets.org/detail/HD_189733_b
+    coord = SkyCoord(ra=300.18213945*u.deg, dec=22.71085126*u.deg, frame='icrs')
+    epoch = Time(2454279.436714, format='jd')
+    period = 2.21857567*u.day
+    duration = 0.0760*u.day
+
+    time = Time('2015-10-02 05:48')
+    hd189 = EclipsingFixedTarget(coord, name='HD 189733 b', epoch=epoch,
+                                 period=period, duration=duration)
+    next_eclipse = hd189.eclipse_time(Time.now(), which='next')
+    previous_eclipse = hd189.eclipse_time(Time.now(), which='previous')
+    nearest_eclipse = hd189.eclipse_time(Time.now(), which='nearest')
+
+    # Check answers versus the Czech Astronomical Society's Exoplanet Transit
+    # Database webpage results for T0(HJD)=2453988.80336, Per=2.2185733 d:
+    ETD_previous_eclipse = Time(2457296.696, format='jd')
+    ETD_next_eclipse = Time(2457298.915, format='jd')
+    ETD_nearest_eclipse = (ETD_previous_eclipse if
+                           abs(ETD_previous_eclipse - time) <
+                           abs(ETD_next_eclipse - time) else ETD_next_eclipse)
+
+    tolerance = 15*u.min
+    assert abs(next_eclipse - ETD_next_eclipse) < tolerance
+    assert abs(previous_eclipse - ETD_previous_eclipse) < tolerance
+    assert abs(nearest_eclipse - ETD_nearest_eclipse) < tolerance
