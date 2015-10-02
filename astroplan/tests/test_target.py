@@ -53,12 +53,17 @@ def test_eclipsing():
     time = Time('2015-10-02 05:48')
     hd189 = EclipsingFixedTarget(coord, name='HD 189733 b', epoch=epoch,
                                  period=period, duration=duration)
-    next_eclipse = hd189.eclipse_time(Time.now(), which='next')
-    previous_eclipse = hd189.eclipse_time(Time.now(), which='previous')
-    nearest_eclipse = hd189.eclipse_time(Time.now(), which='nearest')
+
+    # Mid-eclipse times
+
+    next_eclipse = hd189.mid_eclipse_time(time, which='next')
+    previous_eclipse = hd189.mid_eclipse_time(time, which='previous')
+    nearest_eclipse = hd189.mid_eclipse_time(time, which='nearest')
 
     # Check answers versus the Czech Astronomical Society's Exoplanet Transit
-    # Database webpage results for T0(HJD)=2453988.80336, Per=2.2185733 d:
+    # Database (http://var2.astro.cz/ETD/predictions.php) results for
+    # T0(HJD)=2453988.80336, Per=2.2185733 d, dur=109.6 min
+    ETD_duration = 109.6*u.min
     ETD_previous_eclipse = Time(2457296.696, format='jd')
     ETD_next_eclipse = Time(2457298.915, format='jd')
     ETD_nearest_eclipse = (ETD_previous_eclipse if
@@ -69,3 +74,37 @@ def test_eclipsing():
     assert abs(next_eclipse - ETD_next_eclipse) < tolerance
     assert abs(previous_eclipse - ETD_previous_eclipse) < tolerance
     assert abs(nearest_eclipse - ETD_nearest_eclipse) < tolerance
+
+    # Ingress times
+
+    next_ingress = hd189.ingress_time(time, which='next')
+    previous_ingress = hd189.ingress_time(time, which='previous')
+    nearest_ingress = hd189.ingress_time(time, which='nearest')
+
+    ETD_next_ingress = ETD_next_eclipse - 0.5*ETD_duration
+    ETD_previous_ingress = ETD_previous_eclipse - 0.5*ETD_duration
+    ETD_nearest_ingress = (ETD_previous_ingress if
+                           abs(ETD_previous_ingress - time) <
+                           abs(ETD_next_ingress - time) else ETD_next_ingress)
+
+    assert abs(next_ingress - ETD_next_ingress) < tolerance
+    assert abs(previous_ingress - ETD_previous_ingress) < tolerance
+    assert abs(nearest_ingress - ETD_nearest_ingress) < tolerance
+
+    # Egress times
+
+    next_egress = hd189.egress_time(time, which='next')
+    previous_egress = hd189.egress_time(time, which='previous')
+    nearest_egress = hd189.egress_time(time, which='nearest')
+
+    ETD_next_egress = ETD_next_eclipse + 0.5*ETD_duration
+    ETD_previous_egress = ETD_previous_eclipse + 0.5*ETD_duration
+    ETD_nearest_egress = (ETD_previous_egress if
+                           abs(ETD_previous_egress - time) <
+                           abs(ETD_next_egress - time) else ETD_next_egress)
+
+    assert abs(next_egress - ETD_next_egress) < tolerance
+    assert abs(previous_egress - ETD_previous_egress) < tolerance
+    assert abs(nearest_egress - ETD_nearest_egress) < tolerance
+
+

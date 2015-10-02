@@ -210,6 +210,26 @@ class EclipsingFixedTarget(FixedTarget):
         self.epoch = epoch
 
     def mid_eclipse_time(self, time, which='nearest'):
+        """
+        Mid-eclipse time.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
+
+        which : {'next', 'previous', 'nearest'}
+            Choose which mid-eclipse relative to the present ``time`` would you
+            like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of mid-eclipse
+        """
         if not isinstance(time, Time):
             time = Time(time)
         phase_at_time = abs(time - self.epoch).to(u.day) % self.period
@@ -225,6 +245,94 @@ class EclipsingFixedTarget(FixedTarget):
                 return next_eclipse
             else:
                 return previous_eclipse
+        else:
+            raise ValueError('"which" kwarg must be "next", "previous" or '
+                             '"nearest".')
+
+    def ingress_time(self, time, which='nearest'):
+        """
+        Ingress time.
+
+        Assumes that the difference between time of ingress and the time of
+        mid-eclipse is equivalent to the difference between the time of egress
+        to the time of egress (i.e. strictly true for circular orbits only).
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
+
+        which : {'next', 'previous', 'nearest'}
+            Choose which ingress relative to the present ``time`` would you
+            like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of ingress
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+        phase_at_time = abs(time - self.epoch).to(u.day) % self.period
+        next_ingress = time + (self.period - phase_at_time) - 0.5*self.duration
+        previous_ingress = time - phase_at_time - 0.5*self.duration
+
+        if which == 'next':
+            return next_ingress
+        elif which == 'previous':
+            return previous_ingress
+        elif which == 'nearest':
+            if abs(next_ingress - time) < abs(previous_ingress - time):
+                return next_ingress
+            else:
+                return previous_ingress
+        else:
+            raise ValueError('"which" kwarg must be "next", "previous" or '
+                             '"nearest".')
+
+    def egress_time(self, time, which='nearest'):
+        """
+        Egress time.
+
+        Assumes that the difference between time of ingress and the time of
+        mid-eclipse is equivalent to the difference between the time of egress
+        to the time of egress (i.e. strictly true for circular orbits only).
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observations. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
+
+        which : {'next', 'previous', 'nearest'}
+            Choose which egress relative to the present ``time`` would you
+            like to calculate. Default is nearest.
+
+        Returns
+        -------
+        `~astropy.time.Time`
+            Time of egress
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+        phase_at_time = abs(time - self.epoch).to(u.day) % self.period
+        next_egress = time + (self.period - phase_at_time) + 0.5*self.duration
+        previous_egress = time - phase_at_time + 0.5*self.duration
+
+        if which == 'next':
+            return next_egress
+        elif which == 'previous':
+            return previous_egress
+        elif which == 'nearest':
+            if abs(next_egress - time) < abs(previous_egress - time):
+                return next_egress
+            else:
+                return previous_egress
         else:
             raise ValueError('"which" kwarg must be "next", "previous" or '
                              '"nearest".')
