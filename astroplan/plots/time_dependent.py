@@ -113,7 +113,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
 
     # Set labels.
     ax.set_ylabel("Airmass")
-    ax.set_xlabel("Time")
+    ax.set_xlabel("Time - {0} [UTC]".format(min(time).datetime.date()))
 
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
@@ -214,7 +214,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
 
     # Set labels.
     ax.set_ylabel("Parallactic Angle - Radians")
-    ax.set_xlabel("Time")
+    ax.set_xlabel("Time - {0} [UTC]".format(min(time).datetime.date()))
 
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
