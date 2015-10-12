@@ -68,6 +68,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         2) Dark plot option.
     """
     import matplotlib.pyplot as plt
+    from matplotlib import dates
 
     # Set up plot axes and style if needed.
     if ax is None:
@@ -97,11 +98,13 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
 
-    observe_timezone = ''
-
     # Plot data.
     ax.plot_date(time.plot_date, airmass, **style_kwargs)
-    ax.figure.autofmt_xdate()
+
+    # Format the time axis
+    date_formatter = dates.DateFormatter('%H:%M')
+    ax.xaxis.set_major_formatter(date_formatter)
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Invert y-axis and set limits.
     if ax.get_ylim()[1] > ax.get_ylim()[0]:
@@ -110,7 +113,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
 
     # Set labels.
     ax.set_ylabel("Airmass")
-    ax.set_xlabel("Time - "+observe_timezone)
+    ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
 
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
@@ -169,6 +172,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         2) observe_timezone -- update with info from observer?
     """
     import matplotlib.pyplot as plt
+    from matplotlib import dates
 
     # Set up plot axes and style if needed.
     if ax is None:
@@ -200,15 +204,17 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         target_name = target.name
     style_kwargs.setdefault('label', target_name)
 
-    observe_timezone = ''
-
     # Plot data.
     ax.plot_date(time.plot_date, p_angle, **style_kwargs)
-    ax.figure.autofmt_xdate()
+
+    # Format the time axis
+    date_formatter = dates.DateFormatter('%H:%M')
+    ax.xaxis.set_major_formatter(date_formatter)
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Set labels.
     ax.set_ylabel("Parallactic Angle - Radians")
-    ax.set_xlabel("Time - "+observe_timezone)
+    ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
 
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
