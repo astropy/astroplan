@@ -8,6 +8,7 @@ from astropy.time import Time
 import warnings
 
 from ..exceptions import PlotBelowHorizonWarning
+from ..plots.mplstyles import (astroplan_light_style, astroplan_dark_style)
 
 __all__ = ['plot_sky', 'plot_sky_24hr']
 
@@ -15,7 +16,7 @@ __all__ = ['plot_sky', 'plot_sky_24hr']
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
              north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
-             warn_below_horizon=False):
+             warn_below_horizon=False, style_sheet=None):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -76,6 +77,10 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         If `False`, don't show warnings when attempting to plot targets below
         the horzion.
 
+    style_sheet : dict or `None` (optional)
+        `~matplotlib` style sheet to use. To see available style sheets in
+        astroplan, print `~astroplan.plots.mplstyles.available_style_sheets`
+
     Returns
     -------
     An `~matplotlib.axes.Axes` object (ax) with a map of the sky.
@@ -100,7 +105,13 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         makes it seem as if N/E/S/W are being decoupled from the definition
         of azimuth (North from az = 0 deg., East from az = 90 deg., etc.).
     """
+    # Import matplotlib, set style sheet
+    if style_sheet is None:
+        style_sheet = astroplan_light_style
+    import matplotlib
     import matplotlib.pyplot as plt
+    matplotlib.rcdefaults()
+    matplotlib.rcParams.update(style_sheet)
 
     # Set up axes & plot styles if needed.
     if ax is None:
