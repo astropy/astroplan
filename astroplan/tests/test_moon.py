@@ -47,8 +47,8 @@ def print_pyephem_illumination():
 
     moon = ephem.Moon()
     pe_obs = ephem.Observer()
-    pe_obs.lat = location.latitude.to(u.degree).to_string(sep=':')
-    pe_obs.lon = location.longitude.to(u.degree).to_string(sep=':')
+    pe_obs.lat = location.latitude.to_string(u.deg, sep=':')
+    pe_obs.lon = location.longitude.to_string(u.deg, sep=':')
     pe_obs.elevation = location.height.to(u.m).value
     illuminations = []
     for t in time:

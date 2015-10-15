@@ -255,17 +255,17 @@ def test_parallactic_angle():
     pyephem_q1 = 46.54610060782033*u.deg
     pyephem_q2 = -65.51818282032019*u.deg
 
-    assert_allclose(q1.to(u.degree).value, pyephem_q1, atol=1)
-    assert_allclose(q2.to(u.degree).value, pyephem_q2, atol=1)
+    assert_quantity_allclose(q1, pyephem_q1, atol=1*u.deg)
+    assert_quantity_allclose(q2, pyephem_q2, atol=1*u.deg)
 
     # Get SpeX parallactic angle calculator values for comparison from
     # http://irtfweb.ifa.hawaii.edu/cgi-bin/spex/parangle.cgi to produce
 
-    SpeX_q1 = 46.7237968 # deg
-    SpeX_q2 = -65.428924 # deg
+    SpeX_q1 = 46.7237968*u.deg # deg
+    SpeX_q2 = -65.428924*u.deg # deg
 
-    assert_allclose(q1.to(u.degree).value, SpeX_q1, atol=0.1)
-    assert_allclose(q2.to(u.degree).value, SpeX_q2, atol=0.1)
+    assert_quantity_allclose(q1, SpeX_q1, atol=0.1*u.deg)
+    assert_quantity_allclose(q2, SpeX_q2, atol=0.1*u.deg)
 
     assert q1 == q12[0]
     assert q2 == q12[1]

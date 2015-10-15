@@ -69,8 +69,8 @@ def get_moon(time, location, pressure=None):
 
     moon = ephem.Moon()
     obs = ephem.Observer()
-    obs.lat = location.latitude.to(u.degree).to_string(sep=':')
-    obs.lon = location.longitude.to(u.degree).to_string(sep=':')
+    obs.lat = location.latitude.to_string(u.deg, sep=':')
+    obs.lon = location.longitude.to_string(u.deg, sep=':')
     obs.elevation = location.height.to(u.m).value
     if pressure is not None:
         obs.pressure = pressure.to(u.bar).value*1000.0
