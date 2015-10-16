@@ -90,6 +90,8 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
 
     # Calculate airmass
     airmass = observer.altaz(time, target).secz
+    # Mask out nonsense airmasses
+    masked_airmass = np.ma.array(airmass, mask=airmass < 0)
 
     # Some checks & info for labels.
     if not hasattr(target, 'name'):
