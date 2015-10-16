@@ -419,7 +419,7 @@ any plotting function:
 
 .. code-block:: python
 
-    >>> from astroplan.plots import dark_style_sheet
+    >>> from astroplan.plots import dark_style_sheet, plot_airmass
     >>> plot_airmass(target, observatory, time, style_sheet=dark_style_sheet)
 
 

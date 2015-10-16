@@ -78,8 +78,8 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         the horzion.
 
     style_sheet : dict or `None` (optional)
-        `~matplotlib` style sheet to use. To see available style sheets in
-        astroplan, print `~astroplan.plots.mplstyles.available_style_sheets`
+        matplotlib style sheet to use. To see available style sheets in
+        astroplan, print `~astroplan.plots.available_style_sheets()`
 
     Returns
     -------

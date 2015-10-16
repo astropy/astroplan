@@ -55,8 +55,8 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
         to set plotting styles.
 
     style_sheet : dict or `None` (optional)
-        `~matplotlib` style sheet to use. To see available style sheets in
-        astroplan, print `~astroplan.plots.mplstyles.available_style_sheets`
+        matplotlib style sheet to use. To see available style sheets in
+        astroplan, print `~astroplan.plots.available_style_sheets()`
 
     Returns
     -------
@@ -178,8 +178,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
         to set plotting styles.
 
     style_sheet : dict or `None` (optional)
-        `~matplotlib` style sheet to use. To see available style sheets in
-        astroplan, print `~astroplan.plots.mplstyles.available_style_sheets`
+        matplotlib style sheet to use. To see available style sheets in
+        astroplan, print `~astroplan.plots.available_style_sheets()`
 
     Returns
     -------

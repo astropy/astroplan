@@ -7,7 +7,13 @@ from astropy.visualization import astropy_mpl_style
 __all__ = ['light_style_sheet', 'dark_style_sheet',
            'available_style_sheets']
 
-available_style_sheets = ["light_style_sheet", "dark_style_sheet"]
+available_styles = ["light_style_sheet", "dark_style_sheet"]
+
+def available_style_sheets():
+    """
+    Matplotlib style sheets available within astroplan.
+    """
+    return available_styles
 
 # One update specifically for astroplan.plots: raise bottom up from default 0.1
 astropy_mpl_style.update({'figure.subplot.bottom': 0.15})
