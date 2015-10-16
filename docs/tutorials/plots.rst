@@ -406,8 +406,8 @@ The default line for time-dependent plots is solid and the default label
 See the `Matplotlib`_ documentation for information on plotting styles in line
 plots.
 
-Night vision mode
-+++++++++++++++++
+Dark Theme Plots
+++++++++++++++++
 
 By default, `astroplan` uses the `astropy`_ style sheet for `Matplotlib`_ to
 generate plots with more pleasing settings than provided for by the matplotlib

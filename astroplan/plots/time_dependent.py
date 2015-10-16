@@ -8,7 +8,8 @@ from astropy.time import Time
 import warnings
 
 from ..exceptions import PlotWarning
-from ..plots.mplstyles import (light_style_sheet, dark_style_sheet)
+from ..plots.mplstyles import light_style_sheet
+from ..utils import _set_mpl_style_sheet
 
 __all__ = ['plot_airmass', 'plot_parallactic']
 
@@ -56,7 +57,8 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
 
     style_sheet : dict or `None` (optional)
         matplotlib style sheet to use. To see available style sheets in
-        astroplan, print `~astroplan.plots.available_style_sheets()`
+        astroplan, print *astroplan.plots.available_style_sheets*. Defaults
+        to the light theme.
 
     Returns
     -------
@@ -75,10 +77,9 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     # Import matplotlib, set style sheet
     if style_sheet is None:
         style_sheet = light_style_sheet
-    import matplotlib
+
     import matplotlib.pyplot as plt
-    matplotlib.rcdefaults()
-    matplotlib.rcParams.update(style_sheet)
+    _set_mpl_style_sheet(style_sheet)
 
     from matplotlib import dates
 
@@ -179,7 +180,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
 
     style_sheet : dict or `None` (optional)
         matplotlib style sheet to use. To see available style sheets in
-        astroplan, print `~astroplan.plots.available_style_sheets()`
+        astroplan, print *astroplan.plots.available_style_sheets*. Defaults
+        to the light theme.
 
     Returns
     -------
@@ -192,10 +194,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     # Import matplotlib, set style sheet
     if style_sheet is None:
         style_sheet = light_style_sheet
-    import matplotlib
+
     import matplotlib.pyplot as plt
-    matplotlib.rcdefaults()
-    matplotlib.rcParams.update(style_sheet)
+    _set_mpl_style_sheet(style_sheet)
 
     from matplotlib import dates
 

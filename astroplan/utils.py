@@ -18,7 +18,7 @@ from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
 from .exceptions import OldEarthOrientationDataWarning
 
 __all__ = ["get_IERS_A_or_workaround", "download_IERS_A",
-           "time_grid_from_range"]
+           "time_grid_from_range", "_set_mpl_style_sheet"]
 
 IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   "download an up-to-date IERS Bulletin A table. To do so, run:"
@@ -187,3 +187,13 @@ def _unmock_remote_data():
         FixedTarget.from_name = FixedTarget._real_from_name
         del FixedTarget._real_from_name
     # otherwise assume it's already correct
+
+def _set_mpl_style_sheet(style_sheet):
+    """
+    Import matplotlib, set the style sheet to ``style_sheet`` using
+    the most backward compatible import pattern.
+    """
+    import matplotlib
+    matplotlib.rcdefaults()
+    matplotlib.rcParams.update(style_sheet)
+

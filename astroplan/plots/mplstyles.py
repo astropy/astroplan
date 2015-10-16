@@ -2,23 +2,22 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import copy
+
 from astropy.visualization import astropy_mpl_style
 
 __all__ = ['light_style_sheet', 'dark_style_sheet',
            'available_style_sheets']
 
-available_styles = ["light_style_sheet", "dark_style_sheet"]
+available_style_sheets = ["light_style_sheet", "dark_style_sheet"]
+"""Matplotlib style sheets available within astroplan."""
 
-def available_style_sheets():
-    """
-    Matplotlib style sheets available within astroplan.
-    """
-    return available_styles
+light_style_sheet = copy.deepcopy(astropy_mpl_style)
 
 # One update specifically for astroplan.plots: raise bottom up from default 0.1
-astropy_mpl_style.update({'figure.subplot.bottom': 0.15})
-light_style_sheet = astropy_mpl_style
+light_style_sheet.update({'figure.subplot.bottom': 0.15})
 
+# Define dark style sheet starting from the astropy_mpl_style sheet
 dark_style_sheet = {
 
     # Lines
