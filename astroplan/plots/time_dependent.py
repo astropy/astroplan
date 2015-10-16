@@ -8,7 +8,7 @@ from astropy.time import Time
 import warnings
 
 from ..exceptions import PlotWarning
-from ..plots.mplstyles import (astroplan_light_style, astroplan_dark_style)
+from ..plots.mplstyles import (light_style_sheet, dark_style_sheet)
 
 __all__ = ['plot_airmass', 'plot_parallactic']
 
@@ -71,11 +71,10 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
 
     TODO:
         1) Timezones?
-        2) Dark plot option.
     """
     # Import matplotlib, set style sheet
     if style_sheet is None:
-        style_sheet = astroplan_light_style
+        style_sheet = light_style_sheet
     import matplotlib
     import matplotlib.pyplot as plt
     matplotlib.rcdefaults()
@@ -188,12 +187,11 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
         An ``Axes`` object with added parallactic angle vs. time plot.
 
     TODO:
-        1) dark_plot style
-        2) observe_timezone -- update with info from observer?
+        1) observe_timezone -- update with info from observer?
     """
     # Import matplotlib, set style sheet
     if style_sheet is None:
-        style_sheet = astroplan_light_style
+        style_sheet = light_style_sheet
     import matplotlib
     import matplotlib.pyplot as plt
     matplotlib.rcdefaults()

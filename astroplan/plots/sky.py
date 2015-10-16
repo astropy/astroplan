@@ -8,7 +8,7 @@ from astropy.time import Time
 import warnings
 
 from ..exceptions import PlotBelowHorizonWarning
-from ..plots.mplstyles import (astroplan_light_style, astroplan_dark_style)
+from ..plots.mplstyles import (light_style_sheet, dark_style_sheet)
 
 __all__ = ['plot_sky', 'plot_sky_24hr']
 
@@ -107,7 +107,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     """
     # Import matplotlib, set style sheet
     if style_sheet is None:
-        style_sheet = astroplan_light_style
+        style_sheet = light_style_sheet
     import matplotlib
     import matplotlib.pyplot as plt
     matplotlib.rcdefaults()

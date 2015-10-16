@@ -4,16 +4,16 @@ from __future__ import (absolute_import, division, print_function,
 
 from astropy.visualization import astropy_mpl_style
 
-__all__ = ['astroplan_light_style', 'astroplan_dark_style',
+__all__ = ['light_style_sheet', 'dark_style_sheet',
            'available_style_sheets']
 
-available_style_sheets = ["astroplan_light_style", "astroplan_dark_style"]
+available_style_sheets = ["light_style_sheet", "dark_style_sheet"]
 
 # One update specifically for astroplan.plots: raise bottom up from default 0.1
 astropy_mpl_style.update({'figure.subplot.bottom': 0.15})
-astroplan_light_style = astropy_mpl_style
+light_style_sheet = astropy_mpl_style
 
-astroplan_dark_style = {
+dark_style_sheet = {
 
     # Lines
     'lines.linewidth': 1.7,
@@ -41,10 +41,10 @@ astroplan_dark_style = {
     'axes.labelsize': 'large',
     'axes.labelcolor': 'w',
     'axes.axisbelow': True,
-    'axes.color_cycle': ['#00FFFF',   # blue
+    'axes.color_cycle': ['#00CCFF',   # blue
+                         '#FF0000',   # red
+                         '#40C000',   # green
                          '#E066E0',   # purple
-                         '#FF8080',   # red
-                         '#467821',   # green
                          '#CF4457',   # pink
                          '#188487',   # turquoise
                          '#E24A33'],  # orange
