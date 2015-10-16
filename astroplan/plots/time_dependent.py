@@ -104,7 +104,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     # Calculate airmass
     airmass = observer.altaz(time, target).secz
     # Mask out nonsense airmasses
-    masked_airmass = np.ma.array(airmass, mask=airmass < 0)
+    masked_airmass = np.ma.array(airmass, mask=airmass < 1)
 
     # Some checks & info for labels.
     if not hasattr(target, 'name'):
@@ -114,7 +114,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     style_kwargs.setdefault('label', target_name)
 
     # Plot data.
-    ax.plot_date(time.plot_date, airmass, **style_kwargs)
+    ax.plot_date(time.plot_date, masked_airmass, **style_kwargs)
 
     # Format the time axis
     date_formatter = dates.DateFormatter('%H:%M')
