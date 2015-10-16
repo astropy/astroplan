@@ -21,7 +21,7 @@ from astropy.utils.data import get_pkg_data_contents
 from astropy.coordinates import EarthLocation
 import astropy.units as u
 
-__all__ = ['get_site', 'get_site_names', 'add_site']
+__all__ = ['get_site', 'get_site_names', 'add_site', 'new_site_info_to_json']
 
 # Observatory database and list of names:
 _site_db = None
