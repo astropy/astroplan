@@ -15,7 +15,7 @@ __all__ = ['plot_sky', 'plot_sky_24hr']
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
              north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
-             warn_below_horizon=True):
+             warn_below_horizon=False):
     """
     Plots target positions in the sky with respect to the observer's location.
 
