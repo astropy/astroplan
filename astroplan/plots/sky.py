@@ -9,12 +9,13 @@ import warnings
 
 from ..exceptions import PlotBelowHorizonWarning
 
-__all__ = ['plot_sky']
+__all__ = ['plot_sky', 'plot_sky_24hr']
 
 
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
-             north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg):
+             north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
+             warn_below_horizon=False):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -70,6 +71,10 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         An offset for azimuth labels from the North label.  A positive
         offset will increase in the same direction as azimuth
         (see ``north_to_east_ccw`` option).
+
+    warn_below_horizon : bool, optional
+        If `False`, don't show warnings when attempting to plot targets below
+        the horzion.
 
     Returns
     -------
@@ -128,10 +133,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     az_plot = None
     for alt in range(0, len(altitude)):
         if altitude[alt] > 91.0:
-            msg = 'Target "{0}" is below the horizon at time: {1}'
-            msg = msg.format(target_name if target_name else 'Unknown Name',
-                             time[alt])
-            warnings.warn(msg, PlotBelowHorizonWarning)
+            if warn_below_horizon:
+                msg = 'Target "{0}" is below the horizon at time: {1}'
+                msg = msg.format(target_name if target_name else 'Unknown Name',
+                                 time[alt])
+                warnings.warn(msg, PlotBelowHorizonWarning)
         else:
             if az_plot is None:
                 az_plot = np.array([azimuth[alt]])
@@ -203,4 +209,46 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     # Redraw the figure for interactive sessions.
     ax.figure.canvas.draw()
 
+    return ax
+
+@u.quantity_input(delta=u.hour)
+def plot_sky_24hr(target, observer, time, delta=1*u.hour, ax=None,
+                  style_kwargs=None, north_to_east_ccw=True, grid=True,
+                  az_label_offset=0.0*u.deg, center_time_style_kwargs=None):
+    """
+    Plots target positions in the sky with respect to the observer's location
+    over a twenty-four hour period centered on ``time``.
+
+    Most arguments are copies of those in `~astroplan.plots.plot_sky`, see
+    docs for them. The unique keywords for this function include:
+
+    Parameters
+    ----------
+    delta : `~astropy.units.Quantity` (optional)
+        Interval between times plotted.
+
+    center_time_style_kwargs : dict or `None` (optional)
+        Dictionary of style keyword arguments to pass to
+        `~matplotlib.pyplot.scatter` to set plotting style of the point at
+        time ``time``.
+
+    Returns
+    -------
+    An `~matplotlib.axes.Axes` object (ax) with a map of the sky.
+    """
+
+    time_range = np.arange(-12, 12, delta.to(u.hour).value)*u.hour + time
+
+    ax = plot_sky(target, observer, time_range, ax=ax,
+                  style_kwargs=style_kwargs,
+                  north_to_east_ccw=north_to_east_ccw, grid=grid,
+                  az_label_offset=az_label_offset,
+                  warn_below_horizon=False)
+
+    if center_time_style_kwargs is not None:
+        ax = plot_sky(target, observer, time, ax=ax,
+                      style_kwargs=center_time_style_kwargs,
+                      north_to_east_ccw=north_to_east_ccw, grid=grid,
+                      az_label_offset=az_label_offset,
+                      warn_below_horizon=False)
     return ax
