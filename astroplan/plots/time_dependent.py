@@ -8,11 +8,13 @@ from astropy.time import Time
 import warnings
 
 from ..exceptions import PlotWarning
+from ..utils import _set_mpl_style_sheet
 
 __all__ = ['plot_airmass', 'plot_parallactic']
 
 
-def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
+def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
+                 style_sheet=None):
     """
     Plots airmass as a function of time for a given target.
 
@@ -52,6 +54,11 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
         A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
         to set plotting styles.
 
+    style_sheet : dict or `None` (optional)
+        matplotlib style sheet to use. To see available style sheets in
+        astroplan, print *astroplan.plots.available_style_sheets*. Defaults
+        to the light theme.
+
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
@@ -65,8 +72,11 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
 
     TODO:
         1) Timezones?
-        2) Dark plot option.
     """
+    # Import matplotlib, set style sheet
+    if style_sheet is not None:
+        _set_mpl_style_sheet(style_sheet)
+
     import matplotlib.pyplot as plt
     from matplotlib import dates
 
@@ -91,7 +101,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     # Calculate airmass
     airmass = observer.altaz(time, target).secz
     # Mask out nonsense airmasses
-    masked_airmass = np.ma.array(airmass, mask=airmass < 0)
+    masked_airmass = np.ma.array(airmass, mask=airmass < 1)
 
     # Some checks & info for labels.
     if not hasattr(target, 'name'):
@@ -101,7 +111,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     style_kwargs.setdefault('label', target_name)
 
     # Plot data.
-    ax.plot_date(time.plot_date, airmass, **style_kwargs)
+    ax.plot_date(time.plot_date, masked_airmass, **style_kwargs)
 
     # Format the time axis
     date_formatter = dates.DateFormatter('%H:%M')
@@ -124,7 +134,8 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None):
     return ax
 
 
-def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
+def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
+                     style_sheet=None):
     """
     Plots parallactic angle as a function of time for a given target.
 
@@ -164,16 +175,25 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None):
         A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
         to set plotting styles.
 
+    style_sheet : dict or `None` (optional)
+        matplotlib style sheet to use. To see available style sheets in
+        astroplan, print *astroplan.plots.available_style_sheets*. Defaults
+        to the light theme.
+
     Returns
     -------
     ax :  `~matplotlib.axes.Axes`
         An ``Axes`` object with added parallactic angle vs. time plot.
 
     TODO:
-        1) dark_plot style
-        2) observe_timezone -- update with info from observer?
+        1) observe_timezone -- update with info from observer?
     """
+    # Import matplotlib, set style sheet
+    if style_sheet is not None:
+        _set_mpl_style_sheet(style_sheet)
+
     import matplotlib.pyplot as plt
+
     from matplotlib import dates
 
     # Set up plot axes and style if needed.

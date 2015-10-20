@@ -406,6 +406,43 @@ The default line for time-dependent plots is solid and the default label
 See the `Matplotlib`_ documentation for information on plotting styles in line
 plots.
 
+Dark Theme Plots
+++++++++++++++++
+
+By default, `astroplan` uses the `astropy`_ style sheet for `Matplotlib`_ to
+generate plots with more pleasing settings than provided for by the matplotlib
+defaults. When using `astroplan` at night, you may prefer to make plots with
+dark backgrounds, rather than the default white background, to preserve your
+night vision. To do so, you may use the `astroplan` dark style sheet to
+produce dark-themed plots by using the *style_sheet* keyword argument in
+any plotting function:
+
+.. code-block:: python
+
+    >>> from astroplan.plots import dark_style_sheet, plot_airmass
+    >>> plot_airmass(target, observatory, time, style_sheet=dark_style_sheet)
+
+
+.. plot::
+
+    from astropy.time import Time
+    from astropy.coordinates import SkyCoord
+    import astropy.units as u
+
+    from astroplan.plots import plot_airmass, dark_style_sheet
+    from astroplan import Observer, FixedTarget
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg))
+    apo = Observer.at_site('APO')
+
+    plot_airmass(vega, apo, Time('2005-01-02 19:00') + np.linspace(-5, 5, 20)*u.hour,
+                 style_sheet=dark_style_sheet)
+    plt.show()
+
+
 :ref:`Return to Top <plots>`
 
 
@@ -628,6 +665,7 @@ Customizing your sky plot
 
 `astroplan` plots use `Matplotlib`_ defaults, so you can customize your plots in
 much the same way you tweak any `Matplotlib`_ plot.
+
 
 Setting style options
 +++++++++++++++++++++
