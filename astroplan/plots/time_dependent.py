@@ -8,7 +8,6 @@ from astropy.time import Time
 import warnings
 
 from ..exceptions import PlotWarning
-from ..plots.mplstyles import light_style_sheet
 from ..utils import _set_mpl_style_sheet
 
 __all__ = ['plot_airmass', 'plot_parallactic']
@@ -75,12 +74,10 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
         1) Timezones?
     """
     # Import matplotlib, set style sheet
-    if style_sheet is None:
-        style_sheet = light_style_sheet
+    if style_sheet is not None:
+        _set_mpl_style_sheet(style_sheet)
 
     import matplotlib.pyplot as plt
-    _set_mpl_style_sheet(style_sheet)
-
     from matplotlib import dates
 
     # Set up plot axes and style if needed.
@@ -192,11 +189,10 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
         1) observe_timezone -- update with info from observer?
     """
     # Import matplotlib, set style sheet
-    if style_sheet is None:
-        style_sheet = light_style_sheet
+    if style_sheet is not None:
+        _set_mpl_style_sheet(style_sheet)
 
     import matplotlib.pyplot as plt
-    _set_mpl_style_sheet(style_sheet)
 
     from matplotlib import dates
 
