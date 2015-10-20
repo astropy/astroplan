@@ -54,7 +54,7 @@ fi
 if [[ $SETUP_CMD == build_sphinx* ]]
 then
   $CONDA_INSTALL matplotlib Sphinx Pygments sphinx_rtd_theme
-  pip install wcsaxes
+  pip install wcsaxes astroquery
 fi
 
 # COVERAGE DEPENDENCIES
