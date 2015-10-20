@@ -9,3 +9,4 @@ and `Matplotlib`_.
 from .time_dependent import *
 from .sky import *
 from .mplstyles import *
+from .finder import *

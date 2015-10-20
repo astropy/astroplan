@@ -9,6 +9,8 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
 
+__all__ = ['plot_finder_image']
+
 @u.quantity_input(fov_radius=u.deg)
 def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
                       log=False, ax=None, grid=False, reticle=False,
@@ -17,7 +19,7 @@ def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
     Plot survey image centered on ``target``.
 
     Survey images are retrieved from NASA Goddard's SkyView service via
-    `~astroquery.skyview.SkyView`, and plotted using WCSAxes.
+    ``astroquery.skyview.SkyView``.
 
     If a `~matplotlib.axes.Axes` object already exists, plots the finder image
     on top. Otherwise, creates a new `~matplotlib.axes.Axes`
@@ -31,8 +33,8 @@ def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
     survey : string
         Name of survey to retrieve image from. For dictionary of
         available surveys, use
-        `from astroquery.skyview import SkyView; print(SkyView.survey_dict)`.
-        Defaults to `'DSS'`, the Digital Sky Survey.
+        ``from astroquery.skyview import SkyView; SkyView.list_surveys()``.
+        Defaults to ``'DSS'``, the Digital Sky Survey.
 
     fov_radius : `~astropy.units.Quantity`
         Radius of field of view of retrieved image. Defaults to 10 arcmin.
@@ -66,6 +68,12 @@ def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
 
     hdu : `~astropy.io.fits.PrimaryHDU`
         FITS HDU of the retrieved image
+
+
+    Notes
+    -----
+    Dependencies:
+        In addition to Matplotlib, this function makes use of astroquery.
     """
 
     import matplotlib.pyplot as plt
