@@ -164,22 +164,25 @@ class AltitudeConstraint(Constraint):
     Constrain the altitude of the target.
 
     .. note::
-        This will misbehave if you try to constrain negative altitudes, as
+        This can misbehave if you try to constrain negative altitudes, as
         the `~astropy.coordinates.AltAz` frame tends to mishandle negative
-        altitudes.
-    """
-    def __init__(self, min=None, max=None):
-        """
-        Parameters
-        ----------
-        min : `~astropy.units.Quantity` or `None`
-            Minimum altitude of the target. `None` indicates no limit.
+        altitudes in the presence of atmospheric corrections.
 
-        max : `~astropy.units.Quantity` or `None`
-            Maximum altitude of the target. `None` indicates no limit.
-        """
+
+    Parameters
+    ----------
+    min : `~astropy.units.Quantity` or `None`
+        Minimum altitude of the target. `None` indicates no limit.
+    max : `~astropy.units.Quantity` or `None`
+        Maximum altitude of the target. `None` indicates no limit.
+    boolean_constraint : bool
+        If True, the constraint is treated as a boolean (True for within the
+        limits and False for outside).  If False, the constraint returns a 
+        float on [0, 1], where 0 is the min altitude and 1 is the max.
+    """
+    def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
-            self.min = 0*u.deg
+            self.min = -90*u.deg
         else:
             self.min = min
         if max is None:
@@ -189,7 +192,13 @@ class AltitudeConstraint(Constraint):
 
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
-        return _rescale_minmax(cached_altaz['altaz'].alt, self.min, self.max)
+        alt = cached_altaz['altaz'].alt
+        if self.boolean_constraint:
+            lowermask = self.min < alt
+            uppermask = alt < self.max
+            return lowermask & uppermask
+        else:
+            return _rescale_minmax(alt, self.min, self.max)
 
 
 class AirmassConstraint(AltitudeConstraint):
@@ -198,50 +207,56 @@ class AirmassConstraint(AltitudeConstraint):
 
     In the current implementation the airmass is approximated by the secant of
     the zenith angle.
+
+    .. note::
+        The ``max`` and ``min`` arguments appear in the order (max, min)
+        in this initializer to support the common case for users who care
+        about the upper limit on the airmass (``max``) and not the lower
+        limit.
+
+    Parameters
+    ----------
+    max : float or `None`
+        Maximum airmass of the target. `None` indicates no limit.
+
+    min : float or `None`
+        Minimum airmass of the target. `None` indicates no limit.
+
+    Examples
+    --------
+    To create a constraint that requires the airmass be "better than 2",
+    i.e. at a higher altitude than airmass=2::
+
+        AirmassConstraint(2)
     """
-    def __init__(self, max=None, min=None):
-        """
-        .. note::
-            The ``max`` and ``min`` arguments appear in the order (max, min)
-            in this initializer to support the common case for users who care
-            about the upper limit on the airmass (``max``) and not the lower
-            limit.
-
-        Parameters
-        ----------
-        max : float or `None`
-            Maximum airmass of the target. `None` indicates no limit.
-
-        min : float or `None`
-            Minimum airmass of the target. `None` indicates no limit.
-
-        Examples
-        --------
-        To create a constraint that requires the airmass be "better than 2",
-        i.e. at a higher altitude than airmass=2::
-
-            AirmassConstraint(2)
-        """
+    def __init__(self, max=None, min=None, boolean_constraint=True):
         self.min = min
         self.max = max
+        self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
-        altaz = cached_altaz['altaz']
-        if self.min is None and self.max is not None:
-            mask = altaz.secz < self.max
-        elif self.max is None and self.min is not None:
-            mask = self.min < altaz.secz
-        elif self.min is not None and self.max is not None:
-            mask = (self.min < altaz.secz) & (altaz.secz < self.max)
+        secz = cached_altaz['altaz'].secz
+        if self.boolean_constraint:
+            if self.min is None and self.max is not None:
+                mask = secz < self.max
+            elif self.max is None and self.min is not None:
+                mask = self.min < secz
+            elif self.min is not None and self.max is not None:
+                mask = (self.min < secz) & (secz < self.max)
+            else:
+                raise ValueError("No max and/or min specified in "
+                                 "AirmassConstraint.")
+            return mask
         else:
-            raise ValueError("No max and/or min specified in "
-                             "AirmassConstraint.")
-        return mask
-
-        mi = 1 if self.min is None else self.min
-        cached_altaz = _get_altaz(times, observer, targets)
-        return _rescale_minmax(cached_altaz['altaz'].alt, self.min, mx)
+            if self.max is None:
+                raise ValueError("Cannot have a float AirmassConstraint if max "
+                                 "is None")
+            else:
+                mx = self.max
+            mi = 1 if self.min is None else self.min
+            # we reverse order so that airmass close to 1/min is good
+            return 1 - _rescale_minmax(secz, mi, mx)
 
 
 class AtNightConstraint(Constraint):
