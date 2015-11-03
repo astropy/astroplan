@@ -28,9 +28,9 @@ class ObservingBlock(object):
     def __repr__(self):
         orig_repr = object.__repr__(self)
         if self.start_time is None or self.end_time is None:
-            return orig_repr.replace('object at', 'object (unscheduled) at')
+            return orig_repr.replace('object at', '({0}, unscheduled) at'.format(self.target.name))
         else:
-            s = 'object ({0} to {1}) at'.format(self.start_time, self.end_time)
+            s = '({0}, {1} to {2}) at'.format(self.target.name, self.start_time, self.end_time)
             return orig_repr.replace('object at', s)
 
     @classmethod
@@ -62,10 +62,12 @@ class TransitionBlock(object):
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
+        comp_info = ', '.join(['{0}: {1}'.format(c, t) 
+                               for c, t in self.components.items()])
         if self.start_time is None or self.end_time is None:
-            return orig_repr.replace('object at', 'object ({0}, unscheduled) at'.format(self.components))
+            return orig_repr.replace('object at', ' ({0}, unscheduled) at'.format(comp_info))
         else:
-            s = 'object ({0}, {1} to {2}) at'.format(self.components, self.start_time, self.end_time)
+            s = '({0}, {1} to {2}) at'.format(comp_info, self.start_time, self.end_time)
             return orig_repr.replace('object at', s)
 
     @property
