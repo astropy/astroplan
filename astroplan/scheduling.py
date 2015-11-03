@@ -219,6 +219,7 @@ class SequentialScheduler(Scheduler):
                 newb.start_time = current_time
                 current_time += self.gap_time
                 newb.end_time = current_time
+                newb.constraints_value = block_constraint_results[bestblock_idx]
 
                 new_blocks.append(newb)
 
