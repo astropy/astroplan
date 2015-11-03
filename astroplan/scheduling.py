@@ -14,7 +14,7 @@ import numpy as np
 from astropy import units as u
 
 __all__ = ['ObservingBlock', 'TransitionBlock',
-           'Scheduler', 'SequentialScheduler']
+           'Scheduler', 'SequentialScheduler', 'Transitioner']
 
 class ObservingBlock(object):
     @u.quantity_input(duration=u.second)
@@ -157,20 +157,20 @@ class SequentialScheduler(Scheduler):
         constraints for specific blocks can go on each block individually.
     observer : `astroplan.Observer`
         The observer/site to do the scheduling for.
-    configuration_transitions : dict
-        TBD
+    transitioner : `Transitioner` or None
+        The object to use for computing transition times between blocks
     gap_time : `Quantity` with time units
         The minimal spacing to try over a gap where nothing can be scheduled.
 
     """
     @u.quantity_input(gap_time=u.second)
     def __init__(self, start_time, end_time, constraints, observer,
-                       configuration_transitions={}, gap_time=30*u.min):
+                       transitioner=None, gap_time=30*u.min):
         self.constraints = constraints
         self.start_time = start_time
         self.end_time = end_time
         self.observer = observer
-        self.configuration_transitions = configuration_transitions
+        self.transitioner = transitioner
         self.gap_time = gap_time
 
     @classmethod
@@ -198,9 +198,18 @@ class SequentialScheduler(Scheduler):
 
             # first compute the value of all the constraints for each block
             # given the current starting time
+            block_transitions = []
             block_constraint_results = []
             for b in blocks:
-                times = current_time + b._duration_offsets
+                #first figure out the transition
+                if len(new_blocks) > 0:
+                    trans = self.transitioner(new_blocks[-1], b, current_time, self.observer)
+                else:
+                    trans = None
+                block_transitions.append(trans)
+                transition_time = 0*u.second if trans is None else trans.duration
+
+                times = current_time + transition_time + b._duration_offsets
 
                 constraint_res = []
                 for constraint in b._all_constraints:
@@ -216,7 +225,13 @@ class SequentialScheduler(Scheduler):
                 new_blocks.append(TransitionBlock({'nothing_observable': self.gap_time}, current_time))
                 current_time += self.gap_time
             else:
-                # If there's a best one that's observable, assign it times
+                # If there's a best one that's observable, first get its transition
+                trans = block_transitions.pop(bestblock_idx)
+                if trans is not None:
+                    new_blocks.append(trans)
+                    current_time += trans.duration
+
+                # now assign the block itself times and add it to the schedule
                 newb = blocks.pop(bestblock_idx)
                 newb.start_time = current_time
                 current_time += self.gap_time
@@ -227,7 +242,82 @@ class SequentialScheduler(Scheduler):
 
         return new_blocks, True
 
+class Transitioner(object):
+    """
+    A class that defines how to compute transition times from one block to 
+    another.
 
+    Parameters
+    ----------
+    slew_rate : `~astropy.units.Quantity` with angle/time units
+        The slew rate of the telescope
+    instrument_reconfig_times : dict of dicts or None
+        If not None, gives a mapping from property names to another dictionary.
+        The second dictionary maps 2-tuples of states to the time it takes to
+        transition between those states (as an `~astropy.units.Quantity`).
+
+    """
+    u.quantity_input(slew_rate=u.deg/u.second)
+    def __init__(self, slew_rate=None, instrument_reconfig_times=None):
+        self.slew_rate = slew_rate
+        self.instrument_reconfig_times = instrument_reconfig_times
+
+
+    def __call__(self, oldblock, newblock, start_time, observer):
+        """
+        Determines the amount of time needed to transition from one observing
+        block to another.  This uses the parameters defined in 
+        ``self.instrument_reconfig_times``.
+
+        Parameters
+        ----------
+        oldblock : `ObservingBlock` or None
+            The initial configuration/target
+        newblock : `ObservingBlock` or None
+            The new configuration/target to transition to
+        start_time : `~astropy.time.Time`
+            The time the transition should start
+        observer : `astroplan.Observer`
+            The observer at the time 
+
+        Returns
+        -------
+        transition : `TransitionBlock` or None
+            A transition to get from `oldblock` to `newblock` or None if no
+            transition is necessary
+        """
+        components = {}
+        if self.slew_rate is not None:
+            # use the constraints cache for now, but should move that machinery to
+            # observer
+            from .constraints import _get_altaz
+            from astropy.time import Time
+
+            aaz = _get_altaz(Time([start_time]), observer, [oldblock.target, newblock.target])['altaz']
+            # TODO: make this [0] unnecessary by fixing _get_altaz to behave well in scalar-time case
+            sep = aaz[0].separation(aaz[1])[0]
+            
+            components['slew_time'] = sep / self.slew_rate
+        if self.instrument_reconfig_times is not None:
+            components.update(self.compute_instrument_transitions(oldblock, newblock))
+
+        if components:
+            return TransitionBlock(components, start_time)
+        else:
+            return None
+
+        def compute_instrument_transitions(self, oldblock, newblock):
+            components = {}
+            for conf_name, old_conf in oldblock.configuration.items():
+                if conf_name in newblock:
+                    conf_times = self.instrument_reconfig_times.get(conf_name, None)
+                    if conf_times is not None:
+                        new_conf = newblock[conf_name]
+                        ctime = conf_times.get((old_conf, new_conf), None)
+                        if ctime is not None:
+                            s = '{0}:{1} to {2}'.format(conf_name, old_conf, new_conf)
+                            components[s] = ctime
+            return components
 
 
 
