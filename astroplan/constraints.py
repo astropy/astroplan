@@ -92,6 +92,29 @@ class Constraint(object):
 
     def __call__(self, observer, targets, times=None,
                  time_range=None, time_grid_resolution=0.5*u.hour):
+        """
+        Compute the constraint for this class
+
+        Parameters
+        ----------
+        observer : `~astroplan.Observer`
+            the observaton location from which to apply the constraints
+        targets : sequence of `~astroplan.Target`
+            The targets on which to apply the constraints.
+        times : `~astropy.time.Time`
+            The times to compute the constraint.
+            WHAT HAPPENS WHEN BOTH TIMES AND TIME_RANGE ARE SET?
+        time_range : `~astropy.time.Time` (length = 2)
+            Lower and upper bounds on time sequence.
+        time_grid_resolution : `~astropy.units.quantity`
+            Time-grid spacing
+
+        Returns
+        -------
+        constraint_result : 2D array of float or bool
+            The constraints, with targets along the first index and times along
+            the second.
+        """
 
         if times is None and time_range is not None:
             times = time_grid_from_range(time_range,
@@ -109,10 +132,29 @@ class Constraint(object):
             if isinstance(targets, SkyCoord):
                 targets = FixedTarget(coord=targets)
 
-        cons = self.compute_constraint(times, observer, targets)
-        return cons
+        return self.compute_constraint(times, observer, targets)
 
+    @abstractmethod
     def compute_constraint(self, times, observer, targets):
+        """
+        Actually do the real work of computing the constraint.  Subclasses
+        override this.
+
+        Parameters
+        ----------
+        times : `~astropy.time.Time`
+            The times to compute the constraint
+        observer : `~astroplan.Observer`
+            the observaton location from which to apply the constraints
+        targets : sequence of `~astroplan.Target`
+            The targets on which to apply the constraints.
+
+        Returns
+        -------
+        constraint_result : 2D array of float or bool
+            The constraints, with targets along the first index and times along
+            the second.
+        """
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
 
@@ -146,12 +188,8 @@ class AltitudeConstraint(Constraint):
             self.max = max
 
     def compute_constraint(self, times, observer, targets):
-
         cached_altaz = _get_altaz(times, observer, targets)
-        altaz = cached_altaz['altaz']
-        lowermask = self.min < altaz.alt
-        uppermask = altaz.alt < self.max
-        return lowermask & uppermask
+        return _rescale_minmax(cached_altaz['altaz'].alt, self.min, self.max)
 
 
 class AirmassConstraint(AltitudeConstraint):
@@ -200,6 +238,10 @@ class AirmassConstraint(AltitudeConstraint):
             raise ValueError("No max and/or min specified in "
                              "AirmassConstraint.")
         return mask
+
+        mi = 1 if self.min is None else self.min
+        cached_altaz = _get_altaz(times, observer, targets)
+        return _rescale_minmax(cached_altaz['altaz'].alt, self.min, mx)
 
 
 class AtNightConstraint(Constraint):
@@ -635,3 +677,11 @@ def observability_table(constraints, observer, targets, times=None,
     tab.meta['constraints'] = constraints
 
     return tab
+
+def _rescale_minmax(vals, min_val, max_val):
+    rescaled = (vals - min_val) / (max_val - min_val)
+    below = rescaled < 0
+    above = rescaled > 1
+    rescaled[below] = 0
+    rescaled[above] = 1
+    return rescaled
