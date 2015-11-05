@@ -1,5 +1,10 @@
 #!/bin/bash -x
 
+hash -r
+conda config --set always_yes yes --set changeps1 no
+conda update -q conda
+conda info -a
+
 # CONDA
 conda create --yes -n test -c astropy-ci-extras python=$PYTHON_VERSION pip
 source activate test
@@ -50,7 +55,7 @@ then
 fi
 
 # DOCUMENTATION DEPENDENCIES
-# build_sphinx needs sphinx as well as matplotlib and wcsaxes (for plot_directive). 
+# build_sphinx needs sphinx as well as matplotlib and wcsaxes (for plot_directive).
 if [[ $SETUP_CMD == build_sphinx* ]]
 then
   $CONDA_INSTALL matplotlib Sphinx Pygments sphinx_rtd_theme
