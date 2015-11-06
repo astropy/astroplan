@@ -134,6 +134,75 @@ def test_compare_airmass_constraint_and_observer():
 
 #in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
+
+def test_always_observable_shape():
+    # Scalar time, scalar target
+    scalar_time = Time('2001-02-03 04:05:06')
+    non_scalar_time = (Time('2001-02-03 04:05:06') +
+                       u.Quantity([0, 1, 2, 3], unit=u.min))
+    subaru = Observer.at_site("Subaru")
+    scalar_target = vega
+    non_scalar_target = [vega, rigel, polaris]
+
+    always1 = is_always_observable(AirmassConstraint(max=2),
+                                   subaru, scalar_target,
+                                   times=scalar_time)
+    assert always1.shape == ()
+
+    # Scalar time, non-scalar target
+    always2 = is_always_observable(AirmassConstraint(max=2),
+                                   subaru, non_scalar_target,
+                                   times=scalar_time)
+
+    assert always2.shape == (len(non_scalar_target),)
+
+    # Non-scalar time, scalar target
+    always3 = is_always_observable(AirmassConstraint(max=2),
+                                   subaru, non_scalar_target,
+                                   times=scalar_time)
+    assert always3.shape == (len(non_scalar_target), )
+
+    # non-scalar time, non-scalar target
+    always4 = is_always_observable(AirmassConstraint(max=2),
+                                   subaru, non_scalar_target,
+                                   times=non_scalar_time)
+
+    assert always4.shape == (len(non_scalar_target), )
+
+def test_ever_observable_shape():
+    # Scalar time, scalar target
+    scalar_time = Time('2001-02-03 04:05:06')
+    non_scalar_time = (Time('2001-02-03 04:05:06') +
+                       u.Quantity([0, 1, 2, 3], unit=u.min))
+    subaru = Observer.at_site("Subaru")
+    scalar_target = vega
+    non_scalar_target = [vega, rigel, polaris]
+
+    ever1 = is_observable(AirmassConstraint(max=2),
+                          subaru, scalar_target,
+                          times=scalar_time)
+    assert ever1.shape == ()
+
+    # Scalar time, non-scalar target
+    ever2 = is_observable(AirmassConstraint(max=2),
+                          subaru, non_scalar_target,
+                          times=scalar_time)
+
+    assert ever2.shape == (len(non_scalar_target),)
+
+    # Non-scalar time, scalar target
+    ever3 = is_observable(AirmassConstraint(max=2),
+                          subaru, non_scalar_target,
+                          times=scalar_time)
+    assert ever3.shape == (len(non_scalar_target), )
+
+    # non-scalar time, non-scalar target
+    ever4 = is_observable(AirmassConstraint(max=2),
+                          subaru, non_scalar_target,
+                          times=non_scalar_time)
+
+    assert ever4.shape == (len(non_scalar_target), )
+
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
