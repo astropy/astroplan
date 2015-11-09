@@ -61,7 +61,9 @@ def test_observability_table():
     targets = [vega, rigel, polaris]
 
     time_range = Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06'])
-    constraints = [AtNightConstraint(), AirmassConstraint(3)]
+    # note that this uses the AirmassConstraint in None min mode - that means
+    # targets below the horizon will pass the airmass constraint
+    constraints = [AtNightConstraint(), AirmassConstraint(3, None)]
 
     obstab = observability_table(constraints, subaru, targets,
                                  time_range=time_range)
@@ -118,7 +120,8 @@ def test_compare_airmass_constraint_and_observer():
 
         max_airmass = 2
         # Check if each target meets airmass constraint in using Observer
-        always_from_observer = [all([subaru.altaz(time, target).secz < max_airmass
+        always_from_observer = [all([(subaru.altaz(time, target).secz < max_airmass)&
+                                     (subaru.altaz(time, target).secz > 0)
                                      for time in time_grid_from_range(time_range)])
                                 for target in targets]
         # Check if each target meets altitude constraints using
