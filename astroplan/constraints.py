@@ -297,10 +297,11 @@ class SunSeparationConstraint(Constraint):
         self.max = max
 
     def compute_constraint(self, times, observer, targets):
-        sun = get_sun(times)
-        targets = [target.coord if hasattr(target, 'coord') else target
+        sunaltaz = observer.altaz(times, get_sun(times))
+        target_coos = [target.coord if hasattr(target, 'coord') else target
                    for target in targets]
-        solar_separation = Angle([sun.separation(target) for target in targets])
+        target_altazs = [observer.altaz(times, coo) for coo in target_coos]
+        solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
         if self.min is None and self.max is not None:
             mask = self.max > solar_separation
         elif self.max is None and self.min is not None:
