@@ -318,3 +318,19 @@ def test_docs_example():
                                   time_range=time_range)
 
     assert all(observability == [False, False, True, False, False, False])
+
+def test_regression_airmass_141():
+    subaru = Observer.at_site("Subaru")
+    time = Time('2001-1-1 12:00')
+
+    coord = SkyCoord(ra=16*u.hour, dec=20*u.deg)
+
+    assert subaru.altaz(time, coord).alt < 0*u.deg
+    # ok, it's below the horizon, so it *definitely* should fail an airmass
+    # constraint of being above 2.  So both of these should give False:
+    consmax = AirmassConstraint(2)
+    consminmax = AirmassConstraint(2, 1)
+
+    assert not consminmax(subaru, [coord], [time]).ravel()[0]
+    # prior to 141 the above works, but the below FAILS
+    assert not consmax(subaru, [coord], [time]).ravel()[0]
