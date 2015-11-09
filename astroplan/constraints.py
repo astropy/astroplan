@@ -160,30 +160,32 @@ class AirmassConstraint(AltitudeConstraint):
 
     In the current implementation the airmass is approximated by the secant of
     the zenith angle.
+
+    .. note::
+        The ``max`` and ``min`` arguments appear in the order (max, min)
+        in this initializer to support the common case for users who care
+        about the upper limit on the airmass (``max``) and not the lower
+        limit.  For the same reason, if ``max`` is given without ``min``, the
+        default ``min`` is 0, not ``None``
+
+    Parameters
+    ----------
+    max : float or `None`
+        Maximum airmass of the target. `None` indicates no limit.
+
+    min : float or `None`
+        Minimum airmass of the target. `None` indicates no limit.  Note that in
+        the `None` case, this will mean *negative* airmasses (below the horizon)
+        are accepted.
+
+    Examples
+    --------
+    To create a constraint that requires the airmass be "better than 2",
+    i.e. at a higher altitude than airmass=2::
+
+        AirmassConstraint(2)
     """
-    def __init__(self, max=None, min=None):
-        """
-        .. note::
-            The ``max`` and ``min`` arguments appear in the order (max, min)
-            in this initializer to support the common case for users who care
-            about the upper limit on the airmass (``max``) and not the lower
-            limit.
-
-        Parameters
-        ----------
-        max : float or `None`
-            Maximum airmass of the target. `None` indicates no limit.
-
-        min : float or `None`
-            Minimum airmass of the target. `None` indicates no limit.
-
-        Examples
-        --------
-        To create a constraint that requires the airmass be "better than 2",
-        i.e. at a higher altitude than airmass=2::
-
-            AirmassConstraint(2)
-        """
+    def __init__(self, max=None, min=0):
         self.min = min
         self.max = max
 
