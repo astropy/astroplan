@@ -73,7 +73,7 @@ def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
     Notes
     -----
     Dependencies:
-        In addition to Matplotlib, this function makes use of astroquery.
+        In addition to Matplotlib, this function makes use of astroquery and WCSAxes.
     """
 
     import matplotlib.pyplot as plt

@@ -21,6 +21,8 @@ Optional packages:
 
 * `PyEphem`_
 * `Matplotlib`_
+* `WCSAxes`_
+* `astroquery`_
 
 First-time Python users may want to consider an all-in-one Python installation
 package, such as the `Anaconda Python Distribution

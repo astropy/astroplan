@@ -1065,11 +1065,11 @@ make multiple plots:
 Finder Chart/Image
 ==================
 
-`astroplan` includes a function for generating quick finder images from the
-command line, `~astroplan.plots.plot_finder_image`, by querying for images from
+`astroplan` includes a function for generating quick finder images from
+Python, `~astroplan.plots.plot_finder_image`, by querying for images from
 sky surveys centered on a `~astroplan.FixedTarget`. This function depends on
-`astroquery <https://astroquery.readthedocs.org/en/latest/>`_  (in addition
-to `Matplotlib`_). In this example, we'll quickly make a finder image centered
+`astroquery`_  (in addition
+to `Matplotlib`_ and `WCSAxes`_). In this example, we'll quickly make a finder image centered
 on The Crab Nebula (M1):
 
 .. code-block:: python
