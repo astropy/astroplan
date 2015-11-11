@@ -511,7 +511,8 @@ def is_always_observable(constraints, observer, targets, times=None,
     targets_is_scalar = False
     times_is_scalar = False
 
-    if not hasattr(targets, '__len__'):
+    if (not hasattr(targets, '__len__') or
+        (hasattr(targets, 'isscalar') and targets.isscalar)):
         targets = [targets]
         targets_is_scalar = True
 
@@ -579,7 +580,8 @@ def is_observable(constraints, observer, targets, times=None,
     targets_is_scalar = False
     times_is_scalar = False
 
-    if not hasattr(targets, '__len__'):
+    if (not hasattr(targets, '__len__') or
+        (hasattr(targets, 'isscalar') and targets.isscalar)):
         targets = [targets]
         targets_is_scalar = True
 
