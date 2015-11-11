@@ -526,9 +526,9 @@ def is_always_observable(constraints, observer, targets, times=None,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
 
-    always_observable = np.all(contraint_arr, axis=1)
+    always_observable = np.all(constraint_arr, axis=1)
 
     if targets_is_scalar and times_is_scalar:
         return always_observable.ravel()[0]
@@ -595,9 +595,9 @@ def is_observable(constraints, observer, targets, times=None,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
 
-    ever_observable = np.any(contraint_arr, axis=1)
+    ever_observable = np.any(constraint_arr, axis=1)
 
     if targets_is_scalar and times_is_scalar:
         return ever_observable.ravel()[0]
