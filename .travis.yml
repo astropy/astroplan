@@ -22,8 +22,9 @@ env:
         # Set defaults to avoid repeating in most cases
         - NUMPY_VERSION=1.9
         - ASTROPY_VERSION=1.0
-        - OPTIONAL_DEPS=false
         - MAIN_CMD='python setup.py'
+        - CONDA_DEPENDENCIES='pytz matplotlib nose'
+        - PIP_DEPENDENCIES='pyephem pytest-mpl'
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
@@ -39,25 +40,33 @@ matrix:
 
         # Try MacOS X
         - os: osx
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test -V' OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test -V'
 
         # Check for sphinx doc build warnings - we do this first because it
-        # runs for a long time
-        # OPTIONAL_DEPS needed because the plot_directive in sphinx needs them
+        # runs for a long time. All dependencies are needed because the
+        # plot_directive in sphinx needs them
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'  OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
+               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes'
         - os: linux
-          env: PYTHON_VERSION=3.4 SETUP_CMD='build_sphinx -w'  OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=3.4 SETUP_CMD='build_sphinx -w'
+               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes'
 
         # Try all python versions with the latest numpy
         # TODO: add the `--open-files` option back once this issue has been resolved:
         # https://github.com/astropy/astroplan/pull/83#issuecomment-136129489
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
         - os: linux
           env: PYTHON_VERSION=3.3 SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
         - os: linux
           env: PYTHON_VERSION=3.4 SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
 
         # Try running tests from an installed version via the `astroplan.test()` function
         # Because of the way this travis config file is written this is a bit cryptic.
@@ -66,30 +75,39 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=3.4 $MAIN_CMD='test installed' SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
 
-
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
         # 2.7.
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage' OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
         - os: linux
-          env: PYTHON_VERSION=3.4 SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=3.4 SETUP_CMD='test --remote-data -V'
 
         # Try older numpy versions
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8 SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7 SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.6 SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
 
         # Try developer version of Numpy
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
 
         # Try developer version of Astropy
         - os: linux
           env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev SETUP_CMD='test -V'
+               CONDA_DEPENDENCIES='pytz'
+               PIP_DEPENDENCIES=''
 
         # Do a PEP8 test
         - os: linux
@@ -103,17 +121,22 @@ matrix:
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7 SETUP_CMD='test -V'
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.6 SETUP_CMD='test -V'
 
+before_install:
+    - git clone git://github.com/astropy/ci-helpers.git
+    - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
 
-install:
-    - source .continuous-integration/travis/setup_environment_$TRAVIS_OS_NAME.sh
+    # This is needed to make matplotlib plot testing work
+    - export DISPLAY=:99.0
+    - sh -e /etc/init.d/xvfb start
+    - export QT_API=pyqt
 
 script:
     # Check if install and testing via `astroplan.test()` works, otherwise
     # run tests the usual way
     - if [[ $MAIN_CMD == 'test installed' ]]; then
-        python setup.py install
-        cd /tmp
-        python -c 'import astroplan; import sys; sys.exit(astroplan.test())'
+        python setup.py install;
+        cd /tmp;
+        python -c 'import astroplan; import sys; sys.exit(astroplan.test())';
       else
         $MAIN_CMD $SETUP_CMD
       fi
