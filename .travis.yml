@@ -108,17 +108,15 @@ install:
     - source .continuous-integration/travis/setup_environment_$TRAVIS_OS_NAME.sh
 
 script:
-    - if [[ $MAIN_CMD == 'python setup.py' ]]; then
-        $MAIN_CMD $SETUP_CMD;
-      fi
-
-    # Check if install and testing via `astroplan.test()` works
+    # Check if install and testing via `astroplan.test()` works, otherwise
+    # run tests the usual way
     - if [[ $MAIN_CMD == 'test installed' ]]; then
-        python setup.py install;
-        cd /tmp;
-        python -c 'import astroplan; import sys; sys.exit(astroplan.test())';
+        python setup.py install
+        cd /tmp
+        python -c 'import astroplan; import sys; sys.exit(astroplan.test())'
+      else
+        $MAIN_CMD $SETUP_CMD
       fi
-
 
 after_success:
     - if [[ $SETUP_CMD == 'test --remote-data -V --coverage' ]]; then
