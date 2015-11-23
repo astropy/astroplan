@@ -74,7 +74,6 @@ matrix:
         # - $SETUP_CMD is used to communicate which dependencies should be installed
         - os: linux
           env: PYTHON_VERSION=3.4 $MAIN_CMD='test installed'
-               SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
 
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
