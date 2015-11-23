@@ -115,11 +115,19 @@ matrix:
 
     allow_failures:
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev SETUP_CMD='test -V'
+             CONDA_DEPENDENCIES='pytz'
+             PIP_DEPENDENCIES=''
       # TODO: these fail for now ... make them work!
       - env: PYTHON_VERSION=2.7 MAIN_CMD='pep8 astroplan --count' SETUP_CMD=''
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8 SETUP_CMD='test -V'
+             CONDA_DEPENDENCIES='pytz'
+             PIP_DEPENDENCIES=''
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7 SETUP_CMD='test -V'
+             CONDA_DEPENDENCIES='pytz'
+             PIP_DEPENDENCIES=''
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.6 SETUP_CMD='test -V'
+             CONDA_DEPENDENCIES='pytz'
+             PIP_DEPENDENCIES=''
 
 before_install:
     - git clone git://github.com/astropy/ci-helpers.git
