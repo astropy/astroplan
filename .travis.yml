@@ -73,7 +73,8 @@ matrix:
         # - $MAIN_CMD is used to trigger this case in the install section below
         # - $SETUP_CMD is used to communicate which dependencies should be installed
         - os: linux
-          env: PYTHON_VERSION=3.4 $MAIN_CMD='test installed' SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
+          env: PYTHON_VERSION=3.4 $MAIN_CMD='test installed'
+               SETUP_CMD='test --remote-data -V' OPTIONAL_DEPS=true
 
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
@@ -126,9 +127,11 @@ before_install:
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
 
     # This is needed to make matplotlib plot testing work
-    - export DISPLAY=:99.0
-    - sh -e /etc/init.d/xvfb start
-    - export QT_API=pyqt
+    - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+          export DISPLAY=:99.0;
+          sh -e /etc/init.d/xvfb start;
+          export QT_API=pyqt;
+      fi
 
 script:
     # Check if install and testing via `astroplan.test()` works, otherwise
@@ -138,7 +141,7 @@ script:
         cd /tmp;
         python -c 'import astroplan; import sys; sys.exit(astroplan.test())';
       else
-        $MAIN_CMD $SETUP_CMD
+        $MAIN_CMD $SETUP_CMD;
       fi
 
 after_success:
