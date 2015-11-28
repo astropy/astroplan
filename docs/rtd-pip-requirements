@@ -4,3 +4,4 @@ Cython
 astropy-helpers
 astropy >= 1.0
 pytz
+astroquery

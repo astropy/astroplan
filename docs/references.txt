@@ -6,3 +6,5 @@
 .. _pytz: https://pypi.python.org/pypi/pytz/
 .. _pytest-mpl: https://pypi.python.org/pypi/pytest-mpl
 .. _Nose: https://nose.readthedocs.org
+.. _WCSAxes: https://wcsaxes.readthedocs.org
+.. _astroquery: https://astroquery.readthedocs.org

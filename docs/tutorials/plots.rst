@@ -28,6 +28,8 @@ Contents
 
     * :ref:`plots_sky_charts`
 
+    * :ref:`finder_image`
+
 .. warning::
 
     All examples here assume you know how to and have already constructed
@@ -1057,3 +1059,39 @@ make multiple plots:
     plt.show()
 
 :ref:`Return to Top <plots>`
+
+.. _finder_image:
+
+Finder Chart/Image
+==================
+
+`astroplan` includes a function for generating quick finder images from
+Python, `~astroplan.plots.plot_finder_image`, by querying for images from
+sky surveys centered on a `~astroplan.FixedTarget`. This function depends on
+`astroquery`_  (in addition
+to `Matplotlib`_ and `WCSAxes`_). In this example, we'll quickly make a finder image centered
+on The Crab Nebula (M1):
+
+.. code-block:: python
+
+    >>> from astroplan.plots import plot_finder_image
+    >>> from astroplan import FixedTarget
+    >>> import matplotlib.pyplot as plt
+
+    >>> messier1 = FixedTarget.from_name("M1")
+    >>> ax, hdu = plot_finder_image(messier1)
+    >>> plt.show()
+
+.. plot::
+
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_finder_image
+    import matplotlib.pyplot as plt
+
+    messier1 = FixedTarget.from_name("M1")
+    ax, hdu = plot_finder_image(messier1)
+    plt.show()
+
+
+:ref:`Return to Top <plots>`
+
