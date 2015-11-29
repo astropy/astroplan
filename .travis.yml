@@ -48,10 +48,10 @@ matrix:
         # plot_directive in sphinx needs them
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
-               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes'
+               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes astroquery'
         - os: linux
           env: PYTHON_VERSION=3.5 SETUP_CMD='build_sphinx -w'
-               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes'
+               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes astroquery'
 
         # Try all python versions with the latest numpy
         # TODO: add the `--open-files` option back once this issue has been resolved:
