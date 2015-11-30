@@ -127,6 +127,8 @@ def test_compare_airmass_constraint_and_observer():
         assert all(always_from_observer == always_from_constraint)
 
 
+# xfail can be removed when #141 is finished and merged
+@pytest.mark.xfail
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")

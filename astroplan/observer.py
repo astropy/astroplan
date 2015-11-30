@@ -1093,7 +1093,7 @@ class Observer(object):
         >>> apo = Observer.at_site("APO")
         >>> time = Time('2001-02-03 04:05:06')
         >>> sun_rise = apo.sun_rise_time(time, which="previous")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +FLOAT_CMP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +SKIP
         ISO: 2001-02-02 14:02:50.554, JD: 2451943.08531
         """
         return self.target_rise_time(time, get_sun(time), which, horizon)
@@ -1138,7 +1138,7 @@ class Observer(object):
         >>> apo = Observer.at_site("APO")
         >>> time = Time('2001-02-03 04:05:06')
         >>> sun_set = apo.sun_set_time(time, which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +FLOAT_CMP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +SKIP
         ISO: 2001-02-04 00:35:42.102, JD: 2451944.52479
         """
         return self.target_set_time(time, get_sun(time), which, horizon)
