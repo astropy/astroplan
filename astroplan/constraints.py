@@ -131,10 +131,10 @@ class AltitudeConstraint(Constraint):
         Parameters
         ----------
         min : `~astropy.units.Quantity` or `None`
-            Minimum altitude of the target. `None` indicates no limit.
+            Minimum altitude of the target (inclusive). `None` indicates no limit.
 
         max : `~astropy.units.Quantity` or `None`
-            Maximum altitude of the target. `None` indicates no limit.
+            Maximum altitude of the target (inclusive). `None` indicates no limit.
         """
         if min is None:
             self.min = 0*u.deg
@@ -171,12 +171,12 @@ class AirmassConstraint(AltitudeConstraint):
     Parameters
     ----------
     max : float or `None`
-        Maximum airmass of the target. `None` indicates no limit.
+        Maximum airmass of the target (inclusive). `None` indicates no limit.
 
     min : float or `None`
-        Minimum airmass of the target. `None` indicates no limit.  Note that in
-        the `None` case, this will mean *negative* airmasses (below the horizon)
-        are accepted.
+        Minimum airmass of the target (inclusive). `None` indicates no limit.
+        Note that in the `None` case, this will mean *negative* airmasses (below
+        the horizon) are accepted.
 
     Examples
     --------
@@ -214,14 +214,13 @@ class AtNightConstraint(Constraint):
         Parameters
         ----------
         max_solar_altitude : `~astropy.units.Quantity`
-            Define "night" as when the sun is below ``max_solar_altitude``.
-            Default is zero degrees altitude.
-
+            The altitude of the sun below which it is considered to be "night"
+            (inclusive).
         force_pressure_zero : bool (optional)
             Force the pressure to zero for solar altitude calculations. This
             avoids errors in the altitude of the Sun that can occur when the
             Sun is below the horizon and the corrections for atmospheric
-            refraction return nonsense values. Default is `True`.
+            refraction return nonsense values.
         """
         self.max_solar_altitude = max_solar_altitude
         self.force_pressure_zero = force_pressure_zero
@@ -289,11 +288,11 @@ class SunSeparationConstraint(Constraint):
         Parameters
         ----------
         min : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between Sun and target. `None`
-            indicates no limit.
+            Minimum acceptable separation between Sun and target (inclusive).
+            `None` indicates no limit.
         max : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between Sun and target. `None`
-            indicates no limit.
+            Minimum acceptable separation between Sun and target (inclusive).
+            `None` indicates no limit.
         """
         self.min = min
         self.max = max
@@ -326,11 +325,11 @@ class MoonSeparationConstraint(Constraint):
         Parameters
         ----------
         min : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between moon and target. `None`
-            indicates no limit.
+            Minimum acceptable separation between moon and target (inclusive).
+            `None` indicates no limit.
         max : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between moon and target. `None`
-            indicates no limit.
+            Minimum acceptable separation between moon and target (inclusive).
+            `None` indicates no limit.
         """
         self.min = min
         self.max = max
@@ -371,11 +370,11 @@ class MoonIlluminationConstraint(Constraint):
         Parameters
         ----------
         min : float or `None` (optional)
-            Minimum acceptable fractional illumination. `None` indicates no
-            limit.
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
         max : float or `None` (optional)
-            Maximum acceptable fractional illumination. `None` indicates no
-            limit.
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
         """
         self.min = min
         self.max = max
@@ -405,10 +404,10 @@ class LocalTimeConstraint(Constraint):
         Parameters
         ----------
         min : `~datetime.time`
-            Earliest local time. `None` indicates no limit.
+            Earliest local time (inclusive). `None` indicates no limit.
 
         max : `~datetime.time`
-            Latest local time. `None` indicates no limit.
+            Latest local time (inclusive). `None` indicates no limit.
 
         Examples
         --------
