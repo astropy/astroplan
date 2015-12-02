@@ -185,7 +185,7 @@ class AirmassConstraint(AltitudeConstraint):
 
         AirmassConstraint(2)
     """
-    def __init__(self, max=None, min=0):
+    def __init__(self, max=None, min=1):
         self.min = min
         self.max = max
 
@@ -193,11 +193,11 @@ class AirmassConstraint(AltitudeConstraint):
         cached_altaz = _get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
         if self.min is None and self.max is not None:
-            mask = altaz.secz < self.max
+            mask = altaz.secz <= self.max
         elif self.max is None and self.min is not None:
-            mask = self.min < altaz.secz
+            mask = self.min <= altaz.secz
         elif self.min is not None and self.max is not None:
-            mask = (self.min < altaz.secz) & (altaz.secz < self.max)
+            mask = (self.min <= altaz.secz) & (altaz.secz <= self.max)
         else:
             raise ValueError("No max and/or min specified in "
                              "AirmassConstraint.")
