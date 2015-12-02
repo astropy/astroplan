@@ -7,6 +7,7 @@ import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun
+from astropy.utils import minversion
 
 from ..moon import get_moon
 from ..observer import Observer
@@ -22,6 +23,8 @@ try:
     HAS_PYEPHEM = True
 except ImportError:
     HAS_PYEPHEM = False
+
+APY_LT104 = not minversion('astropy','1.0.4')
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -126,9 +129,8 @@ def test_compare_airmass_constraint_and_observer():
 
         assert all(always_from_observer == always_from_constraint)
 
-
-# xfail can be removed when #141 is finished and merged
-@pytest.mark.xfail
+#in astropy before v1.0.4, a recursion error is triggered by this test
+@pytest.mark.skipif('APY_LT104')
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
