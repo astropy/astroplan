@@ -149,8 +149,8 @@ class AltitudeConstraint(Constraint):
 
         cached_altaz = _get_altaz(times, observer, targets)
         altaz = cached_altaz['altaz']
-        lowermask = self.min < altaz.alt
-        uppermask = altaz.alt < self.max
+        lowermask = self.min <= altaz.alt
+        uppermask = altaz.alt <= self.max
         return lowermask & uppermask
 
 
@@ -276,7 +276,7 @@ class AtNightConstraint(Constraint):
     def compute_constraint(self, times, observer, targets):
         sun_altaz = self._get_solar_altitudes(times, observer, targets)
         solar_altitude = sun_altaz['altitude']
-        mask = solar_altitude < self.max_solar_altitude
+        mask = solar_altitude <= self.max_solar_altitude
         return mask
 
 
@@ -305,12 +305,12 @@ class SunSeparationConstraint(Constraint):
         target_altazs = [observer.altaz(times, coo) for coo in target_coos]
         solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
         if self.min is None and self.max is not None:
-            mask = self.max > solar_separation
+            mask = self.max >= solar_separation
         elif self.max is None and self.min is not None:
-            mask = self.min < solar_separation
+            mask = self.min <= solar_separation
         elif self.min is not None and self.max is not None:
-            mask = ((self.min < solar_separation) &
-                    (solar_separation < self.max))
+            mask = ((self.min <= solar_separation) &
+                    (solar_separation <= self.max))
         else:
             raise ValueError("No max and/or min specified in "
                              "SunSeparationConstraint.")
@@ -350,12 +350,12 @@ class MoonSeparationConstraint(Constraint):
         # Relevant PR: https://github.com/astropy/astropy/issues/4033
 #        moon_separation = Angle([moon.separation(target) for target in targets])
         if self.min is None and self.max is not None:
-            mask = self.max > moon_separation
+            mask = self.max >= moon_separation
         elif self.max is None and self.min is not None:
-            mask = self.min < moon_separation
+            mask = self.min <= moon_separation
         elif self.min is not None and self.max is not None:
-            mask = ((self.min < moon_separation) &
-                    (moon_separation < self.max))
+            mask = ((self.min <= moon_separation) &
+                    (moon_separation <= self.max))
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
@@ -384,12 +384,12 @@ class MoonIlluminationConstraint(Constraint):
         illumination = np.array(moon_illumination(times,
                                                   observer.location))
         if self.min is None and self.max is not None:
-            mask = self.max > illumination
+            mask = self.max >= illumination
         elif self.max is None and self.min is not None:
-            mask = self.min < illumination
+            mask = self.min <= illumination
         elif self.min is not None and self.max is not None:
-            mask = ((self.min < illumination) &
-                    (illumination < self.max))
+            mask = ((self.min <= illumination) &
+                    (illumination <= self.max))
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
@@ -462,12 +462,12 @@ class LocalTimeConstraint(Constraint):
 
         # If time limits occur on same day:
         if self.min < self.max:
-            mask = [min_time < t.datetime.time() < max_time for t in times]
+            mask = [min_time <= t.datetime.time() <= max_time for t in times]
 
         # If time boundaries straddle midnight:
         else:
-            mask = [(t.datetime.time() > min_time) or
-                    (t.datetime.time() < max_time) for t in times]
+            mask = [(t.datetime.time() >= min_time) or
+                    (t.datetime.time() <= max_time) for t in times]
 
         return mask
 
