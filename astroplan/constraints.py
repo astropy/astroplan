@@ -22,13 +22,13 @@ import numpy as np
 # Package
 from .moon import get_moon, moon_illumination
 from .utils import time_grid_from_range
-from .target import FixedTarget
+from .target import FixedTarget, EclipsingFixedTarget
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "observability_table"]
+           "observability_table", "PrimaryEclipseConstraint"]
 
 
 def _get_altaz(times, observer, targets,
@@ -469,6 +469,34 @@ class LocalTimeConstraint(Constraint):
 
         return mask
 
+class PrimaryEclipseConstraint(Constraint):
+    """
+    Constrain observations to times during primary eclipses of
+    `~astroplan.EclipsingFixedTarget` objects in the list of targets.
+    """
+    def __init__(self, buffer_duration=None):
+        """
+        Parameters
+        ----------
+        buffer_duration : `~astropy.units.Quantity`
+            Extra time before and after the event to require that the target
+            is observable. Defaults to zero.
+        """
+        if buffer_duration is None:
+            buffer_duration = 0*u.min
+        self.buffer_duration = buffer_duration
+
+    def compute_constraint(self, times, observer, targets):
+        mask = np.zeros((len(times), len(targets)), dtype=bool)
+
+        for i, target in enumerate(targets):
+            if isinstance(target, EclipsingFixedTarget):
+                phase = abs(times - target.epoch).to(u.day) % target.period
+                mask[:, i] |= ((phase <= 0.5*(target.duration +
+                                              self.buffer_duration)) |
+                               (phase >= target.period - 0.5*(target.duration +
+                                                              self.buffer_duration)))
+        return mask
 
 def is_always_observable(constraints, observer, targets, times=None,
                          time_range=None, time_grid_resolution=0.5*u.hour):

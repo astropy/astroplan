@@ -11,12 +11,12 @@ from astropy.utils import minversion
 
 from ..moon import get_moon
 from ..observer import Observer
-from ..target import FixedTarget
+from ..target import FixedTarget, EclipsingFixedTarget
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           LocalTimeConstraint)
+                           LocalTimeConstraint, PrimaryEclipseConstraint)
 
 try:
     import ephem
@@ -318,3 +318,25 @@ def test_docs_example():
                                   time_range=time_range)
 
     assert all(observability == [False, False, True, False, False, False])
+
+def test_primary_eclipse_constraint():
+    coord = SkyCoord(ra=300.18213945*u.deg, dec=22.71085126*u.deg, frame='icrs')
+    epoch = Time(2454279.436714, format='jd')
+    period = 2.21857567*u.day
+    duration = 0.0760*u.day
+
+    hd189 = EclipsingFixedTarget(coord, name='HD 189733 b', epoch=epoch,
+                                 period=period, duration=duration)
+
+    obs = Observer.at_site("APO")
+    targets = [hd189]
+    time_range1 = Time(['2015-09-30 00:00', '2015-10-01 06:00'])
+    time_range2 = Time(['2015-09-30 00:00', '2015-10-01 02:00'])
+    constraints = PrimaryEclipseConstraint()
+
+    is_in_transit_in_range = is_observable(constraints, obs, targets,
+                                           time_range=time_range1)
+    not_in_transit = is_observable(constraints, obs, targets,
+                                   time_range=time_range2)
+    assert np.any(is_in_transit_in_range)
+    assert not np.any(not_in_transit)
