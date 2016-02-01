@@ -380,5 +380,19 @@
         "longitude_unit": "degree",
         "name": "mro",
         "source": "MRO website"
+    },
+    "vla": {
+        "aliases": [
+            "Very Large Array",
+            "Jansky Very Large Array",
+        ],
+        "elevation": 2124,
+        "elevation_unit": "meter",
+        "latitude": 34.07874916666667,
+        "latitude_unit": "degree",
+        "longitude": -107.61828305555555,
+        "longitude_unit": "degree",
+        "name": "vla",
+        "source": "wikipedia article"
     }
 }
