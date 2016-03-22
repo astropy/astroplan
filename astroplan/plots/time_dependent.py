@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
+from astropy.coordinates import get_sun
 import warnings
 
 from ..exceptions import PlotWarning
@@ -13,8 +14,26 @@ from ..utils import _set_mpl_style_sheet
 __all__ = ['plot_airmass', 'plot_parallactic']
 
 
+def _secz_to_altitude(secant_z):
+    """
+    Convert airmass (approximated as the secant of the zenith angle) to
+    an altitude (aka elevation) in degrees.
+
+    Parameters
+    ----------
+    secant_z : float
+        Secant of the zenith angle
+
+    Returns
+    -------
+    altitude : float
+        Altitude [degrees]
+    """
+    return np.degrees(np.pi/2 - np.arccos(1./secant_z))
+
 def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
-                 style_sheet=None):
+                 style_sheet=None, brightness_shading=False,
+                 altitude_yaxis=False):
     """
     Plots airmass as a function of time for a given target.
 
@@ -58,6 +77,15 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
         matplotlib style sheet to use. To see available style sheets in
         astroplan, print *astroplan.plots.available_style_sheets*. Defaults
         to the light theme.
+
+    brightness_shading : bool
+        Shade background of plot to scale roughly with sky brightness. Dark
+        shading signifies times when the sun is below the horizon. Default
+        is `False`.
+
+    altitude_yaxis : bool
+        Add alternative y-axis on the right side of the figure with target
+        altitude. Default is `False`.
 
     Returns
     -------
@@ -118,14 +146,45 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     ax.xaxis.set_major_formatter(date_formatter)
     plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
+    # Shade background during night time
+    if brightness_shading:
+        for test_time in [time[0], time[-1]]:
+            midnight = observer.midnight(test_time)
+            previous_sunset = observer.sun_set_time(midnight, which='previous')
+            next_sunrise = observer.sun_rise_time(midnight, which='next')
+
+            previous_twilight = observer.twilight_evening_astronomical(midnight, which='previous')
+            next_twilight = observer.twilight_morning_astronomical(midnight, which='next')
+
+            ax.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
+                       facecolor='k', alpha=0.05)
+            ax.axvspan(previous_twilight.plot_date, next_twilight.plot_date,
+                       facecolor='k', alpha=0.05)
+
     # Invert y-axis and set limits.
     if ax.get_ylim()[1] > ax.get_ylim()[0]:
         ax.invert_yaxis()
     ax.set_ylim([3, 1])
+    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
 
     # Set labels.
     ax.set_ylabel("Airmass")
     ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
+
+    if altitude_yaxis:
+        alt_min, alt_max = map(_secz_to_altitude, ax.get_ylim())
+        print(np.rint(alt_max - alt_min))
+        altitude_ticks = np.array([90, 60, 50, 40, 30, 20])
+        print(altitude_ticks)
+        airmass_ticks = 1./np.cos(np.radians(90 - altitude_ticks))
+
+        ax2 = ax.twinx()
+        print(airmass_ticks)
+        ax2.invert_yaxis()
+        ax2.set_yticks(airmass_ticks)
+        ax2.set_yticklabels(altitude_ticks)
+        ax2.set_ylim(ax.get_ylim())
+        ax2.set_ylabel('Altitude [degrees]')
 
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
