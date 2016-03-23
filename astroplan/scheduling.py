@@ -12,15 +12,39 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 from astropy import units as u
+from astropy.time import Time
 
-__all__ = ['ObservingBlock', 'TransitionBlock',
-           'Scheduler', 'SequentialScheduler', 'Transitioner']
+from .utils import time_grid_from_range
+
+__all__ = ['ObservingBlock', 'TransitionBlock', 'Scheduler',
+           'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
 
 class ObservingBlock(object):
+    """
+    An object that represents a target and associated constraints on observations
+
+    Parameters
+    ----------
+    target: `FixedObject'
+
+    duration:
+        exposure time
+
+    priority: integer or float
+        priority of this object in the target list. 1 is highest priority, no maximum
+
+    configuration:
+
+    constraints : sequence of `Constraint`s
+        The constraints to apply to this particular observing block.  Note that
+        constraints applicable to the entire list should go into the Scheduler.
+
+    """
     @u.quantity_input(duration=u.second)
-    def __init__(self, target, duration, configuration={}, constraints=None):
+    def __init__(self, target, duration, priority, configuration={}, constraints=None):
         self.target = target
         self.duration = duration
+        self.priority = priority
         self.configuration = configuration
         self.constraints = constraints
         self.start_time = self.end_time = None
@@ -34,10 +58,10 @@ class ObservingBlock(object):
             return orig_repr.replace('object at', s)
 
     @classmethod
-    def from_exposures(cls, target, timeperexp, nexp, readouttime=0*u.second,
+    def from_exposures(cls, target, priority, timeperexp, nexp, readouttime=0*u.second,
                             configuration={}):
         duration = nexp*(timeperexp + readouttime)
-        ob = cls(target, duration, configuration)
+        ob = cls(target, duration, priority, configuration)
         ob.timeperexp = timeperexp
         ob.nexp = nexp
         ob.readouttime = readouttime
@@ -62,7 +86,7 @@ class TransitionBlock(object):
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
-        comp_info = ', '.join(['{0}: {1}'.format(c, t) 
+        comp_info = ', '.join(['{0}: {1}'.format(c, t)
                                for c, t in self.components.items()])
         if self.start_time is None or self.end_time is None:
             return orig_repr.replace('object at', ' ({0}, unscheduled) at'.format(comp_info))
@@ -242,9 +266,127 @@ class SequentialScheduler(Scheduler):
 
         return new_blocks, True
 
+class PriorityScheduler(Scheduler):
+    """
+    A scheduler that optimizes a prioritized list.  That is, it
+    finds the best time for each ObservingBlock, in order of priority.
+
+    Parameters
+    ----------
+    start_time : `~astropy.time.Time`
+        the start of the observation scheduling window.
+    end_time : `~astropy.time.Time`
+        the end of the observation scheduling window.
+    constraints : sequence of `Constraint`s
+        The constraints to apply to *every* observing block.  Note that
+        constraints for specific blocks can go on each block individually.
+    observer : `astroplan.Observer`
+        The observer/site to do the scheduling for.
+    transitioner : `Transitioner` or None
+        The object to use for computing transition times between blocks.
+        Not currently used in this Scheduler.
+    gap_time : `Quantity` with time units
+        The minimal spacing to try over a gap where nothing can be scheduled.
+    slew_time : `Quanitity` with time units
+        The time required between observations.
+        Used instead of transitioner (for now)
+
+    """
+    @u.quantity_input(gap_time=u.second)
+    def __init__(self, start_time, end_time, constraints, observer,
+                       transitioner=None, gap_time=30*u.min, slew_time=5*u.min):
+        self.constraints = constraints
+        self.start_time = start_time
+        self.end_time = end_time
+        self.observer = observer
+        self.transitioner = transitioner
+        self.gap_time = gap_time
+        self.slew_time = slew_time
+
+    @classmethod
+    @u.quantity_input(duration=u.second)
+    def from_timespan(cls, center_time, duration, **kwargs):
+        """
+        Create a new instance of this class given a time and
+        """
+        start_time = center_time - duration/2.
+        end_time = center_time + duration/2.
+        return cls(start_time, end_time, **kwargs)
+
+    def _make_schedule(self, blocks):
+
+        # Combine individual constraints with global constraints, and
+        # retrieve priorities from each block to define scheduling order
+        block_priorities = np.zeros(len(blocks))
+        for i,b in enumerate(blocks):
+            if b.constraints is None:
+                b._all_constraints = self.constraints
+            else:
+                b._all_constraints = self.constraints + b.constraints
+            b._duration_offsets = u.Quantity([0*u.second, b.duration/2, b.duration])
+            block_priorities[i] = b.priority
+
+        # Sort the list of blocks by priority
+        sorted_indices = np.argsort(block_priorities)
+
+        new_blocks = []
+        unscheduled_blocks = []
+        # Compute the optimal observation time in priority order
+        for i in sorted_indices:
+            b = blocks[i]
+            print(b.target)
+
+            # Exposure time plus overheads
+            time_required = (b.duration+self.slew_time).to(u.hour)
+
+            # Generate grid of possible time slots, and a mask for previous observations
+            times = time_grid_from_range([self.start_time,self.end_time],
+                                         time_resolution=time_required)
+            is_open_time = np.ones(len(times),bool)
+
+            # Loop over scheduled blocks, remove times that already have observations
+            for nb in new_blocks:
+                is_open_time[(times>=nb.start_time) & (times<(nb.end_time))] = False
+
+            # Compute possible observing times by combining object constraints
+            # with the master schedule mask
+            constraint_scores = np.zeros(len(times))
+            for constraint in b._all_constraints:
+                applied_constraint = constraint(self.observer, [b.target], times=times)
+                applied_score = np.asarray(applied_constraint[0],np.float32)
+                constraint_scores = constraint_scores + applied_score
+            # Add up the applied constraints to prioritize the best blocks
+            # And then remove any times that are already scheduled
+            constraint_scores[is_open_time==False] = 0
+
+            # Select the most optimal time
+            if np.all(constraint_scores==0):
+                # Block could not be scheduled, go on to the next
+                unscheduled_blocks.append(b)
+                print("could not schedule")
+                continue
+            else:
+                # pick the first
+                best_time_idx = np.argmax(constraint_scores)
+                new_start_time = times[best_time_idx]
+
+            # now assign the block itself times and add it to the schedule
+            newb = b
+            newb.start_time = new_start_time
+            newb.end_time = new_start_time + time_required
+            newb.constraints = b._all_constraints
+            print(newb.start_time,newb.end_time)
+
+            new_blocks.append(newb)
+
+        already_sorted = False
+        return new_blocks, already_sorted
+
+
+
 class Transitioner(object):
     """
-    A class that defines how to compute transition times from one block to 
+    A class that defines how to compute transition times from one block to
     another.
 
     Parameters
@@ -266,7 +408,7 @@ class Transitioner(object):
     def __call__(self, oldblock, newblock, start_time, observer):
         """
         Determines the amount of time needed to transition from one observing
-        block to another.  This uses the parameters defined in 
+        block to another.  This uses the parameters defined in
         ``self.instrument_reconfig_times``.
 
         Parameters
@@ -278,7 +420,7 @@ class Transitioner(object):
         start_time : `~astropy.time.Time`
             The time the transition should start
         observer : `astroplan.Observer`
-            The observer at the time 
+            The observer at the time
 
         Returns
         -------
@@ -296,7 +438,7 @@ class Transitioner(object):
             aaz = _get_altaz(Time([start_time]), observer, [oldblock.target, newblock.target])['altaz']
             # TODO: make this [0] unnecessary by fixing _get_altaz to behave well in scalar-time case
             sep = aaz[0].separation(aaz[1])[0]
-            
+
             components['slew_time'] = sep / self.slew_rate
         if self.instrument_reconfig_times is not None:
             components.update(self.compute_instrument_transitions(oldblock, newblock))
@@ -318,8 +460,3 @@ class Transitioner(object):
                             s = '{0}:{1} to {2}'.format(conf_name, old_conf, new_conf)
                             components[s] = ctime
             return components
-
-
-
-
-
