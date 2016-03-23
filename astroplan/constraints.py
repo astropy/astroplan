@@ -253,10 +253,10 @@ class AirmassConstraint(AltitudeConstraint):
                                  "is None")
             else:
                 mx = self.max
+
             mi = 1 if self.min is None else self.min
             # we reverse order so that airmass close to 1/min is good
-            return 1 - _rescale_minmax(secz, mi, mx)
-
+            return _rescale_airmass(secz, mi, mx)
 
 class AtNightConstraint(Constraint):
     """
@@ -693,9 +693,22 @@ def observability_table(constraints, observer, targets, times=None,
     return tab
 
 def _rescale_minmax(vals, min_val, max_val):
+    """ Rescale altitude into an observability score."""
     rescaled = (vals - min_val) / (max_val - min_val)
     below = rescaled < 0
     above = rescaled > 1
     rescaled[below] = 0
     rescaled[above] = 1
+
     return rescaled
+
+def _rescale_airmass(vals, min_val, max_val):
+    """ Rescale airmass into an observability score."""
+    rescaled = (vals - min_val) / (max_val - min_val)
+    below = rescaled < 0
+    above = rescaled > 1
+    # In both cases, we want out-of-range airmasses to return a 0 score
+    rescaled[below] = 1
+    rescaled[above] = 1
+
+    return 1 - rescaled
