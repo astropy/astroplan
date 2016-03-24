@@ -570,7 +570,7 @@ def is_observable(constraints, observer, targets, times=None,
 def months_observable(constraints, observer, targets,
                       time_grid_resolution=0.5*u.hour):
     """
-    During which months is the target observable?
+    During which months are the targets observable?
 
     Parameters
     ----------

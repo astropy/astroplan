@@ -77,25 +77,30 @@ code below.
     constraints = [AltitudeConstraint(10*u.deg, 80*u.deg),
                    AirmassConstraint(5), AtNightConstraint.twilight_civil()]
 
-This list of constraints can now be applied to our target list to determine
-whether:
+This list of constraints can now be applied to our target list to determine:
 
-* the targets are observable given the constraints at *any* times in the time
-  range, using `~astroplan.is_observable`,
+* whether the targets are observable given the constraints at *any* times in the
+  time range, using `~astroplan.is_observable`,
 
-* the targets are observable given the constraints at *all* times in the time
-  range, using `~astroplan.is_always_observable`::
+* whether the targets are observable given the constraints at *all* times in the
+  time range, using `~astroplan.is_always_observable`
 
-    from astroplan import is_observable, is_always_observable
+* during what months the targets are *ever* observable given the constraints,
+  using `~astroplan.months_observable`::
+
+    from astroplan import is_observable, is_always_observable, months_observable
     # Are targets *ever* observable in the time range?
     ever_observable = is_observable(constraints, subaru, targets, time_range=time_range)
 
     # Are targets *always* observable in the time range?
     always_observable = is_always_observable(constraints, subaru, targets, time_range=time_range)
 
-These two functions will return boolean arrays which tell you whether or not
-each target is observable given your constraints. Let's print these results in
-tabular form:
+    # During what months are the targets ever observable?
+    best_months = months_observable(constraints, subaru, targets)
+
+The `~astroplan.is_observable` and `~astroplan.is_always_observable` functions
+will return boolean arrays which tell you whether or not each target is
+observable given your constraints. Let's print these results in tabular form:
 
     >>> from astropy.table import Table
     >>> import numpy as np
