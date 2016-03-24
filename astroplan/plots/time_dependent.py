@@ -172,14 +172,10 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
 
     if altitude_yaxis:
-        alt_min, alt_max = map(_secz_to_altitude, ax.get_ylim())
-        print(np.rint(alt_max - alt_min))
         altitude_ticks = np.array([90, 60, 50, 40, 30, 20])
-        print(altitude_ticks)
         airmass_ticks = 1./np.cos(np.radians(90 - altitude_ticks))
 
         ax2 = ax.twinx()
-        print(airmass_ticks)
         ax2.invert_yaxis()
         ax2.set_yticks(airmass_ticks)
         ax2.set_yticklabels(altitude_ticks)
