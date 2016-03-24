@@ -32,7 +32,11 @@ def _secz_to_altitude(secant_z):
     return np.degrees(np.pi/2 - np.arccos(1./secant_z))
 
 
-def has_twin(ax):
+def _has_twin(ax):
+    """
+    Solution for detecting twin axes built on `ax`. Courtesy of
+    Jake Vanderplas http://stackoverflow.com/a/36209590/1340208
+    """
     for other_ax in ax.figure.axes:
         if other_ax is ax:
             continue
@@ -181,7 +185,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     ax.set_ylabel("Airmass")
     ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
 
-    if altitude_yaxis and not has_twin(ax):
+    if altitude_yaxis and not _has_twin(ax):
         altitude_ticks = np.array([90, 60, 50, 40, 30, 20])
         airmass_ticks = 1./np.cos(np.radians(90 - altitude_ticks))
 
