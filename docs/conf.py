@@ -143,7 +143,7 @@ man_pages = [('index', project.lower(), project + u' Documentation',
               [author], 1)]
 
 
-## -- Options for the edit_on_github extension ----------------------------------------
+# -- Options for the edit_on_github extension ----------------------------------
 
 if eval(setup_cfg.get('edit_on_github')):
     extensions += ['astropy_helpers.sphinx.ext.edit_on_github']
@@ -163,8 +163,27 @@ import os
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
+    try:
+        import sphinx_rtd_theme
+    except ImportError:
+        raise ImportError("It looks like you don't have the sphinx_rtd_theme "
+                          "package installed. The astroplan documentation "
+                          "uses the Read The Docs theme, so you must install this "
+                          "first. For example, pip install sphinx_rtd_theme")
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
+# Make appropriate substitutions to mock internet querying methods
+# within the tests.
+# Currently this is not needed because of the content of the tests, but we leave
+# it here in case it's needed again in the future.  BUT beware of:
+# https://github.com/astropy/astroplan/issues/96
+#from astroplan.utils import _mock_remote_data
+#_mock_remote_data()
+
+# Add additional Sphinx extensions:
+extensions += ['matplotlib.sphinxext.plot_directive']
+
+nitpicky = True
