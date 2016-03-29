@@ -47,7 +47,8 @@ def _has_twin(ax):
 
 def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
-                 altitude_yaxis=False):
+                 altitude_yaxis=False, lo_limit=1.0, lo_region=None,
+                 hi_limit=3.0, hi_region=None):
     """
     Plots airmass as a function of time for a given target.
 
@@ -100,6 +101,20 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     altitude_yaxis : bool
         Add alternative y-axis on the right side of the figure with target
         altitude. Default is `False`.
+
+    lo_limit : float
+        Lower limit of y-axis airmass range in the plot. Default is `1.0`.
+
+    lo_region : float
+        If set, defines an interval between `lo_limit` and `lo_region`
+        that will be shaded. Default is `None`.
+
+    hi_limit : float
+        Upper limit of y-axis airmass range in the plot. Default is `3.0`.
+
+    hi_region : float
+        If set, defines an interval between `hi_limit` and `hi_region`
+        that will be shaded. Default is `None`.
 
     Returns
     -------
@@ -176,10 +191,19 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
                        facecolor='k', alpha=0.05)
 
     # Invert y-axis and set limits.
-    if ax.get_ylim()[1] > ax.get_ylim()[0]:
+    y_lim = ax.get_ylim()
+    if y_lim[1] > y_lim[0]:
         ax.invert_yaxis()
-    ax.set_ylim([3, 1])
+    ax.set_ylim([hi_limit, lo_limit])
     ax.set_xlim([time[0].plot_date, time[-1].plot_date])
+
+    # Draw lo/hi limit regions, if present
+    ymax, ymin = ax.get_ylim()       # should be (hi_limit, lo_limit)
+
+    if hi_region is not None:
+        ax.axhspan(ymax, hi_region, facecolor='#F9EB4E', alpha=0.10)
+    if lo_region is not None:
+        ax.axhspan(lo_region, ymin, facecolor='#F9EB4E', alpha=0.10)
 
     # Set labels.
     ax.set_ylabel("Airmass")
