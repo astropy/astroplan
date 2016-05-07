@@ -317,7 +317,7 @@ class PriorityScheduler(Scheduler):
 
         # Combine individual constraints with global constraints, and
         # retrieve priorities from each block to define scheduling order
-        _all_times = np.zeros(len(blocks))
+        _all_times = []
         _block_priorities = np.zeros(len(blocks))
         for i,b in enumerate(blocks):
             if b.constraints is None:
@@ -326,7 +326,7 @@ class PriorityScheduler(Scheduler):
                 b._all_constraints = self.constraints + b.constraints
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2, b.duration])
             _block_priorities[i] = b.priority
-            _all_times[i] = b.duration
+            _all_times.append(b.duration)
 
         # Define a master schedule
         # Generate grid of time slots, and a mask for previous observations
@@ -339,14 +339,14 @@ class PriorityScheduler(Scheduler):
         is_open_time = np.ones(len(times),bool)
 
         # Sort the list of blocks by priority
-        sorted_indices = np.argsort(block_priorities)
+        sorted_indices = np.argsort(_block_priorities)
 
         new_blocks = []
         unscheduled_blocks = []
         # Compute the optimal observation time in priority order
         for i in sorted_indices:
             b = blocks[i]
-            print(b.target)
+            #print(b.target)
 
             # Compute possible observing times by combining object constraints
             # with the master schedule mask
@@ -358,7 +358,7 @@ class PriorityScheduler(Scheduler):
                 constraint_scores = constraint_scores + applied_score
             # Add up the applied constraints to prioritize the best blocks
             # And then remove any times that are already scheduled
-            constraint_scores[is_open_time is False] = 0
+            constraint_scores[is_open_time==False] = 0
 
             # Select the most optimal time
             _is_scheduled=False
@@ -368,15 +368,15 @@ class PriorityScheduler(Scheduler):
                 _is_scheduled=False
             else:
                 # calculate the number of time slots needed for this exposure
-                _stride_by = int(total_duration // self.time_resolution)
+                _stride_by = np.int(np.ceil(total_duration / time_resolution))
 
                 # Stride the score arrays by that number
-                strided_scores = stride_array(constraint_scores,_stride_by)
+                _strided_scores = stride_array(constraint_scores,_stride_by)
 
                 # Collapse the sub-arrays
                 # (run them through scorekeeper again? Just add them?
                 # If there's a zero anywhere in there, def. have to skip)
-                good = np.all(_strided_scores!=0,axis=1)
+                good = np.all(_strided_scores>1e-5,axis=1)
                 sum_scores = np.zeros(len(_strided_scores))
                 sum_scores[good] = np.sum(_strided_scores[good],axis=1)
 
@@ -385,7 +385,10 @@ class PriorityScheduler(Scheduler):
                 new_start_time = times[best_time_idx]
                 _is_scheduled=True
 
-            if _is_scheduled==False:
+                # And remove it from the master time list
+                is_open_time[best_time_idx:best_time_idx+_stride_by] = False
+
+            if _is_scheduled is False:
                 print("could not schedule",b.target.name)
                 unscheduled_blocks.append(b)
                 continue
@@ -395,7 +398,7 @@ class PriorityScheduler(Scheduler):
                 # now assign the block itself times and add it to the schedule
                 newb = b
                 newb.start_time = new_start_time
-                newb.end_time = new_start_time + time_required
+                newb.end_time = new_start_time + total_duration
                 newb.constraints = b._all_constraints
                 #print(newb.start_time,newb.end_time)
                 new_blocks.append(newb)
