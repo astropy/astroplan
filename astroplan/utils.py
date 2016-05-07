@@ -18,7 +18,8 @@ from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
 from .exceptions import OldEarthOrientationDataWarning
 
 __all__ = ["get_IERS_A_or_workaround", "download_IERS_A",
-           "time_grid_from_range", "_set_mpl_style_sheet"]
+           "time_grid_from_range", "_set_mpl_style_sheet",
+           "stride_array"]
 
 IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   "download an up-to-date IERS Bulletin A table. To do so, run:"
@@ -197,3 +198,27 @@ def _set_mpl_style_sheet(style_sheet):
     matplotlib.rcdefaults()
     matplotlib.rcParams.update(style_sheet)
 
+def stride_array(arr, window_width):
+    """
+    Computes all possible sequential subarrays of arr with length = window_width
+
+    Parameters
+    ----------
+    arr : array-like (length = n)
+        Linearly-spaced sequence
+
+    window_width : int
+        Number of elements in each new sub-array
+
+    Returns
+    -------
+    strided_arr : array (shape = (n-window_width, window_width))
+        Linearly-spaced sequence of times
+    """
+    as_strided = np.lib.stride_tricks.as_strided
+
+    new_shape = (len(arr) - window_width + 1, window_width)
+
+    strided_arr = as_strided(arr, new_shape, (arr.strides[0], arr.strides[0]))
+
+    return strided_arr
