@@ -14,7 +14,7 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 
-from .utils import time_grid_from_range
+from .utils import time_grid_from_range, stride_array
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
@@ -317,14 +317,26 @@ class PriorityScheduler(Scheduler):
 
         # Combine individual constraints with global constraints, and
         # retrieve priorities from each block to define scheduling order
-        block_priorities = np.zeros(len(blocks))
+        _all_times = np.zeros(len(blocks))
+        _block_priorities = np.zeros(len(blocks))
         for i,b in enumerate(blocks):
             if b.constraints is None:
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2, b.duration])
-            block_priorities[i] = b.priority
+            _block_priorities[i] = b.priority
+            _all_times[i] = b.duration
+
+        # Define a master schedule
+        # Generate grid of time slots, and a mask for previous observations
+
+        # Find the minimum required time step
+        # TODO: a common factorization of all times is probably better long-term
+        time_resolution = min(min(_all_times),self.slew_time)
+        times = time_grid_from_range([self.start_time,self.end_time],
+                                     time_resolution=time_resolution)
+        is_open_time = np.ones(len(times),bool)
 
         # Sort the list of blocks by priority
         sorted_indices = np.argsort(block_priorities)
@@ -336,48 +348,57 @@ class PriorityScheduler(Scheduler):
             b = blocks[i]
             print(b.target)
 
-            # Exposure time plus overheads
-            time_required = (b.duration+self.slew_time).to(u.hour)
-
-            # Generate grid of possible time slots, and a mask for previous observations
-            times = time_grid_from_range([self.start_time,self.end_time],
-                                         time_resolution=time_required)
-            is_open_time = np.ones(len(times),bool)
-
-            # Loop over scheduled blocks, remove times that already have observations
-            for nb in new_blocks:
-                is_open_time[(times>=nb.start_time) & (times<(nb.end_time))] = False
-
             # Compute possible observing times by combining object constraints
             # with the master schedule mask
             constraint_scores = np.zeros(len(times))
             for constraint in b._all_constraints:
-                applied_constraint = constraint(self.observer, [b.target], times=times)
+                applied_constraint = constraint(self.observer, [b.target],
+                                                times=times)
                 applied_score = np.asarray(applied_constraint[0],np.float32)
                 constraint_scores = constraint_scores + applied_score
             # Add up the applied constraints to prioritize the best blocks
             # And then remove any times that are already scheduled
-            constraint_scores[is_open_time==False] = 0
+            constraint_scores[is_open_time is False] = 0
 
             # Select the most optimal time
+            _is_scheduled=False
+            total_duration = b.duration + self.slew_time
             if np.all(constraint_scores==0):
-                # Block could not be scheduled, go on to the next
-                unscheduled_blocks.append(b)
-                print("could not schedule")
-                continue
+                # No further calculation if no times meet the constraints
+                _is_scheduled=False
             else:
-                # pick the first
-                best_time_idx = np.argmax(constraint_scores)
+                # calculate the number of time slots needed for this exposure
+                _stride_by = int(total_duration // self.time_resolution)
+
+                # Stride the score arrays by that number
+                strided_scores = stride_array(constraint_scores,_stride_by)
+
+                # Collapse the sub-arrays
+                # (run them through scorekeeper again? Just add them?
+                # If there's a zero anywhere in there, def. have to skip)
+                good = np.all(_strided_scores!=0,axis=1)
+                sum_scores = np.zeros(len(_strided_scores))
+                sum_scores[good] = np.sum(_strided_scores[good],axis=1)
+
+                # If an optimal block is available, _is_scheduled=True
+                best_time_idx = np.argmax(sum_scores)
                 new_start_time = times[best_time_idx]
+                _is_scheduled=True
 
-            # now assign the block itself times and add it to the schedule
-            newb = b
-            newb.start_time = new_start_time
-            newb.end_time = new_start_time + time_required
-            newb.constraints = b._all_constraints
-            print(newb.start_time,newb.end_time)
-
-            new_blocks.append(newb)
+            if _is_scheduled==False:
+                print("could not schedule",b.target.name)
+                unscheduled_blocks.append(b)
+                continue
+#                best_time_idx = np.argmax(constraint_scores)
+#                new_start_time = times[best_time_idx]
+            else:
+                # now assign the block itself times and add it to the schedule
+                newb = b
+                newb.start_time = new_start_time
+                newb.end_time = new_start_time + time_required
+                newb.constraints = b._all_constraints
+                #print(newb.start_time,newb.end_time)
+                new_blocks.append(newb)
 
         already_sorted = False
         return new_blocks, already_sorted
