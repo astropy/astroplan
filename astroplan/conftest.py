@@ -22,12 +22,12 @@ from .exceptions import AstroplanWarning
 enable_deprecations_as_exceptions()
 
 # Define list of packages for which to display version numbers in the test log
-PYTEST_HEADER_MODULES['astropy'] = 'astropy'
+PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
 PYTEST_HEADER_MODULES['pytz'] = 'pytz'
 PYTEST_HEADER_MODULES['pyephem'] = 'pyephem'
 PYTEST_HEADER_MODULES['matplotlib'] = 'matplotlib'
 PYTEST_HEADER_MODULES['nose'] = 'nose'
-PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest-mpl'
+PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest_mpl'
 del PYTEST_HEADER_MODULES['h5py']
 
 
