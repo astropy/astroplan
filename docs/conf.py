@@ -53,7 +53,7 @@ setup_cfg = dict(conf.items('metadata'))
 #needs_sphinx = '1.2'
 
 del intersphinx_mapping['h5py']
-intersphinx_mapping['astroquery'] = ('http://astroquery.readthedocs.org/en/latest/', None)
+intersphinx_mapping['astroquery'] = ('http://astroquery.readthedocs.io/en/latest/', None)
 
 # To perform a Sphinx version check that needs to be more specific than
 # major.minor, call `check_sphinx_version("x.y.z")` here.
@@ -158,7 +158,7 @@ if eval(setup_cfg.get('edit_on_github')):
     edit_on_github_source_root = ""
     edit_on_github_doc_root = "docs"
 
-# on_rtd is whether we are on readthedocs.org
+# on_rtd is whether we are on readthedocs.io
 import os
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
@@ -173,7 +173,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme = 'sphinx_rtd_theme'
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
-# otherwise, readthedocs.org uses their theme by default, so no need to specify it
+# otherwise, readthedocs.io uses their theme by default, so no need to specify it
 
 # Make appropriate substitutions to mock internet querying methods
 # within the tests.

@@ -4,7 +4,7 @@ astroplan
 Observation planning package for astronomers
 
 * Code: https://github.com/astropy/astroplan
-* Docs: https://astroplan.readthedocs.org/
+* Docs: https://astroplan.readthedocs.io/
 * License: BSD-3
 
 .. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat

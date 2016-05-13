@@ -72,5 +72,5 @@ More
 
 astroplan follows `Astropy`_'s guidelines for affiliated packages--installation
 and testing for the two are quite similar! Please see Astropy's
-`installation page <http://astropy.readthedocs.org/en/latest/install.html>`_
+`installation page <http://astropy.readthedocs.io/en/latest/install.html>`_
 for more information.
