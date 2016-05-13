@@ -40,7 +40,7 @@ Links
 =====
 
 * `Source code <https://github.com/astropy/astroplan>`_
-* `Docs <https://astroplan.readthedocs.org/>`_
+* `Docs <https://astroplan.readthedocs.io/>`_
 * `Issues <https://github.com/astropy/astroplan/issues>`_
 
 License: BSD-3

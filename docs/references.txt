@@ -5,6 +5,6 @@
 .. _Matplotlib: http://www.matplotlib.org
 .. _pytz: https://pypi.python.org/pypi/pytz/
 .. _pytest-mpl: https://pypi.python.org/pypi/pytest-mpl
-.. _Nose: https://nose.readthedocs.org
-.. _WCSAxes: https://wcsaxes.readthedocs.org
-.. _astroquery: https://astroquery.readthedocs.org
+.. _Nose: https://nose.readthedocs.io
+.. _WCSAxes: https://wcsaxes.readthedocs.io
+.. _astroquery: https://astroquery.readthedocs.io
