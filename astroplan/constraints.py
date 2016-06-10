@@ -355,7 +355,7 @@ class SunSeparationConstraint(Constraint):
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times))
         target_coos = [target.coord if hasattr(target, 'coord') else target
-                   for target in targets]
+                       for target in targets]
         target_altazs = [observer.altaz(times, coo) for coo in target_coos]
         solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
         if self.min is None and self.max is not None:
@@ -415,10 +415,6 @@ class MoonSeparationConstraint(Constraint):
                 sep = [moon_coord.separation(target) for target in targets]
                 moon_separation.append(sep)
             moon_separation = Angle(moon_separation).T
-
-        # The line below should have worked, but needs a workaround.
-        # TODO: once bug has been fixed, replace workaround with simpler version.
-        # Relevant PR: https://github.com/astropy/astropy/issues/4033
 
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
