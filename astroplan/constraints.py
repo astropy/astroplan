@@ -560,9 +560,10 @@ class MoonIlluminationConstraint(Constraint):
                              "MoonSeparationConstraint.")
 
         mask = np.logical_or(moon_alt_mask, mask)
-        mask = np.tile(mask, len(targets))
-        return mask.reshape(len(targets), len(times))
-
+        if targets is not None:
+            mask = np.tile(mask, len(targets))
+            mask = mask.reshape(len(targets), len(times))
+        return mask
 
 class LocalTimeConstraint(Constraint):
     """
@@ -663,7 +664,7 @@ class UtcDateConstraint(Constraint):
         >>> subaru = Observer.at_site("Subaru")
         >>> t1 = Time("2016-03-28T12:00:00")
         >>> t2 = Time("2016-03-30T12:00:00")
-        >>> constraint = UTCDateConstraint(t1,t2)
+        >>> constraint = UtcDateConstraint(t1,t2)
         """
         self.min = min
         self.max = max
