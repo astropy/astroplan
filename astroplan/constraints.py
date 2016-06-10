@@ -28,7 +28,9 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
+           "UtcDateConstraint", "PierFlipConstraint",
            "observability_table", "months_observable"]
+
 
 
 def _get_altaz(times, observer, targets,
@@ -106,13 +108,13 @@ def _get_moon_data(times, observer,
         corresponding alt/az coordinates at those times and (3) contains
         the moon illumination for those times.
     """
-    if not hasattr(observer, '_transit_cache'):
-        observer._transit_cache = {}
+    if not hasattr(observer, '_moon_cache'):
+        observer._moon_cache = {}
 
     # convert times to tuple for hashing
     aakey = (tuple(times.jd))
 
-    if aakey not in observer._transit_cache:
+    if aakey not in observer._moon_cache:
         try:
             if force_zero_pressure:
                 observer_old_pressure = observer.pressure
@@ -121,14 +123,14 @@ def _get_moon_data(times, observer,
             altaz = observer.moon_altaz(times)
             illumination = np.array(moon_illumination(times,
                                                       observer.location))
-            observer._transit_cache[aakey] = dict(times=times,
-                                                  illum=illumination,
-                                                  altaz=altaz)
+            observer._moon_cache[aakey] = dict(times=times,
+                                               illum=illumination,
+                                               altaz=altaz)
         finally:
             if force_zero_pressure:
                 observer.pressure = observer_old_pressure
 
-    return observer._transit_cache[aakey]
+    return observer._moon_cache[aakey]
 
 
 def _get_transit_times(times, observer, targets):
@@ -563,7 +565,8 @@ class MoonIlluminationConstraint(Constraint):
         if targets is not None:
             mask = np.tile(mask, len(targets))
             mask = mask.reshape(len(targets), len(times))
-        return mask
+        return np.atleast_2d(mask)
+
 
 class LocalTimeConstraint(Constraint):
     """
@@ -637,8 +640,10 @@ class LocalTimeConstraint(Constraint):
         else:
             mask = [(t.datetime.time() >= min_time) or
                     (t.datetime.time() <= max_time) for t in times]
-
-        return mask
+        if targets is not None:
+            mask = np.tile(mask, len(targets))
+            mask = mask.reshape(len(targets), len(times))
+        return np.atleast_2d(mask)
 
 
 class UtcDateConstraint(Constraint):
@@ -685,10 +690,11 @@ class UtcDateConstraint(Constraint):
             warnings.simplefilter('ignore')
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
             max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
-        calculation_times = Time([t for target in targets for t in times])
-        mask = np.logical_and(calculation_times > min_time,
-                              calculation_times < max_time)
-        return mask.reshape((len(targets), len(times)))
+        mask = np.logical_and(times > min_time, times < max_time)
+        if targets is not None:
+            mask = np.tile(mask, len(targets))
+            mask = mask.reshape(len(targets), len(times))
+        return np.atleast_2d(mask)
 
 
 class PierFlipConstraint(Constraint):
