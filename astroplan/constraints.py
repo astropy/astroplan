@@ -165,7 +165,6 @@ def _get_meridian_transit_times(times, observer, targets):
 
     return observer._meridian_transit_cache[aakey]
 
-
 @abstractmethod
 class Constraint(object):
     """
@@ -613,10 +612,7 @@ class MoonIlluminationConstraint(Constraint):
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
 
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+        return mask
 
 
 class LocalTimeConstraint(Constraint):
