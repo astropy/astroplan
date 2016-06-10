@@ -339,6 +339,8 @@ many targets on the plot as you wish::
 When you're ready to make a different plot, use ``ax.cla()`` to clear the
 current `~matplotlib.axes.Axes` object.
 
+
+
 .. _plots_style:
 
 Changing style options
@@ -443,6 +445,43 @@ any plotting function:
     plot_airmass(vega, apo, Time('2005-01-02 19:00') + np.linspace(-5, 5, 20)*u.hour,
                  style_sheet=dark_style_sheet)
     plt.show()
+
+
+Additional Options
+++++++++++++++++++
+
+You can also shade the background according to the darkness of the sky (light
+shading for 0 degree twilight, darker shading for -18 degree twilight) with
+the `brightness_shading` keyword, and display additional y-axis ticks on the
+right side of the axis with the altitudes in degrees using the `altitude_yaxis`
+keyword:
+
+.. code-block:: python
+
+    >>> import matplotlib.pyplot as plt
+    >>> from astropy.time import Time
+    >>> from astroplan import FixedTarget, Observer
+    >>> from astroplan.plots import plot_airmass
+
+    >>> time = Time.now()
+    >>> target = FixedTarget.from_name('HD 189733')
+    >>> apo = Observer.at_site('APO')
+    >>> plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
+
+
+.. plot::
+
+    from astroplan.plots import plot_airmass
+    import matplotlib.pyplot as plt
+    from astropy.time import Time
+    from astroplan import FixedTarget, Observer
+
+    time = Time.now()
+    target = FixedTarget.from_name('HD 189733')
+    apo = Observer.at_site('APO')
+    plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
+    plt.show()
+
 
 
 :ref:`Return to Top <plots>`
