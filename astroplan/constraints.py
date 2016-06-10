@@ -10,6 +10,7 @@ from __future__ import (absolute_import, division, print_function,
 # Standard library
 from abc import ABCMeta, abstractmethod
 import datetime
+import warnings
 
 # Third-party
 from astropy.time import Time
@@ -599,6 +600,56 @@ class LocalTimeConstraint(Constraint):
                     (t.datetime.time() <= max_time) for t in times]
 
         return mask
+
+
+class UtcDateConstraint(Constraint):
+    """Constrain the observing time to be within UTC datetime limits"""
+    def __init__(self, min=None, max=None):
+        """
+        Parameters
+        ----------
+        min : `~astropy.time.Time`
+            Earliest time (inclusive). `None` indicates no limit.
+
+        max : `~astropy.time.Time`
+            Latest time (inclusive). `None` indicates no limit.
+
+        Examples
+        --------
+        Constrain the observations to targets that are observable between
+        23:50 and 04:08 UTC:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> import datetime as dt
+        >>> subaru = Observer.at_site("Subaru")
+        >>> t1 = Time("2016-03-28T12:00:00")
+        >>> t2 = Time("2016-03-30T12:00:00")
+        >>> constraint = UTCDateConstraint(t1,t2)
+        """
+        self.min = min
+        self.max = max
+
+        if self.min is None and self.max is None:
+            raise ValueError("You must at least supply either a minimum or a maximum time.")
+
+        if self.min is not None:
+            if not isinstance(self.min, Time):
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+
+        if self.max is not None:
+            if not isinstance(self.max, Time):
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+
+    def compute_constraint(self, times, observer, targets):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
+            max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
+        calculation_times = Time([t for target in targets for t in times])
+        mask = np.logical_and(calculation_times > min_time,
+                              calculation_times < max_time)
+        return mask.reshape((len(targets), len(times)))
 
 
 def is_always_observable(constraints, observer, targets, times=None,
