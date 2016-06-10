@@ -82,6 +82,54 @@ def _get_altaz(times, observer, targets,
     return observer._altaz_cache[aakey]
 
 
+def _get_moon_data(times, observer,
+                   force_zero_pressure=False):
+    """
+    Calculate moon altitude az and illumination for an array of times for ``observer``.
+
+    Cache the result on the ``observer`` object.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    Returns
+    -------
+    moon_dict : dict
+        Dictionary containing three key-value pairs. (1) 'times' contains the
+        times for the computations, (2) 'altaz' contains the
+        corresponding alt/az coordinates at those times and (3) contains
+        the moon illumination for those times.
+    """
+    if not hasattr(observer, '_transit_cache'):
+        observer._transit_cache = {}
+
+    # convert times to tuple for hashing
+    aakey = (tuple(times.jd))
+
+    if aakey not in observer._transit_cache:
+        try:
+            if force_zero_pressure:
+                observer_old_pressure = observer.pressure
+                observer.pressure = 0
+
+            altaz = observer.moon_altaz(times)
+            illumination = np.array(moon_illumination(times,
+                                                      observer.location))
+            observer._transit_cache[aakey] = dict(times=times,
+                                                  illum=illumination,
+                                                  altaz=altaz)
+        finally:
+            if force_zero_pressure:
+                observer.pressure = observer_old_pressure
+
+    return observer._transit_cache[aakey]
+
+
 @abstractmethod
 class Constraint(object):
     """
@@ -432,6 +480,8 @@ class MoonSeparationConstraint(Constraint):
 class MoonIlluminationConstraint(Constraint):
     """
     Constrain the fractional illumination of the Earth's moon.
+
+    Constraint is also satisfied if the Moon has set.
     """
     def __init__(self, min=None, max=None, ephemeris=None):
         """
@@ -453,9 +503,12 @@ class MoonIlluminationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        illumination = np.array(moon_illumination(times,
-                                                  observer.location,
-                                                  self.ephemeris))
+        # first is the moon up?
+        cached_moon = _get_moon_data(times, observer)
+        moon_alt = cached_moon['altaz'].alt
+        moon_alt_mask = moon_alt < 0
+
+        illumination = cached_moon['illum']
         if self.min is None and self.max is not None:
             mask = self.max >= illumination
         elif self.max is None and self.min is not None:
@@ -466,7 +519,10 @@ class MoonIlluminationConstraint(Constraint):
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
-        return mask
+
+        mask = np.logical_or(moon_alt_mask, mask)
+        mask = np.tile(mask, len(targets))
+        return mask.reshape(len(targets), len(times))
 
 
 class LocalTimeConstraint(Constraint):
