@@ -131,6 +131,44 @@ def _get_moon_data(times, observer,
     return observer._transit_cache[aakey]
 
 
+def _get_transit_times(times, observer, targets):
+    """
+    Calculate next transit for an array of times for ``targets`` and ``observer``.
+
+    Cache the result on the ``observer`` object.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target or list of targets
+
+    Returns
+    -------
+    time_dict : dict
+        Dictionary containing a key-value pair. 'times' contains the
+        transit times.
+    """
+    if not hasattr(observer, '_transit_cache'):
+        observer._transit_cache = {}
+
+    # convert times to tuple for hashing
+    aakey = (tuple(times.jd), tuple(targets))
+
+    if aakey not in observer._transit_cache:
+        transit_times = Time([observer.target_meridian_transit_time(
+                              time, target, which='next') for target in targets
+                              for time in times])
+        observer._transit_cache[aakey] = dict(times=transit_times)
+
+    return observer._transit_cache[aakey]
+
+
 @abstractmethod
 class Constraint(object):
     """
@@ -650,6 +688,37 @@ class UtcDateConstraint(Constraint):
         mask = np.logical_and(calculation_times > min_time,
                               calculation_times < max_time)
         return mask.reshape((len(targets), len(times)))
+
+
+class PierFlipConstraint(Constraint):
+    """
+    Constrain the target so that a pier flip is not about to occur.
+
+    For German equatorial mounts, observing as the object transits the
+    meridian requires breaking observations whilst the telescope
+    flips around the mount. At the same time, the pier flip
+    rotates the sky w.r.t the telescope by 180 degrees.
+
+    Time resolved observations, or ones which require a consistent
+    field-of-view across all exposures may wish to avoid this.
+    """
+    @u.quantity_input(mintime=u.d)
+    def __init__(self, mintime):
+        """
+        Parameters
+        -----------
+        mintime : `~astropy.units.Quantity`
+            the minimum time object must be observed without a pier flip
+        """
+        self.mintime = mintime
+
+    def compute_constraint(self, times, observer, targets):
+        transit_times = _get_transit_times(times, observer, targets)['times']
+        # does next pier flip happen after the mintime?
+        calculation_times = Time([t for target in targets for t in times])
+        mask = calculation_times + self.mintime < transit_times
+        mask = mask.reshape((len(targets), len(times)))
+        return mask
 
 
 def is_always_observable(constraints, observer, targets, times=None,
