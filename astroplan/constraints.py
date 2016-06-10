@@ -402,23 +402,27 @@ class AtNightConstraint(Constraint):
                     observer_old_pressure = observer.pressure
                     observer.pressure = 0
 
-                # Broadcast the solar altitudes for the number of targets:
+                # find solar altitude at these times
                 altaz = observer.altaz(times, get_sun(times))
                 altitude = altaz.alt
-                altitude.resize(1, len(altitude))
-                altitude = altitude + np.zeros((len(targets), 1))
-
+                # cache the altitude
                 observer._altaz_cache[aakey] = dict(times=times,
                                                     altitude=altitude)
             finally:
                 if self.force_pressure_zero:
                     observer.pressure = observer_old_pressure
+        else:
+            altitude = observer._altaz_cache[aakey]['altitude']
 
-        return observer._altaz_cache[aakey]
+        # Broadcast the solar altitudes for the number of targets.
+        # Needs to be done after storing/fetching cache so we get the
+        # correct shape if targets changes, but times does not.
+        altitude = np.atleast_2d(altitude)
+        altitude = altitude + np.zeros((len(targets), 1))
+        return altitude
 
     def compute_constraint(self, times, observer, targets):
-        sun_altaz = self._get_solar_altitudes(times, observer, targets)
-        solar_altitude = sun_altaz['altitude']
+        solar_altitude = self._get_solar_altitudes(times, observer, targets)
         mask = solar_altitude <= self.max_solar_altitude
         return mask
 
