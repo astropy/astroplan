@@ -402,3 +402,4 @@ def test_regression_shapes(constraint):
     assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
     assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
     assert constraint(lapalma, targets, times[0]).shape == (2, 1)
+
