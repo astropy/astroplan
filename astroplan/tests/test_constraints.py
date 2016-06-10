@@ -15,6 +15,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
+                           UtcDateConstraint, PierFlipConstraint,
                            LocalTimeConstraint, months_observable)
 
 APY_LT104 = not minversion('astropy','1.0.4')
@@ -349,3 +350,28 @@ def test_months_observable():
                  set({1, 2, 3, 4, 5, 6}), set({4, 5, 6, 7, 8, 9})]
 
     assert months == should_be
+
+
+constraint_tests = [
+    AltitudeConstraint(),
+    AirmassConstraint(2),
+    AtNightConstraint(),
+    SunSeparationConstraint(min=90*u.deg),
+    MoonSeparationConstraint(min=20*u.deg),
+    LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
+    UtcDateConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"])),
+    PierFlipConstraint(1000*u.s)
+]
+
+@pytest.mark.parametrize('constraint', constraint_tests)
+def test_regression_shapes(constraint):
+    times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
+    targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
+               FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
+    lapalma = Observer.at_site('lapalma')
+
+    assert constraint(lapalma, targets, times).shape == (2, 3)
+    assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
+    assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
+    assert constraint(lapalma, targets, times[0]).shape == (2, 1)
+
