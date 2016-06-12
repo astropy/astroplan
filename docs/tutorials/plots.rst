@@ -452,9 +452,9 @@ Additional Options
 
 You can also shade the background according to the darkness of the sky (light
 shading for 0 degree twilight, darker shading for -18 degree twilight) with
-the `brightness_shading` keyword, and display additional y-axis ticks on the
-right side of the axis with the altitudes in degrees using the `altitude_yaxis`
-keyword:
+the ``brightness_shading`` keyword, and display additional y-axis ticks on the
+right side of the axis with the altitudes in degrees using the
+``altitude_yaxis`` keyword:
 
 .. code-block:: python
 
