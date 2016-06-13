@@ -98,7 +98,7 @@ time and issue the plotting command.
     >>> from astropy.time import Time
     >>> from astroplan.plots import plot_airmass
 
-    >>> observe_time = Time('2015-06-15 23:30:00')
+    >>> observe_time = Time('2000-06-15 23:30:00')
 
     >>> plot_airmass(target, observer, observe_time)
     >>> plt.show()
@@ -131,7 +131,7 @@ time and issue the plotting command.
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
 
-    observe_time = Time('2015-06-15 23:30:00')
+    observe_time = Time('2000-06-15 23:30:00')
 
     plot_airmass(target, observer, observe_time)
     plt.show()
@@ -142,9 +142,9 @@ can't contain more than one instance in time.
 
 For example, these are acceptable *time* inputs::
 
-    Time(['2015-06-15 23:30:00'])
+    Time(['2000-06-15 23:30:00'])
 
-    [Time('2015-06-15 23:30:00')]
+    [Time('2000-06-15 23:30:00')]
 
 .. _plots_time_window:
 
@@ -172,7 +172,7 @@ To center your window at some instance in time:
     >>> from astropy.time import Time
     >>> from astroplan.plots import plot_airmass
 
-    >>> observe_time = Time('2015-06-15 23:30:00')
+    >>> observe_time = Time('2000-06-15 23:30:00')
     >>> observe_time = observe_time + np.linspace(-5, 5, 55)*u.hour
 
     >>> plot_airmass(target, observer, observe_time)
@@ -209,7 +209,7 @@ To center your window at some instance in time:
 
     import numpy as np
 
-    observe_time = Time('2015-06-15 23:30:00')
+    observe_time = Time('2000-06-15 23:30:00')
     observe_time = observe_time + np.linspace(-5, 5, 55)*u.hour
 
     plot_airmass(target, observer, observe_time)
@@ -226,8 +226,8 @@ If you know the start and end times of your observation run, you can use a
     >>> from astropy.time import Time
     >>> from astroplan.plots import plot_airmass
 
-    >>> start_time = Time('2015-06-15 20:00:00')
-    >>> end_time = Time('2015-06-16 04:00:00')
+    >>> start_time = Time('2000-06-15 20:00:00')
+    >>> end_time = Time('2000-06-16 04:00:00')
     >>> delta_t = end_time - start_time
     >>> observe_time = start_time + delta_t*np.linspace(0, 1, 75)
 
@@ -263,8 +263,8 @@ If you know the start and end times of your observation run, you can use a
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
 
-    start_time = Time('2015-06-15 20:00:00')
-    end_time = Time('2015-06-16 04:00:00')
+    start_time = Time('2000-06-15 20:00:00')
+    end_time = Time('2000-06-16 04:00:00')
     delta_t = end_time - start_time
     observe_time = start_time + delta_t*np.linspace(0, 1, 75)
 
@@ -284,7 +284,7 @@ many targets on the plot as you wish::
     >>> from astropy.time import Time
     >>> from astroplan.plots import plot_airmass
 
-    >>> observe_time = Time('2015-06-30 23:30:00') + np.linspace(-7.0, 5.5, 50)*u.hour
+    >>> observe_time = Time('2000-06-30 23:30:00') + np.linspace(-7.0, 5.5, 50)*u.hour
 
     >>> plot_airmass(target, observer, observe_time)
     >>> plot_airmass(other_target, observer, observe_time)
@@ -327,7 +327,7 @@ many targets on the plot as you wish::
     coordinates = SkyCoord('07h45m19.4s', '+28d01m35s', frame='icrs')
     third_target = FixedTarget(name='Pollux', coord=coordinates)
 
-    observe_time = Time('2015-06-30 23:30:00') + np.linspace(-7.0, 5.5, 50)*u.hour
+    observe_time = Time('2000-06-30 23:30:00') + np.linspace(-7.0, 5.5, 50)*u.hour
 
     plot_airmass(target, observer, observe_time)
     plot_airmass(other_target, observer, observe_time)
@@ -394,7 +394,7 @@ The default line for time-dependent plots is solid and the default label
     coordinates = SkyCoord('07h45m19.4s', '+28d01m35s', frame='icrs')
     other_target = FixedTarget(name='Pollux', coord=coordinates)
 
-    observe_time = Time('2015-06-30 23:30:00') + np.linspace(-10, 10, 50)*u.hour
+    observe_time = Time('2000-06-30 23:30:00') + np.linspace(-10, 10, 50)*u.hour
 
     sirius_styles = {'linestyle': '--', 'color': 'r'}
     pollux_styles = {'color': 'g'}
@@ -504,7 +504,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
     >>> from astropy.time import Time
     >>> from astroplan.plots import plot_sky
 
-    >>> observe_time = Time(['2015-03-15 15:30:00'])
+    >>> observe_time = Time(['2000-03-15 15:30:00'])
 
     >>> polaris_style = {color': 'k'}
     >>> vega_style = {'color': 'g'}
@@ -567,7 +567,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
     deneb_style = {'color': 'r'}
 
     # Note that this is not a scalar.
-    observe_time = Time(['2015-03-15 15:30:00'])
+    observe_time = Time(['2000-03-15 15:30:00'])
 
     plot_sky(polaris, observer, observe_time, style_kwargs=polaris_style)
     plot_sky(altair, observer, observe_time)
@@ -598,7 +598,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
     >>> import astropy.units as u
     >>> from astroplan.plots import plot_sky
 
-    >>> observe_time = Time('2015-03-15 17:00:00')
+    >>> observe_time = Time('2000-03-15 17:00:00')
     >>> observe_time = observe_time + np.linspace(-4, 5, 10)*u.hour
 
     >>> plot_sky(altair, observer, observe_time)
@@ -637,7 +637,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
 
     import numpy as np
 
-    observe_time = Time('2015-03-15 17:00:00')
+    observe_time = Time('2000-03-15 17:00:00')
     observe_time = observe_time + np.linspace(-4, 5, 10)*u.hour
 
     plot_sky(altair, observer, observe_time)
@@ -744,7 +744,7 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
 
     import numpy as np
 
-    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+    observe_time = Time('2000-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
 
     guide_style = {'marker': '*'}
 
@@ -816,7 +816,7 @@ A positive offset is in the same direction as azimuth increase (see the
 
     import numpy as np
 
-    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+    observe_time = Time('2000-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
 
     guide_style = {'marker': '*'}
 
@@ -894,7 +894,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
 
     import numpy as np
 
-    observe_time = Time('2015-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
+    observe_time = Time('2000-03-15 17:00:00') + np.linspace(-4, 5, 10)*u.hour
 
     guide_style = {'marker': '*'}
 
@@ -1029,7 +1029,7 @@ make multiple plots:
     deneb = FixedTarget(name='Deneb', coord=coordinates)
     deneb_style = {'color': 'r'}
 
-    observe_time = Time(['2015-03-15 15:30:00'])
+    observe_time = Time(['2000-03-15 15:30:00'])
 
     my_ax = plot_sky(polaris, observer, observe_time)
     plot_sky(altair, observer, observe_time, my_ax, style_kwargs=altair_style)
