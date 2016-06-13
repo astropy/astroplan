@@ -15,7 +15,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           UtcDateConstraint, PierFlipConstraint,
+                           TimeConstraint, PierFlipConstraint,
                            LocalTimeConstraint, months_observable)
 
 APY_LT104 = not minversion('astropy','1.0.4')
@@ -359,7 +359,7 @@ constraint_tests = [
     SunSeparationConstraint(min=90*u.deg),
     MoonSeparationConstraint(min=20*u.deg),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
-    UtcDateConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"])),
+    TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"])),
     PierFlipConstraint(1000*u.s)
 ]
 

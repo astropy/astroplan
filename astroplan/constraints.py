@@ -28,9 +28,8 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "UtcDateConstraint", "PierFlipConstraint",
+           "TimeConstraint", "PierFlipConstraint",
            "observability_table", "months_observable"]
-
 
 
 def _get_altaz(times, observer, targets,
@@ -650,8 +649,14 @@ class LocalTimeConstraint(Constraint):
         return np.atleast_2d(mask)
 
 
-class UtcDateConstraint(Constraint):
-    """Constrain the observing time to be within UTC datetime limits"""
+class TimeConstraint(Constraint):
+    """Constrain the observing time to be within certain time limits.
+
+    An example use case for this class would be to associate an acceptable
+    time range with a specific observing block. This can be useful if not
+    all observing blocks are valid over the time limits used in calls
+    to `is_observable` or `is_always_observable`.
+    """
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -665,7 +670,7 @@ class UtcDateConstraint(Constraint):
         Examples
         --------
         Constrain the observations to targets that are observable between
-        23:50 and 04:08 UTC:
+        2016-03-28 and 2016-03-30:
 
         >>> from astroplan import Observer
         >>> from astropy.time import Time
@@ -673,7 +678,7 @@ class UtcDateConstraint(Constraint):
         >>> subaru = Observer.at_site("Subaru")
         >>> t1 = Time("2016-03-28T12:00:00")
         >>> t2 = Time("2016-03-30T12:00:00")
-        >>> constraint = UtcDateConstraint(t1,t2)
+        >>> constraint = TimeConstraint(t1,t2)
         """
         self.min = min
         self.max = max
