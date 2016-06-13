@@ -28,7 +28,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "observability_table"]
+           "observability_table", "months_observable"]
 
 
 def _get_altaz(times, observer, targets,
@@ -565,6 +565,73 @@ def is_observable(constraints, observer, targets, times=None,
                            for constraint in constraints]
     contraint_arr = np.logical_and.reduce(applied_constraints)
     return np.any(contraint_arr, axis=1)
+
+
+def months_observable(constraints, observer, targets,
+                      time_grid_resolution=0.5*u.hour):
+    """
+    During which months are the targets observable?
+
+    Parameters
+    ----------
+    constraints : list or `~astroplan.constraints.Constraint`
+        Observational constraint(s)
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target or list of targets
+
+    times : `~astropy.time.Time` (optional)
+        Array of times on which to test the constraint
+
+    time_range : `~astropy.time.Time` (optional)
+        Lower and upper bounds on time sequence, with spacing
+        ``time_resolution``. This will be passed as the first argument into
+        `~astroplan.time_grid_from_range`.
+
+    time_resolution : `~astropy.units.Quantity` (optional)
+        If ``time_range`` is specified, determine whether constraints are met
+        between test times in ``time_range`` by checking constraint at
+        linearly-spaced times separated by ``time_resolution``. Default is 0.5
+        hours.
+
+    Returns
+    -------
+    observable_months : list
+        List of sets of unique integers representing each month that a target is
+        observable, one set per target. These integers are 1-based so that
+        January maps to 1, February maps to 2, etc.
+
+    To Do
+    -----
+    TODO: This method could be sped up a lot by dropping to the trigonometric
+    altitude calculations.
+    """
+    if not hasattr(constraints, '__len__'):
+        constraints = [constraints]
+
+    # Calculate throughout the year of 2014 so as not to require forward
+    # extrapolation off of the IERS tables
+    time_range = Time(['2014-01-01', '2014-12-31'])
+    times = time_grid_from_range(time_range, time_grid_resolution)
+
+    # TODO: This method could be sped up a lot by dropping to the trigonometric
+    # altitude calculations.
+
+    applied_constraints = [constraint(observer, targets,
+                                      times=times)
+                           for constraint in constraints]
+    contraint_arr = np.logical_and.reduce(applied_constraints)
+
+    months_observable = []
+    for target, observable in zip(targets, contraint_arr):
+        s = set([t.datetime.month for t in times[observable]])
+        months_observable.append(s)
+
+    return months_observable
+
 
 def observability_table(constraints, observer, targets, times=None,
                         time_range=None, time_grid_resolution=0.5*u.hour):
