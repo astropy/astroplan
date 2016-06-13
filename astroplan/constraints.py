@@ -133,9 +133,9 @@ def _get_moon_data(times, observer,
     return observer._moon_cache[aakey]
 
 
-def _get_transit_times(times, observer, targets):
+def _get_meridian_transit_times(times, observer, targets):
     """
-    Calculate next transit for an array of times for ``targets`` and ``observer``.
+    Calculate next meridian transit for an array of times for ``targets`` and ``observer``.
 
     Cache the result on the ``observer`` object.
 
@@ -154,21 +154,21 @@ def _get_transit_times(times, observer, targets):
     -------
     time_dict : dict
         Dictionary containing a key-value pair. 'times' contains the
-        transit times.
+        meridian_transit times.
     """
-    if not hasattr(observer, '_transit_cache'):
-        observer._transit_cache = {}
+    if not hasattr(observer, '_meridian_transit_cache'):
+        observer._meridian_transit_cache = {}
 
     # convert times to tuple for hashing
     aakey = (tuple(times.jd), tuple(targets))
 
-    if aakey not in observer._transit_cache:
-        transit_times = Time([observer.target_meridian_transit_time(
-                              time, target, which='next') for target in targets
-                              for time in times])
-        observer._transit_cache[aakey] = dict(times=transit_times)
+    if aakey not in observer._meridian_transit_cache:
+        meridian_transit_times = Time([observer.target_meridian_transit_time(
+                                       time, target, which='next') for target in targets
+                                       for time in times])
+        observer._meridian_transit_cache[aakey] = dict(times=meridian_transit_times)
 
-    return observer._transit_cache[aakey]
+    return observer._meridian_transit_cache[aakey]
 
 
 @abstractmethod
@@ -719,15 +719,17 @@ class PierFlipConstraint(Constraint):
         Parameters
         -----------
         mintime : `~astropy.units.Quantity`
-            the minimum time object must be observed without a pier flip
+            the minimum time object must be observed without a meridian transit.
         """
         self.mintime = mintime
 
     def compute_constraint(self, times, observer, targets):
-        transit_times = _get_transit_times(times, observer, targets)['times']
+        meridian_transit_times = _get_meridian_transit_times(times,
+                                                             observer,
+                                                             targets)['times']
         # does next pier flip happen after the mintime?
         calculation_times = Time([t for target in targets for t in times])
-        mask = calculation_times + self.mintime < transit_times
+        mask = calculation_times + self.mintime < meridian_transit_times
         mask = mask.reshape((len(targets), len(times)))
         return mask
 
