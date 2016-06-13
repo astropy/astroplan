@@ -19,7 +19,6 @@ supported) as well as the following packages:
 
 Optional packages:
 
-* `PyEphem`_
 * `Matplotlib`_
 * `WCSAxes`_
 * `astroquery`_

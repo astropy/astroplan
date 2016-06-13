@@ -43,7 +43,7 @@ matrix:
         - os: osx
           env: PYTHON_VERSION=2.7 SETUP_CMD='test -V'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
-               PIP_DEPENDENCIES='pyephem pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl'
 
         # Check for sphinx doc build warnings - we do this first because it
         # runs for a long time. All dependencies are needed because the
@@ -51,11 +51,11 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
-               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes astroquery'
+               PIP_DEPENDENCIES='pytest-mpl wcsaxes astroquery'
         - os: linux
           env: PYTHON_VERSION=3.5 SETUP_CMD='build_sphinx -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
-               PIP_DEPENDENCIES='pyephem pytest-mpl wcsaxes astroquery'
+               PIP_DEPENDENCIES='pytest-mpl wcsaxes astroquery'
 
         # Try all python versions with the latest numpy
         # TODO: add the `--open-files` option back once this issue has been resolved:
@@ -86,11 +86,11 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
-               PIP_DEPENDENCIES='pyephem pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
           env: PYTHON_VERSION=3.5 SETUP_CMD='test --remote-data -V'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
-               PIP_DEPENDENCIES='pyephem pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl'
 
         # Try older numpy versions
         - os: linux

@@ -14,13 +14,12 @@ import datetime
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, Angle, SkyCoord
-from astropy.coordinates.angle_utilities import angular_separation
+from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord, AltAz
 from astropy import table
 import numpy as np
 
 # Package
-from .moon import get_moon, moon_illumination
+from .moon import moon_illumination
 from .utils import time_grid_from_range
 from .target import FixedTarget
 
@@ -376,7 +375,7 @@ class MoonSeparationConstraint(Constraint):
     """
     Constrain the distance between the Earth's moon and some targets.
     """
-    def __init__(self, min=None, max=None):
+    def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
         ----------
@@ -386,24 +385,41 @@ class MoonSeparationConstraint(Constraint):
         max : `~astropy.units.Quantity` or `None` (optional)
             Maximum acceptable separation between moon and target (inclusive).
             `None` indicates no limit.
+        ephemeris : str, optional
+            Ephemeris to use.  If not given, use the one set with
+            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            set to 'builtin' by default).
         """
         self.min = min
         self.max = max
+        self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        moon = get_moon(times, observer.location, observer.pressure)
+
         targets = [target.coord if hasattr(target, 'coord') else target
                    for target in targets]
 
-        moon_separation = Angle([angular_separation(moon.spherical.lon,
-                                                    moon.spherical.lat,
-                                                    target.spherical.lon,
-                                                    target.spherical.lat)
-                                 for target in targets])
+        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
+        # handles scalar and non-scalar time inputs differently
+
+        if times.isscalar:
+            moon = get_moon(times, location=observer.location,
+                            ephemeris=self.ephemeris)
+            moon_separation = Angle([moon.separation(target)
+                                     for target in targets]).T
+        else:
+            moon_separation = []
+            for t in times:
+                moon_coord = get_moon(t, location=observer.location,
+                                      ephemeris=self.ephemeris)
+                sep = [moon_coord.separation(target) for target in targets]
+                moon_separation.append(sep)
+            moon_separation = Angle(moon_separation).T
+
         # The line below should have worked, but needs a workaround.
         # TODO: once bug has been fixed, replace workaround with simpler version.
         # Relevant PR: https://github.com/astropy/astropy/issues/4033
-#        moon_separation = Angle([moon.separation(target) for target in targets])
+
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
         elif self.max is None and self.min is not None:
@@ -421,7 +437,7 @@ class MoonIlluminationConstraint(Constraint):
     """
     Constrain the fractional illumination of the Earth's moon.
     """
-    def __init__(self, min=None, max=None):
+    def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
         ----------
@@ -431,13 +447,19 @@ class MoonIlluminationConstraint(Constraint):
         max : float or `None` (optional)
             Maximum acceptable fractional illumination (inclusive). `None`
             indicates no limit.
+        ephemeris : str, optional
+            Ephemeris to use.  If not given, use the one set with
+            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            set to 'builtin' by default).
         """
         self.min = min
         self.max = max
+        self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
         illumination = np.array(moon_illumination(times,
-                                                  observer.location))
+                                                  observer.location,
+                                                  self.ephemeris))
         if self.min is None and self.max is not None:
             mask = self.max >= illumination
         elif self.max is None and self.min is not None:

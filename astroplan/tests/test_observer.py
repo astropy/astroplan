@@ -21,11 +21,6 @@ from ..observer import Observer, MAGIC_TIME
 from ..target import FixedTarget
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
-try:
-    import ephem
-    HAS_PYEPHEM = True
-except ImportError:
-    HAS_PYEPHEM = False
 
 def test_Observer_constructor_location():
     """
@@ -196,7 +191,7 @@ def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
     and observatory, for comparison with astroplan calucation tested in
     `test_Observer_altaz`.
     """
-
+    import ephem
     pyephem_obs = ephem.Observer()
     pyephem_obs.lat = latitude
     pyephem_obs.lon = longitude
@@ -278,6 +273,7 @@ def print_pyephem_parallactic_angle():
     desired_HA_1 = 3*u.hourangle
     desired_HA_2 = 19*u.hourangle # = -5*u.hourangle
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = '19:49:34.3848'
     obs.lon = '-155:28:19.1964'
@@ -350,6 +346,7 @@ def print_pyephem_sunrise_sunset():
     pressure = 0
     time = Time('2000-01-01 12:00:00')
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -427,6 +424,7 @@ def print_pyephem_vega_rise_set():
     vega_ra, vega_dec = (279.23473479*u.degree, 38.78368896*u.degree)
     vega = SkyCoord(vega_ra, vega_dec)
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -516,6 +514,7 @@ def print_pyephem_vega_sirius_rise_set():
     vega_coords = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
     sirius_coords = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -597,6 +596,7 @@ def print_pyephem_sunrise_sunset_equator_civil_twilight():
     pressure = 0
     time = Time('2000-01-01 12:00:00')
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -681,6 +681,7 @@ def print_pyephem_twilight_convenience_funcs():
     pressure = 0
     time = Time('2000-01-01 12:00:00')
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -814,6 +815,7 @@ def print_pyephem_solar_transit_noon():
     pressure = 0
     time = Time('2000-01-01 12:00:00')
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -886,6 +888,7 @@ def print_pyephem_vega_sirius_transit():
     vega_coords = SkyCoord(279.23473479*u.degree, 38.78368896*u.degree)
     sirius_coords = SkyCoord(101.28715533*u.degree, -16.71611586*u.degree)
 
+    import ephem
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -1077,7 +1080,6 @@ def test_is_night():
     assert np.all(nights2 == [True, False, False])
 
 
-@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_moon_altaz():
     time = Time('2012-06-21 03:00:00')
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
@@ -1097,6 +1099,7 @@ def print_pyephem_moon_altaz():
     time = Time('2012-06-21 03:00:00')
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
 
+    import ephem
     moon = ephem.Moon()
     pe_obs = ephem.Observer()
     pe_obs.lat = location.latitude.to(u.degree).to_string(sep=':')
@@ -1169,6 +1172,7 @@ def test_local_sidereal_time():
 
 def print_pyephem_lst():
     time = Time('2005-02-03 00:00:00')
+    import ephem
     pe_apo = ephem.Observer()
     pe_apo.lat = '40:00:00'
     pe_apo.lon = '10:00:00'
