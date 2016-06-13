@@ -213,7 +213,7 @@ stellar coordinates defined in the example above::
     targets = [FixedTarget(coord=SkyCoord(ra=ra*u.deg, dec=dec*u.deg), name=name)
                for name, ra, dec in target_table]
 
-In the above example, you may have noticed that constraints are assembled by
+In the previous section, you may have noticed that constraints are assembled by
 making a list of calls to the initializers for classes like
 `~astroplan.AltitudeConstraint` and `~astroplan.AirmassConstraint`. Each of
 those constraint classes is subclassed from the abstract
