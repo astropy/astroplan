@@ -474,8 +474,9 @@ class LocalTimeConstraint(Constraint):
 def is_always_observable(constraints, observer, targets, times=None,
                          time_range=None, time_grid_resolution=0.5*u.hour):
     """
-    Are the ``targets`` always observable throughout ``time_range`` given
-    constraints in ``constraints_list`` for ``observer``?
+    A function to determine whether ``targets`` are always observable throughout
+    ``time_range`` given constraints in the ``constraints_list`` for a
+    particular ``observer``.
 
     Parameters
     ----------
@@ -522,8 +523,8 @@ def is_always_observable(constraints, observer, targets, times=None,
 def is_observable(constraints, observer, targets, times=None,
                   time_range=None, time_grid_resolution=0.5*u.hour):
     """
-    Are the ``targets`` observable during ``time_range`` given constraints in
-    ``constraints_list`` for ``observer``?
+    Determines if the ``targets`` are observable during ``time_range`` given
+    constraints in ``constraints_list`` for a particular ``observer``.
 
     Parameters
     ----------
@@ -570,7 +571,8 @@ def is_observable(constraints, observer, targets, times=None,
 def months_observable(constraints, observer, targets,
                       time_grid_resolution=0.5*u.hour):
     """
-    During which months are the targets observable?
+    Determines which month the specified ``targets`` are observable for a
+    specific ``observer``, given the supplied ``constriants``.
 
     Parameters
     ----------
@@ -604,11 +606,9 @@ def months_observable(constraints, observer, targets,
         observable, one set per target. These integers are 1-based so that
         January maps to 1, February maps to 2, etc.
 
-    To Do
-    -----
-    TODO: This method could be sped up a lot by dropping to the trigonometric
-    altitude calculations.
     """
+    #TODO: This method could be sped up a lot by dropping to the trigonometric
+    #altitude calculations.
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
