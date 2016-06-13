@@ -328,7 +328,7 @@ class MoonSeparationConstraint(Constraint):
             Minimum acceptable separation between moon and target (inclusive).
             `None` indicates no limit.
         max : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between moon and target (inclusive).
+            Maximum acceptable separation between moon and target (inclusive).
             `None` indicates no limit.
         """
         self.min = min
