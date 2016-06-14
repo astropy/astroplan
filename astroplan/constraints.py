@@ -875,8 +875,8 @@ def months_observable(constraints, observer, targets,
         January maps to 1, February maps to 2, etc.
 
     """
-    #TODO: This method could be sped up a lot by dropping to the trigonometric
-    #altitude calculations.
+    # TODO: This method could be sped up a lot by dropping to the trigonometric
+    # altitude calculations.
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 

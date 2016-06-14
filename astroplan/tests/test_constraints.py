@@ -126,6 +126,7 @@ def test_compare_airmass_constraint_and_observer():
                                                       time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
+
 # in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
 def test_sun_separation():
@@ -363,6 +364,7 @@ constraint_tests = [
     MeridianTransitConstraint(1000*u.s)
 ]
 
+
 @pytest.mark.parametrize('constraint', constraint_tests)
 @pytest.mark.skipif('not HAS_PYEPHEM')
 def test_regression_shapes(constraint):
@@ -375,4 +377,3 @@ def test_regression_shapes(constraint):
     assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
     assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
     assert constraint(lapalma, targets, times[0]).shape == (2, 1)
-
