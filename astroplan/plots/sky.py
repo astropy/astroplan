@@ -31,6 +31,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     (e.g. ``Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])``), target's
     position will be shown at each of these times.
 
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
+
     Parameters
     ----------
     target : `~astroplan.FixedTarget`
@@ -105,6 +108,10 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         ``az_label_offset`` option, but it is not recommended, as to do so
         makes it seem as if N/E/S/W are being decoupled from the definition
         of azimuth (North from az = 0 deg., East from az = 90 deg., etc.).
+
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#sky-charts
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:

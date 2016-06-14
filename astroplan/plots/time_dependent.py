@@ -64,6 +64,9 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1
     23:30:00'])`` will result in a plot with only two airmass measurements.
 
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
+
     Parameters
     ----------
     target : `~astroplan.FixedTarget`
@@ -112,8 +115,10 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     If user wishes to change these, use ``ax.\<set attribute\>`` before drawing
     or saving plot:
 
-    TODO:
-        1) Timezones?
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
+
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
@@ -221,6 +226,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])``
     will result in a plot with only two parallactic angle measurements.
 
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
+
     Parameters
     ----------
     target : `~astroplan.FixedTarget`
@@ -254,8 +262,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     ax :  `~matplotlib.axes.Axes`
         An ``Axes`` object with added parallactic angle vs. time plot.
 
-    TODO:
-        1) observe_timezone -- update with info from observer?
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
