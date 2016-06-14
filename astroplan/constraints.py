@@ -28,7 +28,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "TimeConstraint", "PierFlipConstraint",
+           "TimeConstraint", "MeridianTransitConstraint",
            "observability_table", "months_observable"]
 
 
@@ -706,9 +706,9 @@ class TimeConstraint(Constraint):
         return np.atleast_2d(mask)
 
 
-class PierFlipConstraint(Constraint):
+class MeridianTransitConstraint(Constraint):
     """
-    Constrain the target so that a pier flip is not about to occur.
+    Constrain the target so that a meridian transit is not about to occur.
 
     For German equatorial mounts, observing as the object transits the
     meridian requires breaking observations whilst the telescope
