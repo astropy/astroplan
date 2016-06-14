@@ -27,7 +27,8 @@ from .target import FixedTarget
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
+           "MoonIlluminationConstraint", "TimeBrightnessConstraint",
+           "LocalTimeConstraint", "Constraint",
            "observability_table", "months_observable"]
 
 
@@ -394,7 +395,59 @@ class MoonIlluminationConstraint(Constraint):
                              "MoonSeparationConstraint.")
         return mask
 
+class TimeBrightnessConstraint(Constraint):
+    """
+    Constrain whether it is dark, gray or bright time or how bright.
+    """
+    #following the format of Erik and Stephanie
+    # TODO: make a better test
+    def __init__(self, time='dark', max=None, boolean_constraint=True):
+        '''
+        Parameters
+        ----------
+        time : string (optional)
+            'dark' for dark time, 'grey' for grey time, 'bright' for bright
+            time.p.array()))
+        max : float or 'None' (optional)
+            
+        boolean_constraint : bool
+            
+        
+        '''
+        # TODO: let grey/bright be customizable
+        if time.lower() == 'dark':
+            self.max = 0
+        elif max:
+            self.max = max
+        elif time.lower() == 'grey':
+            self.max = 0.5
+        elif time.lower() == 'bright':
+            self.max = 1
+        else:
+            self.max = 1
+        self.boolean_constraint = boolean_constraint
+        
+    def compute_constraint(self,times,observer,targets):
+        moon = get_moon(times, observer.location, observer.pressure)
+        targets = [target.coord if hasattr(target, 'coord') else target
+                   for target in targets]
 
+        moon_separation = Angle([angular_separation(moon.spherical.lon,
+                                                    moon.spherical.lat,
+                                                    target.spherical.lon,
+                                                    target.spherical.lat)
+                                 for target in targets])
+        #moon_separation is [[time1,time2,time3...][][]] with a bin for each target
+        # TODO: refine brightness computation, it's a lot more complex than below
+        brightness = np.multiply(np.multiply(np.array([moon_illumination(time,observer.location) for time in times]), np.array([observer.is_moon_up(time) for time in times])),1-moon_separation.radian/180.)
+        if self.boolean_constraint:
+            mask = brightness <= self.max
+            return mask
+        #non-boolean will not work until merged with Stephanie's code
+        else:
+            return _rescale_minmax(brightness, 0, self.max)
+
+    
 class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.
