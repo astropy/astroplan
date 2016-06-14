@@ -27,7 +27,7 @@ from .target import FixedTarget
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "TimeBrightnessConstraint",
+           "MoonIlluminationConstraint", "DarkGreyBrightConstraint",
            "LocalTimeConstraint", "Constraint",
            "observability_table", "months_observable"]
 

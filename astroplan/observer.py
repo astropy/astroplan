@@ -1520,40 +1520,6 @@ class Observer(object):
                 moon_az.append(float(moon.az))
         return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
                         frame=self.altaz(time))
-
-    @u.quantity_input(horizon=u.deg)
-    def is_moon_up(self, time, horizon=0*u.degree):
-        # TODO: add a test 
-        """
-        Is the Moon above the horizion at this ``time``?
-        
-        Parameters
-        ----------
-        time: `~astropy.time.Time` or other (see below)
-            This will be passed in as the first argument to
-            the `~astropy.time.Time` initialiwzer, so it can be anything that
-            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object).
-            
-        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
-            Degrees above/below actual horizon to use
-            for calculating rise/set times (i.e.,
-            -6 deg horizon = civil twilight, etc.)            
-            
-        Returns
-        -------
-        In_sky : boolean
-            True if Moon is above ``horizon`` at ``time``, else False.
-        
-        """
-
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        moon_altaz = self.moon_altaz(time)
-        In_sky = bool(moon_altaz.alt > horizon)
-        
-        return In_sky 
     
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
