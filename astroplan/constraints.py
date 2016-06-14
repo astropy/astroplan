@@ -402,7 +402,7 @@ class DarkGreyBrightConstraint(Constraint):
     """
     # TODO: make a new test
     @u.quantity_input(horizon=u.deg)
-    def __init__(self lunar_horizon=90*u.deg, min_moon_illumination=0,
+    def __init__(self, lunar_horizon=90*u.deg, min_moon_illumination=0,
                                                 max_moon_illumination=1):
         '''
         Parameters
@@ -425,8 +425,8 @@ class DarkGreyBrightConstraint(Constraint):
         >>> greytime = DarkGreyBrightConstraint(max_moon_illumination=.5)
         '''
         
-        self.min_illumination = min_max_moon_illumination[0]
-        self.max_illumination = min_max_moon_illumination[1]
+        self.min_illumination = min_moon_illumination
+        self.max_illumination = max_moon_illumination
         self.horizon = lunar_horizon
         
     def _get_lunar_altitudes(self, times, observer, targets):
@@ -436,15 +436,15 @@ class DarkGreyBrightConstraint(Constraint):
         aakey = (tuple(times.jd), 'sun')
 
         if aakey not in observer._altaz_cache:
-            try:
-                # Broadcast the lunar altitudes for the number of targets:
-                altaz = observer.altaz(times, get_moon(times))
-                altitude = altaz.alt
-                altitude.resize(1, len(altitude))
-                altitude = altitude + np.zeros((len(targets), 1))
+            # TODO: make sure this works properly
+            # Broadcast the lunar altitudes for the number of targets:
+            altaz = observer.altaz(times, get_moon(times))
+            altitude = altaz.alt
+            altitude.resize(1, len(altitude))
+            altitude = altitude + np.zeros((len(targets), 1))
 
-                observer._altaz_cache[aakey] = dict(times=times,
-                                                    altitude=altitude)
+            observer._altaz_cache[aakey] = dict(times=times,
+                                                altitude=altitude)
 
         return observer._altaz_cache[aakey]
         
