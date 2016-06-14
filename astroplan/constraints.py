@@ -395,58 +395,78 @@ class MoonIlluminationConstraint(Constraint):
                              "MoonSeparationConstraint.")
         return mask
 
-class TimeBrightnessConstraint(Constraint):
+    
+class DarkGreyBrightConstraint(Constraint):
     """
     Constrain whether it is dark, gray or bright time or how bright.
     """
-    #following the format of Erik and Stephanie
-    # TODO: make a better test
-    def __init__(self, time='dark', max=None, boolean_constraint=True):
+    # TODO: make a new test
+    @u.quantity_input(horizon=u.deg)
+    def __init__(self lunar_horizon=90*u.deg, min_moon_illumination=0,
+                                                max_moon_illumination=1):
         '''
         Parameters
         ----------
-        time : string (optional)
-            'dark' for dark time, 'grey' for grey time, 'bright' for bright
-            time.p.array()))
-        max : float or 'None' (optional)
-            
-        boolean_constraint : bool
-            
+        Lunar_horizon : `~astropy.units.Quantity` (optional)
+            The altitude of the ``horizon`` and defaults to 90 degrees       
+        min_moon_illumination : float or `None` (optional)
+            the minimum value of the fraction of the moon illuminated
+        max_moon_illumination : float or `None` (optional)
+            the maximum value of the fraction of the moon illuminated
         
+        Example
+        -------
+        Constrain the observations to times where the moon :
+
+        >>> from astroplan import Observer
+        >>> from astroplan.constraints import DarkGreyBrightConstraint
+        >>> subaru = Observer.at_site("Subaru")
+        >>> darktime = DarkGreyBrightConstraint(lunar_horizon=-5*u.deg) 
+        >>> greytime = DarkGreyBrightConstraint(max_moon_illumination=.5)
         '''
-        # TODO: let grey/bright be customizable
-        if time.lower() == 'dark':
-            self.max = 0
-        elif max:
-            self.max = max
-        elif time.lower() == 'grey':
-            self.max = 0.5
-        elif time.lower() == 'bright':
-            self.max = 1
-        else:
-            self.max = 1
-        self.boolean_constraint = boolean_constraint
+        
+        self.min_illumination = min_max_moon_illumination[0]
+        self.max_illumination = min_max_moon_illumination[1]
+        self.horizon = lunar_horizon
+        
+    def _get_lunar_altitudes(self, times, observer, targets):
+        if not hasattr(observer, '_altaz_cache'):
+            observer._altaz_cache = {}
+
+        aakey = (tuple(times.jd), 'sun')
+
+        if aakey not in observer._altaz_cache:
+            try:
+                # Broadcast the lunar altitudes for the number of targets:
+                altaz = observer.altaz(times, get_moon(times))
+                altitude = altaz.alt
+                altitude.resize(1, len(altitude))
+                altitude = altitude + np.zeros((len(targets), 1))
+
+                observer._altaz_cache[aakey] = dict(times=times,
+                                                    altitude=altitude)
+
+        return observer._altaz_cache[aakey]
+        
         
     def compute_constraint(self,times,observer,targets):
+        #find when it is up
+        moon_altaz = self._get_lunar_altitudes(times, observer, targets)
+        moon_altitude = moon_altaz['altitude']
+        moon_down_mask = moon_altitude <= self.horizon
+        #find when it satisfies illumination constraints
         moon = get_moon(times, observer.location, observer.pressure)
-        targets = [target.coord if hasattr(target, 'coord') else target
-                   for target in targets]
-
-        moon_separation = Angle([angular_separation(moon.spherical.lon,
-                                                    moon.spherical.lat,
-                                                    target.spherical.lon,
-                                                    target.spherical.lat)
-                                 for target in targets])
-        #moon_separation is [[time1,time2,time3...][][]] with a bin for each target
-        # TODO: refine brightness computation, it's a lot more complex than below
-        brightness = np.multiply(np.multiply(np.array([moon_illumination(time,observer.location) for time in times]), np.array([observer.is_moon_up(time) for time in times])),1-moon_separation.radian/180.)
-        if self.boolean_constraint:
-            mask = brightness <= self.max
-            return mask
-        #non-boolean will not work until merged with Stephanie's code
+        illumination = moon_illumination(times, observer.location)
+        if self.min is None and self.max is not None:
+            mask = self.max >= illumination
+        elif self.max is None and self.min is not None:
+            mask = self.min <= illumination
+        elif self.min is not None and self.max is not None:
+            mask = ((self.min <= illumination) &
+                    (illumination <= self.max))
         else:
-            return _rescale_minmax(brightness, 0, self.max)
-
+            return moon_down_mask
+        return mask & moon_down_mask
     
 class LocalTimeConstraint(Constraint):
     """
