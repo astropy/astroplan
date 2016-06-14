@@ -16,7 +16,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           LocalTimeConstraint, months_observable)
+                           TimeBrightnessConstraint, LocalTimeConstraint, months_observable)
 
 try:
     import ephem
@@ -206,7 +206,49 @@ def test_moon_illumination():
     is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [False, True, True])
 
-
+    
+def test_time_brightness_constraint():
+    time = Time('2001-02-03 04:05:06')
+    time_ranges = [Time([time, time+1*u.hour]) + offset
+                       for offset in np.arange(0, 400, 100)*u.day]
+    mro = Observer.at_site('MRO')
+    targets = [vega, rigel, polaris]
+    
+    for time_range in time_ranges:
+        #testing whether dark works
+        time = 'dark'
+        always_from_observer = [all([mro.moon_altaz(time).alt <= 0 
+                                     for time in time_grid_from_range(time_range)])
+                                for target in targets]
+        print([[mro.moon_altaz(time).alt for time in time_grid_from_range(time_range)]
+                                for target in targets])
+        always_from_constraint = is_always_observable(TimeBrightnessConstraint(
+                                                            time=time),
+                                                      mro, targets,
+                                                      time_range=time_range)
+        print(always_from_constraint)
+        assert all(always_from_observer == always_from_constraint)
+    # TODO: fix the code below to test when the max is defined
+    ''' The code below relies on things that aren't being called nicely (.spherical)
+    for time_range in time_ranges:
+        #does it work for defined maximum brightness
+        bright_max = 0.7
+        times = time_grid_from_range(time_range)
+        moon = get_moon(times, mro.location, mro.pressure)
+        always_from_observer = [all([mro.moon_altaz(time).alt*moon_illumination(time,mro.location)*
+                                      (1-(Angle(angular_separation(moon.spherical.lon,
+                                                    moon.spherical.lat,
+                                                    target.spherical.lon,
+                                                    target.spherical.lat))/180.))<= 0.7
+                                     for time in times])
+                                for target in targets]
+        always_from_constraint = is_always_observable(TimeBrightnessConstraint(
+                                                            max = bright_max),
+                                                      mro, targets,
+                                                      time_range=time_range)
+        assert all(always_from_observer == always_from_constraint)
+        '''
+        
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru")
