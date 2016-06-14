@@ -206,7 +206,7 @@ def test_moon_illumination():
     is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [False, True, True])
 
-    
+@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_Dark_Grey_Bright():
     darktime = DarkGreyBrightConstraint(lunar_horizon=-5*u.deg) 
     greytime = DarkGreyBrightConstraint(max_moon_illumination=.5)
