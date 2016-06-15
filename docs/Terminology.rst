@@ -22,3 +22,4 @@ Determined during the python in astronomy conference:
   observing blocks and produces a schedule
 * Weights (“user defined”?): preferences for which constraints matter most 
   (i.e. I care more about getting dark time than getting a low airmass)
+  
