@@ -27,7 +27,8 @@ from .target import FixedTarget
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
+           "MoonIlluminationConstraint", "DarkGreyBrightConstraint",
+           "LocalTimeConstraint", "Constraint",
            "observability_table", "months_observable"]
 
 
@@ -394,7 +395,81 @@ class MoonIlluminationConstraint(Constraint):
                              "MoonSeparationConstraint.")
         return mask
 
+    
+class DarkGreyBrightConstraint(Constraint):
+    """
+    Constrain whether it is dark, gray or bright time or how bright.
+    """
+    # TODO: make a new test
+    @u.quantity_input(horizon=u.deg)
+    def __init__(self, lunar_horizon=90*u.deg, min_moon_illumination=None,
+                                                max_moon_illumination=None):
+        '''
+        Parameters
+        ----------
+        Lunar_horizon : `~astropy.units.Quantity` (optional)
+            The altitude of the ``horizon`` and defaults to 90 degrees       
+        min_moon_illumination : float or `None` (optional)
+            the minimum value of the fraction of the moon illuminated
+        max_moon_illumination : float or `None` (optional)
+            the maximum value of the fraction of the moon illuminated
+        
+        Example
+        -------
+        Constrain the observations to times where the moon :
 
+        >>> from astroplan import Observer
+        >>> from astroplan.constraints import DarkGreyBrightConstraint
+        >>> subaru = Observer.at_site("Subaru")
+        >>> darktime = DarkGreyBrightConstraint(lunar_horizon=-5*u.deg) 
+        >>> greytime = DarkGreyBrightConstraint(max_moon_illumination=.5)
+        '''
+        
+        self.min = min_moon_illumination
+        self.max = max_moon_illumination
+        self.horizon = lunar_horizon
+        
+    def _get_lunar_altitudes(self, times, observer, targets):
+        if not hasattr(observer, '_altaz_cache'):
+            observer._altaz_cache = {}
+
+        aakey = (tuple(times.jd), 'sun')
+
+        if aakey not in observer._altaz_cache:
+            # TODO: make sure this works properly
+            # Broadcast the lunar altitudes for the number of targets:
+            altaz = observer.altaz(times, get_moon(times, observer.location))
+            altitude = altaz.alt
+            altitude.resize(1, len(altitude))
+            try:
+                altitude = altitude + np.zeros((len(targets), 1))
+            except TypeError:
+                pass
+            observer._altaz_cache[aakey] = dict(times=times,
+                                                altitude=altitude)
+
+        return observer._altaz_cache[aakey]
+        
+        
+    def compute_constraint(self,times,observer,targets):
+        #find when it is up
+        moon_altaz = self._get_lunar_altitudes(times, observer, targets)
+        moon_altitude = moon_altaz['altitude']
+        moon_down_mask = moon_altitude <= self.horizon
+        #find when it satisfies illumination constraints
+        moon = get_moon(times, observer.location, observer.pressure)
+        illumination = moon_illumination(times, observer.location)
+        if self.min is None and self.max is not None:
+            mask = self.max >= illumination
+        elif self.max is None and self.min is not None:
+            mask = self.min <= illumination
+        elif self.min is not None and self.max is not None:
+            mask = ((self.min <= illumination) &
+                    (illumination <= self.max))
+        else:
+            return moon_down_mask
+        return mask & moon_down_mask
+    
 class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.

@@ -1520,7 +1520,7 @@ class Observer(object):
                 moon_az.append(float(moon.az))
         return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
                         frame=self.altaz(time))
-
+    
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
         """

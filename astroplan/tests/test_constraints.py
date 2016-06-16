@@ -16,7 +16,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           LocalTimeConstraint, months_observable)
+                           DarkGreyBrightConstraint, LocalTimeConstraint, months_observable)
 
 try:
     import ephem
@@ -119,7 +119,7 @@ def test_compare_airmass_constraint_and_observer():
         targets = [vega, rigel, polaris]
 
         max_airmass = 2
-        # Check if each target meets airmass constraint in using Observer
+        # Check if each target meets airmass constraint using Observer
         always_from_observer = [all([(subaru.altaz(time, target).secz < max_airmass)&
                                      (subaru.altaz(time, target).secz > 0)
                                      for time in time_grid_from_range(time_range)])
@@ -206,7 +206,27 @@ def test_moon_illumination():
     is_constraint_met = [constraint(lco, None, times=time) for time in times]
     assert np.all(is_constraint_met == [False, True, True])
 
-
+@pytest.mark.skipif('not HAS_PYEPHEM')
+def test_Dark_Grey_Bright():
+    darktime = DarkGreyBrightConstraint(lunar_horizon=-5*u.deg) 
+    greytime = DarkGreyBrightConstraint(max_moon_illumination=.5)
+    brighttime = DarkGreyBrightConstraint(min_moon_illumination = .5)
+    
+    times = Time(["2015-08-29 18:35", "2015-09-05 18:35", "2015-09-15 18:35"])
+    lco = Observer.at_site("LCO")
+    # At these times, moon illuminations are:
+    # [ 0.99946328  0.46867661  0.05379006]
+    # Moon altitudes are:
+    #[-45:11:59.8996 -31:30:40.556 66:28:06.7655]
+    # TODO: write a test with targets
+    is_darktime_met = darktime(lco, None, times=times)
+    is_greytime_met = greytime(lco, None, times=times)
+    is_brighttime_met = brighttime(lco, None, times=times)
+    assert np.all(is_darktime_met == [True, True, False])
+    assert np.all(is_greytime_met == [False, True, True])
+    assert np.all(is_brighttime_met == [True, False, False])
+    
+    
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru")
