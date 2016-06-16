@@ -20,8 +20,8 @@ addons:
 env:
     global:
         # Set defaults to avoid repeating in most cases
-        - NUMPY_VERSION=1.10
-        - ASTROPY_VERSION=1.0
+        - NUMPY_VERSION=stable
+        - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='pytz'
         - PIP_DEPENDENCIES=''
@@ -93,6 +93,8 @@ matrix:
                PIP_DEPENDENCIES='pyephem pytest-mpl'
 
         # Try older numpy versions
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10 SETUP_CMD='test -V'
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.9 SETUP_CMD='test -V'
         - os: linux
