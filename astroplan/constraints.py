@@ -171,9 +171,9 @@ class AltitudeConstraint(Constraint):
     Parameters
     ----------
     min : `~astropy.units.Quantity` or `None`
-        Minimum altitude of the target. `None` indicates no limit.
+        Minimum altitude of the target (inclusive). `None` indicates no limit.
     max : `~astropy.units.Quantity` or `None`
-        Maximum altitude of the target. `None` indicates no limit.
+        Maximum altitude of the target (inclusive). `None` indicates no limit.
     boolean_constraint : bool
         If True, the constraint is treated as a boolean (True for within the
         limits and False for outside).  If False, the constraint returns a
@@ -189,12 +189,14 @@ class AltitudeConstraint(Constraint):
         else:
             self.max = max
 
+        self.boolean_constraint = boolean_constraint
+
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
         alt = cached_altaz['altaz'].alt
         if self.boolean_constraint:
-            lowermask = self.min < alt
-            uppermask = alt < self.max
+            lowermask = self.min <= alt
+            uppermask = alt <= self.max
             return lowermask & uppermask
         else:
             return _rescale_minmax(alt, self.min, self.max)
@@ -228,7 +230,7 @@ class AirmassConstraint(AltitudeConstraint):
 
         AirmassConstraint(2)
     """
-    def __init__(self, max=None, min=None, boolean_constraint=True):
+    def __init__(self, max=None, min=1, boolean_constraint=True):
         self.min = min
         self.max = max
         self.boolean_constraint = boolean_constraint
@@ -238,11 +240,11 @@ class AirmassConstraint(AltitudeConstraint):
         secz = cached_altaz['altaz'].secz
         if self.boolean_constraint:
             if self.min is None and self.max is not None:
-                mask = secz < self.max
+                mask = secz <= self.max
             elif self.max is None and self.min is not None:
-                mask = self.min < secz
+                mask = self.min <= secz
             elif self.min is not None and self.max is not None:
-                mask = (self.min < secz) & (secz < self.max)
+                mask = (self.min <= secz) & (secz <= self.max)
             else:
                 raise ValueError("No max and/or min specified in "
                                  "AirmassConstraint.")
