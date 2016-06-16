@@ -129,8 +129,6 @@ def test_compare_airmass_constraint_and_observer():
         always_from_constraint = is_always_observable(AirmassConstraint(max_airmass),
                                                       subaru, targets,
                                                       time_range=time_range)
-        print(always_from_observer, always_from_constraint,
-              type(always_from_observer), type(always_from_constraint))
         assert all(always_from_observer == always_from_constraint)
 
 #in astropy before v1.0.4, a recursion error is triggered by this test
