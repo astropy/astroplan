@@ -18,7 +18,8 @@ The terms used are as follows:
 * **priority**: number assigned to the **observing block** by the user that 
   defines its precedence within the set of blocks to be scheduled. Should probably
   also be on a 0->1 (0=no good, 1=good) scale, or rescaled within the scheduler
-* **rank**: a **priority** defined by a time allocation committee (TAC) rather than a user
+* **rank**: like a **priority**, but defined by a time allocation committee (TAC) rather
+  than a user and applied to an entire proposal.
 * **constraint**: sets limits and can yield **scores** based on inputs. Currently
   only boolean scores are implemented in the code.
 * **score**: the value returned by evaluating a **constraint**. Can be 
