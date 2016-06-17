@@ -1,12 +1,17 @@
 .. _Observation_Terminology:
 
-***************
+***********
 Terminology
-***************
+***********
 
 Scheduling
-==================
-Determined during the python in astronomy conference:
+==========
+
+Scheduling observations is a common task in astronomy, but there is a lack of
+formal terminology. Here we define the terminology as it will be used in astroplan
+for scheduling tasks. This is for consistency within the code and the documentation.
+
+The terms used are as follows:
 
 * **visit**: a period of time spent observing a single target
 * **observing block** (OB): the minimum schedulable block (tentative: a group of visits)
@@ -25,9 +30,14 @@ Determined during the python in astronomy conference:
 * **Weights** (“user defined”?): preferences for which constraint's **scores** matter most 
   (i.e. I care more about getting dark time than getting a low airmass)
 
-Schedulers (not yet implemented):
+
+The different schedulers that are already implemented (none are implemented yet) 
+have different methods for creating their schedule. Below is a list of the scheduler
+descriptors and how its scheduler works. Each scheduler can be called with 
+``DescriptorScheduler(args)`` using the descriptor defined below.
+
 * **Sequential**: starts from the beginning of the time range and schedules the OB
-   with the best **score**, that hasn't already been scheduled, for that time.
+  with the best **score**, that hasn't already been scheduled, for that time.
 * **Priority**: starts from the highest **priority** OB and schedules it at the time
   where it has its highest **score**. Then schedules the next-highest priority without
   overlapping
