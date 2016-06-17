@@ -21,7 +21,7 @@ The terms used are as follows:
 * **rank**: a **priority** defined by a TAC rather than a user
 * **constraint**: sets limits and can yield **scores** based on inputs. Currently
   only boolean scores are implemented in the code.
-* **score**: the value returned by evaluating a **constraint**. can be 
+* **score**: the value returned by evaluating a **constraint**. Can be 
   boolean or floats between 0 and 1 inclusive (0=no good, 1=good), with a flag in the 
   ``Constraint`` call that selects which is used
 * **scorekeeper**: assigns a cumulative score to the OB based on some function that 
@@ -29,7 +29,7 @@ The terms used are as follows:
 * **scheduler**: the entity that consumes the results of the **scorekeeper** and the 
   **observing blocks** and produces a schedule
 * **Weights** (“user defined”?): preferences for which constraint's **scores** matter most 
-  (i.e. I care more about getting dark time than getting a low airmass)
+  (e.g. I care more about getting dark time than getting a low airmass).
 
 
 This is a list of possible schedulers, none are implemented yet. Once implemented they
