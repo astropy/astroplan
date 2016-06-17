@@ -106,18 +106,23 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev SETUP_CMD='test -V'
 
+        # Try pre-release version of Numpy. This only runs if a pre-release
+        # is available on pypi.
+        - os: linux
+          env: PYTHON_VERSION=3.5 NUMPY_VERSION=prerelease SETUP_CMD='test -V'
+
         # Try developer version of Astropy
         - os: linux
           env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev SETUP_CMD='test -V'
 
-        # Do a PEP8 test
+        # Do a PEP8 test with pycodestyle
         - os: linux
-          env: PYTHON_VERSION=2.7 MAIN_CMD='pep8 astroplan --count' SETUP_CMD=''
+          env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
 
     allow_failures:
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev SETUP_CMD='test -V'
       # TODO: these fail for now ... make them work!
-      - env: PYTHON_VERSION=2.7 MAIN_CMD='pep8 astroplan --count' SETUP_CMD=''
+      - env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8 SETUP_CMD='test -V'
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7 SETUP_CMD='test -V'
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.6 SETUP_CMD='test -V'

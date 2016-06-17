@@ -9,7 +9,7 @@ seeks to make your life as an observational astronomer a little less
 infuriating.
 
 * Code: https://github.com/astropy/astroplan
-* Docs: https://astroplan.readthedocs.org/
+* Docs: https://astroplan.readthedocs.io/
 """
 
 # Affiliated packages may add whatever they like to this file, but

@@ -56,7 +56,7 @@ by the IERS used by astroplan are the IERS Bulletins A and B.
   compute UT1-UTC, and by default will raise an error if you try to compute
   UT1-UTC for a time that is outside the bounds of the IERS Bulletin B table
   (see the `astropy`_ docs on the `UT1/UTC transformation offsets
-  <http://astropy.readthedocs.org/en/latest/time/index.html?highlight=iers#transformation-offsets>`_
+  <http://astropy.readthedocs.io/en/latest/time/index.html?highlight=iers#transformation-offsets>`_
   for more details), like this::
 
     >>> from astropy.time import Time

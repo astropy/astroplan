@@ -1,5 +1,5 @@
 * Code: https://github.com/astropy/astroplan
-* Docs: https://astroplan.readthedocs.org/
+* Docs: https://astroplan.readthedocs.io/
 
 **astroplan** is an open source (BSD licensed) observation planning package for
 astronomers that can help you plan for everything but the clouds.

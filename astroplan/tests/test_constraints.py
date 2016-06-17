@@ -16,7 +16,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           LocalTimeConstraint)
+                           LocalTimeConstraint, months_observable)
 
 try:
     import ephem
@@ -321,6 +321,7 @@ def test_docs_example():
 
     assert all(observability == [False, False, True, False, False, False])
 
+
 def test_regression_airmass_141():
     subaru = Observer.at_site("Subaru")
     time = Time('2001-1-1 12:00')
@@ -336,3 +337,21 @@ def test_regression_airmass_141():
     assert not consminmax(subaru, [coord], [time]).ravel()[0]
     # prior to 141 the above works, but the below FAILS
     assert not consmax(subaru, [coord], [time]).ravel()[0]
+
+
+def test_months_observable():
+    obs = Observer(latitude=0*u.deg, longitude=0*u.deg, elevation=0*u.m)
+
+    coords = [SkyCoord(ra=0*u.hourangle, dec=0*u.deg),
+              SkyCoord(ra=6*u.hourangle, dec=0*u.deg),
+              SkyCoord(ra=12*u.hourangle, dec=0*u.deg),
+              SkyCoord(ra=18*u.hourangle, dec=0*u.deg)]
+    targets = [FixedTarget(coord=coord) for coord in coords]
+    constraints = [AltitudeConstraint(min=80*u.deg),
+                   AtNightConstraint.twilight_astronomical()]
+    months = months_observable(constraints, obs, targets)
+
+    should_be = [set({7, 8, 9, 10, 11, 12}), set({1, 2, 3, 10, 11, 12}),
+                 set({1, 2, 3, 4, 5, 6}), set({4, 5, 6, 7, 8, 9})]
+
+    assert months == should_be

@@ -20,7 +20,7 @@ Contributions to improve, expand and fix `astroplan` are welcome! As part of the
 `Astropy`_ ecosystem, we recommend the following resources for getting started
 on your first contributions to astroplan:
 
-* `How to make a code contribution <http://astropy.readthedocs.org/en/stable/development/workflow/development_workflow.html>`_
+* `How to make a code contribution <http://astropy.readthedocs.io/en/stable/development/workflow/development_workflow.html>`_
 
 * `Comprehensive Coding Guidelines <http://docs.astropy.org/en/latest/development/codeguide.html>`_
 
