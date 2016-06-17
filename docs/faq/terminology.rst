@@ -19,10 +19,11 @@ The terms used are as follows:
   defines its precedence within the set of blocks to be scheduled. Should probably
   also be on a 0->1 (0=no good, 1=good) scale, or rescaled within the scheduler
 * **rank**: a **priority** defined by a TAC rather than a user
-* **constraint**: sets limits and can yield **scores** based on inputs. Scores can be 
-  boolean or floats (0=no good, 1=good), with a flag in the ``Constraint`` call 
-  that selects which is used
-* **score**: the value returned by evaluating a **constraint**
+* **constraint**: sets limits and can yield **scores** based on inputs. Currently
+  only boolean scores are implemented in the code.
+* **score**: the value returned by evaluating a **constraint**. can be 
+  boolean or floats between 0 and 1 inclusive (0=no good, 1=good), with a flag in the 
+  ``Constraint`` call that selects which is used
 * **scorekeeper**: assigns a cumulative score to the OB based on some function that 
   would be applied to all the individual **scores** (result should be in 0, 1)
 * **scheduler**: the entity that consumes the results of the **scorekeeper** and the 
@@ -31,10 +32,10 @@ The terms used are as follows:
   (i.e. I care more about getting dark time than getting a low airmass)
 
 
-The different schedulers that are already implemented (none are implemented yet) 
-have different methods for creating their schedule. Below is a list of the scheduler
-descriptors and how its scheduler works. Each scheduler can be called with 
-``DescriptorScheduler(args)`` using the descriptor defined below.
+This is a list of possible schedulers, none are implemented yet. Once implemented they
+will have different methods for creating their schedule. Below is a list of ideas for
+the scheduler descriptors and the related scheduler would work. Each scheduler will be
+able to be called with ``DescriptorScheduler(args)`` using the descriptor defined below.
 
 * **Sequential**: starts from the beginning of the time range and schedules the OB
   with the best **score**, that hasn't already been scheduled, for that time.
