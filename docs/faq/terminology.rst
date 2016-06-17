@@ -29,7 +29,8 @@ The terms used are as follows:
 * **scheduler**: the entity that consumes the results of the **scorekeeper** and the 
   **observing blocks** and produces a schedule
 * **Weights** (“user defined”?): preferences for which constraint's **scores** matter most 
-  (e.g. I care more about getting dark time than getting a low airmass).
+  (e.g. I care more about getting dark time than getting a low airmass). **weights** can be
+  floats between 0 and 1 inclusive (0=not important, 1 = important)
 
 
 This is a list of possible schedulers, none are implemented yet. Once implemented they
