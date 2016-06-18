@@ -12,36 +12,42 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 from astropy import units as u
-from astropy.time import Time
 
 from .utils import time_grid_from_range, stride_array
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
 
+
 class ObservingBlock(object):
     """
-    An object that represents a target and associated constraints on observations
-
-    Parameters
-    ----------
-    target: `FixedObject'
-
-    duration:
-        exposure time
-
-    priority: integer or float
-        priority of this object in the target list. 1 is highest priority, no maximum
-
-    configuration:
-
-    constraints : sequence of `Constraint`s
-        The constraints to apply to this particular observing block.  Note that
-        constraints applicable to the entire list should go into the Scheduler.
-
+    An observation to be scheduled, consisting of a target and associated
+    constraints on observations.
     """
     @u.quantity_input(duration=u.second)
     def __init__(self, target, duration, priority, configuration={}, constraints=None):
+        """
+        Parameters
+        ----------
+        target: `~astroplan.FixedTarget'
+            Target to observe
+
+        duration : `~astropy.units.Quantity`
+            exposure time
+
+        priority: integer or float
+            priority of this object in the target list. 1 is highest priority,
+            no maximum
+
+        configuration : dict
+            Configuration metadata
+
+        constraints : list of `~astroplan.constraints.Constraint` objects
+            The constraints to apply to this particular observing block.  Note
+            that constraints applicable to the entire list should go into the
+            scheduler.
+
+        """
         self.target = target
         self.duration = duration
         self.priority = priority
@@ -52,37 +58,45 @@ class ObservingBlock(object):
     def __repr__(self):
         orig_repr = object.__repr__(self)
         if self.start_time is None or self.end_time is None:
-            return orig_repr.replace('object at', '({0}, unscheduled) at'.format(self.target.name))
+            return orig_repr.replace('object at',
+                                     '({0}, unscheduled) at'
+                                     .format(self.target.name))
         else:
-            s = '({0}, {1} to {2}) at'.format(self.target.name, self.start_time, self.end_time)
+            s = '({0}, {1} to {2}) at'.format(self.target.name, self.start_time,
+                                              self.end_time)
             return orig_repr.replace('object at', s)
 
     @classmethod
-    def from_exposures(cls, target, priority, timeperexp, nexp, readouttime=0*u.second,
-                            configuration={}):
-        duration = nexp*(timeperexp + readouttime)
+    def from_exposures(cls, target, priority, time_per_exposure,
+                       number_exposures, readout_time=0 * u.second,
+                       configuration={}):
+        duration = number_exposures * (time_per_exposure + readout_time)
         ob = cls(target, duration, priority, configuration)
-        ob.timeperexp = timeperexp
-        ob.nexp = nexp
-        ob.readouttime = readouttime
+        ob.time_per_exposure = time_per_exposure
+        ob.number_exposures = number_exposures
+        ob.readout_time = readout_time
         return ob
 
 class TransitionBlock(object):
     """
-    An object that represents "dead time" between observations, while the
+    Parameterizes the "dead time", e.g. between observations, while the
     telescope is slewing, instrument is reconfiguring, etc.
-
-    Parameters
-    ----------
-    components : dict
-        A dictionary mapping the reason for an observation's dead time to
-        `Quantity`s with time units
-    start_time : Quantity with time units
-
     """
     def __init__(self, components, start_time=None):
+        """
+        Parameters
+        ----------
+        components : dict
+            A dictionary mapping the reason for an observation's dead time to
+            `~astropy.units.Quantity` objects with time units
+
+        start_time : `~astropy.units.Quantity`
+            Start time of observation
+        """
         self.start_time = start_time
         self.components = components
+        self._components = None
+        self.duration = None
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
@@ -101,6 +115,7 @@ class TransitionBlock(object):
     @property
     def components(self):
         return self._components
+
     @components.setter
     def components(self, val):
         duration = 0*u.second
@@ -112,25 +127,29 @@ class TransitionBlock(object):
 
 
 class Scheduler(object):
+    """
+    Schedule a set of `~astroplan.scheduling.ObservingBlock` objects
+    """
+
     __metaclass__ = ABCMeta
 
     def __call__(self, blocks):
         """
-        Schedule a set of `ObservingBlock`s
-
         Parameters
         ----------
-        blocks : iterable of `ObservingBlock`s
-            The blocks to schedule.  Note that these blocks will *not*
-            be modified - new ones will be created and returned.
+        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
+            The observing blocks to schedule.  Note that the input
+            `~astroplan.scheduling.ObservingBlock` objects will *not* be
+            modified - new ones will be created and returned.
 
         Returns
         -------
         schedule : list
-            A list of `ObservingBlock`s and `TransitionBlock`s with populated
-            `start_time` and `end_time` attributes
+            A list of `~astroplan.scheduling.ObservingBlock` objects and
+            `~astroplan.scheduling.TransitionBlock` objects with populated
+            ``start_time`` and ``end_time`` attributes
         """
-        #these are *shallow* copies
+        # these are *shallow* copies
         copied_blocks = [copy.copy(block) for block in blocks]
         new_blocks, already_sorted = self._make_schedule(copied_blocks)
         if not already_sorted:
@@ -141,28 +160,30 @@ class Scheduler(object):
     @abstractmethod
     def _make_schedule(self, blocks):
         """
-        Does the actual business of scheduling. The `blocks` passed in should
-        have their `start_time` and `end_time` modified to reflect the schedule.
-        any necessary `TransitionBlock` should also be added.  Then the full set
-        of blocks should be returned as a list of blocks, along with a boolean
-        indicating whether or not they have been put in order already.
+        Does the actual business of scheduling. The ``blocks`` passed in should
+        have their ``start_time` and `end_time`` modified to reflect the
+        schedule. Any necessary `~astroplan.scheduling.TransitionBlock` should
+        also be added.  Then the full set of blocks should be returned as a list
+        of blocks, along with a boolean indicating whether or not they have been
+        put in order already.
 
         Parameters
         ----------
-        blocks : list of `ObservingBlock`s
-            Can be modified as it is already copied by `__call__`
+        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
+            Can be modified as it is already copied by ``__call__``
 
         Returns
         -------
         new_blocks : list of blocks
             The blocks from ``blocks``, as well as any necessary
-            `TransitionBlock`s
+            `~astroplan.scheduling.TransitionBlock` objects
         already_sorted : bool
             If True, the ``new_blocks`` come out pre-sorted, otherwise they need
             to be sorted.
         """
         raise NotImplementedError
         return new_blocks, already_sorted
+
 
 class SequentialScheduler(Scheduler):
     """
@@ -176,20 +197,20 @@ class SequentialScheduler(Scheduler):
         the start of the observation scheduling window.
     end_time : `~astropy.time.Time`
         the end of the observation scheduling window.
-    constraints : sequence of `Constraint`s
+    constraints : sequence of `~astroplan.constraints.Constraint` objects
         The constraints to apply to *every* observing block.  Note that
         constraints for specific blocks can go on each block individually.
-    observer : `astroplan.Observer`
+    observer : `~astroplan.Observer`
         The observer/site to do the scheduling for.
-    transitioner : `Transitioner` or None
+    transitioner : `~astroplan.scheduling.Transitioner` or None
         The object to use for computing transition times between blocks
-    gap_time : `Quantity` with time units
+    gap_time : `~astropy.units.Quantity` with time units
         The minimal spacing to try over a gap where nothing can be scheduled.
 
     """
     @u.quantity_input(gap_time=u.second)
     def __init__(self, start_time, end_time, constraints, observer,
-                       transitioner=None, gap_time=30*u.min):
+                 transitioner=None, gap_time=30*u.min):
         self.constraints = constraints
         self.start_time = start_time
         self.end_time = end_time
@@ -201,7 +222,15 @@ class SequentialScheduler(Scheduler):
     @u.quantity_input(duration=u.second)
     def from_timespan(cls, center_time, duration, **kwargs):
         """
-        Create a new instance of this class given a time and
+        Create a new instance of this class given a center time and duration.
+
+        Parameters
+        ----------
+        center_time : `~astropy.time.Time`
+            Mid-point of time-span to schedule.
+
+        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
+            Duration of time-span to schedule
         """
         start_time = center_time - duration/2.
         end_time = center_time + duration/2.
@@ -213,8 +242,8 @@ class SequentialScheduler(Scheduler):
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
-            b._duration_offsets = u.Quantity([0*u.second, b.duration/2, b.duration])
-
+            b._duration_offsets = u.Quantity([0*u.second, b.duration/2,
+                                              b.duration])
 
         new_blocks = []
         current_time = self.start_time
@@ -225,9 +254,10 @@ class SequentialScheduler(Scheduler):
             block_transitions = []
             block_constraint_results = []
             for b in blocks:
-                #first figure out the transition
+                # first figure out the transition
                 if len(new_blocks) > 0:
-                    trans = self.transitioner(new_blocks[-1], b, current_time, self.observer)
+                    trans = self.transitioner(new_blocks[-1], b, current_time,
+                                              self.observer)
                 else:
                     trans = None
                 block_transitions.append(trans)
@@ -237,7 +267,8 @@ class SequentialScheduler(Scheduler):
 
                 constraint_res = []
                 for constraint in b._all_constraints:
-                    constraint_res.append(constraint(self.observer, [b.target], times))
+                    constraint_res.append(constraint(self.observer, [b.target],
+                                                     times))
                 # take the product over all the constraints *and* times
                 block_constraint_results.append(np.prod(constraint_res))
 
@@ -246,7 +277,8 @@ class SequentialScheduler(Scheduler):
 
             if block_constraint_results[bestblock_idx] == 0.:
                 # if even the best is unobservable, we need a gap
-                new_blocks.append(TransitionBlock({'nothing_observable': self.gap_time}, current_time))
+                new_blocks.append(TransitionBlock({'nothing_observable': self.gap_time},
+                                                  current_time))
                 current_time += self.gap_time
             else:
                 # If there's a best one that's observable, first get its transition
@@ -266,35 +298,36 @@ class SequentialScheduler(Scheduler):
 
         return new_blocks, True
 
+
 class PriorityScheduler(Scheduler):
     """
     A scheduler that optimizes a prioritized list.  That is, it
     finds the best time for each ObservingBlock, in order of priority.
-
-    Parameters
-    ----------
-    start_time : `~astropy.time.Time`
-        the start of the observation scheduling window.
-    end_time : `~astropy.time.Time`
-        the end of the observation scheduling window.
-    constraints : sequence of `Constraint`s
-        The constraints to apply to *every* observing block.  Note that
-        constraints for specific blocks can go on each block individually.
-    observer : `astroplan.Observer`
-        The observer/site to do the scheduling for.
-    transitioner : `Transitioner` or None
-        The object to use for computing transition times between blocks.
-        Not currently used in this Scheduler.
-    gap_time : `Quantity` with time units
-        The minimal spacing to try over a gap where nothing can be scheduled.
-    slew_time : `Quanitity` with time units
-        The time required between observations.
-        Used instead of transitioner (for now)
-
     """
     @u.quantity_input(gap_time=u.second)
     def __init__(self, start_time, end_time, constraints, observer,
-                       transitioner=None, gap_time=30*u.min, slew_time=5*u.min):
+                 transitioner=None, gap_time=30*u.min, slew_time=5*u.min):
+        """
+        Parameters
+        ----------
+        start_time : `~astropy.time.Time`
+            the start of the observation scheduling window.
+        end_time : `~astropy.time.Time`
+            the end of the observation scheduling window.
+        constraints : sequence of `~astroplan.constraints.Constraint`
+            The constraints to apply to *every* observing block.  Note that
+            constraints for specific blocks can go on each block individually.
+        observer : `~astroplan.Observer`
+            The observer/site to do the scheduling for.
+        transitioner : `~astroplan.scheduling.Transitioner` or None
+            The object to use for computing transition times between blocks.
+            Not currently used in this Scheduler.
+        gap_time : `~astropy.units.Quantity` with time units
+            The minimal spacing to try over a gap where nothing can be scheduled.
+        slew_time : `~astropy.units.Quantity` with time units
+            The time required between observations.
+            Used instead of transitioner (for now)
+        """
         self.constraints = constraints
         self.start_time = start_time
         self.end_time = end_time
@@ -307,7 +340,15 @@ class PriorityScheduler(Scheduler):
     @u.quantity_input(duration=u.second)
     def from_timespan(cls, center_time, duration, **kwargs):
         """
-        Create a new instance of this class given a time and
+        Create a new instance of this class given a center time and duration.
+
+        Parameters
+        ----------
+        center_time : `~astropy.time.Time`
+            Mid-point of time-span to schedule.
+
+        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
+            Duration of time-span to schedule
         """
         start_time = center_time - duration/2.
         end_time = center_time + duration/2.
@@ -346,7 +387,6 @@ class PriorityScheduler(Scheduler):
         # Compute the optimal observation time in priority order
         for i in sorted_indices:
             b = blocks[i]
-            #print(b.target)
 
             # Compute possible observing times by combining object constraints
             # with the master schedule mask
@@ -356,16 +396,17 @@ class PriorityScheduler(Scheduler):
                                                 times=times)
                 applied_score = np.asarray(applied_constraint[0],np.float32)
                 constraint_scores = constraint_scores + applied_score
+
             # Add up the applied constraints to prioritize the best blocks
             # And then remove any times that are already scheduled
-            constraint_scores[is_open_time==False] = 0
+            constraint_scores[is_open_time == False] = 0
 
             # Select the most optimal time
-            _is_scheduled=False
+            _is_scheduled = False
             total_duration = b.duration + self.slew_time
-            if np.all(constraint_scores==0):
+            if np.all(constraint_scores == 0):
                 # No further calculation if no times meet the constraints
-                _is_scheduled=False
+                _is_scheduled = False
             else:
                 # calculate the number of time slots needed for this exposure
                 _stride_by = np.int(np.ceil(total_duration / time_resolution))
@@ -376,14 +417,14 @@ class PriorityScheduler(Scheduler):
                 # Collapse the sub-arrays
                 # (run them through scorekeeper again? Just add them?
                 # If there's a zero anywhere in there, def. have to skip)
-                good = np.all(_strided_scores>1e-5,axis=1)
+                good = np.all(_strided_scores > 1e-5, axis=1)
                 sum_scores = np.zeros(len(_strided_scores))
-                sum_scores[good] = np.sum(_strided_scores[good],axis=1)
+                sum_scores[good] = np.sum(_strided_scores[good], axis=1)
 
                 # If an optimal block is available, _is_scheduled=True
                 best_time_idx = np.argmax(sum_scores)
                 new_start_time = times[best_time_idx]
-                _is_scheduled=True
+                _is_scheduled = True
 
                 # And remove it from the master time list
                 is_open_time[best_time_idx:best_time_idx+_stride_by] = False
@@ -400,34 +441,32 @@ class PriorityScheduler(Scheduler):
                 newb.start_time = new_start_time
                 newb.end_time = new_start_time + total_duration
                 newb.constraints = b._all_constraints
-                #print(newb.start_time,newb.end_time)
                 new_blocks.append(newb)
 
         already_sorted = False
         return new_blocks, already_sorted
 
 
-
 class Transitioner(object):
     """
     A class that defines how to compute transition times from one block to
     another.
-
-    Parameters
-    ----------
-    slew_rate : `~astropy.units.Quantity` with angle/time units
-        The slew rate of the telescope
-    instrument_reconfig_times : dict of dicts or None
-        If not None, gives a mapping from property names to another dictionary.
-        The second dictionary maps 2-tuples of states to the time it takes to
-        transition between those states (as an `~astropy.units.Quantity`).
-
     """
     u.quantity_input(slew_rate=u.deg/u.second)
     def __init__(self, slew_rate=None, instrument_reconfig_times=None):
+        """
+        Parameters
+        ----------
+        slew_rate : `~astropy.units.Quantity` with angle/time units
+            The slew rate of the telescope
+        instrument_reconfig_times : dict of dicts or None
+            If not None, gives a mapping from property names to another
+            dictionary. The second dictionary maps 2-tuples of states to the
+            time it takes to transition between those states (as an
+            `~astropy.units.Quantity`).
+        """
         self.slew_rate = slew_rate
         self.instrument_reconfig_times = instrument_reconfig_times
-
 
     def __call__(self, oldblock, newblock, start_time, observer):
         """
@@ -437,9 +476,9 @@ class Transitioner(object):
 
         Parameters
         ----------
-        oldblock : `ObservingBlock` or None
+        oldblock : `~astroplan.scheduling.ObservingBlock` or None
             The initial configuration/target
-        newblock : `ObservingBlock` or None
+        newblock : `~astroplan.scheduling.ObservingBlock` or None
             The new configuration/target to transition to
         start_time : `~astropy.time.Time`
             The time the transition should start
@@ -448,18 +487,19 @@ class Transitioner(object):
 
         Returns
         -------
-        transition : `TransitionBlock` or None
-            A transition to get from `oldblock` to `newblock` or None if no
-            transition is necessary
+        transition : `~astroplan.scheduling.TransitionBlock` or None
+            A transition to get from ``oldblock`` to ``newblock`` or `None` if
+            no transition is necessary
         """
         components = {}
         if self.slew_rate is not None:
-            # use the constraints cache for now, but should move that machinery to
-            # observer
+            # use the constraints cache for now, but should move that machinery
+            # to observer
             from .constraints import _get_altaz
             from astropy.time import Time
 
-            aaz = _get_altaz(Time([start_time]), observer, [oldblock.target, newblock.target])['altaz']
+            aaz = _get_altaz(Time([start_time]), observer,
+                             [oldblock.target, newblock.target])['altaz']
             # TODO: make this [0] unnecessary by fixing _get_altaz to behave well in scalar-time case
             sep = aaz[0].separation(aaz[1])[0]
 
@@ -476,11 +516,13 @@ class Transitioner(object):
             components = {}
             for conf_name, old_conf in oldblock.configuration.items():
                 if conf_name in newblock:
-                    conf_times = self.instrument_reconfig_times.get(conf_name, None)
+                    conf_times = self.instrument_reconfig_times.get(conf_name,
+                                                                    None)
                     if conf_times is not None:
                         new_conf = newblock[conf_name]
                         ctime = conf_times.get((old_conf, new_conf), None)
                         if ctime is not None:
-                            s = '{0}:{1} to {2}'.format(conf_name, old_conf, new_conf)
+                            s = '{0}:{1} to {2}'.format(conf_name, old_conf,
+                                                        new_conf)
                             components[s] = ctime
             return components
