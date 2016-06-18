@@ -120,8 +120,8 @@ def test_compare_airmass_constraint_and_observer():
 
         max_airmass = 2
         # Check if each target meets airmass constraint in using Observer
-        always_from_observer = [all([(subaru.altaz(time, target).secz < max_airmass)&
-                                     (subaru.altaz(time, target).secz > 0)
+        always_from_observer = [all([(subaru.altaz(time, target).secz <= max_airmass) &
+                                     (1 <= subaru.altaz(time, target).secz)
                                      for time in time_grid_from_range(time_range)])
                                 for target in targets]
         # Check if each target meets altitude constraints using
@@ -129,7 +129,6 @@ def test_compare_airmass_constraint_and_observer():
         always_from_constraint = is_always_observable(AirmassConstraint(max_airmass),
                                                       subaru, targets,
                                                       time_range=time_range)
-
         assert all(always_from_observer == always_from_constraint)
 
 #in astropy before v1.0.4, a recursion error is triggered by this test
