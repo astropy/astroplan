@@ -266,9 +266,11 @@ Here's our ``VegaSeparationConstraint`` implementation::
         def compute_constraint(self, times, observer, targets):
 
             # Vega's coordinate must be non-scalar for the dimensions
-            # to work out properly when combined with other constraints which
-            # test multiple times
-            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
+            # to work out properly when the constraint accepts multiple
+            # input times. Since Vega's position doesn't depend on
+            # time, we'll enter the same coordinates for each time.
+            vega = SkyCoord(ra=len(times)*[279.23473479*u.deg],
+                            dec=len(times)*[38.78368896*u.deg])
 
             # Calculate separation between target and vega
             vega_separation = Angle([vega.separation(target.coord)
@@ -297,8 +299,8 @@ Here's our ``VegaSeparationConstraint`` implementation::
 
 Then as in the earlier example, we can call our constraint::
 
-    >>> constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
-    >>> observability = is_observable(constraints, subaru, targets,
+    >>> constraint = VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)
+    >>> observability = is_observable(constraint, subaru, targets,
     ...                               time_range=time_range)
     >>> print(observability)
     [False False  True False False False]

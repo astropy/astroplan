@@ -133,6 +133,108 @@ def test_compare_airmass_constraint_and_observer():
 
 #in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
+
+def test_always_observable_shape():
+    # Scalar time, scalar target
+    scalar_time = Time('2001-02-03 04:05:06')
+    non_scalar_time = (Time('2001-02-03 04:05:06') +
+                       u.Quantity([0, 1, 2, 3], unit=u.min))
+    subaru = Observer.at_site("Subaru")
+    scalar_target_ft = vega
+    scalar_target_sc = vega.coord
+    non_scalar_target_ft = [vega, rigel, polaris]
+    non_scalar_target_sc = SkyCoord([vega.coord, rigel.coord, polaris.coord])
+
+    always1_ft = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, scalar_target_ft,
+                                      times=scalar_time)
+    always1_sc = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, scalar_target_sc,
+                                      times=scalar_time)
+    assert always1_ft.shape == ()
+    assert always1_sc.shape == ()
+
+    # Scalar time, non-scalar target
+    always2_ft = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, non_scalar_target_ft,
+                                      times=scalar_time)
+    always2_sc = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, non_scalar_target_sc,
+                                      times=scalar_time)
+    assert always2_ft.shape == (len(non_scalar_target_ft), )
+    assert always2_sc.shape == (len(non_scalar_target_sc), )
+
+    # Non-scalar time, scalar target
+    always3_ft = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, scalar_target_ft,
+                                      times=non_scalar_time)
+    always3_sc = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, scalar_target_sc,
+                                      times=non_scalar_time)
+    assert always3_ft.shape == ()
+    assert always3_sc.shape == ()
+
+    # non-scalar time, non-scalar target
+    always4_ft = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, non_scalar_target_ft,
+                                      times=non_scalar_time)
+    always4_sc = is_always_observable(AirmassConstraint(max=2),
+                                      subaru, non_scalar_target_sc,
+                                      times=non_scalar_time)
+    assert always4_ft.shape == (len(non_scalar_target_ft), )
+    assert always4_sc.shape == (len(non_scalar_target_sc), )
+
+def test_ever_observable_shape():
+    # Scalar time, scalar target
+    scalar_time = Time('2001-02-03 04:05:06')
+    non_scalar_time = (Time('2001-02-03 04:05:06') +
+                       u.Quantity([0, 1, 2, 3], unit=u.min))
+    subaru = Observer.at_site("Subaru")
+    scalar_target_ft = vega
+    scalar_target_sc = vega.coord
+    non_scalar_target_ft = [vega, rigel, polaris]
+    non_scalar_target_sc = SkyCoord([vega.coord, rigel.coord, polaris.coord])
+
+    # Scalar time, scalar target
+    ever1_ft = is_observable(AirmassConstraint(max=2),
+                             subaru, scalar_target_ft,
+                             times=scalar_time)
+    ever1_sc = is_observable(AirmassConstraint(max=2),
+                             subaru, scalar_target_sc,
+                             times=scalar_time)
+    assert ever1_ft.shape == ()
+    assert ever1_sc.shape == ()
+
+    # Scalar time, non-scalar target
+    ever2_ft = is_observable(AirmassConstraint(max=2),
+                             subaru, non_scalar_target_ft,
+                             times=scalar_time)
+    ever2_sc = is_observable(AirmassConstraint(max=2),
+                             subaru, non_scalar_target_sc,
+                             times=scalar_time)
+    assert ever2_ft.shape == (len(non_scalar_target_ft),)
+    assert ever2_sc.shape == (len(non_scalar_target_sc),)
+
+    # Non-scalar time, scalar target
+    ever3_ft = is_observable(AirmassConstraint(max=2),
+                             subaru, scalar_target_ft,
+                             times=non_scalar_time)
+    ever3_sc = is_observable(AirmassConstraint(max=2),
+                             subaru, scalar_target_sc,
+                             times=non_scalar_time)
+    assert ever3_ft.shape == ()
+    assert ever3_sc.shape == ()
+
+    # non-scalar time, non-scalar target
+    ever4_ft = is_observable(AirmassConstraint(max=2),
+                             subaru, non_scalar_target_ft,
+                             times=non_scalar_time)
+    ever4_sc = is_observable(AirmassConstraint(max=2),
+                             subaru, non_scalar_target_sc,
+                             times=non_scalar_time)
+    assert ever4_ft.shape == (len(non_scalar_target_ft), )
+    assert ever4_sc.shape == (len(non_scalar_target_sc), )
+
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -286,9 +388,11 @@ def test_docs_example():
         def compute_constraint(self, times, observer, targets):
 
             # Vega's coordinate must be non-scalar for the dimensions
-            # to work out properly when combined with other constraints which
-            # test multiple times
-            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
+            # to work out properly when the constraint accepts multiple
+            # input times. Since Vega's position doesn't depend on
+            # time, we'll enter the same coordinates for each time.
+            vega = SkyCoord(ra=len(times)*[279.23473479*u.deg],
+                            dec=len(times)*[38.78368896*u.deg])
 
             # Calculate separation between target and vega
             vega_separation = Angle([vega.separation(target.coord)
@@ -315,8 +419,8 @@ def test_docs_example():
             # False where it is not
             return mask
 
-    constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
-    observability = is_observable(constraints, subaru, targets,
+    constraint = VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)
+    observability = is_observable(constraint, subaru, targets,
                                   time_range=time_range)
 
     assert all(observability == [False, False, True, False, False, False])

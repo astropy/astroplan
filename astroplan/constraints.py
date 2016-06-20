@@ -565,15 +565,36 @@ def is_always_observable(constraints, observer, targets, times=None,
         List of booleans of same length as ``targets`` for whether or not each
         target is observable in the time range given the constraints.
     """
+    targets_is_scalar = False
+    times_is_scalar = False
+
+    if (not hasattr(targets, '__len__') or
+        (hasattr(targets, 'isscalar') and targets.isscalar)):
+        targets = [targets]
+        targets_is_scalar = True
+
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
+
+    if not hasattr(times, '__len__') or not hasattr(time_range, '__len__'):
+        times_is_scalar = True
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
-    return np.all(contraint_arr, axis=1)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
+
+    always_observable = np.all(constraint_arr, axis=1)
+
+    if targets_is_scalar and times_is_scalar:
+        return always_observable.ravel()[0]
+
+    elif targets_is_scalar:
+        return always_observable[:, 0]
+
+    else:
+        return always_observable
 
 
 def is_observable(constraints, observer, targets, times=None,
@@ -613,15 +634,36 @@ def is_observable(constraints, observer, targets, times=None,
         List of booleans of same length as ``targets`` for whether or not each
         target is ever observable in the time range given the constraints.
     """
+    targets_is_scalar = False
+    times_is_scalar = False
+
+    if (not hasattr(targets, '__len__') or
+        (hasattr(targets, 'isscalar') and targets.isscalar)):
+        targets = [targets]
+        targets_is_scalar = True
+
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
+
+    if not hasattr(times, '__len__') or not hasattr(time_range, '__len__'):
+        times_is_scalar = True
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
-    return np.any(contraint_arr, axis=1)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
+
+    ever_observable = np.any(constraint_arr, axis=1)
+
+    if targets_is_scalar and times_is_scalar:
+        return ever_observable.ravel()[0]
+
+    elif targets_is_scalar:
+        return ever_observable[:, 0]
+
+    else:
+        return ever_observable
 
 
 def months_observable(constraints, observer, targets,
