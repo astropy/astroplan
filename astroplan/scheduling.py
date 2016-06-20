@@ -153,7 +153,7 @@ class Scheduler(object):
         copied_blocks = [copy.copy(block) for block in blocks]
         new_blocks, already_sorted = self._make_schedule(copied_blocks)
         if not already_sorted:
-            block_time_map = {block.start_time : block for block in new_blocks}
+            block_time_map = {block.start_time.datetime : block for block in new_blocks}
             new_blocks = [block_time_map[time] for time in sorted(block_time_map)]
         return new_blocks
 
