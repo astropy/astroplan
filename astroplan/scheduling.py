@@ -15,7 +15,7 @@ from astropy import units as u
 
 from .utils import time_grid_from_range, stride_array
 
-__all__ = ['ObservingBlock', 'TransitionBlock', 'Scheduler',
+__all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
 
 
@@ -124,7 +124,120 @@ class TransitionBlock(object):
 
         self._components = val
         self.duration = duration
+        
+    @classmethod
+    @u.quantity_input(duration=u.second)
+    def from_start_duration(cls, duration, start_time):
+        #for testing how to put transitions between observations during
+        #scheduling without considering the complexities of duration
+        tb = TransitionBlock(None, start_time)
+        tb.duration = duration
+        return tb
 
+class Schedule(object):
+    """
+    An object that represents a astronomical schedule
+    
+    Parameters:
+    -----------
+    start_time : `~astropy.time.Time`
+        The starting time of the schedule; the start of your 
+        observing window
+    end_time : `~astropy.time.Time`
+        The ending time of the schedule; the end of your
+        observing window
+    constraints : sequence of `Constraint`s
+        these are constraints that apply to the entire schedule
+    """
+    #as currently written, there should be no consecutive unoccupied slots
+    #this should change to allow for more flexibility (e.g. dark slots, grey slots)
+    
+    def __init__(self, start_time, end_time, constraints = None):
+        self.slots = slot(start_time, end_time)
+        self.constraints = constraints
+    
+    
+    def apply_constraints(self):
+        #this needs to be able to handle being passed constraints
+        #that are targeted and non-targeted, use the non-targeted
+        #and place targeted (e.g. MoonSep) somewhere they can be used
+        raise NotImplementedError
+    
+    
+    def new_slots(self, slot_index, start_time, end_time):
+        #this is intended to be used such that there aren't consecutive unoccupied slots
+        new_slots = [self.slots[slot_index].split_slot(start_time,end_time)]
+        return new_slots
+ 
+    
+    def insert_slot(self, slot_index, start_time, Block):
+        
+        
+        earlier_slots = self.slots[:slot_index]
+        later_slots = self.slots[slot_index+1:]
+        end_time = start_time+Block.duration
+        new_slots = self.new_slots(slot_index, start_time, end_time)
+        for new_slot in new_slots:
+            if new_slot.middle:
+                new_slot.occupied = True
+                new_slot.OB = Block
+        return earlier_slots + new_slots + later_slots
+    
+    
+    def remove_slot(self, slot_index, start_time, end_time):
+        earlier_slots = self.slots[:slot_index]
+        later_slots = self.slots[slot_index+1:]
+        new_slots = self.new_slots(slot_index, start_time, end_time)
+        for new_slot in new_slots:
+            if new_slot.middle:
+                new_slots.remove(new_slot)
+        return earlier_slots + new_slots + later_slots
+        
+    
+    @classmethod
+    def from_constraints(cls, start_time, end_time, constraints):
+        sch = cls(start_time, end_time, constraints = constraints)
+        sch.apply_constraints()
+        return sch
+    
+class Slot(object):
+    """
+    A time slot within the schedule
+    
+    Parameters:
+    -----------
+    start_time : `~astropy.time.Time`
+        The starting time of the slot
+    end_time : `~astropy.time.Time`
+        The ending time of the slot    
+    """
+    
+    def __init__(self, start_time, end_time):
+        self.start = start_time
+        self.end = end_time
+        self.duration = start_time-end_time
+        self.occupied = False
+        
+    def split_slot(self, early_time, later_time):
+        #check if the new slot would overwrite occupied/other slots
+        if self.occupied:
+            raise ValueError('slot is already occupied')
+        if early_time < self.start or end_time > self.end:
+            raise ValueError('start or end time is not within slot')
+            
+        new_slot = slot(early_time, later_time)
+        new_slot.middle = True
+        early_slot = slot(self.start, early_time)
+        late_slot = slot(later_time, self.end)
+        
+        if early_time > self.start and later_time < self.end:
+            return early_slot, new_slot, late_slot
+        elif early_time > self.start:
+            return early_slot, new_slot
+        elif later_time < self.end:
+            return new_slot, late_slot
+        else:
+            return new_slot
 
 class Scheduler(object):
     """
