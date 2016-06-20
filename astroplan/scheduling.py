@@ -155,6 +155,8 @@ class Schedule(object):
     def __init__(self, start_time, end_time, constraints = None):
         self.slots = slot(start_time, end_time)
         self.constraints = constraints
+        self.duration = 4*u.min
+        #TODO: remove the self.duration and make it work better
     
     
     def apply_constraints(self):
@@ -171,8 +173,21 @@ class Schedule(object):
  
     
     def insert_slot(self, slot_index, start_time, Block):
-        
-        
+        block_type = type(Block)
+        #should the TB and OB classes get a self.type= property?
+        #TODO: figure out if there should be a seperate insert_OB/insert_TB method
+        if Block.duration + self.duration > self.slots[slot_index].duration:
+            raise ValueError('constraint application failed and did not leave enough time')
+        if block_type = astroplan.scheduling.ObservingBlock:
+            TB = TransitionBlock.from_duration(self.duration)
+            if self.slots[slot_index].end-(start_time+Block.duration) <TB.duration:
+                insert_slot(slot_index, self.slots[slot_index].end-TB.duration, TB)
+                start_time = self.slots[slot_index].end - Block.duration
+            else:
+                insert_slot(slot_index, start_time+Block.duration, TB)
+            #TODO: make this actuallly work how it should, right now it
+            #doesn't compute the TB and just puts one after each OB
+            #TODO: make it shift the OB/TB to fill small amounts of open space
         earlier_slots = self.slots[:slot_index]
         later_slots = self.slots[slot_index+1:]
         end_time = start_time+Block.duration
@@ -180,7 +195,10 @@ class Schedule(object):
         for new_slot in new_slots:
             if new_slot.middle:
                 new_slot.occupied = True
-                new_slot.OB = Block
+                if block_type == astroplan.scheduling.ObservingBlock:
+                    new_slot.OB = Block
+                elif block_type == astroplan.scheduling.TransitionBlock:
+                    
         return earlier_slots + new_slots + later_slots
     
     
@@ -239,6 +257,17 @@ class Slot(object):
         else:
             return new_slot
 
+class Schedule_scheduler(object):
+    #temporary as I try to figure out how to deal with TransitionBlocks
+    #for testing modifications to the PriorityScheduler
+    
+    __metaclass__ = ABCMeta
+    
+    def __call__(self,blocks):
+        copied_blocks = [copy.copy(block) for block in blocks]
+        schedule = self._make_schedule
+    
+        
 class Scheduler(object):
     """
     Schedule a set of `~astroplan.scheduling.ObservingBlock` objects
