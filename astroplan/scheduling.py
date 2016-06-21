@@ -162,20 +162,10 @@ class Schedule(object):
         # TODO: replace/overwrite slew_duration with Transitioner calls
 
     def __repr__(self):
-        # once TransitionBlocks are defined, this should be scheduled_blocks
         # TODO: make a better repr
-        for block in self.observing_blocks:
-            if hasattr(block, 'target'):
-                try:
-                    print(block.target.name, 'starting @',
-                          block.start_time.iso, 'lasting', block.duration)
-                except:
-                    print(block.name, 'starting @', block.start_time.iso,
-                          'lasting', block.duration)
-            else:
-                print('trans starting @', block.start_time.iso, 'lasting',
-                      block.duration, ':', block.components)
-        return 'done'
+        return 'Schedule containing ' + str(len(self.observing_blocks)) + \
+               ' observing blocks between ' + str(self.slots[0].start.iso) + \
+               ' and ' + str(self.slots[-1].end.iso)
 
     def apply_constraints(self):
         # this needs to be able to handle being passed constraints
