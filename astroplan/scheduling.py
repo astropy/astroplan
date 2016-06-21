@@ -185,17 +185,11 @@ class Schedule(object):
     
     @property
     def observing_blocks(self):
-        return [slot.OB for slot in self.slots if slot.OB]
+        return [slot.block for slot in self.slots if isinstance(slot.block, ObservingBlock)]
 
     @property
     def scheduled_blocks(self):
-        blocks = []
-        for slot in self.slots:
-            if slot.OB:
-                blocks.append(slot.OB)
-            elif slot.TB:
-                blocks.append(slot.TB)
-        return blocks
+        return [slot.block for slot in self.slots if slot.block]
 
     @property
     def open_slots(self):
@@ -226,10 +220,7 @@ class Schedule(object):
         for new_slot in new_slots:
             if new_slot.middle:
                 new_slot.occupied = True
-                if isinstance(block, ObservingBlock):
-                    new_slot.OB = block
-                elif isinstance(block, TransitionBlock):
-                    new_slot.TB = block
+                new_slot.block = block
         self.slots = earlier_slots + new_slots + later_slots
         return earlier_slots + new_slots + later_slots
     
@@ -267,8 +258,7 @@ class Slot(object):
         self.duration = end_time-start_time
         self.occupied = False
         self.middle = False
-        self.OB = False
-        self.TB = False
+        self.block = False
         
     def split_slot(self, early_time, later_time):
         # check if the new slot would overwrite occupied/other slots
