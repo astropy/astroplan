@@ -55,6 +55,7 @@ class ObservingBlock(object):
         self.configuration = configuration
         self.constraints = constraints
         self.start_time = self.end_time = None
+        self.observer = None
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
@@ -66,6 +67,16 @@ class ObservingBlock(object):
             s = '({0}, {1} to {2}) at'.format(self.target.name, self.start_time,
                                               self.end_time)
             return orig_repr.replace('object at', s)
+
+    @property
+    def constraints_scores(self):
+        if not (self.start_time and self.duration):
+            return None
+        # TODO: setup a way of caching or define it as an attribute during scheduling
+        elif self.observer:
+            return {constraint: constraint(self.observer, [self.target],
+                                           times=[self.start_time, self.start_time + self.duration])
+                    for constraint in self.constraints}
 
     @classmethod
     def from_exposures(cls, target, priority, time_per_exposure,
@@ -190,16 +201,13 @@ class Schedule(object):
         new_slots = self.slots[slot_index].split_slot(start_time, end_time)
         return new_slots
 
-    def insert_slot(self, slot_index, start_time, block):
-        if block.duration + self.slew_duration > self.slots[slot_index].duration:
+    def insert_slot(self, start_time, block):
+        for j, slot in enumerate(self.slots):
+            if slot.start <= start_time and slot.end >= start_time + block.duration:
+                slot_index = j
+        if block.duration > self.slots[slot_index].duration:
             raise ValueError('constraint application failed and did not leave enough time')
         if isinstance(block, ObservingBlock):
-            tb = TransitionBlock.from_duration(self.slew_duration)
-            if self.slots[slot_index].end-(start_time+block.duration) < tb.duration:
-                self.insert_slot(slot_index, self.slots[slot_index].end-tb.duration, tb)
-                start_time = self.slots[slot_index].end - block.duration
-            else:
-                self.insert_slot(slot_index, start_time+block.duration, tb)
             # TODO: make it shift observing/transition blocks to fill small amounts of open space
             block.end_time = start_time+block.duration
         earlier_slots = self.slots[:slot_index]
@@ -449,6 +457,7 @@ class ScheduleScheduler(object):
 
     __metaclass__ = ABCMeta
 
+    # these are *shallow* copies
     def __call__(self, blocks):
         copied_blocks = [copy.copy(block) for block in blocks]
         schedule = self._make_schedule(copied_blocks)
@@ -546,6 +555,7 @@ class PriorityScheduler(ScheduleScheduler):
     def _make_schedule(self, blocks):
         # Combine individual constraints with global constraints, and
         # retrieve priorities from each block to define scheduling order
+
         _all_times = []
         _block_priorities = np.zeros(len(blocks))
         for i, b in enumerate(blocks):
@@ -556,6 +566,7 @@ class PriorityScheduler(ScheduleScheduler):
             b._duration_offsets = u.Quantity([0 * u.second, b.duration / 2, b.duration])
             _block_priorities[i] = b.priority
             _all_times.append(b.duration)
+            b.observer = self.observer
 
         # Define a master schedule
         # Generate grid of time slots, and a mask for previous observations
@@ -606,6 +617,7 @@ class PriorityScheduler(ScheduleScheduler):
                 # (run them through scorekeeper again? Just add them?
                 # If there's a zero anywhere in there, def. have to skip)
                 good = np.all(_strided_scores > 1e-5, axis=1)
+                print(np.all(_strided_scores > 1e-5, axis=1))
                 sum_scores = np.zeros(len(_strided_scores))
                 sum_scores[good] = np.sum(_strided_scores[good], axis=1)
 
@@ -625,12 +637,11 @@ class PriorityScheduler(ScheduleScheduler):
 #                new_start_time = times[best_time_idx]
             else:
                 # now assign the block itself times and add it to the schedule
-                newb = b
-                for j, slot in enumerate(self.schedule.slots):
-                    if slot.start <= new_start_time and slot.end >= new_start_time + total_duration:
-                        slot_index = j
-                newb.constraints = b._all_constraints
-                self.schedule.insert_slot(slot_index, new_start_time, newb)
+                b.constraints = b._all_constraints
+                # we already considered the TransitionBlock's duration so:
+                tb = TransitionBlock.from_duration(self.slew_time)
+                self.schedule.insert_slot(new_start_time+b.duration, tb)
+                self.schedule.insert_slot(new_start_time, b)
 
         return self.schedule
 
