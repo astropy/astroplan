@@ -17,7 +17,7 @@ from .utils import time_grid_from_range, stride_array
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner',
-           'ScheduleScheduler', 'PrioritySchedulerSchedule']
+           'ScheduleScheduler']
 
 
 class ObservingBlock(object):
@@ -132,7 +132,7 @@ class TransitionBlock(object):
     def from_duration(cls, duration):
         # for testing how to put transitions between observations during
         # scheduling without considering the complexities of duration
-        tb = TransitionBlock({None: 0*u.sec})
+        tb = TransitionBlock({None: 0*u.second})
         tb.duration = duration
         return tb
 
@@ -158,9 +158,23 @@ class Schedule(object):
     def __init__(self, start_time, end_time, constraints=None):
         self.slots = [Slot(start_time, end_time)]
         self.constraints = constraints
-        self.duration = 4*u.min
-        # TODO: remove the self.duration and make it work better
-        # in PriorityScheduler it is currently overwritten
+        self.slew_duration = 4*u.min
+        # TODO: replace/overwrite slew_duration with Transitioner calls
+
+    def __repr__(self):
+        # once TransitionBlocks are defined, this should be scheduled_blocks
+        for block in self.observing_blocks:
+            if hasattr(block, 'target'):
+                try:
+                    print(block.target.name, 'starting @',
+                          block.start_time.iso, 'lasting', block.duration)
+                except:
+                    print(block.name, 'starting @', block.start_time.iso,
+                          'lasting', block.duration)
+            else:
+                print('trans starting @', block.start_time.iso, 'lasting',
+                      block.duration, ':', block.components)
+        return 'done'
 
     def apply_constraints(self):
         # this needs to be able to handle being passed constraints
@@ -169,35 +183,44 @@ class Schedule(object):
         raise NotImplementedError
     
     @property
-    def schedule_blocks(self):
+    def observing_blocks(self):
         return [slot.OB for slot in self.slots if slot.OB]
+
+    @property
+    def scheduled_blocks(self):
+        blocks = []
+        for slot in self.slots:
+            if slot.OB:
+                blocks.append(slot.OB)
+            elif slot.TB:
+                blocks.append(slot.TB)
+        return blocks
+
+    @property
+    def open_slots(self):
+        return [slot for slot in self.slots if not slot.occupied]
 
     def new_slots(self, slot_index, start_time, end_time):
         # this is intended to be used such that there aren't consecutive unoccupied slots
-        print(start_time.iso, end_time.iso)
-        print([(slot.start.iso,slot.end.iso,slot.occupied) for slot in self.slots])
         new_slots = self.slots[slot_index].split_slot(start_time, end_time)
         return new_slots
 
     def insert_slot(self, slot_index, start_time, block):
-        # TODO: figure out if there should be a seperate insert_OB/insert_TB method
-        if block.duration + self.duration > self.slots[slot_index].duration:
+        if block.duration + self.slew_duration > self.slots[slot_index].duration:
             raise ValueError('constraint application failed and did not leave enough time')
         if isinstance(block, ObservingBlock):
-            tb = TransitionBlock.from_duration(self.duration)
-            if self.slots[slot_index].end-(start_time+block.duration) <tb.duration:
+            tb = TransitionBlock.from_duration(self.slew_duration)
+            if self.slots[slot_index].end-(start_time+block.duration) < tb.duration:
                 self.insert_slot(slot_index, self.slots[slot_index].end-tb.duration, tb)
                 start_time = self.slots[slot_index].end - block.duration
             else:
                 self.insert_slot(slot_index, start_time+block.duration, tb)
-            # TODO: make this actuallly work how it should, right now it
-            # doesn't compute the tb and just puts one after each OB
-            # TODO: make it shift the ob/tb to fill small amounts of open space
+            # TODO: make it shift observing/transition blocks to fill small amounts of open space
+            block.end_time = start_time+block.duration
         earlier_slots = self.slots[:slot_index]
         later_slots = self.slots[slot_index+1:]
         end_time = start_time+block.duration
         block.start_time = start_time
-        block.end_time = end_time
         new_slots = self.new_slots(slot_index, start_time, end_time)
         for new_slot in new_slots:
             if new_slot.middle:
@@ -245,16 +268,11 @@ class Slot(object):
         self.middle = False
         self.OB = False
         self.TB = False
-        # TODO: find a better descriptor than middle if it is going
-        # to be part of the object, fix .OB and .TB to make more
-        # sense as part of object or not need to be
         
     def split_slot(self, early_time, later_time):
         # check if the new slot would overwrite occupied/other slots
         if self.occupied:
             raise ValueError('slot is already occupied')
-        if early_time < self.start or later_time > self.end:
-            raise ValueError('start or end time is not within slot')
             
         new_slot = Slot(early_time, later_time)
         new_slot.middle = True
@@ -444,14 +462,54 @@ class SequentialScheduler(Scheduler):
         return new_blocks, True
 
 
-class PriorityScheduler(Scheduler):
+class ScheduleScheduler(object):
+    # temporary as I try to figure out how to deal with TransitionBlocks
+    # for testing modifications to the PriorityScheduler
+
+    __metaclass__ = ABCMeta
+
+    def __call__(self, blocks):
+        copied_blocks = [copy.copy(block) for block in blocks]
+        schedule = self._make_schedule(copied_blocks)
+        return schedule
+
+    @abstractmethod
+    def _make_schedule(self, blocks):
+        """
+        Does the actual business of scheduling. The ``blocks`` passed in should
+        have their ``start_time` and `end_time`` modified to reflect the
+        schedule. Any necessary `~astroplan.scheduling.TransitionBlock` should
+        also be added.  Then the full set of blocks should be returned as a list
+        of blocks, along with a boolean indicating whether or not they have been
+        put in order already.
+
+        Parameters
+        ----------
+        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
+            Can be modified as it is already copied by ``__call__``
+
+        Returns
+        -------
+        new_blocks : list of blocks
+            The blocks from ``blocks``, as well as any necessary
+            `~astroplan.scheduling.TransitionBlock` objects
+        already_sorted : bool
+            If True, the ``new_blocks`` come out pre-sorted, otherwise they need
+            to be sorted.
+        """
+        raise NotImplementedError
+        return schedule
+
+
+class PriorityScheduler(ScheduleScheduler):
     """
     A scheduler that optimizes a prioritized list.  That is, it
     finds the best time for each ObservingBlock, in order of priority.
     """
+
     @u.quantity_input(gap_time=u.second)
     def __init__(self, start_time, end_time, constraints, observer,
-                 transitioner=None, gap_time=30*u.min, slew_time=5*u.min):
+                 transitioner=None, gap_time=30 * u.min, slew_time=5 * u.min):
         """
         Parameters
         ----------
@@ -480,6 +538,11 @@ class PriorityScheduler(Scheduler):
         self.transitioner = transitioner
         self.gap_time = gap_time
         self.slew_time = slew_time
+        # make a schedule object, when apply_constraints works, add constraints
+        self.schedule = Schedule(self.start_time, self.end_time,
+                                 # constraints=self.constraints
+                                 )
+        self.schedule.slew_duration = self.slew_time
 
     @classmethod
     @u.quantity_input(duration=u.second)
@@ -495,12 +558,11 @@ class PriorityScheduler(Scheduler):
         duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
             Duration of time-span to schedule
         """
-        start_time = center_time - duration/2.
-        end_time = center_time + duration/2.
+        start_time = center_time - duration / 2.
+        end_time = center_time + duration / 2.
         return cls(start_time, end_time, **kwargs)
 
     def _make_schedule(self, blocks):
-
         # Combine individual constraints with global constraints, and
         # retrieve priorities from each block to define scheduling order
         _all_times = []
@@ -510,7 +572,7 @@ class PriorityScheduler(Scheduler):
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
-            b._duration_offsets = u.Quantity([0*u.second, b.duration/2, b.duration])
+            b._duration_offsets = u.Quantity([0 * u.second, b.duration / 2, b.duration])
             _block_priorities[i] = b.priority
             _all_times.append(b.duration)
 
@@ -527,7 +589,6 @@ class PriorityScheduler(Scheduler):
         # Sort the list of blocks by priority
         sorted_indices = np.argsort(_block_priorities)
 
-        new_blocks = []
         unscheduled_blocks = []
         # Compute the optimal observation time in priority order
         for i in sorted_indices:
@@ -552,6 +613,7 @@ class PriorityScheduler(Scheduler):
             if np.all(constraint_scores == 0):
                 # No further calculation if no times meet the constraints
                 _is_scheduled = False
+
             else:
                 # calculate the number of time slots needed for this exposure
                 _stride_by = np.int(np.ceil(total_duration / time_resolution))
@@ -572,7 +634,7 @@ class PriorityScheduler(Scheduler):
                 _is_scheduled = True
 
                 # And remove it from the master time list
-                is_open_time[best_time_idx:best_time_idx+_stride_by] = False
+                is_open_time[best_time_idx:best_time_idx + _stride_by] = False
 
             if _is_scheduled is False:
                 print("could not schedule", b.target.name)
@@ -583,13 +645,13 @@ class PriorityScheduler(Scheduler):
             else:
                 # now assign the block itself times and add it to the schedule
                 newb = b
-                newb.start_time = new_start_time
-                newb.end_time = new_start_time + total_duration
+                for j, slot in enumerate(self.schedule.slots):
+                    if slot.start <= new_start_time and slot.end >= new_start_time + total_duration:
+                        slot_index = j
                 newb.constraints = b._all_constraints
-                new_blocks.append(newb)
+                self.schedule.insert_slot(slot_index, new_start_time, newb)
 
-        already_sorted = False
-        return new_blocks, already_sorted
+        return self.schedule
 
 
 class Transitioner(object):
@@ -672,203 +734,3 @@ class Transitioner(object):
                                                         new_conf)
                             components[s] = ctime
             return components
-
-
-class ScheduleScheduler(object):
-    # temporary as I try to figure out how to deal with TransitionBlocks
-    # for testing modifications to the PriorityScheduler
-    
-    __metaclass__ = ABCMeta
-    
-    def __call__(self, blocks):
-        copied_blocks = [copy.copy(block) for block in blocks]
-        schedule = self._make_schedule(copied_blocks)
-        return schedule
-    
-    @abstractmethod
-    def _make_schedule(self, blocks):
-        """
-        Does the actual business of scheduling. The ``blocks`` passed in should
-        have their ``start_time` and `end_time`` modified to reflect the
-        schedule. Any necessary `~astroplan.scheduling.TransitionBlock` should
-        also be added.  Then the full set of blocks should be returned as a list
-        of blocks, along with a boolean indicating whether or not they have been
-        put in order already.
-
-        Parameters
-        ----------
-        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
-            Can be modified as it is already copied by ``__call__``
-
-        Returns
-        -------
-        new_blocks : list of blocks
-            The blocks from ``blocks``, as well as any necessary
-            `~astroplan.scheduling.TransitionBlock` objects
-        already_sorted : bool
-            If True, the ``new_blocks`` come out pre-sorted, otherwise they need
-            to be sorted.
-        """
-        raise NotImplementedError
-        return schedule
-
-
-class PrioritySchedulerSchedule(ScheduleScheduler):
-    """
-    A scheduler that optimizes a prioritized list.  That is, it
-    finds the best time for each ObservingBlock, in order of priority.
-    """
-    @u.quantity_input(gap_time=u.second)
-    def __init__(self, start_time, end_time, constraints, observer,
-                 transitioner=None, gap_time=30*u.min, slew_time=5*u.min):
-        """
-        Parameters
-        ----------
-        start_time : `~astropy.time.Time`
-            the start of the observation scheduling window.
-        end_time : `~astropy.time.Time`
-            the end of the observation scheduling window.
-        constraints : sequence of `~astroplan.constraints.Constraint`
-            The constraints to apply to *every* observing block.  Note that
-            constraints for specific blocks can go on each block individually.
-        observer : `~astroplan.Observer`
-            The observer/site to do the scheduling for.
-        transitioner : `~astroplan.scheduling.Transitioner` or None
-            The object to use for computing transition times between blocks.
-            Not currently used in this Scheduler.
-        gap_time : `~astropy.units.Quantity` with time units
-            The minimal spacing to try over a gap where nothing can be scheduled.
-        slew_time : `~astropy.units.Quantity` with time units
-            The time required between observations.
-            Used instead of transitioner (for now)
-        """
-        self.constraints = constraints
-        self.start_time = start_time
-        self.end_time = end_time
-        self.observer = observer
-        self.transitioner = transitioner
-        self.gap_time = gap_time
-        self.slew_time = slew_time
-        # make a schedule object, when apply_constraints works, add constraints
-        self.schedule = Schedule(self.start_time, self.end_time,
-                                 # constraints=self.constraints
-                                 )
-        self.schedule.duration = self.slew_time
-
-    @classmethod
-    @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time, duration, **kwargs):
-        """
-        Create a new instance of this class given a center time and duration.
-
-        Parameters
-        ----------
-        center_time : `~astropy.time.Time`
-            Mid-point of time-span to schedule.
-
-        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
-            Duration of time-span to schedule
-        """
-        start_time = center_time - duration/2.
-        end_time = center_time + duration/2.
-        return cls(start_time, end_time, **kwargs)
-
-    def _make_schedule(self, blocks):
-        # TODO: rewrite schedule or this so that they can better use each other
-        # Combine individual constraints with global constraints, and
-        # retrieve priorities from each block to define scheduling order
-        _all_times = []
-        _block_priorities = np.zeros(len(blocks))
-        for i, b in enumerate(blocks):
-            if b.constraints is None:
-                b._all_constraints = self.constraints
-            else:
-                b._all_constraints = self.constraints + b.constraints
-            b._duration_offsets = u.Quantity([0*u.second, b.duration/2, b.duration])
-            _block_priorities[i] = b.priority
-            _all_times.append(b.duration)
-
-        # Define a master schedule
-        # Generate grid of time slots, and a mask for previous observations
-
-        # Find the minimum required time step
-        # TODO: a common factorization of all times is probably better long-term
-        time_resolution = min(min(_all_times), self.slew_time)
-        times = time_grid_from_range([self.start_time, self.end_time],
-                                     time_resolution=time_resolution)
-        is_open_time = np.ones(len(times), bool)
-        # TODO: figure out a good way of using the schedule
-
-        # Sort the list of blocks by priority
-        sorted_indices = np.argsort(_block_priorities)
-
-        #new_blocks = []
-        unscheduled_blocks = []
-        # Compute the optimal observation time in priority order
-        for i in sorted_indices:
-            b = blocks[i]
-
-            # Compute possible observing times by combining object constraints
-            # with the master schedule mask
-            constraint_scores = np.zeros(len(times))
-            for constraint in b._all_constraints:
-                applied_constraint = constraint(self.observer, [b.target],
-                                                times=times)
-                applied_score = np.asarray(applied_constraint[0], np.float32)
-                constraint_scores = constraint_scores + applied_score
-
-            # Add up the applied constraints to prioritize the best blocks
-            # And then remove any times that are already scheduled
-            constraint_scores[is_open_time == False] = 0
-
-            # Select the most optimal time
-            _is_scheduled = False
-            total_duration = b.duration + self.slew_time
-            if np.all(constraint_scores == 0):
-                # No further calculation if no times meet the constraints
-                _is_scheduled = False
-            
-            else:
-                # calculate the number of time slots needed for this exposure
-                _stride_by = np.int(np.ceil(total_duration / time_resolution))
-
-                # Stride the score arrays by that number
-                _strided_scores = stride_array(constraint_scores, _stride_by)
-
-                # Collapse the sub-arrays
-                # (run them through scorekeeper again? Just add them?
-                # If there's a zero anywhere in there, def. have to skip)
-                good = np.all(_strided_scores > 1e-5, axis=1)
-                sum_scores = np.zeros(len(_strided_scores))
-                sum_scores[good] = np.sum(_strided_scores[good], axis=1)
-
-                # If an optimal block is available, _is_scheduled=True
-                best_time_idx = np.argmax(sum_scores)
-                new_start_time = times[best_time_idx]
-                _is_scheduled = True
-
-                # And remove it from the master time list
-                is_open_time[best_time_idx:best_time_idx+_stride_by] = False
-
-            if _is_scheduled is False:
-                print("could not schedule", b.target.name)
-                unscheduled_blocks.append(b)
-                continue
-#                best_time_idx = np.argmax(constraint_scores)
-#                new_start_time = times[best_time_idx]
-            else:
-                # now assign the block itself times and add it to the schedule
-                newb = b
-                #newb.start_time = new_start_time
-                end_time = new_start_time + b.duration
-                # TODO: use schedule earlier so that this doesn't have to happen
-                for j, slot in enumerate(self.schedule.slots):
-                    if slot.start <= new_start_time and slot.end >= new_start_time+total_duration:
-                        slot_index = j
-                newb.constraints = b._all_constraints
-                #new_blocks.append(newb)
-                self.schedule.insert_slot(slot_index, new_start_time, newb)
-
-        #already_sorted = False
-        #return new_blocks, already_sorted
-        return self.schedule
