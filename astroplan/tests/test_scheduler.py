@@ -35,4 +35,3 @@ def test_scheduler_hashable():
     scheduler = PriorityScheduler(start_time, end_time,
                                   constraints=constraints, observer=mdm)
     schedule = scheduler(blocks)
-    pass
