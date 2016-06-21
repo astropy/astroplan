@@ -440,12 +440,12 @@ class Observer(object):
 
         Now transform the target's coordinates to the alt/az frame:
 
-        >>> target_altaz = target.transform_to(altaz_frame)
+        >>> target_altaz = target.transform_to(altaz_frame) # doctest: +SKIP
 
         Alternatively, construct an alt/az frame and transform the target to
         that frame all in one step:
 
-        >>> target_altaz = apo.altaz(time, target)
+        >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
         if not isinstance(time, Time):
             time = Time(time)
