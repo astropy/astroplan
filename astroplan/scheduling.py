@@ -77,6 +77,7 @@ class ObservingBlock(object):
         ob.readout_time = readout_time
         return ob
 
+
 class TransitionBlock(object):
     """
     Parameterizes the "dead time", e.g. between observations, while the
@@ -153,7 +154,7 @@ class Scheduler(object):
         copied_blocks = [copy.copy(block) for block in blocks]
         new_blocks, already_sorted = self._make_schedule(copied_blocks)
         if not already_sorted:
-            block_time_map = {block.start_time : block for block in new_blocks}
+            block_time_map = {block.start_time.datetime: block for block in new_blocks}
             new_blocks = [block_time_map[time] for time in sorted(block_time_map)]
         return new_blocks
 
@@ -360,7 +361,7 @@ class PriorityScheduler(Scheduler):
         # retrieve priorities from each block to define scheduling order
         _all_times = []
         _block_priorities = np.zeros(len(blocks))
-        for i,b in enumerate(blocks):
+        for i, b in enumerate(blocks):
             if b.constraints is None:
                 b._all_constraints = self.constraints
             else:
@@ -374,10 +375,10 @@ class PriorityScheduler(Scheduler):
 
         # Find the minimum required time step
         # TODO: a common factorization of all times is probably better long-term
-        time_resolution = min(min(_all_times),self.slew_time)
-        times = time_grid_from_range([self.start_time,self.end_time],
+        time_resolution = min(min(_all_times), self.slew_time)
+        times = time_grid_from_range([self.start_time, self.end_time],
                                      time_resolution=time_resolution)
-        is_open_time = np.ones(len(times),bool)
+        is_open_time = np.ones(len(times), bool)
 
         # Sort the list of blocks by priority
         sorted_indices = np.argsort(_block_priorities)
@@ -394,7 +395,7 @@ class PriorityScheduler(Scheduler):
             for constraint in b._all_constraints:
                 applied_constraint = constraint(self.observer, [b.target],
                                                 times=times)
-                applied_score = np.asarray(applied_constraint[0],np.float32)
+                applied_score = np.asarray(applied_constraint[0], np.float32)
                 constraint_scores = constraint_scores + applied_score
 
             # Add up the applied constraints to prioritize the best blocks
@@ -412,7 +413,7 @@ class PriorityScheduler(Scheduler):
                 _stride_by = np.int(np.ceil(total_duration / time_resolution))
 
                 # Stride the score arrays by that number
-                _strided_scores = stride_array(constraint_scores,_stride_by)
+                _strided_scores = stride_array(constraint_scores, _stride_by)
 
                 # Collapse the sub-arrays
                 # (run them through scorekeeper again? Just add them?
@@ -430,7 +431,7 @@ class PriorityScheduler(Scheduler):
                 is_open_time[best_time_idx:best_time_idx+_stride_by] = False
 
             if _is_scheduled is False:
-                print("could not schedule",b.target.name)
+                print("could not schedule", b.target.name)
                 unscheduled_blocks.append(b)
                 continue
 #                best_time_idx = np.argmax(constraint_scores)
@@ -448,11 +449,13 @@ class PriorityScheduler(Scheduler):
 
 
 class Transitioner(object):
+
     """
     A class that defines how to compute transition times from one block to
     another.
     """
     u.quantity_input(slew_rate=u.deg/u.second)
+
     def __init__(self, slew_rate=None, instrument_reconfig_times=None):
         """
         Parameters
