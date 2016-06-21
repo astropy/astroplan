@@ -163,6 +163,7 @@ class Schedule(object):
 
     def __repr__(self):
         # once TransitionBlocks are defined, this should be scheduled_blocks
+        # TODO: make a better repr
         for block in self.observing_blocks:
             if hasattr(block, 'target'):
                 try:
