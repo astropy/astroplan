@@ -72,7 +72,7 @@ class ObservingBlock(object):
     def constraints_scores(self):
         if not (self.start_time and self.duration):
             return None
-        # TODO: setup a way of caching or define it as an attribute during scheduling
+        # TODO: setup a way of caching or defining it as an attribute during scheduling
         elif self.observer:
             return {constraint: constraint(self.observer, [self.target],
                                            times=[self.start_time, self.start_time + self.duration])
@@ -296,10 +296,11 @@ class Scheduler(object):
 
         Returns
         -------
-        schedule : list
-            A list of `~astroplan.scheduling.ObservingBlock` objects and
-            `~astroplan.scheduling.TransitionBlock` objects with populated
-            ``start_time`` and ``end_time`` attributes
+        schedule : `~astroplan.scheduling.Schedule`
+            A schedule objects which consists of `~astroplan.scheduling.slot`
+            objects with and wihtout populated ``block`` objects containing either
+            `~astroplan.scheduling.TransitionBlock` or `~astroplan.scheduling.ObservingBlock`
+            objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes
         """
 
         # these are *shallow* copies
@@ -323,12 +324,11 @@ class Scheduler(object):
             Can be modified as it is already copied by ``__call__``
          Returns
         -------
-        new_blocks : list of blocks
-            The blocks from ``blocks``, as well as any necessary
-            `~astroplan.scheduling.TransitionBlock` objects
-        already_sorted : bool
-            If True, the ``new_blocks`` come out pre-sorted, otherwise they need
-            to be sorted.
+        schedule : `~astroplan.scheduling.Schedule`
+            A schedule objects which consists of `~astroplan.scheduling.slot`
+            objects with and wihtout populated ``block`` objects containing either
+            `~astroplan.scheduling.TransitionBlock` or `~astroplan.scheduling.ObservingBlock`
+            objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes.
         """
         raise NotImplementedError
         return schedule
@@ -451,47 +451,7 @@ class SequentialScheduler(Scheduler):
         return self.schedule
 
 
-class ScheduleScheduler(object):
-    # temporary as I try to figure out how to deal with TransitionBlocks
-    # for testing modifications to the PriorityScheduler
-
-    __metaclass__ = ABCMeta
-
-    # these are *shallow* copies
-    def __call__(self, blocks):
-        copied_blocks = [copy.copy(block) for block in blocks]
-        schedule = self._make_schedule(copied_blocks)
-        return schedule
-
-    @abstractmethod
-    def _make_schedule(self, blocks):
-        """
-        Does the actual business of scheduling. The ``blocks`` passed in should
-        have their ``start_time` and `end_time`` modified to reflect the
-        schedule. Any necessary `~astroplan.scheduling.TransitionBlock` should
-        also be added.  Then the full set of blocks should be returned as a list
-        of blocks, along with a boolean indicating whether or not they have been
-        put in order already.
-
-        Parameters
-        ----------
-        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
-            Can be modified as it is already copied by ``__call__``
-
-        Returns
-        -------
-        new_blocks : list of blocks
-            The blocks from ``blocks``, as well as any necessary
-            `~astroplan.scheduling.TransitionBlock` objects
-        already_sorted : bool
-            If True, the ``new_blocks`` come out pre-sorted, otherwise they need
-            to be sorted.
-        """
-        raise NotImplementedError
-        return schedule
-
-
-class PriorityScheduler(ScheduleScheduler):
+class PriorityScheduler(Scheduler):
     """
     A scheduler that optimizes a prioritized list.  That is, it
     finds the best time for each ObservingBlock, in order of priority.
