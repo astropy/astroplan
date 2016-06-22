@@ -105,10 +105,10 @@ class TransitionBlock(object):
         start_time : `~astropy.units.Quantity`
             Start time of observation
         """
+        self.duration = None
         self.start_time = start_time
         self.components = components
         self._components = None
-        self.duration = None
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
@@ -399,7 +399,6 @@ class SequentialScheduler(Scheduler):
             b.observer = self.observer
         current_time = self.start_time
         while (len(blocks) > 0) and (current_time < self.end_time):
-
             # first compute the value of all the constraints for each block
             # given the current starting time
             block_transitions = []
@@ -428,24 +427,22 @@ class SequentialScheduler(Scheduler):
 
             if block_constraint_results[bestblock_idx] == 0.:
                 # if even the best is unobservable, we need a gap
-#                new_blocks.append(TransitionBlock({'nothing_observable': self.gap_time},
-#                                                  current_time))
                 current_time += self.gap_time
             else:
                 # If there's a best one that's observable, first get its transition
                 trans = block_transitions.pop(bestblock_idx)
                 if trans is not None:
-                    self.schedule.insert_slot(current_time, trans)
+                    self.schedule.insert_slot(trans.start_time, trans)
                     current_time += trans.duration
 
                 # now assign the block itself times and add it to the schedule
                 newb = blocks.pop(bestblock_idx)
                 newb.start_time = current_time
-                current_time += self.gap_time
+                current_time += newb.duration
                 newb.end_time = current_time
                 newb.constraints_value = block_constraint_results[bestblock_idx]
 
-                self.schedule.insert_slot(current_time, newb)
+                self.schedule.insert_slot(newb.start_time, newb)
 
         return self.schedule
 
