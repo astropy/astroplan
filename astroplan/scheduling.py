@@ -16,8 +16,7 @@ from astropy import units as u
 from .utils import time_grid_from_range, stride_array
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
-           'SequentialScheduler', 'PriorityScheduler', 'Transitioner',
-           'ScheduleScheduler']
+           'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
 
 
 class ObservingBlock(object):
@@ -577,7 +576,7 @@ class PriorityScheduler(Scheduler):
                 # (run them through scorekeeper again? Just add them?
                 # If there's a zero anywhere in there, def. have to skip)
                 good = np.all(_strided_scores > 1e-5, axis=1)
-                print(np.all(_strided_scores > 1e-5, axis=1))
+                #print(np.all(_strided_scores > 1e-5, axis=1))
                 sum_scores = np.zeros(len(_strided_scores))
                 sum_scores[good] = np.sum(_strided_scores[good], axis=1)
 
