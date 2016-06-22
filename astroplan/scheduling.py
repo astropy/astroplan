@@ -301,13 +301,11 @@ class Scheduler(object):
             `~astroplan.scheduling.TransitionBlock` objects with populated
             ``start_time`` and ``end_time`` attributes
         """
+
         # these are *shallow* copies
         copied_blocks = [copy.copy(block) for block in blocks]
-        new_blocks, already_sorted = self._make_schedule(copied_blocks)
-        if not already_sorted:
-            block_time_map = {block.start_time.datetime: block for block in new_blocks}
-            new_blocks = [block_time_map[time] for time in sorted(block_time_map)]
-        return new_blocks
+        schedule = self._make_schedule(copied_blocks)
+        return schedule
 
     @abstractmethod
     def _make_schedule(self, blocks):
@@ -323,8 +321,7 @@ class Scheduler(object):
         ----------
         blocks : list of `~astroplan.scheduling.ObservingBlock` objects
             Can be modified as it is already copied by ``__call__``
-
-        Returns
+         Returns
         -------
         new_blocks : list of blocks
             The blocks from ``blocks``, as well as any necessary
@@ -334,7 +331,7 @@ class Scheduler(object):
             to be sorted.
         """
         raise NotImplementedError
-        return new_blocks, already_sorted
+        return schedule
 
 
 class SequentialScheduler(Scheduler):
@@ -369,6 +366,10 @@ class SequentialScheduler(Scheduler):
         self.observer = observer
         self.transitioner = transitioner
         self.gap_time = gap_time
+        # make a schedule object, when apply_constraints works, add constraints
+        self.schedule = Schedule(self.start_time, self.end_time,
+                                 # constraints=self.constraints
+                                 )
 
     @classmethod
     @u.quantity_input(duration=u.second)
@@ -396,8 +397,7 @@ class SequentialScheduler(Scheduler):
                 b._all_constraints = self.constraints + b.constraints
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2,
                                               b.duration])
-
-        new_blocks = []
+            b.observer = self.observer
         current_time = self.start_time
         while (len(blocks) > 0) and (current_time < self.end_time):
 
@@ -407,8 +407,8 @@ class SequentialScheduler(Scheduler):
             block_constraint_results = []
             for b in blocks:
                 # first figure out the transition
-                if len(new_blocks) > 0:
-                    trans = self.transitioner(new_blocks[-1], b, current_time,
+                if len(self.schedule.observing_blocks) > 0:
+                    trans = self.transitioner(self.schedule.observing_blocks[-1], b, current_time,
                                               self.observer)
                 else:
                     trans = None
@@ -429,14 +429,14 @@ class SequentialScheduler(Scheduler):
 
             if block_constraint_results[bestblock_idx] == 0.:
                 # if even the best is unobservable, we need a gap
-                new_blocks.append(TransitionBlock({'nothing_observable': self.gap_time},
-                                                  current_time))
+#                new_blocks.append(TransitionBlock({'nothing_observable': self.gap_time},
+#                                                  current_time))
                 current_time += self.gap_time
             else:
                 # If there's a best one that's observable, first get its transition
                 trans = block_transitions.pop(bestblock_idx)
                 if trans is not None:
-                    new_blocks.append(trans)
+                    self.schedule.insert_slot(current_time, trans)
                     current_time += trans.duration
 
                 # now assign the block itself times and add it to the schedule
@@ -446,9 +446,9 @@ class SequentialScheduler(Scheduler):
                 newb.end_time = current_time
                 newb.constraints_value = block_constraint_results[bestblock_idx]
 
-                new_blocks.append(newb)
+                self.schedule.insert_slot(current_time, newb)
 
-        return new_blocks, True
+        return self.schedule
 
 
 class ScheduleScheduler(object):
@@ -712,17 +712,17 @@ class Transitioner(object):
         else:
             return None
 
-        def compute_instrument_transitions(self, oldblock, newblock):
-            components = {}
-            for conf_name, old_conf in oldblock.configuration.items():
-                if conf_name in newblock:
-                    conf_times = self.instrument_reconfig_times.get(conf_name,
-                                                                    None)
-                    if conf_times is not None:
-                        new_conf = newblock[conf_name]
-                        ctime = conf_times.get((old_conf, new_conf), None)
-                        if ctime is not None:
-                            s = '{0}:{1} to {2}'.format(conf_name, old_conf,
-                                                        new_conf)
-                            components[s] = ctime
-            return components
+    def compute_instrument_transitions(self, oldblock, newblock):
+        components = {}
+        for conf_name, old_conf in oldblock.configuration.items():
+            if conf_name in newblock:
+                conf_times = self.instrument_reconfig_times.get(conf_name,
+                                                                None)
+                if conf_times is not None:
+                    new_conf = newblock[conf_name]
+                    ctime = conf_times.get((old_conf, new_conf), None)
+                    if ctime is not None:
+                        s = '{0}:{1} to {2}'.format(conf_name, old_conf,
+                                                    new_conf)
+                        components[s] = ctime
+        return components
