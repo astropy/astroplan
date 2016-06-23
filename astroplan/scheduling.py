@@ -149,23 +149,25 @@ class TransitionBlock(object):
 
 class Schedule(object):
     """
-    An object that represents a astronomical schedule
-    
-    Parameters:
-    -----------
-    start_time : `~astropy.time.Time`
-        The starting time of the schedule; the start of your 
-        observing window
-    end_time : `~astropy.time.Time`
-        The ending time of the schedule; the end of your
-        observing window
-    constraints : sequence of `Constraint`s
-        these are constraints that apply to the entire schedule
+    An object that represents a schedule, consisting ofa list of
+    `~astroplan.scheduling.Slot` objects
     """
     # as currently written, there should be no consecutive unoccupied slots
     # this should change to allow for more flexibility (e.g. dark slots, grey slots)
     
     def __init__(self, start_time, end_time, constraints=None):
+        """
+        Parameters:
+        -----------
+        start_time : `~astropy.time.Time`
+            The starting time of the schedule; the start of your
+            observing window
+        end_time : `~astropy.time.Time`
+           The ending time of the schedule; the end of your
+           observing window
+        constraints : sequence of `Constraint`s
+           these are constraints that apply to the entire schedule
+        """
         self.slots = [Slot(start_time, end_time)]
         self.constraints = constraints
         self.slew_duration = 4*u.min
@@ -248,17 +250,18 @@ class Schedule(object):
 
 class Slot(object):
     """
-    A time slot within the schedule
-    
-    Parameters:
-    -----------
-    start_time : `~astropy.time.Time`
-        The starting time of the slot
-    end_time : `~astropy.time.Time`
-        The ending time of the slot    
+    A time slot consisting of a start and end time
     """
     
     def __init__(self, start_time, end_time):
+        """
+        Parameters:
+        -----------
+        start_time : `~astropy.time.Time`
+            The starting time of the slot
+        end_time : `~astropy.time.Time`
+            The ending time of the slot
+        """
         self.start = start_time
         self.end = end_time
         self.duration = end_time-start_time
@@ -347,27 +350,27 @@ class SequentialScheduler(Scheduler):
     A scheduler that does "stupid simple sequential scheduling".  That is, it
     simply looks at all the blocks, picks the best one, schedules it, and then
     moves on.
-
-    Parameters
-    ----------
-    start_time : `~astropy.time.Time`
-        the start of the observation scheduling window.
-    end_time : `~astropy.time.Time`
-        the end of the observation scheduling window.
-    constraints : sequence of `~astroplan.constraints.Constraint` objects
-        The constraints to apply to *every* observing block.  Note that
-        constraints for specific blocks can go on each block individually.
-    observer : `~astroplan.Observer`
-        The observer/site to do the scheduling for.
-    transitioner : `~astroplan.scheduling.Transitioner` or None
-        The object to use for computing transition times between blocks
-    gap_time : `~astropy.units.Quantity` with time units
-        The minimal spacing to try over a gap where nothing can be scheduled.
-
     """
     @u.quantity_input(gap_time=u.second)
     def __init__(self, start_time, end_time, constraints, observer,
                  transitioner=None, gap_time=30*u.min):
+        """
+        Parameters
+        ----------
+        start_time : `~astropy.time.Time`
+            the start of the observation scheduling window.
+        end_time : `~astropy.time.Time`
+            the end of the observation scheduling window.
+        constraints : sequence of `~astroplan.constraints.Constraint` objects
+            The constraints to apply to *every* observing block.  Note that
+            constraints for specific blocks can go on each block individually.
+        observer : `~astroplan.Observer`
+            The observer/site to do the scheduling for.
+        transitioner : `~astroplan.scheduling.Transitioner` or None
+            The object to use for computing transition times between blocks
+        gap_time : `~astropy.units.Quantity` with time units
+            The minimal spacing to try over a gap where nothing can be scheduled.
+        """
         self.constraints = constraints
         self.start_time = start_time
         self.end_time = end_time
