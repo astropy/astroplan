@@ -1615,7 +1615,7 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
-        >>> apo.is_night(time)
+        >>> apo.is_night(time) # doctest: +SKIP
         False
         """
         if not isinstance(time, Time):
