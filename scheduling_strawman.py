@@ -15,8 +15,8 @@ from astroplan import Observer, FixedTarget
 from astroplan.scheduling import *
 
 # create the time frame during which you observing
-start_time = Time.now()+4*u.hour
-end_time = start_time+24*u.hour
+schedule_start = Time.now()+4*u.hour
+schedule_end = schedule_start+24*u.hour
 
 # define the observer
 mro = Observer.at_site('mro')
@@ -65,8 +65,7 @@ blocks.append(BlockGroup(target_group, durations=[54*u.minute for target in targ
 
 # The observatory is optical so all ObservationBlocks need to be scheduled at night
 # it also can only point between 10 and 80 degrees altitude.
-constraints = [AtNightconstraint(),
-               AltitudeConstraint(10*u.deg, 80*u.deg)]
+observer_constraints = [AtNightconstraint(), AltitudeConstraint(10*u.deg, 80*u.deg)]
 
 # The final piece we need to define, is how quickly the telescope can transition
 # between different objects
@@ -76,14 +75,17 @@ transitioner = Transitioner(slew_rate, filter_time=30*u.second)
 
 # now create a scheduler object, in this case we want the scheduler which uses
 # the Greedy method for scheduling
-scheduler = GreedyScheduler(start_time, end_time, constraints=constraints, observer=mro,
-                            transitioner=transitioner)
+scheduler = GreedyScheduler(schedule_start, schedule_end, constraints=observer_constraints,
+                            observer=mro, transitioner=transitioner)
 
 # run the scheduler on the defined blocks
 schedule = scheduler(blocks)
 
 # to see the chronological list of the OBs and when they are scheduled for
 print(schedule.scheduled)
+
+# to see the above, but in table form instead (with columns of target, start, end, target_ra, target_dec, score, etc.)
+print(schedule.to_table)
 
 # to see the entire schedule including transitions and open slots
 print(schedule)
