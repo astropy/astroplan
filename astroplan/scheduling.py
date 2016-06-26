@@ -231,15 +231,20 @@ class Schedule(object):
                 new_slot.block = block
         self.slots = earlier_slots + new_slots + later_slots
         return earlier_slots + new_slots + later_slots
-    
-    def remove_slot(self, slot_index, start_time, end_time):
-        earlier_slots = self.slots[:slot_index]
-        later_slots = self.slots[slot_index+1:]
-        new_slots = self.new_slots(slot_index, start_time, end_time)
-        for new_slot in new_slots:
-            if new_slot.middle:
-                new_slots.remove(new_slot)
-        return earlier_slots + new_slots + later_slots
+
+    def change_slot(self, slot_index, new_start, new_end, block = None):
+        # currently only written to work for TransitionBlocks in PriorityScheduler
+        start_change = np.abs(self.slots[slot_index] - new_start)
+        end_change = np.abs(self.slot[slot_index] - new_end)
+        if start_change > 1*u.second:
+            if new_start > self.slots[slot_index - 1].start:
+                pass
+            else:
+                raise ValueError('blarg')
+        if end_change > 1*u.second:
+            if new_end > self.slots[slot_index + 1].end and not self.slots[slot_index + 1].block:
+                self.slots[slot_index].end = new_end
+                self.slots[slot_index + 1].start = new_end
     
     @classmethod
     def from_constraints(cls, start_time, end_time, constraints):
