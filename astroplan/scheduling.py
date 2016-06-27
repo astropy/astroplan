@@ -559,7 +559,7 @@ class PriorityScheduler(Scheduler):
         # Find the minimum required time step
         # TODO: a common factorization of all times is probably better long-term
 
-        #time_resolution = min(min(_all_times), self.slew_time)
+        #trtime_resolution = min(min(_all_times), self.slew_time)
         time_resolution = self.time_resolution
         times = time_grid_from_range([self.start_time, self.end_time],
                                      time_resolution=time_resolution)
@@ -638,7 +638,6 @@ class PriorityScheduler(Scheduler):
                             new_start_time = tb.end_time
                         self.schedule.insert_slot(tb.start_time, tb)
                         slot_index += 1
-                        print(tb.duration)
                         start_idx = [idx for idx, time in enumerate(times) if
                                      np.abs(time-tb.start_time) < time_resolution/4.][0]
                         end_idx = [idx for idx, time in enumerate(times) if
@@ -646,7 +645,6 @@ class PriorityScheduler(Scheduler):
                         is_open_time[start_idx: end_idx] = False
                     elif isinstance(self.schedule.slots[slot_index-1].block, TransitionBlock):
                         # change the existing TransitionBlock to what it needs to be now
-                        print([type(slot.block) for slot in self.schedule.slots[:slot_index]])
                         tb = self.transitioner(self.schedule.slots[slot_index - 2].block, b,
                                                self.schedule.slots[slot_index - 2].end, self.observer)
                         tb.duration = np.int(np.ceil(tb.duration / time_resolution)) * time_resolution
@@ -659,7 +657,6 @@ class PriorityScheduler(Scheduler):
                         end_idx = [idx for idx, time in enumerate(times) if
                                    np.abs(time - tb.end_time) < time_resolution / 4.][0]
                         is_open_time[start_idx: end_idx] = False
-                        print('changed', tb.duration)
 
                 if slots_after:
                     if isinstance(self.schedule.slots[slot_index + 1].block, ObservingBlock):
@@ -673,7 +670,6 @@ class PriorityScheduler(Scheduler):
                         end_idx = [idx for idx, time in enumerate(times) if
                                    np.abs(time - tb.end_time) < time_resolution / 4.][0]
                         is_open_time[start_idx: end_idx] = False
-                        print('after', tb.duration)
 
                 # now assign the block itself times and add it to the schedule
                 b.constraints = b._all_constraints
