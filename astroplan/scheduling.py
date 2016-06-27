@@ -614,9 +614,6 @@ class PriorityScheduler(Scheduler):
                 new_start_time = times[best_time_idx]
                 _is_scheduled = True
 
-                # And remove it from the master time list
-#               is_open_time[best_time_idx:best_time_idx + _stride_by] = False
-
             if _is_scheduled:
                 # set duration such that the Block will fit in the strided array
                 b.duration = np.int(np.ceil(b.duration / time_resolution)) * time_resolution
@@ -638,6 +635,7 @@ class PriorityScheduler(Scheduler):
                             new_start_time = tb.end_time
                         self.schedule.insert_slot(tb.start_time, tb)
                         slot_index += 1
+                        # Remove times from the master time list (copied in later code blocks)
                         start_idx = [idx for idx, time in enumerate(times) if
                                      np.abs(time-tb.start_time) < time_resolution/4.][0]
                         end_idx = [idx for idx, time in enumerate(times) if
