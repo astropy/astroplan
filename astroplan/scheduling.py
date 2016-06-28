@@ -177,12 +177,6 @@ class Schedule(object):
         return 'Schedule containing ' + str(len(self.observing_blocks)) + \
                ' observing blocks between ' + str(self.slots[0].start.iso) + \
                ' and ' + str(self.slots[-1].end.iso)
-
-    def apply_constraints(self):
-        # this needs to be able to handle being passed constraints
-        # that are targeted and non-targeted, use the non-targeted
-        # and place targeted (e.g. MoonSep) somewhere they can be used
-        raise NotImplementedError
     
     @property
     def observing_blocks(self):
@@ -232,21 +226,6 @@ class Schedule(object):
         self.slots = earlier_slots + new_slots + later_slots
         return earlier_slots + new_slots + later_slots
     
-    def remove_slot(self, slot_index, start_time, end_time):
-        earlier_slots = self.slots[:slot_index]
-        later_slots = self.slots[slot_index+1:]
-        new_slots = self.new_slots(slot_index, start_time, end_time)
-        for new_slot in new_slots:
-            if new_slot.middle:
-                new_slots.remove(new_slot)
-        return earlier_slots + new_slots + later_slots
-    
-    @classmethod
-    def from_constraints(cls, start_time, end_time, constraints):
-        sch = cls(start_time, end_time, constraints=constraints)
-        sch.apply_constraints()
-        return sch
-
 
 class Slot(object):
     """
