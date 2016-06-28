@@ -11,7 +11,7 @@ from ..observer import Observer
 from ..target import FixedTarget
 from ..constraints import (AirmassConstraint, _get_altaz)
 from ..scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
-                          Transitioner, TransitionBlock)
+                          Transitioner, TransitionBlock, Schedule, Slot)
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -63,3 +63,28 @@ def test_transitioner():
     sep = aaz[0].separation(aaz[1])[0]
     assert isinstance(trans, TransitionBlock)
     assert trans.duration == sep/slew_rate
+
+
+def test_slot():
+    start_time = Time('2016-02-06 00:00:00')
+    end_time = start_time + 24 * u.hour
+    slot = Slot(start_time, end_time)
+    slots = slot.split_slot(start_time, start_time+1*u.hour)
+    assert len(slots) == 2
+    assert slots[0].end == slots[1].start
+
+
+def test_schedule():
+    start_time = Time('2016-02-06 00:00:00')
+    end_time = start_time + 24 * u.hour
+    schedule = Schedule(start_time, end_time)
+    assert schedule.slots[0].start == start_time
+    assert schedule.slots[0].end == end_time
+    assert schedule.slots[0].duration == 24*u.hour
+    schedule.new_slots(0, start_time, end_time)
+    assert len(schedule.slots) == 1
+    new_slots = schedule.new_slots(0, start_time+1*u.hour, start_time+4*u.hour)
+    assert new_slots[0].duration == 1*u.hour
+    assert new_slots[1].duration == 3*u.hour
+    assert new_slots[2].duration == 20*u.hour
+
