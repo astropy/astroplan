@@ -28,8 +28,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "TimeConstraint", "MeridianTransitConstraint",
-           "observability_table", "months_observable"]
+           "TimeConstraint", "observability_table", "months_observable"]
 
 
 def _get_altaz(times, observer, targets,
@@ -346,6 +345,7 @@ class AirmassConstraint(AltitudeConstraint):
             mi = 1 if self.min is None else self.min
             # we reverse order so that airmass close to 1/min is good
             return _rescale_airmass(secz, mi, mx)
+
 
 class AtNightConstraint(Constraint):
     """
@@ -706,39 +706,6 @@ class TimeConstraint(Constraint):
         return np.atleast_2d(mask)
 
 
-class MeridianTransitConstraint(Constraint):
-    """
-    Constrain the target so that a meridian transit is not about to occur.
-
-    For German equatorial mounts, observing as the object transits the
-    meridian requires breaking observations whilst the telescope
-    flips around the mount. At the same time, the pier flip
-    rotates the sky w.r.t the telescope by 180 degrees.
-
-    Time resolved observations, or ones which require a consistent
-    field-of-view across all exposures may wish to avoid this.
-    """
-    @u.quantity_input(mintime=u.d)
-    def __init__(self, mintime):
-        """
-        Parameters
-        -----------
-        mintime : `~astropy.units.Quantity`
-            the minimum time object must be observed without a meridian transit.
-        """
-        self.mintime = mintime
-
-    def compute_constraint(self, times, observer, targets):
-        meridian_transit_times = _get_meridian_transit_times(times,
-                                                             observer,
-                                                             targets)['times']
-        # does next pier flip happen after the mintime?
-        calculation_times = Time([t for target in targets for t in times])
-        mask = calculation_times + self.mintime < meridian_transit_times
-        mask = mask.reshape((len(targets), len(times)))
-        return mask
-
-
 def is_always_observable(constraints, observer, targets, times=None,
                          time_range=None, time_grid_resolution=0.5*u.hour):
     """
@@ -973,6 +940,7 @@ def observability_table(constraints, observer, targets, times=None,
 
     return tab
 
+
 def _rescale_minmax(vals, min_val, max_val):
     """ Rescale altitude into an observability score."""
     rescaled = (vals - min_val) / (max_val - min_val)
@@ -982,6 +950,7 @@ def _rescale_minmax(vals, min_val, max_val):
     rescaled[above] = 1
 
     return rescaled
+
 
 def _rescale_airmass(vals, min_val, max_val):
     """ Rescale airmass into an observability score."""
