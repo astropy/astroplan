@@ -232,9 +232,6 @@ class Schedule(object):
                 new_slot.block = block
         self.slots = earlier_slots + new_slots + later_slots
         return earlier_slots + new_slots + later_slots
-<<<<<<< HEAD
-    
-=======
 
     def change_slot_block(self, slot_index, new_block=None):
         # currently only written to work for TransitionBlocks in PriorityScheduler
@@ -253,7 +250,6 @@ class Schedule(object):
         sch.apply_constraints()
         return sch
 
->>>>>>> 3b66940a26ab206ed72570e8a4142fe17c23fa01
 
 class Slot(object):
     """
