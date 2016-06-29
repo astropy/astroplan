@@ -206,29 +206,30 @@ class Schedule(object):
         # and duration by up to 1 second in order to fit in a slot
         for j, slot in enumerate(self.slots):
             if (slot.start < start_time or np.abs(slot.start-start_time) < 1*u.second) \
-                    and (slot.end > start_time #+ block.duration or
-#                         np.abs(slot.end - start_time - block.duration) < 1*u.second):
-                         ):
+                    and (slot.end > start_time):
                 slot_index = j
-        if (self.slots[slot_index].duration - block.duration) < -1*u.second:
+        if (block.duration - self.slots[slot_index].duration) > 1*u.second:
             print(self.slots[slot_index].duration.to(u.second), block.duration)
             raise ValueError('longer block than slot')
         elif self.slots[slot_index].end - block.duration < start_time:
             start_time = self.slots[slot_index].end - block.duration
 
-        if np.abs(self.slots[slot_index].start-start_time) < 1*u.second:
-            start_time = self.slots[slot_index].start
-        if np.abs((self.slots[slot_index].duration-block.duration) < 1*u.second):
+        if np.abs((self.slots[slot_index].duration - block.duration) < 1 * u.second):
             block.duration = self.slots[slot_index].duration
-
-        if block.duration > self.slots[slot_index].duration:
-            raise ValueError('constraint application failed and did not leave enough time')
+            start_time = self.slots[slot_index].start
+            end_time = self.slots[slot_index].end
+        elif np.abs(self.slots[slot_index].start - start_time) < 1*u.second:
+            start_time = self.slots[slot_index].start
+            end_time = start_time + block.duration
+        elif np.abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
+            end_time = self.slots[slot_index].end
+        else:
+            end_time = start_time + block.duration
         if isinstance(block, ObservingBlock):
             # TODO: make it shift observing/transition blocks to fill small amounts of open space
             block.end_time = start_time+block.duration
         earlier_slots = self.slots[:slot_index]
         later_slots = self.slots[slot_index+1:]
-        end_time = start_time+block.duration
         block.start_time = start_time
         new_slots = self.new_slots(slot_index, start_time, end_time)
         for new_slot in new_slots:
