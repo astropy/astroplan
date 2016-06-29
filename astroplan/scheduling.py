@@ -549,10 +549,6 @@ class PriorityScheduler(Scheduler):
         # Define a master schedule
         # Generate grid of time slots, and a mask for previous observations
 
-        # Find the minimum required time step
-        # TODO: a common factorization of all times is probably better long-term
-
-        #time_resolution = min(min(_all_times), self.slew_time)
         time_resolution = self.time_resolution
         times = time_grid_from_range([self.start_time, self.end_time],
                                      time_resolution=time_resolution)
@@ -568,10 +564,9 @@ class PriorityScheduler(Scheduler):
             # Compute possible observing times by combining object constraints
             # with the master schedule mask
             # assume all times are good, then multiply by 0 ones that aren't
-            constraint_scores = np.zeros(len(times))+1
+            constraint_scores = np.zeros(len(times)) + 1
             for constraint in b._all_constraints:
-                applied_constraint = constraint(self.observer, [b.target],
-                                                times=times)
+                applied_constraint = constraint(self.observer, [b.target], times=times)
                 applied_score = np.asarray(applied_constraint[0], np.float32)
                 constraint_scores = constraint_scores * applied_score
 
@@ -603,71 +598,76 @@ class PriorityScheduler(Scheduler):
             else:
                 # If an optimal block is available, _is_scheduled=True
                 best_time_idx = np.argmax(sum_scores)
+                start_time_idx = best_time_idx
                 new_start_time = times[best_time_idx]
                 _is_scheduled = True
 
             if _is_scheduled:
                 # set duration such that the Block will fit in the strided array
-                b.duration = np.int(np.ceil(b.duration / time_resolution)) * time_resolution
+                duration_indices = np.int(np.ceil(b.duration / time_resolution))
+                b.duration = duration_indices * time_resolution
                 slot_index = [q for q, slot in enumerate(self.schedule.slots)
                               if slot.start < new_start_time < slot.end][0]
                 slots_before = self.schedule.slots[:slot_index]
-                slots_after = self.schedule.slots[slot_index+1:]
+                slots_after = self.schedule.slots[slot_index + 1:]
                 # this has to remake transitions between already existing ObservingBlocks
                 if slots_before:
-                    if isinstance(self.schedule.slots[slot_index-1].block, ObservingBlock):
+                    if isinstance(self.schedule.slots[slot_index - 1].block, ObservingBlock):
                         # make a transition object after the previous ObservingBlock
-                        tb = self.transitioner(self.schedule.slots[slot_index-1].block, b,
-                                               self.schedule.slots[slot_index-1].end, self.observer)
-                        tb.duration = np.int(np.ceil(tb.duration / time_resolution))*time_resolution
+                        tb = self.transitioner(self.schedule.slots[slot_index - 1].block, b,
+                                               self.schedule.slots[slot_index - 1].end, self.observer)
+                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        tb.duration = times_indices * time_resolution
+                        start_idx = self.schedule.slots[slot_index - 1].block.end_idx
+                        end_idx = times_indices + start_idx
                         # this may make some OBs get sub-optimal scheduling, but it closes gaps
                         # TODO: determine a reasonable range inside which it gets shifted
                         if tb.duration > new_start_time - tb.start_time or \
-                           np.abs(new_start_time-tb.end_time) < self.gap_time:
+                           np.abs(new_start_time - tb.end_time) < self.gap_time:
                             new_start_time = tb.end_time
+                            start_time_idx = end_idx
                         self.schedule.insert_slot(tb.start_time, tb)
+                        is_open_time[start_idx: end_idx] = False
                         slot_index += 1
                         # Remove times from the master time list (copied in later code blocks)
-                        start_idx = np.argmin(np.abs(times - tb.start_time))
-                        end_idx = np.argmin(np.abs(times - tb.end_time))
-                        is_open_time[start_idx: end_idx] = False
-                    elif isinstance(self.schedule.slots[slot_index-1].block, TransitionBlock):
+                    elif isinstance(self.schedule.slots[slot_index - 1].block, TransitionBlock):
                         # change the existing TransitionBlock to what it needs to be now
                         tb = self.transitioner(self.schedule.slots[slot_index - 2].block, b,
                                                self.schedule.slots[slot_index - 2].end, self.observer)
-                        tb.duration = np.int(np.ceil(tb.duration / time_resolution)) * time_resolution
+                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        tb.duration = times_indices * time_resolution
+                        start_idx = self.schedule.slots[slot_index - 2].block.end_idx
+                        end_idx = times_indices + start_idx
                         self.schedule.change_slot_block(slot_index - 1, new_block=tb)
                         if tb.duration > new_start_time - tb.start_time or \
                            np.abs(new_start_time - tb.end_time) < self.gap_time:
                             new_start_time = tb.end_time
-                        start_idx = np.argmin(np.abs(times - tb.start_time))
-                        end_idx = np.argmin(np.abs(times - tb.end_time))
+                            start_time_idx = end_idx
                         is_open_time[start_idx: end_idx] = False
+                end_time_idx = duration_indices + start_time_idx
 
                 if slots_after:
                     if isinstance(self.schedule.slots[slot_index + 1].block, ObservingBlock):
                         # make a transition object after the new ObservingBlock
                         tb = self.transitioner(b, self.schedule.slots[slot_index + 1].block,
                                                new_start_time + b.duration, self.observer)
-                        tb.duration = np.int(np.ceil(tb.duration / time_resolution)) * time_resolution
+                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        tb.duration = times_indices * time_resolution
                         self.schedule.insert_slot(tb.start_time, tb)
-                        start_idx = np.argmin(np.abs(times - tb.start_time))
-                        end_idx = np.argmin(np.abs(times - tb.end_time))
+                        start_idx = end_time_idx
+                        end_idx = start_idx + times_indices
                         is_open_time[start_idx: end_idx] = False
 
                 # now assign the block itself times and add it to the schedule
                 b.constraints = b._all_constraints
+                b.end_idx = end_time_idx
                 self.schedule.insert_slot(new_start_time, b)
-                start_idx = np.argmin(np.abs(times - b.start_time))
-                end_idx = np.argmin(np.abs(times - b.end_time))
-                is_open_time[start_idx: end_idx] = False
+                is_open_time[start_time_idx: end_time_idx] = False
 
             else:
                 print("could not schedule", b.target.name)
                 unscheduled_blocks.append(b)
                 continue
-#                best_time_idx = np.argmax(constraint_scores)
-#                new_start_time = times[best_time_idx]
 
         return self.schedule
 
