@@ -92,8 +92,8 @@ print(schedule.scheduled)
 # to see the above, but in table form instead (with columns of target, start, end, target_ra, target_dec, score, etc.)
 print(schedule.to_table)
 
-#
-print(schedule)
+# plotting when the targets were scheduled and the airmass of the targets.
+plot_schedule_airmass(schedule)
 
 # to see how much of the time is spent observing
 print(schedule.up_time, schedule.down_time)
