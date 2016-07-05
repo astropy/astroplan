@@ -168,6 +168,8 @@ class Schedule(object):
         constraints : sequence of `Constraint`s
            these are constraints that apply to the entire schedule
         """
+        self.start_time = start_time
+        self.end_time = end_time
         self.slots = [Slot(start_time, end_time)]
         self.constraints = constraints
         self.slew_duration = 4*u.min
@@ -512,6 +514,7 @@ class PriorityScheduler(Scheduler):
         self.schedule = Schedule(self.start_time, self.end_time,
                                  # constraints=self.constraints
                                  )
+        self.schedule.observer = self.observer
 
     @classmethod
     @u.quantity_input(duration=u.second)
