@@ -167,7 +167,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        for test_time in [time[0], time[-1]]:
+        for test_time in time:
             midnight = observer.midnight(test_time)
             previous_sunset = observer.sun_set_time(midnight, which='previous')
             next_sunrise = observer.sun_rise_time(midnight, which='next')
@@ -208,7 +208,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     return ax
 
 
-def plot_schedule_airmass(schedule):
+def plot_schedule_airmass(schedule, show_night = False):
     """
     Plots when observations of targets are scheduled to occur superimposed
     upon plots of the airmasses of the targets.
@@ -218,8 +218,6 @@ def plot_schedule_airmass(schedule):
     schedule : `~astroplan.Schedule`
         a schedule object output by a scheduler
 
-    Returns
-    -------
     Returns
     -------
     ax :  `~matplotlib.axes.Axes`
@@ -236,6 +234,20 @@ def plot_schedule_airmass(schedule):
     for target, ci in zip(targets, color_idx):
         plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
         targ_to_color[target.name] = plt.cm.cool(ci)
+    if show_night:
+        for test_time in ts:
+            midnight = schedule.observer.midnight(test_time)
+            previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
+            next_sunrise = schedule.observer.sun_rise_time(midnight, which='next')
+
+            previous_twilight = schedule.observer.twilight_evening_astronomical(midnight, which='previous')
+            next_twilight = schedule.observer.twilight_morning_astronomical(midnight, which='next')
+
+            plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
+                        facecolor='k', alpha=0.05)
+            plt.axvspan(previous_twilight.plot_date, next_twilight.plot_date,
+                        facecolor='k', alpha=0.05)
+
     for block in blocks:
         if hasattr(block, 'target'):
             plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
