@@ -322,7 +322,7 @@ class Scheduler(object):
         Returns
         -------
         schedule : `~astroplan.scheduling.Schedule`
-            A schedule objects which consists of `~astroplan.scheduling.slot`
+            A schedule objects which consists of `~astroplan.scheduling.Slot`
             objects with and wihtout populated ``block`` objects containing either
             `~astroplan.scheduling.TransitionBlock` or `~astroplan.scheduling.ObservingBlock`
             objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes
@@ -350,7 +350,7 @@ class Scheduler(object):
          Returns
         -------
         schedule : `~astroplan.scheduling.Schedule`
-            A schedule objects which consists of `~astroplan.scheduling.slot`
+            A schedule objects which consists of `~astroplan.scheduling.Slot`
             objects with and wihtout populated ``block`` objects containing either
             `~astroplan.scheduling.TransitionBlock` or `~astroplan.scheduling.ObservingBlock`
             objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes.

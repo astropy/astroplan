@@ -208,7 +208,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
     return ax
 
 
-def plot_schedule_airmass(schedule, show_night = False):
+def plot_schedule_airmass(schedule, show_night=False):
     """
     Plots when observations of targets are scheduled to occur superimposed
     upon plots of the airmasses of the targets.
@@ -217,6 +217,8 @@ def plot_schedule_airmass(schedule, show_night = False):
     ----------
     schedule : `~astroplan.Schedule`
         a schedule object output by a scheduler
+    show_night : bool
+        Shades the night-time on the plot
 
     Returns
     -------
