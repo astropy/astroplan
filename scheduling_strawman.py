@@ -48,7 +48,7 @@ priorities = {target.name: i for i, target in enumerate(targets)}
 
 # now `ObservingBlock`s and `BlockGroup`s need to be defined
 # define the duration of the ObservingBlocks
-block_duration = 55*u.minute
+block_duration = 55 * u.minute
 blocks = []
 
 # a `BlockGroup` contains one or more `ObservingBlocks` that are related
@@ -101,7 +101,8 @@ schedule = scheduler(blocks)
 # to see the chronological list of the OBs and when they are scheduled for
 print(schedule.scheduled)
 
-# to see the above, but as an Astropy Table instead (with columns of target, start, end, target_ra, target_dec, score, etc.)
+# to see the above, but as an Astropy Table instead:
+# with columns of target, start, end, target_ra, target_dec, score, etc.
 print(schedule.to_table())
 
 # plotting when the targets were scheduled and the airmass of the targets.
