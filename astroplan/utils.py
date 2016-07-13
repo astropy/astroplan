@@ -36,11 +36,11 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     precision time conversion by assuming UT1-UTC=0 always.
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
-    try:
-        return self.delta_ut1_utc
-    except IndexError:
+    if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
-        return np.zeros(self.shape)
+        return self.delta_ut1_utc
+    else:
+        return self.delta_ut1_utc
 
 
 def get_IERS_A_or_workaround():
