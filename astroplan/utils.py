@@ -39,10 +39,9 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     try:
         if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
             warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
-            return self.delta_ut1_utc
-        else:
-            return self.delta_ut1_utc
-    except ValueError:
+        return self.delta_ut1_utc
+
+    except (AttributeError, ValueError):
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return np.zeros(self.shape)
 
