@@ -37,8 +37,12 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
     try:
-        return self.delta_ut1_utc
-    except IndexError:
+        if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
+            warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
+            return self.delta_ut1_utc
+        else:
+            return self.delta_ut1_utc
+    except ValueError:
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return np.zeros(self.shape)
 
