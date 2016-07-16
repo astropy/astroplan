@@ -359,13 +359,16 @@ class AirmassConstraint(AltitudeConstraint):
         AirmassConstraint(2)
     """
     def __init__(self, max=None, min=1, boolean_constraint=True):
-        self.min = min
-        self.max = max
+        self.min = self._recast_limits(min)
+        self.max = self._recast_limits(max)
         self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
         secz = cached_altaz['altaz'].secz
+        # ensure broadcastability
+        self._check_limit_shape(secz, self.min)
+        self._check_limit_shape(secz, self.max)
         if self.boolean_constraint:
             if self.min is None and self.max is not None:
                 mask = secz <= self.max
@@ -384,7 +387,7 @@ class AirmassConstraint(AltitudeConstraint):
             else:
                 mx = self.max
 
-            mi = 1 if self.min is None else self.min
+            mi = self._recast_limits(1) if self.min is None else self.min
             # values below 1 should be disregarded
             return min_best_rescale(secz, mi, mx, less_than_min=0)
 
