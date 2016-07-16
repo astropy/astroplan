@@ -240,6 +240,43 @@ class Constraint(object):
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
 
+    def _recast_limits(self, limit):
+        """
+        Ensure the limits can be broadcast against the supplied targets
+
+        If we want to broadcast the limits of a constraint against a list
+        of targets, then the limits should be an array of shape (N, 1),
+        where N is the number of targets in the list.
+
+        Returns
+        -------
+        recast_limit : `~numpy.ndarray`
+            The limit recast to the correct shape
+        """
+        # change lists of Quantities to a non-scalar Quantity
+        if isinstance(limit, list) and isinstance(limit[0], u.Quantity):
+            limit = u.Quantity(limit)
+        return np.atleast_2d(limit).T
+
+    def _check_limit_shape(self, values, limit):
+        """
+        Check to make sure that limit shape is broadcastable against values
+
+        For a well-behaved constraint, values should have a leading dimension of N,
+        where N is the number of targets. This should be broadcastable against the
+        (1,N) shape of the limits. This routine checks that, and raises a ValueError
+        if not true.
+        """
+        # get shapes, or () if no shape attribute (i.e scalar)
+        limit_shape = getattr(limit, 'shape', ())
+        value_shape = getattr(values, 'shape', ())
+        if limit_shape == () or limit_shape == (1,1):
+            # scalar limits always OK
+            return
+        # we have non-scalar limits
+        if value_shape == () or value_shape[0] != limit_shape[0]:
+            raise ValueError("Cannot broadcast number of targets and constraint limits")
+
 
 class AltitudeConstraint(Constraint):
     """
@@ -263,19 +300,22 @@ class AltitudeConstraint(Constraint):
     """
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
-            self.min = -90*u.deg
+            self.min = self._recast_limits(-90*u.deg)
         else:
-            self.min = min
+            self.min = self._recast_limits(min)
         if max is None:
-            self.max = 90*u.deg
+            self.max = self._recast_limits(90*u.deg)
         else:
-            self.max = max
+            self.max = self._recast_limits(max)
 
         self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
         alt = cached_altaz['altaz'].alt
+        # ensure broadcastability
+        self._check_limit_shape(alt, self.min)
+        self._check_limit_shape(alt, self.max)
         if self.boolean_constraint:
             lowermask = self.min <= alt
             uppermask = alt <= self.max
