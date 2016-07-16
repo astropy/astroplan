@@ -357,13 +357,13 @@ class AltitudeConstraint(Constraint):
 
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
-            self.min = -90*u.deg
+            self.min = self._recast_limits(-90*u.deg)
         else:
-            self.min = min
+            self.min = self._recast_limits(min)
         if max is None:
-            self.max = 90*u.deg
+            self.max = self._recast_limits(90*u.deg)
         else:
-            self.max = max
+            self.max = self._recast_limits(max)
 
         self.boolean_constraint = boolean_constraint
 
