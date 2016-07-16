@@ -253,6 +253,9 @@ class Constraint(object):
         recast_limit : `~numpy.ndarray`
             The limit recast to the correct shape
         """
+        # do nothing if limit is None
+        if limit is None:
+            return None
         # change lists of Quantities to a non-scalar Quantity
         if isinstance(limit, list) and isinstance(limit[0], u.Quantity):
             limit = u.Quantity(limit)
@@ -267,6 +270,9 @@ class Constraint(object):
         (1,N) shape of the limits. This routine checks that, and raises a ValueError
         if not true.
         """
+        # do nothing if limit is None
+        if limit is None:
+            return
         # get shapes, or () if no shape attribute (i.e scalar)
         limit_shape = getattr(limit, 'shape', ())
         value_shape = getattr(values, 'shape', ())
