@@ -414,8 +414,8 @@ class AirmassConstraint(AltitudeConstraint):
     max = limit('max')
 
     def __init__(self, max=None, min=1, boolean_constraint=True):
-        self.min = min
-        self.max = max
+        self.min = self._recast_limits(min)
+        self.max = self._recast_limits(max)
         self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
