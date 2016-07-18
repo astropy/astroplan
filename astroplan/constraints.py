@@ -468,7 +468,7 @@ class AtNightConstraint(Constraint):
             Sun is below the horizon and the corrections for atmospheric
             refraction return nonsense values.
         """
-        self.max_solar_altitude = max_solar_altitude
+        self.max_solar_altitude = self._recast_limits(max_solar_altitude)
         self.force_pressure_zero = force_pressure_zero
 
     @classmethod
@@ -549,8 +549,8 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
-        self.min = min
-        self.max = max
+        self.min = self._recast_limits(min)
+        self.max = self._recast_limits(max)
 
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times), grid=False)
