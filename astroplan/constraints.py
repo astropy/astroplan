@@ -543,7 +543,8 @@ class MoonSeparationConstraint(Constraint):
     def compute_constraint(self, times, observer, targets):
         moon = get_moon(times, observer.location, observer.pressure)
         targets = get_icrs_skycoord(targets)
-        moon_separation = moon.separation(targets[:, np.newaxis])
+        # has to be this way around
+        moon_separation = targets[:, np.newaxis].separation(moon)
         # check broadcastability
         self._check_limit_shape(moon_separation, self.min)
         self._check_limit_shape(moon_separation, self.max)
