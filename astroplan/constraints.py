@@ -22,7 +22,7 @@ import numpy as np
 # Package
 from .moon import moon_illumination
 from .utils import time_grid_from_range
-from .target import FixedTarget
+from .target import FixedTarget, get_icrs_skycoord
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -259,6 +259,9 @@ class Constraint(object):
         # change lists of Quantities to a non-scalar Quantity
         if isinstance(limit, list) and isinstance(limit[0], u.Quantity):
             limit = u.Quantity(limit)
+        # change lists of Times to a non-scalar Time
+        if isinstance(limit, list) and isinstance(limit[0], Time):
+            limit = Time(limit)
         return np.atleast_2d(limit).T
 
     def _check_limit_shape(self, values, limit):
@@ -410,7 +413,7 @@ class AtNightConstraint(Constraint):
             Sun is below the horizon and the corrections for atmospheric
             refraction return nonsense values.
         """
-        self.max_solar_altitude = max_solar_altitude
+        self.max_solar_altitude = self._recast_limits(max_solar_altitude)
         self.force_pressure_zero = force_pressure_zero
 
     @classmethod
@@ -467,6 +470,7 @@ class AtNightConstraint(Constraint):
 
     def compute_constraint(self, times, observer, targets):
         solar_altitude = self._get_solar_altitudes(times, observer, targets)
+        self._check_limit_shape(solar_altitude, self.max_solar_altitude)
         mask = solar_altitude <= self.max_solar_altitude
         return mask
 
@@ -486,8 +490,8 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
-        self.min = min
-        self.max = max
+        self.min = self._recast_limits(min)
+        self.max = self._recast_limits(max)
 
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times), grid=False)
@@ -495,6 +499,11 @@ class SunSeparationConstraint(Constraint):
                        for target in targets]
         target_altazs = [observer.altaz(times, coo) for coo in target_coos]
         solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
+
+        # check broadcastability
+        self._check_limit_shape(solar_separation, self.min)
+        self._check_limit_shape(solar_separation, self.max)
+
         if self.min is None and self.max is not None:
             mask = self.max >= solar_separation
         elif self.max is None and self.min is not None:
@@ -532,27 +541,12 @@ class MoonSeparationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-
-        targets = [target.coord if hasattr(target, 'coord') else target
-                   for target in targets]
-
-        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
-        # handles scalar and non-scalar time inputs differently
-
-        if times.isscalar:
-            moon = get_moon(times, location=observer.location,
-                            ephemeris=self.ephemeris)
-            moon_separation = Angle([moon.separation(target)
-                                     for target in targets]).T
-        else:
-            moon_separation = []
-            for t in times:
-                moon_coord = get_moon(t, location=observer.location,
-                                      ephemeris=self.ephemeris)
-                sep = [moon_coord.separation(target) for target in targets]
-                moon_separation.append(sep)
-            moon_separation = Angle(moon_separation).T
-
+        moon = get_moon(times, observer.location, observer.pressure)
+        targets = get_icrs_skycoord(targets)
+        moon_separation = moon.separation(targets[:, np.newaxis])
+        # check broadcastability
+        self._check_limit_shape(moon_separation, self.min)
+        self._check_limit_shape(moon_separation, self.max)
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
         elif self.max is None and self.min is not None:
@@ -650,6 +644,12 @@ class MoonIlluminationConstraint(Constraint):
         moon_up_mask = moon_alt >= 0
 
         illumination = cached_moon['illum']
+
+        """
+        illumination and mask arrays are (ntimes,) whilst
+        limits are (ntargets, 1). These will broadcast to make
+        an (ntargets, ntimes) array
+        """
         if self.min is None and self.max is not None:
             mask = (self.max >= illumination) | moon_down_mask
         elif self.max is None and self.min is not None:
@@ -698,49 +698,67 @@ class LocalTimeConstraint(Constraint):
             raise ValueError("You must at least supply either a minimum or a maximum time.")
 
         if self.min is not None:
-            if not isinstance(self.min, datetime.time):
+            valid_type = False
+            try:
+                valid_type = all(isinstance(item, datetime.time) for item in self.min)
+            except:
+                valid_type = isinstance(self.min, datetime.time)
+            if not valid_type:
                 raise TypeError("Time limits must be specified as datetime.time objects.")
 
         if self.max is not None:
-            if not isinstance(self.max, datetime.time):
+            valid_type = False
+            try:
+                valid_type = all(isinstance(item, datetime.time) for item in self.max)
+            except:
+                valid_type = isinstance(self.max, datetime.time)
+            if not valid_type:
                 raise TypeError("Time limits must be specified as datetime.time objects.")
+
+        self.min = self._recast_limits(self.min)
+        self.max = self._recast_limits(self.max)
 
     def compute_constraint(self, times, observer, targets):
 
         timezone = None
+        gettz = np.frompyfunc(lambda x: getattr(x, 'tzinfo'), 1, 1)
 
         # get timezone from time objects, or from observer
         if self.min is not None:
-            timezone = self.min.tzinfo
+            timezone = gettz(self.min)
 
         elif self.max is not None:
-            timezone = self.max.tzinfo
+            timezone = gettz(self.max)
 
         if timezone is None:
-            timezone = observer.timezone
+            timezone = self._recast_limits(observer.timezone)
 
         if self.min is not None:
             min_time = self.min
         else:
-            min_time = self.min = datetime.time(0, 0, 0)
+            min_time = self.min = self._recast_limits(datetime.time(0, 0, 0))
 
         if self.max is not None:
             max_time = self.max
         else:
-            max_time = datetime.time(23, 59, 59)
+            max_time = self.max = self._recast_limits(datetime.time(23, 59, 59))
+
+        # make numpy ufunc to get time from astropy time object
+        gettime = np.frompyfunc(lambda x: x.time(), 1, 1)
 
         # If time limits occur on same day:
-        if self.min < self.max:
-            mask = [min_time <= t.datetime.time() <= max_time for t in times]
+        same_day_mask = np.tile(self.min < self.max, len(times))
+        same_day_mask_values = np.logical_and(self.min <= gettime(times.datetime),
+                                              gettime(times.datetime) <= self.max)
+        mask = np.logical_or(gettime(times.datetime) >= self.min,
+                             gettime(times.datetime) <= self.max)
+        mask[same_day_mask] = same_day_mask_values[same_day_mask]
 
-        # If time boundaries straddle midnight:
-        else:
-            mask = [(t.datetime.time() >= min_time) or
-                    (t.datetime.time() <= max_time) for t in times]
         if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+            if mask.shape != (len(targets), len(times)):
+                mask = np.tile(mask, len(targets))
+                mask = mask.reshape(len(targets), len(times))
+        return mask
 
 
 class TimeConstraint(Constraint):
@@ -781,25 +799,48 @@ class TimeConstraint(Constraint):
                              "maximum time.")
 
         if self.min is not None:
-            if not isinstance(self.min, Time):
-                raise TypeError("Time limits must be specified as "
-                                "astropy.time.Time objects.")
+            valid_input = False
+            if isinstance(self.min, Time):
+                valid_input = True
+            if isinstance(self.min, list):
+                valid_input = all(isinstance(item, Time) for item in self.min)
+                if valid_input:
+                    self.min = Time(self.min)  # change lists of Times to a non-scalar Time
+            if not valid_input:
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
 
-        if self.max is not None:
-            if not isinstance(self.max, Time):
-                raise TypeError("Time limits must be specified as "
-                                "astropy.time.Time objects.")
+        if self.min is not None:
+            valid_input = False
+            if isinstance(self.max, Time):
+                valid_input = True
+            if isinstance(self.max, list):
+                valid_input = all(isinstance(item, Time) for item in self.max)
+                if valid_input:
+                    self.max = Time(self.max)  # change lists of Times to a non-scalar Time
+            if not valid_input:
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
 
     def compute_constraint(self, times, observer, targets):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
             max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
-        mask = np.logical_and(times > min_time, times < max_time)
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+
+        if min_time.isscalar:
+            min_mask = times > min_time
+            min_mask = np.tile(min_mask, len(targets))
+            min_mask = min_mask.reshape(len(targets), len(times))
+        else:
+            min_mask = times > min_time[:, np.newaxis]
+
+        if max_time.isscalar:
+            max_mask = times < max_time
+            max_mask = np.tile(max_mask, len(targets))
+            max_mask = max_mask.reshape(len(targets), len(times))
+        else:
+            max_mask = times < max_time[:, np.newaxis]
+        mask = np.logical_and(min_mask, max_mask)
+        return mask
 
 
 def is_always_observable(constraints, observer, targets, times=None,
