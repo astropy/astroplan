@@ -165,6 +165,22 @@ def _get_meridian_transit_times(times, observer, targets):
 
     return observer._meridian_transit_cache[aakey]
 
+
+def limit(storage_name):
+    """
+    A property factory for constraint limits.
+
+    This will ensure that any attempt to set the limit goes through
+    a call to recast_limits.
+    """
+    def limit_getter(instance):
+        return instance.__dict__[storage_name]
+
+    def limit_setter(instance, value):
+        instance.__dict__[storage_name] = instance._recast_limits(value)
+
+    return property(limit_getter, limit_setter)
+
 @abstractmethod
 class Constraint(object):
     """
@@ -279,7 +295,7 @@ class Constraint(object):
         # get shapes, or () if no shape attribute (i.e scalar)
         limit_shape = getattr(limit, 'shape', ())
         value_shape = getattr(values, 'shape', ())
-        if limit_shape == () or limit_shape == (1,1):
+        if limit_shape == () or limit_shape == (1, 1):
             # scalar limits always OK
             return
         # we have non-scalar limits
@@ -307,15 +323,19 @@ class AltitudeConstraint(Constraint):
         limits and False for outside).  If False, the constraint returns a
         float on [0, 1], where 0 is the min altitude and 1 is the max.
     """
+
+    min = limit('min')  # ensure any attempt to set min goes through recast_limits
+    max = limit('max')
+
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
-            self.min = self._recast_limits(-90*u.deg)
+            self.min = -90*u.deg
         else:
-            self.min = self._recast_limits(min)
+            self.min = min
         if max is None:
-            self.max = self._recast_limits(90*u.deg)
+            self.max = 90*u.deg
         else:
-            self.max = self._recast_limits(max)
+            self.max = max
 
         self.boolean_constraint = boolean_constraint
 
@@ -361,9 +381,13 @@ class AirmassConstraint(AltitudeConstraint):
 
         AirmassConstraint(2)
     """
+
+    min = limit('min')  # ensure any attempt to set min goes through recast_limits
+    max = limit('max')
+
     def __init__(self, max=None, min=1, boolean_constraint=True):
-        self.min = self._recast_limits(min)
-        self.max = self._recast_limits(max)
+        self.min = min
+        self.max = max
         self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
@@ -399,6 +423,9 @@ class AtNightConstraint(Constraint):
     """
     Constrain the Sun to be below ``horizon``.
     """
+
+    max_solar_altitude = limit('max_solar_altitude')
+
     @u.quantity_input(horizon=u.deg)
     def __init__(self, max_solar_altitude=0*u.deg, force_pressure_zero=True):
         """
@@ -413,7 +440,7 @@ class AtNightConstraint(Constraint):
             Sun is below the horizon and the corrections for atmospheric
             refraction return nonsense values.
         """
-        self.max_solar_altitude = self._recast_limits(max_solar_altitude)
+        self.max_solar_altitude = max_solar_altitude
         self.force_pressure_zero = force_pressure_zero
 
     @classmethod
@@ -479,6 +506,10 @@ class SunSeparationConstraint(Constraint):
     """
     Constrain the distance between the Sun and some targets.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -490,8 +521,8 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
-        self.min = self._recast_limits(min)
-        self.max = self._recast_limits(max)
+        self.min = min
+        self.max = max
 
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times), grid=False)
@@ -521,6 +552,10 @@ class MoonSeparationConstraint(Constraint):
     """
     Constrain the distance between the Earth's moon and some targets.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -567,6 +602,10 @@ class MoonIlluminationConstraint(Constraint):
 
     Constraint is also satisfied if the Moon has set.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
