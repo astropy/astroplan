@@ -357,13 +357,13 @@ class AltitudeConstraint(Constraint):
 
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
-            self.min = self._recast_limits(-90*u.deg)
+            self.min = -90*u.deg
         else:
-            self.min = self._recast_limits(min)
+            self.min = min
         if max is None:
-            self.max = self._recast_limits(90*u.deg)
+            self.max = 90*u.deg
         else:
-            self.max = self._recast_limits(max)
+            self.max = max
 
         self.boolean_constraint = boolean_constraint
 
@@ -414,8 +414,8 @@ class AirmassConstraint(AltitudeConstraint):
     max = limit('max')
 
     def __init__(self, max=None, min=1, boolean_constraint=True):
-        self.min = self._recast_limits(min)
-        self.max = self._recast_limits(max)
+        self.min = min
+        self.max = max
         self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
@@ -468,7 +468,7 @@ class AtNightConstraint(Constraint):
             Sun is below the horizon and the corrections for atmospheric
             refraction return nonsense values.
         """
-        self.max_solar_altitude = self._recast_limits(max_solar_altitude)
+        self.max_solar_altitude = max_solar_altitude
         self.force_pressure_zero = force_pressure_zero
 
     @classmethod
@@ -549,8 +549,8 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
-        self.min = self._recast_limits(min)
-        self.max = self._recast_limits(max)
+        self.min = min
+        self.max = max
 
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times), grid=False)
