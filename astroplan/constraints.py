@@ -800,23 +800,21 @@ class TimeConstraint(Constraint):
 
         if self.min is not None:
             valid_input = False
-            if isinstance(self.min, Time):
-                valid_input = True
-            if isinstance(self.min, list):
+            try:
                 valid_input = all(isinstance(item, Time) for item in self.min)
-                if valid_input:
-                    self.min = Time(self.min)  # change lists of Times to a non-scalar Time
+                self.min = Time(self.min)  # change lists of Times to a non-scalar Time
+            except:
+                valid_input = isinstance(self.min, Time)
             if not valid_input:
                 raise TypeError("Time limits must be specified as astropy.time.Time objects.")
 
-        if self.min is not None:
+        if self.max is not None:
             valid_input = False
-            if isinstance(self.max, Time):
-                valid_input = True
-            if isinstance(self.max, list):
+            try:
                 valid_input = all(isinstance(item, Time) for item in self.max)
-                if valid_input:
-                    self.max = Time(self.max)  # change lists of Times to a non-scalar Time
+                self.max = Time(self.min)  # change lists of Times to a non-scalar Time
+            except:
+                valid_input = isinstance(self.max, Time)
             if not valid_input:
                 raise TypeError("Time limits must be specified as astropy.time.Time objects.")
 
