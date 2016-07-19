@@ -804,22 +804,22 @@ class LocalTimeConstraint(Constraint):
         if self.min is not None:
             min_time = self.min
         else:
-            min_time = self.min = self._recast_limits(datetime.time(0, 0, 0))
+            min_time = self._recast_limits(datetime.time(0, 0, 0))
 
         if self.max is not None:
             max_time = self.max
         else:
-            max_time = self.max = self._recast_limits(datetime.time(23, 59, 59))
+            max_time = self._recast_limits(datetime.time(23, 59, 59))
 
         # make numpy ufunc to get time from astropy time object
         gettime = np.frompyfunc(lambda x: x.time(), 1, 1)
 
         # If time limits occur on same day:
-        same_day_mask = np.tile(self.min < self.max, len(times))
-        same_day_mask_values = np.logical_and(self.min <= gettime(times.datetime),
-                                              gettime(times.datetime) <= self.max)
-        mask = np.logical_or(gettime(times.datetime) >= self.min,
-                             gettime(times.datetime) <= self.max)
+        same_day_mask = np.tile(min_time < max_time, len(times))
+        same_day_mask_values = np.logical_and(min_time <= gettime(times.datetime),
+                                              gettime(times.datetime) <= max_time)
+        mask = np.logical_or(gettime(times.datetime) >= min_time,
+                             gettime(times.datetime) <= max_time)
         mask[same_day_mask] = same_day_mask_values[same_day_mask]
 
         if targets is not None:
