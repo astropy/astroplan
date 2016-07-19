@@ -234,9 +234,9 @@ be within some angular separation from Vega – we'll call it
   a target could have from Vega.
 
 * We'll also define a method ``compute_constraints`` which takes three
-  arguments: an array of times to test, an `~astroplan.Observer` object, and
-  one or a list of `~astroplan.FixedTarget` objects. ``compute_constraints``
-  will return a matrix of booleans that describe whether or not each target
+  arguments: an array of M times to test, an `~astroplan.Observer` object, and
+  a list of N `~astroplan.FixedTarget` objects. ``compute_constraints``
+  will return a (N, M) shaped matrix of booleans that describe whether or not each target
   meets the constraints.  The super class `~astroplan.Constraint` has a
   ``__call__`` method which will run your custom class's
   ``compute_constraints`` method when you check if a target is observable
@@ -291,9 +291,13 @@ Here's our ``VegaSeparationConstraint`` implementation::
                 raise ValueError("No max and/or min specified in "
                                  "VegaSeparationConstraint.")
 
+
             # Return an array that is True where the target is observable and
             # False where it is not
-            return mask
+            # Must have shape (len(targets), len(times))
+
+            # currently mask has shape (len(targets), 1)
+            return np.tile(mask, len(times))
 
 Then as in the earlier example, we can call our constraint::
 
