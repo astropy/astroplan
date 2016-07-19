@@ -381,13 +381,13 @@ def test_rescale_minmax():
     assert all(np.array([0.8, 0.2, 1, 0, 0]) == rescaled)
 
 constraint_tests = [
-    AltitudeConstraint(),
+    AltitudeConstraint(min=30*u.deg),
     AirmassConstraint(2),
-    AtNightConstraint(),
+    AtNightConstraint(max_solar_altitude=0*u.deg),
     SunSeparationConstraint(min=90*u.deg),
     MoonSeparationConstraint(min=20*u.deg),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
-    TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
+    TimeConstraint(min=Time("2015-08-28 03:30"), max=Time("2015-09-05 10:30"))
 ]
 
 
@@ -403,3 +403,26 @@ def test_regression_shapes(constraint):
     assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
     assert constraint(lapalma, targets, times[0]).shape == (2, 1)
 
+
+vector_constraint_tests = [
+    AltitudeConstraint(min=[30*u.deg]*2),
+    AirmassConstraint([2, 2]),
+    AtNightConstraint(max_solar_altitude=[0*u.deg]*2),
+    SunSeparationConstraint(min=[90*u.deg]*2),
+    MoonSeparationConstraint(min=[20*u.deg]*2),
+    LocalTimeConstraint(min=[dt.time(23, 50)]*2, max=dt.time(4, 8)),
+    TimeConstraint(min=Time(["2015-08-28 03:30", "2015-08-28 03:30"]),
+                   max=Time("2015-09-05 10:30"))
+]
+
+
+@pytest.mark.parametrize('constraint_idx', range(len(constraint_tests)))
+def test_vector_constraints(constraint_idx):
+    times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
+    targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
+               FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
+    lapalma = Observer.at_site('lapalma')
+    constraint = constraint_tests[constraint_idx]
+    vconstraint = vector_constraint_tests[constraint_idx]
+    assert np.all(constraint(lapalma, targets, times) ==
+                  vconstraint(lapalma, targets, times))
