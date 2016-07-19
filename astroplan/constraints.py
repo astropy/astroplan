@@ -880,7 +880,7 @@ class TimeConstraint(Constraint):
             valid_input = False
             try:
                 valid_input = all(isinstance(item, Time) for item in self.max)
-                self.max = Time(self.min)  # change lists of Times to a non-scalar Time
+                self.max = Time(self.max)  # change lists of Times to a non-scalar Time
             except:
                 valid_input = isinstance(self.max, Time)
             if not valid_input:
