@@ -172,6 +172,34 @@ def limit(storage_name):
 
     This will ensure that any attempt to set the limit goes through
     a call to recast_limits.
+
+    Examples
+    ---------
+    >>> class MyConstraint(Constraint):
+    ...     # A demo constraint that does nothing
+    ...     min = limit('min')
+    ...     max = limit('max')  # set min and max properties to use limit property factory
+    ...
+    ...     def __init__(self, min=None, max=None):
+    ...             self.min = min
+    ...             self.max = max  # setting self.max goes through _recast_limits
+    ...
+    ...     def compute_constraint(self, times, observer, targets):
+    ...             return np.atleast_2d(True)
+    ...
+    >>>
+    >>> cons = MyConstraint(max=2)
+    >>> cons.max
+    array([[2]])
+    >>> cons.max = 3
+    >>> cons.max.shape
+    (1, 1)
+    >>> cons.max = [3, 2]
+    >>> cons.max
+    array([[3],
+           [2]])
+    >>> cons.max.shape
+    (2, 1)
     """
     def limit_getter(instance):
         return instance.__dict__[storage_name]
