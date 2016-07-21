@@ -13,6 +13,8 @@ import numpy as np
 
 from astropy import units as u
 from astropy.table import Table
+import astroplan.constraints
+from astroplan.constraints import *
 
 from .utils import time_grid_from_range, stride_array
 
@@ -88,6 +90,72 @@ class ObservingBlock(object):
         ob.number_exposures = number_exposures
         ob.readout_time = readout_time
         return ob
+
+
+class Scorer(object):
+    """
+    Returns scores and score arrays from the evaluation of constraints on
+    observing blocks
+    """
+    def __init__(self, blocks, observer, schedule):
+        """
+
+        Parameters
+        ----------
+        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
+            list of blocks that need to be scored
+        observer : `~astroplan.Observer`
+            the observer
+        schedule : `~astroplan.scheduling.Schedule`
+            The schedule inside which the blocks should fit
+        """
+        self.blocks = blocks
+        self.observer = observer
+        self.schedule = schedule
+        # the ranges below should change if there are new constraints made
+        self.constraint_list = [eval(name) for name in
+                                astroplan.constraints.__all__[:-6]
+                                if 'Constraint' in name]
+        self.scheduling_constraints = [eval(name) for name in
+                                       astroplan.constraints.__all__[-5:]
+                                       if 'Constraint' in name]
+
+    def create_score_array(self, time_resolution=1*u.minute):
+        """
+        this makes a score array over the entire schedule for all of the
+        blocks and each `~astropy.units.Constraint`.
+        Parameters
+        ----------
+        time_resolution : `~astropy.units.Quantity`
+            the time between each scored time
+        """
+        start = self.schedule.start_time
+        end = self.schedule.end_time
+        times = time_grid_from_range(start, end, time_resolution)
+        score_array = np.ones((len(self.blocks), len(times)))
+        for constraint in self.constraint_list:
+            indices = []
+            constraints = []
+            for i, block in enumerate(self.blocks):
+                constrain = [x for x in block.constraints if
+                             isinstance(x, constraint)]
+                if not len(constrain) == 0:
+                    indices.append(i)
+                    constraints.append(constrain[0])
+                    # the following can be removed when vectorization is added
+                    applied_constraint = constrain[0](self.observer, [block.target],
+                                                      times=times)
+                    applied_score = applied_constraint[0]
+                    score_array[i] *= applied_score
+#            indices = [i for i, block in enumerate(self.blocks) if
+#                       any(isinstance(a, constraint) for
+#                           a in block.constraints)]
+            # for when this is implemented into
+            # constraint_vector = constraint.vectorize(constraints)
+            # constraint_array = constraint_vector.compute_constraint
+            # for x in len(indices):
+                # score_array[indices[x]] *= constraint_array[x]
+        return score_array
 
 
 class TransitionBlock(object):
