@@ -138,7 +138,7 @@ class Scorer(object):
             constraints = []
             for i, block in enumerate(self.blocks):
                 constrain = [x for x in block.constraints if
-                             isinstance(x, constraint)]
+                             x.__class__.__name__ == constraint]
                 if not len(constrain) == 0:
                     indices.append(i)
                     constraints.append(constrain[0])
@@ -148,7 +148,7 @@ class Scorer(object):
                     applied_score = applied_constraint[0]
                     score_array[i] *= applied_score
 #            indices = [i for i, block in enumerate(self.blocks) if
-#                       any(isinstance(a, constraint) for
+#                       any(a.__class__.__name__ == constraint) for
 #                           a in block.constraints)]
             # for when this is implemented into
             # constraint_vector = constraint.vectorize(constraints)
