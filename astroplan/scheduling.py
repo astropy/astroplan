@@ -157,6 +157,15 @@ class Scorer(object):
                 # score_array[indices[x]] *= constraint_array[x]
         return score_array
 
+    @classmethod
+    def from_start_end(cls, blocks, observer, start_time, end_time):
+        """
+        for if you don't have a schedule/ aren't inside a scheduler
+        """
+        dummy_schedule = Schedule(start_time, end_time)
+        sc = cls(blocks, observer, dummy_schedule)
+        return sc
+
 
 class TransitionBlock(object):
     """
