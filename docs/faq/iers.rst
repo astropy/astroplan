@@ -78,13 +78,19 @@ astropy's IERS machinery:
     import numpy as np
     import astropy.units as u
     from astropy.time import Time
+    from astropy.extern.six.moves.urllib.error import HTTPError
 
     # Download and cache the IERS Bulletins A and B  using astropy's machinery
     # (reminder: astroplan has its own function for this: `download_IERS_A`)
     from astropy.utils.iers import (IERS_A, IERS_A_URL, IERS_B, IERS_B_URL,
                                     FROM_IERS_B)
     from astropy.utils.data import download_file
-    iers_a = IERS_A.open(download_file(IERS_A_URL, cache=True))
+    # Workaround until astropy/astropy#5194 is solved
+    try:
+        iers_a = IERS_A.open(download_file(IERS_A_URL, cache=True))
+    except HTTPError:
+        IERS_A_URL = 'https://datacenter.iers.org/eop/-/somos/5Rgv/latest/7'
+        iers_a = IERS_A.open(download_file(IERS_A_URL, cache=True))
     iers_b = IERS_B.open(download_file(IERS_B_URL, cache=True))
 
     # Get a range of times to plot from 1990-2022
