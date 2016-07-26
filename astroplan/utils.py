@@ -37,8 +37,11 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
     try:
+        if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
+            warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return self.delta_ut1_utc
-    except IndexError:
+
+    except (AttributeError, ValueError):
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return np.zeros(self.shape)
 
@@ -85,8 +88,7 @@ def _get_IERS_A_table(warn_update=14*u.day):
     This will fail and raise OSError if the file is not in the cache.
     """
     if IERS_A_in_cache():
-        path = download_file(iers.IERS_A_URL, cache=True, show_progress=True)
-        table = iers.IERS_A.open(path)
+        table = iers.IERS_Auto.open()
         # Use polar motion flag to identify last observation before predictions
         index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
         time_of_last_observation = Time(table['MJD'][index_of_last_observation],
