@@ -105,12 +105,9 @@ matrix:
           env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
 
     allow_failures:
-      - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev SETUP_CMD='test -V'
+      - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
       # TODO: these fail for now ... make them work!
       - env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
-      - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8 SETUP_CMD='test -V'
-      - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7 SETUP_CMD='test -V'
-      - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.6 SETUP_CMD='test -V'
       # Allow them to fail now until the IERSs issues are fixed
       - env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
              CONDA_DEPENDENCIES='pytz matplotlib nose'
