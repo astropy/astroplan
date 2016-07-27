@@ -1375,14 +1375,6 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        moon : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.get_moon`.
-
-        sun : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the sun at time ``time``. If `None`, will calculate
-            the position of the Sun with `~astropy.coordinates.get_sun`.
-
         Returns
         -------
         float
@@ -1405,7 +1397,7 @@ class Observer(object):
 
         return moon_illumination(time, self.location)
 
-    def moon_phase(self, time=None, moon=None, sun=None):
+    def moon_phase(self, time=None):
         """
         Calculate lunar orbital phase.
 
@@ -1418,14 +1410,6 @@ class Observer(object):
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
-
-        moon : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.get_moon`.
-
-        sun : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the sun at time ``time``. If `None`, will calculate
-            the position of the Sun with `~astropy.coordinates.get_sun`.
 
         Returns
         -------
