@@ -1467,7 +1467,7 @@ class Observer(object):
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
         >>> altaz_moon = apo.moon_altaz(time) # doctest: +SKIP
-        >>> print("alt: {0.alt}, az: {0.az}".format(altaz_moon)) # doctest: +FLOAT_CMP
+        >>> print("alt: {0.alt}, az: {0.az}".format(altaz_moon)) # doctest: +SKIP
         alt: -63.72706397691421 deg, az: 345.3640380598265 deg
         """
         if not isinstance(time, Time):
