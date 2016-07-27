@@ -18,17 +18,33 @@ import warnings
 from .utils import _mock_remote_data, _unmock_remote_data
 from .exceptions import AstroplanWarning
 
+import os
+
+# This is to figure out the affiliated package version, rather than
+# using Astropy's
+try:
+    from .version import version
+except ImportError:
+    version = 'dev'
+
+packagename = os.path.basename(os.path.dirname(__file__))
+TESTED_VERSIONS[packagename] = version
+
+
 # Comment out this line to avoid deprecation warnings being raised as exceptions
 enable_deprecations_as_exceptions()
 
 # Define list of packages for which to display version numbers in the test log
-PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
-PYTEST_HEADER_MODULES['pytz'] = 'pytz'
-PYTEST_HEADER_MODULES['pyephem'] = 'pyephem'
-PYTEST_HEADER_MODULES['matplotlib'] = 'matplotlib'
-PYTEST_HEADER_MODULES['nose'] = 'nose'
-PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest_mpl'
-del PYTEST_HEADER_MODULES['h5py']
+try:
+    PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
+    PYTEST_HEADER_MODULES['pytz'] = 'pytz'
+    PYTEST_HEADER_MODULES['pyephem'] = 'pyephem'
+    PYTEST_HEADER_MODULES['matplotlib'] = 'matplotlib'
+    PYTEST_HEADER_MODULES['nose'] = 'nose'
+    PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest_mpl'
+    del PYTEST_HEADER_MODULES['h5py']
+except KeyError:
+    pass
 
 
 def pytest_configure(config):

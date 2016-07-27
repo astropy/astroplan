@@ -18,7 +18,6 @@ import pytz
 
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
-from .sites import get_site
 from .moon import moon_illumination, moon_phase_angle
 
 __all__ = ["Observer", "MAGIC_TIME"]
@@ -90,7 +89,7 @@ class Observer(object):
     >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
 
     To find out which observatories can be accessed by name, check out
-    `~astroplan.get_site_names`.
+    `~astropy.coordinates.EarthLocation.get_site_names`.
 
     Next, you can initialize an observer by specifying the location with
     `~astropy.coordinates.EarthLocation`:
@@ -234,7 +233,7 @@ class Observer(object):
         ----------
         site_name : str
             Observatory name, must be resolvable with
-            `~astroplan.get_site`.
+            `~astropy.coordinates.EarthLocation.get_site_names`.
 
         Returns
         -------
@@ -254,7 +253,7 @@ class Observer(object):
         if 'location' in kwargs:
             raise ValueError("Location kwarg should not be used if "
                              "initializing an Observer with Observer.at_site()")
-        return cls(location=get_site(site_name), name=name, **kwargs)
+        return cls(location=EarthLocation.of_site(site_name), name=name, **kwargs)
 
     def astropy_time_to_datetime(self, astropy_time):
         """
@@ -440,12 +439,12 @@ class Observer(object):
 
         Now transform the target's coordinates to the alt/az frame:
 
-        >>> target_altaz = target.transform_to(altaz_frame)
+        >>> target_altaz = target.transform_to(altaz_frame) # doctest: +SKIP
 
         Alternatively, construct an alt/az frame and transform the target to
         that frame all in one step:
 
-        >>> target_altaz = apo.altaz(time, target)
+        >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
         if not isinstance(time, Time):
             time = Time(time)
@@ -1615,7 +1614,7 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
-        >>> apo.is_night(time)
+        >>> apo.is_night(time) # doctest: +SKIP
         False
         """
         if not isinstance(time, Time):

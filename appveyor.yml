@@ -19,11 +19,11 @@ environment:
       # so we test Python 2.7 (whereas Astropy tests on 2.6)
 
       - PYTHON_VERSION: "2.7"
-        NUMPY_VERSION: "1.9.1"
-        ASTROPY_VERSION: "1.0"
-      - PYTHON_VERSION: "3.4"
-        NUMPY_VERSION: "1.9.1"
-        ASTROPY_VERSION: "1.0"
+        NUMPY_VERSION: "stable"
+        ASTROPY_VERSION: "stable"
+      - PYTHON_VERSION: "3.5"
+        NUMPY_VERSION: "stable"
+        ASTROPY_VERSION: "stable"
 
 platform:
     -x64

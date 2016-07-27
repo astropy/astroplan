@@ -13,6 +13,7 @@ from astropy.time import Time
 import astropy.units as u
 from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
                                 _open_shelve)
+from astropy.coordinates import EarthLocation, Longitude, Latitude
 
 # Package
 from .exceptions import OldEarthOrientationDataWarning
@@ -37,8 +38,11 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
     try:
+        if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
+            warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return self.delta_ut1_utc
-    except IndexError:
+
+    except (AttributeError, ValueError):
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return np.zeros(self.shape)
 
@@ -85,8 +89,7 @@ def _get_IERS_A_table(warn_update=14*u.day):
     This will fail and raise OSError if the file is not in the cache.
     """
     if IERS_A_in_cache():
-        path = download_file(iers.IERS_A_URL, cache=True, show_progress=True)
-        table = iers.IERS_A.open(path)
+        table = iers.IERS_Auto.open()
         # Use polar motion flag to identify last observation before predictions
         index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
         time_of_last_observation = Time(table['MJD'][index_of_last_observation],
@@ -157,7 +160,7 @@ def _mock_remote_data():
     This is currently called in `astroplan/conftest.py` when the tests are run
     and the `--remote-data` option isn't used.
 
-    The way this setup works is that for functionality that usuasally requires
+    The way this setup works is that for functionality that usually requires
     internet access, but has mocks in place, it is possible to write the test
     without adding a `@remote_data` decorator, and `py.test` will do the right
     thing when running the tests:
@@ -166,14 +169,18 @@ def _mock_remote_data():
     2. Not access the internet and use the mock code if `--remote-data` is not used
 
     Both of these cases are tested on travis-ci.
-
-    Currently only `FixedTarget.from_name` is mocked.
     """
     from .target import FixedTarget
+    from astropy.coordinates import EarthLocation
 
     if not hasattr(FixedTarget, '_real_from_name'):
         FixedTarget._real_from_name = FixedTarget.from_name
         FixedTarget.from_name = FixedTarget._from_name_mock
+
+    if not hasattr(EarthLocation, '_real_of_site'):
+        EarthLocation._real_of_site = EarthLocation.of_site
+        EarthLocation.of_site = EarthLocation_mock.of_site_mock
+
     # otherwise already mocked
 
 
@@ -187,6 +194,10 @@ def _unmock_remote_data():
     if hasattr(FixedTarget, '_real_from_name'):
         FixedTarget.from_name = FixedTarget._real_from_name
         del FixedTarget._real_from_name
+
+    if hasattr(EarthLocation, '_real_of_site'):
+        EarthLocation.of_site = EarthLocation._real_of_site
+        del EarthLocation._real_of_site
     # otherwise assume it's already correct
 
 def _set_mpl_style_sheet(style_sheet):
@@ -222,3 +233,45 @@ def stride_array(arr, window_width):
     strided_arr = as_strided(arr, new_shape, (arr.strides[0], arr.strides[0]))
 
     return strided_arr
+
+
+class EarthLocation_mock(EarthLocation):
+    """
+    Mock the EarthLocation class if no remote data for locations commonly
+    used in the tests.
+    """
+    @classmethod
+    def of_site_mock(cls, string):
+
+        subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
+                                             19.825555555555564*u.deg,
+                                             4139*u.m)
+
+        lco = EarthLocation.from_geodetic(-70.70166666666665*u.deg,
+                                          -29.003333333333327*u.deg,
+                                          2282*u.m)
+
+        aao = EarthLocation.from_geodetic(149.06608611111113*u.deg,
+                                          -31.277038888888896*u.deg,
+                                          1164*u.m)
+
+        vbo = EarthLocation.from_geodetic(78.8266*u.deg,
+                                          12.576659999999999*u.deg,
+                                          725*u.m)
+
+        apo = EarthLocation.from_geodetic(-105.82*u.deg,
+                                          32.78*u.deg,
+                                          2798*u.m)
+
+        keck = EarthLocation.from_geodetic(-155.47833333333332*u.deg,
+                                           19.828333333333326*u.deg,
+                                           4160*u.m)
+
+        kpno = EarthLocation.from_geodetic(-111.6*u.deg,
+                                           31.963333333333342*u.deg,
+                                           2120*u.m)
+
+        observatories = dict(lco=lco, subaru=subaru, aao=aao, vbo=vbo, apo=apo,
+                             keck=keck, kpno=kpno)
+
+        return observatories[string.lower()]

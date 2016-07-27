@@ -1,10 +1,9 @@
 # Compiled files
-*.py[co]
+*.py[cod]
 *.a
 *.o
 *.so
 __pycache__
-.cache
 
 # Ignore .c files by default to avoid including generated code. If you want to
 # add a non-generated .c extension, use `git add -f filename.c`.
@@ -16,6 +15,7 @@ __pycache__
 htmlcov
 .coverage
 MANIFEST
+.ipynb_checkpoints
 
 # Sphinx
 docs/api
@@ -44,11 +44,10 @@ develop-eggs
 distribute-*.tar.gz
 
 # Other
-.*.swp
+.cache
+.tox
+.*.sw[op]
 *~
 
 # Mac OSX
 .DS_Store
-
-# Ignore IPython notebook (Jupyter) checkpoints.
-.ipynb_checkpoints
