@@ -46,7 +46,6 @@ try:
 except KeyError:
     pass
 
-
 def pytest_configure(config):
     if hasattr(astropy_pytest_plugins, 'pytest_configure'):
         # sure ought to be true right now, but always possible it will change in

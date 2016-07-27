@@ -11,15 +11,14 @@ Requirements
 
 **astroplan** works on Linux, Mac OS X and Windows.
 It requires Python 2.7 or 3.5+ (2.6 and 3.2 or earlier are not
-supported) as well as the following packages:
+supported, 3.3 and 3.4 may work) as well as the following packages:
 
 * `Numpy`_
-* `Astropy`_ (v1.0.4 or later)
+* `Astropy`_ (v1.2 or later)
 * `pytz`_
 
 Optional packages:
 
-* `PyEphem`_
 * `Matplotlib`_
 * `WCSAxes`_
 * `astroquery`_

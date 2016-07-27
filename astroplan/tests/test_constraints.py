@@ -6,10 +6,9 @@ import pytest
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, get_sun
+from astropy.coordinates import SkyCoord, get_sun, get_moon
 from astropy.utils import minversion
 
-from ..moon import get_moon
 from ..observer import Observer
 from ..target import FixedTarget
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
@@ -17,12 +16,6 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            LocalTimeConstraint, months_observable)
-
-try:
-    import ephem
-    HAS_PYEPHEM = True
-except ImportError:
-    HAS_PYEPHEM = False
 
 APY_LT104 = not minversion('astropy','1.0.4')
 
@@ -157,12 +150,11 @@ def test_sun_separation():
     assert np.all(is_constraint_met == [[False], [True], [True]])
 
 
-@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_moon_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
     altaz_frame = apo.altaz(time)
-    moon = get_moon(time, apo.location, apo.pressure)
+    moon = get_moon(time, apo.location).transform_to(altaz_frame)
     one_deg_away = SkyCoord(az=moon.az, alt=moon.alt+1*u.deg, frame=altaz_frame)
     five_deg_away = SkyCoord(az=moon.az+5*u.deg, alt=moon.alt,
                              frame=altaz_frame)
@@ -172,6 +164,7 @@ def test_moon_separation():
     constraint = MoonSeparationConstraint(min=2*u.deg, max=10*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
+    print(is_constraint_met)
     assert np.all(is_constraint_met == [[False], [True], [False]])
 
 
@@ -186,7 +179,6 @@ def test_moon_separation():
     assert np.all(is_constraint_met == [[False], [True], [True]])
 
 
-@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_moon_illumination():
     times = Time(["2015-08-29 18:35", "2015-09-05 18:35", "2015-09-15 18:35"])
     lco = Observer.at_site("LCO")
