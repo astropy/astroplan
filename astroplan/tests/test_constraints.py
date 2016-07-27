@@ -396,12 +396,12 @@ def test_regression_shapes(constraint):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
                FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
-    lapalma = Observer.at_site('lapalma')
+    keck = Observer.at_site('keck')
 
-    assert constraint(lapalma, targets, times).shape == (2, 3)
-    assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
-    assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
-    assert constraint(lapalma, targets, times[0]).shape == (2, 1)
+    assert constraint(keck, targets, times).shape == (2, 3)
+    assert constraint(keck, [targets[0]], times).shape == (1, 3)
+    assert constraint(keck, [targets[0]], times[0]).shape == (1, 1)
+    assert constraint(keck, targets, times[0]).shape == (2, 1)
 
 
 vector_constraint_tests = [
@@ -421,8 +421,8 @@ def test_vector_constraints(constraint_idx):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
                FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
-    lapalma = Observer.at_site('lapalma')
+    keck = Observer.at_site('keck')
     constraint = constraint_tests[constraint_idx]
     vconstraint = vector_constraint_tests[constraint_idx]
-    assert np.all(constraint(lapalma, targets, times) ==
-                  vconstraint(lapalma, targets, times))
+    assert np.all(constraint(keck, targets, times) ==
+                  vconstraint(keck, targets, times))
