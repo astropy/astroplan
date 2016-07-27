@@ -17,7 +17,6 @@ from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
 from astropy.tests.helper import assert_quantity_allclose
 
 # Package
-from ..sites import get_site
 from ..observer import Observer, MAGIC_TIME
 from ..target import FixedTarget
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
@@ -1065,9 +1064,9 @@ def test_timezone_convenience_methods():
 
 
 def test_is_night():
-    lco = Observer(location=get_site('lco')) # Las Campanas
-    aao = Observer(location=get_site('aao')) # Sydney, Australia
-    vbo = Observer(location=get_site('vbo')) # India
+    lco = Observer(location=EarthLocation.of_site('lco')) # Las Campanas
+    aao = Observer(location=EarthLocation.of_site('aao')) # Sydney, Australia
+    vbo = Observer(location=EarthLocation.of_site('vbo')) # India
 
     time1 = Time('2015-07-28 17:00:00')
     nights1 = [observer.is_night(time1) for observer in [lco, aao, vbo]]

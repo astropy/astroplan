@@ -24,7 +24,6 @@ if not _ASTROPY_SETUP_:
     from .observer import *
     from .target import *
     from .exceptions import *
-    from .sites import *
     from .moon import *
     from .constraints import *
     from .scheduling import *

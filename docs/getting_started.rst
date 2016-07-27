@@ -26,12 +26,11 @@ an `~astroplan.FixedTarget` object::
 Similarly, an `~astroplan.Observer` object contains information about the
 observatory, telescope or place where you are observing, such as longitude,
 latitude, elevation and other optional parameters.  You can initialize an
-`~astroplan.Observer` object via the `~astroplan.get_site` function, which
-accesses the site list built into `astroplan` (see
-`~astroplan.get_site_names`)::
+`~astroplan.Observer` object via the `~astroplan.Observer.at_site` class
+method::
 
-    from astroplan import get_site
-    observer = get_site('subaru')
+    from astroplan import Observer
+    observer = Observer.at_site('subaru')
 
 Or you can specify your own location parameters::
 
