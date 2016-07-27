@@ -578,7 +578,6 @@ class PriorityScheduler(Scheduler):
             # And then remove any times that are already scheduled
             constraint_scores[is_open_time == False] = 0
             # Select the most optimal time
-            _is_scheduled = False
             # need to leave time around the Block for transitions
             # TODO: make it so that this isn't required to prevent errors in slot creation
             total_duration = b.duration + self.gap_time
