@@ -296,6 +296,14 @@ def test_docs_example():
             self.min = min
             self.max = max
 
+        @classmethod
+        def vectorize(cls, constraint_list):
+            # this function should take a list of constraints
+            # and return a vectorized version of this constraint
+            min_vals = _get_limit_vals(constraint_list, 'min')
+            max_vals = _get_limit_vals(constraint_list, 'max')
+            return cls(min_vals, max_vals)
+
         def compute_constraint(self, times, observer, targets):
 
             # Vega's coordinate must be non-scalar for the dimensions
@@ -324,9 +332,13 @@ def test_docs_example():
                 raise ValueError("No max and/or min specified in "
                                  "VegaSeparationConstraint.")
 
+
             # Return an array that is True where the target is observable and
             # False where it is not
-            return mask
+            # Must have shape (len(targets), len(times))
+
+            # currently mask has shape (len(targets), 1)
+            return np.tile(mask, len(times))
 
     constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
     observability = is_observable(constraints, subaru, targets,
