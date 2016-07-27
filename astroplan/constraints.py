@@ -187,6 +187,12 @@ def limit(storage_name):
     ...     def compute_constraint(self, times, observer, targets):
     ...             return np.atleast_2d(True)
     ...
+    ...     @classmethod
+    ...     def vectorize(cls, constraint_list):
+    ...         min_vals = _get_limit_values(constraint_list, 'min')
+    ...         max_vals = _get_limit_values(constraint_list, 'max')
+    ...         return cls(min_vals, max_vals)
+    ...
     >>>
     >>> cons = MyConstraint(max=2)
     >>> cons.max
