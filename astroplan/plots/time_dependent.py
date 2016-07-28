@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-
+import copy
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -11,7 +11,7 @@ import warnings
 from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
 
-__all__ = ['plot_airmass', 'plot_parallactic']
+__all__ = ['plot_airmass', 'plot_schedule_airmass', 'plot_parallactic']
 
 
 def _secz_to_altitude(secant_z):
@@ -167,7 +167,7 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        for test_time in [time[0], time[-1]]:
+        for test_time in time:
             midnight = observer.midnight(test_time)
             previous_sunset = observer.sun_set_time(midnight, which='previous')
             next_sunrise = observer.sun_rise_time(midnight, which='next')
@@ -206,6 +206,59 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
 
     # Output.
     return ax
+
+
+def plot_schedule_airmass(schedule, show_night=False):
+    """
+    Plots when observations of targets are scheduled to occur superimposed
+    upon plots of the airmasses of the targets.
+
+    Parameters
+    ----------
+    schedule : `~astroplan.Schedule`
+        a schedule object output by a scheduler
+    show_night : bool
+        Shades the night-time on the plot
+
+    Returns
+    -------
+    ax :  `~matplotlib.axes.Axes`
+        An ``Axes`` object with added airmass and schedule vs. time plot.
+    """
+    import matplotlib.pyplot as plt
+    blocks = copy.copy(schedule.scheduled_blocks)
+    sorted_blocks = sorted(schedule.observing_blocks, key=lambda x: x.priority)
+    targets = [block.target for block in sorted_blocks]
+    ts = schedule.start_time + np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day
+    targ_to_color = {}
+    color_idx = np.linspace(0, 1, len(targets))
+    # lighter, bluer colors indicate higher priority
+    for target, ci in zip(targets, color_idx):
+        plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
+        targ_to_color[target.name] = plt.cm.cool(ci)
+    if show_night:
+        # I'm pretty sure this overlaps a lot, creating darker bands
+        for test_time in ts:
+            midnight = schedule.observer.midnight(test_time)
+            previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
+            next_sunrise = schedule.observer.sun_rise_time(midnight, which='next')
+
+            previous_twilight = schedule.observer.twilight_evening_astronomical(midnight, which='previous')
+            next_twilight = schedule.observer.twilight_morning_astronomical(midnight, which='next')
+
+            plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
+                        facecolor='lightgrey', alpha=0.05)
+            plt.axvspan(previous_twilight.plot_date, next_twilight.plot_date,
+                        facecolor='lightgrey', alpha=0.05)
+
+    for block in blocks:
+        if hasattr(block, 'target'):
+            plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
+                        fc=targ_to_color[block.target.name], lw=0, alpha=.6)
+        else:
+            plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
+                        color='k', lw=0, alpha=.6)
+    # TODO: make this output a `axes` object
 
 
 def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
