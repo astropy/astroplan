@@ -274,8 +274,10 @@ Here's our ``VegaSeparationConstraint`` implementation::
 
         @classmethod
         def vectorize(cls, constraint_list):
-            # this function should take a list of constraints
-            # and return a vectorized version of this constraint
+            """
+            this function should take a list of constraints
+            and return a vectorized version of this constraint.
+            """
             min_vals = _get_limit_vals(constraint_list, 'min')
             max_vals = _get_limit_vals(constraint_list, 'max')
             return cls(min_vals, max_vals)

@@ -328,10 +328,12 @@ class Constraint(object):
     def vectorize(self, constraint_list):
         """
         Given a list of constraints, return a vector constraint of this type.
+
         Parameters
         ----------
         constraint_list : list
             A list of `~astroplan.Constraint` objects.
+
         Returns
         -------
         constraint : `~astroplan.Constraint`
