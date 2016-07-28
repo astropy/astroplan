@@ -12,6 +12,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 from astropy import units as u
+from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
 
@@ -80,9 +81,9 @@ class ObservingBlock(object):
     @classmethod
     def from_exposures(cls, target, priority, time_per_exposure,
                        number_exposures, readout_time=0 * u.second,
-                       configuration={}):
+                       configuration={}, constraints=None):
         duration = number_exposures * (time_per_exposure + readout_time)
-        ob = cls(target, duration, priority, configuration)
+        ob = cls(target, duration, priority, configuration, constraints)
         ob.time_per_exposure = time_per_exposure
         ob.number_exposures = number_exposures
         ob.readout_time = readout_time
@@ -174,6 +175,7 @@ class Schedule(object):
         self.constraints = constraints
         self.slew_duration = 4*u.min
         # TODO: replace/overwrite slew_duration with Transitioner calls
+        self.observer = None
 
     def __repr__(self):
         return 'Schedule containing ' + str(len(self.observing_blocks)) + \
@@ -197,6 +199,40 @@ class Schedule(object):
     @property
     def open_slots(self):
         return [slot for slot in self.slots if not slot.occupied]
+
+    def to_table(self, show_transitions=True, show_unused=False):
+        # TODO: allow different coordinate types
+        target_names = []
+        start_times = []
+        end_times = []
+        durations = []
+        ra = []
+        dec = []
+        for slot in self.slots:
+            if hasattr(slot.block, 'target'):
+                start_times.append(slot.start.iso)
+                end_times.append(slot.end.iso)
+                durations.append(slot.duration.to(u.minute).value)
+                target_names.append(slot.block.target.name)
+                ra.append(slot.block.target.ra)
+                dec.append(slot.block.target.dec)
+            elif show_transitions and slot.block:
+                start_times.append(slot.start.iso)
+                end_times.append(slot.end.iso)
+                durations.append(slot.duration.to(u.minute).value)
+                target_names.append('TransitionBlock')
+                ra.append('')
+                dec.append('')
+            elif slot.block is None and show_unused:
+                start_times.append(slot.start.iso)
+                end_times.append(slot.end.iso)
+                durations.append(slot.duration.to(u.minute).value)
+                target_names.append('Unused Time')
+                ra.append('')
+                dec.append('')
+        return Table([target_names, start_times, end_times, durations, ra, dec],
+                     names=('target', 'start time (UTC)', 'end time (UTC)',
+                            'duration (minutes)', 'ra', 'dec'))
 
     def new_slots(self, slot_index, start_time, end_time):
         # this is intended to be used such that there aren't consecutive unoccupied slots
@@ -277,7 +313,7 @@ class Slot(object):
         self.end = end_time
         self.occupied = False
         self.middle = False
-        self.block = False
+        self.block = None
 
     @property
     def duration(self):
@@ -395,6 +431,7 @@ class SequentialScheduler(Scheduler):
         self.schedule = Schedule(self.start_time, self.end_time,
                                  # constraints=self.constraints
                                  )
+        self.schedule.observer = observer
 
     @classmethod
     @u.quantity_input(duration=u.second)

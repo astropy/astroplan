@@ -237,6 +237,7 @@ def plot_schedule_airmass(schedule, show_night=False):
         plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
         targ_to_color[target.name] = plt.cm.cool(ci)
     if show_night:
+        # i'm pretty sure this overlaps a lot, creating darker bands
         for test_time in ts:
             midnight = schedule.observer.midnight(test_time)
             previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
@@ -246,17 +247,17 @@ def plot_schedule_airmass(schedule, show_night=False):
             next_twilight = schedule.observer.twilight_morning_astronomical(midnight, which='next')
 
             plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
-                        facecolor='k', alpha=0.05)
+                        facecolor='lightgrey', alpha=0.05)
             plt.axvspan(previous_twilight.plot_date, next_twilight.plot_date,
-                        facecolor='k', alpha=0.05)
+                        facecolor='lightgrey', alpha=0.05)
 
     for block in blocks:
         if hasattr(block, 'target'):
             plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
-                        fc=targ_to_color[block.target.name], lw=0)
+                        fc=targ_to_color[block.target.name], lw=0, alpha=.6)
         else:
             plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
-                        color='k', lw=0)
+                        color='k', lw=0, alpha=.6)
     # TODO: make this output a `axes` object
 
 
