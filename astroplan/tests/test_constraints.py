@@ -15,7 +15,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           LocalTimeConstraint, months_observable)
+                           TimeConstraint, LocalTimeConstraint, months_observable)
 
 APY_LT104 = not minversion('astropy','1.0.4')
 
@@ -26,10 +26,11 @@ rigel = FixedTarget(coord=SkyCoord(ra=78.63446707*u.deg, dec=8.20163837*u.deg),
 polaris = FixedTarget(coord=SkyCoord(ra=37.95456067*u.deg,
                                      dec=89.26410897*u.deg), name="Polaris")
 
+
 def test_at_night_basic():
     subaru = Observer.at_site("Subaru")
-    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']), # 1 day
-                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])] # 1 hr
+    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
+                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])]  # 1 hr
     targets = [vega, rigel, polaris]
     for time_range in time_ranges:
         # Calculate constraint using methods on astroplan.Observer:
@@ -49,8 +50,8 @@ def test_at_night_basic():
 
 def test_observability_table():
     subaru = Observer.at_site("Subaru")
-    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']), # 1 day
-                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])] # 1 hr
+    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
+                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])]  # 1 hr
     targets = [vega, rigel, polaris]
 
     time_range = Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06'])
@@ -72,7 +73,7 @@ def test_observability_table():
     np.testing.assert_allclose(obstab['fraction of time observable'],
                                np.array([21, 22, 15])/48)
 
-    #now compare to is_observable and is_always_observable
+    # now compare to is_observable and is_always_observable
     is_obs = is_observable(constraints, subaru, targets, time_range=time_range)
     np.testing.assert_allclose(obstab['ever observable'], is_obs)
     all_obs = is_always_observable(constraints, subaru, targets,
@@ -124,7 +125,8 @@ def test_compare_airmass_constraint_and_observer():
                                                       time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
-#in astropy before v1.0.4, a recursion error is triggered by this test
+
+# in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
@@ -167,7 +169,6 @@ def test_moon_separation():
     print(is_constraint_met)
     assert np.all(is_constraint_met == [[False], [True], [False]])
 
-
     constraint = MoonSeparationConstraint(max=10*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
@@ -180,36 +181,38 @@ def test_moon_separation():
 
 
 def test_moon_illumination():
-    times = Time(["2015-08-29 18:35", "2015-09-05 18:35", "2015-09-15 18:35"])
+    times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     lco = Observer.at_site("LCO")
     # At these times, moon illuminations are:
-    # [ 0.99946328  0.46867661  0.05379006]
+    # [ 0.9600664 ,  0.49766145,  0.05427445]
+    # and altitudes are:
+    # [ 73.53496408, 42.93207952, 66.46854598] deg
 
     constraint = MoonIlluminationConstraint(min=0.2, max=0.8)
-    is_constraint_met = [constraint(lco, None, times=time) for time in times]
+    is_constraint_met = constraint(lco, None, times=times)
     assert np.all(is_constraint_met == [False, True, False])
 
     constraint = MoonIlluminationConstraint(min=0.2)
-    is_constraint_met = [constraint(lco, None, times=time) for time in times]
+    is_constraint_met = constraint(lco, None, times=times)
     assert np.all(is_constraint_met == [True, True, False])
 
     constraint = MoonIlluminationConstraint(max=0.8)
-    is_constraint_met = [constraint(lco, None, times=time) for time in times]
+    is_constraint_met = constraint(lco, None, times=times)
     assert np.all(is_constraint_met == [False, True, True])
 
 
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru")
-    constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
+    constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
-    constraint = LocalTimeConstraint(min=dt.time(0,2), max=dt.time(4,3))
+    constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [False]
 
-    constraint = LocalTimeConstraint(min=dt.time(3,8), max=dt.time(5,35))
+    constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
@@ -218,15 +221,15 @@ def test_local_time_constraint_hawaii_tz():
     # Define timezone in Observer.timezone
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
-    constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
+    constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
-    constraint = LocalTimeConstraint(min=dt.time(0,2), max=dt.time(4,3))
+    constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [False]
 
-    constraint = LocalTimeConstraint(min=dt.time(3,8), max=dt.time(5,35))
+    constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met == [True]
 
@@ -347,3 +350,27 @@ def test_months_observable():
                  set({1, 2, 3, 4, 5, 6}), set({4, 5, 6, 7, 8, 9})]
 
     assert months == should_be
+
+
+constraint_tests = [
+    AltitudeConstraint(),
+    AirmassConstraint(2),
+    AtNightConstraint(),
+    SunSeparationConstraint(min=90*u.deg),
+    MoonSeparationConstraint(min=20*u.deg),
+    LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
+    TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
+]
+
+
+@pytest.mark.parametrize('constraint', constraint_tests)
+def test_regression_shapes(constraint):
+    times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
+    targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
+               FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
+    lapalma = Observer.at_site('lapalma')
+
+    assert constraint(lapalma, targets, times).shape == (2, 3)
+    assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
+    assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
+    assert constraint(lapalma, targets, times[0]).shape == (2, 1)

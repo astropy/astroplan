@@ -10,6 +10,7 @@ from __future__ import (absolute_import, division, print_function,
 # Standard library
 from abc import ABCMeta, abstractmethod
 import datetime
+import warnings
 
 # Third-party
 from astropy.time import Time
@@ -27,7 +28,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "observability_table", "months_observable"]
+           "TimeConstraint", "observability_table", "months_observable"]
 
 
 def _get_altaz(times, observer, targets,
@@ -80,6 +81,92 @@ def _get_altaz(times, observer, targets,
                 observer.pressure = observer_old_pressure
 
     return observer._altaz_cache[aakey]
+
+
+def _get_moon_data(times, observer,
+                   force_zero_pressure=False):
+    """
+    Calculate moon altitude az and illumination for an array of times for ``observer``.
+
+    Cache the result on the ``observer`` object.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    Returns
+    -------
+    moon_dict : dict
+        Dictionary containing three key-value pairs. (1) 'times' contains the
+        times for the computations, (2) 'altaz' contains the
+        corresponding alt/az coordinates at those times and (3) contains
+        the moon illumination for those times.
+    """
+    if not hasattr(observer, '_moon_cache'):
+        observer._moon_cache = {}
+
+    # convert times to tuple for hashing
+    aakey = (tuple(times.jd))
+
+    if aakey not in observer._moon_cache:
+        try:
+            if force_zero_pressure:
+                observer_old_pressure = observer.pressure
+                observer.pressure = 0
+
+            altaz = observer.moon_altaz(times)
+            illumination = np.array(moon_illumination(times,
+                                                      observer.location))
+            observer._moon_cache[aakey] = dict(times=times,
+                                               illum=illumination,
+                                               altaz=altaz)
+        finally:
+            if force_zero_pressure:
+                observer.pressure = observer_old_pressure
+
+    return observer._moon_cache[aakey]
+
+
+def _get_meridian_transit_times(times, observer, targets):
+    """
+    Calculate next meridian transit for an array of times for ``targets`` and ``observer``.
+
+    Cache the result on the ``observer`` object.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target or list of targets
+
+    Returns
+    -------
+    time_dict : dict
+        Dictionary containing a key-value pair. 'times' contains the
+        meridian_transit times.
+    """
+    if not hasattr(observer, '_meridian_transit_cache'):
+        observer._meridian_transit_cache = {}
+
+    # convert times to tuple for hashing
+    aakey = (tuple(times.jd), tuple(targets))
+
+    if aakey not in observer._meridian_transit_cache:
+        meridian_transit_times = Time([observer.target_meridian_transit_time(
+                                       time, target, which='next') for target in targets
+                                       for time in times])
+        observer._meridian_transit_cache[aakey] = dict(times=meridian_transit_times)
+
+    return observer._meridian_transit_cache[aakey]
 
 
 @abstractmethod
@@ -259,6 +346,7 @@ class AirmassConstraint(AltitudeConstraint):
             # we reverse order so that airmass close to 1/min is good
             return _rescale_airmass(secz, mi, mx)
 
+
 class AtNightConstraint(Constraint):
     """
     Constrain the Sun to be below ``horizon``.
@@ -313,23 +401,27 @@ class AtNightConstraint(Constraint):
                     observer_old_pressure = observer.pressure
                     observer.pressure = 0
 
-                # Broadcast the solar altitudes for the number of targets:
+                # find solar altitude at these times
                 altaz = observer.altaz(times, get_sun(times))
                 altitude = altaz.alt
-                altitude.resize(1, len(altitude))
-                altitude = altitude + np.zeros((len(targets), 1))
-
+                # cache the altitude
                 observer._altaz_cache[aakey] = dict(times=times,
                                                     altitude=altitude)
             finally:
                 if self.force_pressure_zero:
                     observer.pressure = observer_old_pressure
+        else:
+            altitude = observer._altaz_cache[aakey]['altitude']
 
-        return observer._altaz_cache[aakey]
+        # Broadcast the solar altitudes for the number of targets.
+        # Needs to be done after storing/fetching cache so we get the
+        # correct shape if targets changes, but times does not.
+        altitude = np.atleast_2d(altitude)
+        altitude = altitude + np.zeros((len(targets), 1))
+        return altitude
 
     def compute_constraint(self, times, observer, targets):
-        sun_altaz = self._get_solar_altitudes(times, observer, targets)
-        solar_altitude = sun_altaz['altitude']
+        solar_altitude = self._get_solar_altitudes(times, observer, targets)
         mask = solar_altitude <= self.max_solar_altitude
         return mask
 
@@ -355,7 +447,7 @@ class SunSeparationConstraint(Constraint):
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times))
         target_coos = [target.coord if hasattr(target, 'coord') else target
-                   for target in targets]
+                       for target in targets]
         target_altazs = [observer.altaz(times, coo) for coo in target_coos]
         solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
         if self.min is None and self.max is not None:
@@ -416,10 +508,6 @@ class MoonSeparationConstraint(Constraint):
                 moon_separation.append(sep)
             moon_separation = Angle(moon_separation).T
 
-        # The line below should have worked, but needs a workaround.
-        # TODO: once bug has been fixed, replace workaround with simpler version.
-        # Relevant PR: https://github.com/astropy/astropy/issues/4033
-
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
         elif self.max is None and self.min is not None:
@@ -436,6 +524,8 @@ class MoonSeparationConstraint(Constraint):
 class MoonIlluminationConstraint(Constraint):
     """
     Constrain the fractional illumination of the Earth's moon.
+
+    Constraint is also satisfied if the Moon has set.
     """
     def __init__(self, min=None, max=None, ephemeris=None):
         """
@@ -457,9 +547,12 @@ class MoonIlluminationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        illumination = np.array(moon_illumination(times,
-                                                  observer.location,
-                                                  self.ephemeris))
+        # first is the moon up?
+        cached_moon = _get_moon_data(times, observer)
+        moon_alt = cached_moon['altaz'].alt
+        moon_alt_mask = moon_alt < 0
+
+        illumination = cached_moon['illum']
         if self.min is None and self.max is not None:
             mask = self.max >= illumination
         elif self.max is None and self.min is not None:
@@ -470,7 +563,12 @@ class MoonIlluminationConstraint(Constraint):
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
-        return mask
+
+        mask = np.logical_or(moon_alt_mask, mask)
+        if targets is not None:
+            mask = np.tile(mask, len(targets))
+            mask = mask.reshape(len(targets), len(times))
+        return np.atleast_2d(mask)
 
 
 class LocalTimeConstraint(Constraint):
@@ -545,8 +643,67 @@ class LocalTimeConstraint(Constraint):
         else:
             mask = [(t.datetime.time() >= min_time) or
                     (t.datetime.time() <= max_time) for t in times]
+        if targets is not None:
+            mask = np.tile(mask, len(targets))
+            mask = mask.reshape(len(targets), len(times))
+        return np.atleast_2d(mask)
 
-        return mask
+
+class TimeConstraint(Constraint):
+    """Constrain the observing time to be within certain time limits.
+
+    An example use case for this class would be to associate an acceptable
+    time range with a specific observing block. This can be useful if not
+    all observing blocks are valid over the time limits used in calls
+    to `is_observable` or `is_always_observable`.
+    """
+    def __init__(self, min=None, max=None):
+        """
+        Parameters
+        ----------
+        min : `~astropy.time.Time`
+            Earliest time (inclusive). `None` indicates no limit.
+
+        max : `~astropy.time.Time`
+            Latest time (inclusive). `None` indicates no limit.
+
+        Examples
+        --------
+        Constrain the observations to targets that are observable between
+        2016-03-28 and 2016-03-30:
+
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> import datetime as dt
+        >>> subaru = Observer.at_site("Subaru")
+        >>> t1 = Time("2016-03-28T12:00:00")
+        >>> t2 = Time("2016-03-30T12:00:00")
+        >>> constraint = TimeConstraint(t1,t2)
+        """
+        self.min = min
+        self.max = max
+
+        if self.min is None and self.max is None:
+            raise ValueError("You must at least supply either a minimum or a maximum time.")
+
+        if self.min is not None:
+            if not isinstance(self.min, Time):
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+
+        if self.max is not None:
+            if not isinstance(self.max, Time):
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+
+    def compute_constraint(self, times, observer, targets):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
+            max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
+        mask = np.logical_and(times > min_time, times < max_time)
+        if targets is not None:
+            mask = np.tile(mask, len(targets))
+            mask = mask.reshape(len(targets), len(times))
+        return np.atleast_2d(mask)
 
 
 def is_always_observable(constraints, observer, targets, times=None,
@@ -685,8 +842,8 @@ def months_observable(constraints, observer, targets,
         January maps to 1, February maps to 2, etc.
 
     """
-    #TODO: This method could be sped up a lot by dropping to the trigonometric
-    #altitude calculations.
+    # TODO: This method could be sped up a lot by dropping to the trigonometric
+    # altitude calculations.
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
@@ -783,6 +940,7 @@ def observability_table(constraints, observer, targets, times=None,
 
     return tab
 
+
 def _rescale_minmax(vals, min_val, max_val):
     """ Rescale altitude into an observability score."""
     rescaled = (vals - min_val) / (max_val - min_val)
@@ -792,6 +950,7 @@ def _rescale_minmax(vals, min_val, max_val):
     rescaled[above] = 1
 
     return rescaled
+
 
 def _rescale_airmass(vals, min_val, max_val):
     """ Rescale airmass into an observability score."""

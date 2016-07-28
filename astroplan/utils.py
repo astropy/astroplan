@@ -271,7 +271,11 @@ class EarthLocation_mock(EarthLocation):
                                            31.963333333333342*u.deg,
                                            2120*u.m)
 
+        lapalma = EarthLocation.from_geodetic(-17.879999*u.deg,
+                                              28.758333*u.deg,
+                                              2327*u.m)
+
         observatories = dict(lco=lco, subaru=subaru, aao=aao, vbo=vbo, apo=apo,
-                             keck=keck, kpno=kpno)
+                             keck=keck, kpno=kpno, lapalma=lapalma)
 
         return observatories[string.lower()]
