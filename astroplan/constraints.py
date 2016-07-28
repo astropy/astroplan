@@ -701,8 +701,20 @@ class MoonSeparationConstraint(Constraint):
         )
 
     def compute_constraint(self, times, observer, targets):
-        moon = get_moon(times, observer.location, observer.pressure)
+        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
+        # handles scalar and non-scalar time inputs differently
+        if times.isscalar:
+            moon = get_moon(times, observer.location, ephemeris=self.ephemeris)
+        else:
+            moon_coords = [get_moon(t, observer.location, ephemeris=self.ephemeris).transform_to(ICRS)
+                           for t in times]
+            ras = u.Quantity([coord.ra for coord in moon_coords])
+            decs = u.Quantity([coord.dec for coord in moon_coords])
+            dists = u.Quantity([coord.distance for coord in moon_coords])
+            moon = SkyCoord(ICRS(ras, decs, dists))
+
         targets = get_icrs_skycoord(targets)
+
         # has to be this way around
         moon_separation = targets[:, np.newaxis].separation(moon)
         # check broadcastability
