@@ -1664,13 +1664,21 @@ class Observer(object):
 
         return hour_angle
 
-    def tonight(self):
+    @u.quantity_input(horizon=u.deg)
+    def tonight(self, horizon=0 * u.degree):
         """
         Return a time range corresponding to the nearest night
 
         This will return a range of `Time` values from the `astronomical_twilight`
         to `astronomical_sunrise`. If in the middle of a given night, return times
         from `now` until `astronomical_sunrise`
+
+        Parameters
+        ----------
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
 
         Returns
         -------
@@ -1682,8 +1690,8 @@ class Observer(object):
             start_time = current_time
             start_time.format = 'jd'
         else:
-            start_time = self.twilight_evening_astronomical(current_time)
+            start_time = self.sun_set_time(current_time, horizon=horizon)
 
-        end_time = self.twilight_morning_astronomical(current_time)
+        end_time = self.sun_rise_time(current_time, horizon=horizon)
 
         return start_time, end_time
