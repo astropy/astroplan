@@ -29,6 +29,9 @@ docs/_build
 # Pycharm editor project files
 .idea
 
+# VS Studio Code project files
+.vscode
+
 # Packages/installer info
 *.egg
 *.egg-info
