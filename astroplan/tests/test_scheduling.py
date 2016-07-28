@@ -20,7 +20,7 @@ rigel = FixedTarget(coord=SkyCoord(ra=78.63446707 * u.deg, dec=8.20163837 * u.de
 polaris = FixedTarget(coord=SkyCoord(ra=37.95456067 * u.deg,
                                      dec=89.26410897 * u.deg), name="Polaris")
 
-mdm = Observer.at_site('mdm')
+apo = Observer.at_site('apo')
 targets = [vega, rigel, polaris]
 
 
@@ -29,8 +29,8 @@ def test_transitioner():
     slew_rate = 1 * u.deg / u.second
     trans = Transitioner(slew_rate=slew_rate)
     start_time = Time('2016-02-06 00:00:00')
-    transition = trans(blocks[0], blocks[1], start_time, mdm)
-    aaz = _get_altaz(Time([start_time]), mdm,
+    transition = trans(blocks[0], blocks[1], start_time, apo)
+    aaz = _get_altaz(Time([start_time]), apo,
                      [blocks[0].target, blocks[1].target])['altaz']
     sep = aaz[0].separation(aaz[1])[0]
     assert isinstance(transition, TransitionBlock)
@@ -44,7 +44,7 @@ def test_priority_scheduler():
     start_time = Time('2016-02-06 00:00:00')
     end_time = start_time + 24*u.hour
     scheduler = PriorityScheduler(start_time, end_time, transitioner=transitioner,
-                                  constraints=constraints, observer=mdm)
+                                  constraints=constraints, observer=apo)
     schedule = scheduler(blocks)
     assert len(schedule.observing_blocks) == 3
     assert all(np.abs(block.end_time - block.start_time - block.duration) <
@@ -57,7 +57,7 @@ def test_sequential_scheduler():
     start_time = Time('2016-02-06 00:00:00')
     end_time = start_time + 24 * u.hour
     scheduler = SequentialScheduler(start_time, end_time,
-                                    constraints=constraints, observer=mdm,
+                                    constraints=constraints, observer=apo,
                                     transitioner=transitioner)
     schedule = scheduler(blocks)
     assert len(schedule.observing_blocks) > 0
