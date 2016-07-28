@@ -1663,3 +1663,27 @@ class Observer(object):
             hour_angle = Longitude(self.local_sidereal_time(time) - coord.ra)
 
         return hour_angle
+
+    def tonight(self):
+        """
+        Return a time range corresponding to the nearest night
+
+        This will return a range of `Time` values from the `astronomical_twilight`
+        to `astronomical_sunrise`. If in the middle of a given night, return times
+        from `now` until `astronomical_sunrise`
+
+        Returns
+        -------
+        times : `~astropy.time.Time`
+            A tuple of times corresponding to the start and end of current night
+        """
+        current_time = Time.now()
+        if self.is_night(current_time):
+            start_time = current_time
+            start_time.format = 'jd'
+        else:
+            start_time = self.twilight_evening_astronomical(current_time)
+
+        end_time = self.twilight_morning_astronomical(current_time)
+
+        return start_time, end_time
