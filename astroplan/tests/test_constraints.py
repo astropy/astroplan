@@ -364,7 +364,6 @@ constraint_tests = [
 
 
 @pytest.mark.parametrize('constraint', constraint_tests)
-@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_regression_shapes(constraint):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
