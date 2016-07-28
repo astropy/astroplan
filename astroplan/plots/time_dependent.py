@@ -237,7 +237,7 @@ def plot_schedule_airmass(schedule, show_night=False):
         plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
         targ_to_color[target.name] = plt.cm.cool(ci)
     if show_night:
-        # i'm pretty sure this overlaps a lot, creating darker bands
+        # I'm pretty sure this overlaps a lot, creating darker bands
         for test_time in ts:
             midnight = schedule.observer.midnight(test_time)
             previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
