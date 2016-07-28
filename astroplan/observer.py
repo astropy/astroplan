@@ -1669,9 +1669,10 @@ class Observer(object):
         """
         Return a time range corresponding to the nearest night
 
-        This will return a range of `Time` values from the `astronomical_twilight`
-        to `astronomical_sunrise`. If in the middle of a given night, return times
-        from `now` until `astronomical_sunrise`
+        This will return a range of `~astropy.time.Time` corresponding to the
+        beginning and ending of the night. If in the middle of a given night,
+        return times from `~astropy.time.Time.now` until the nearest
+        `~astroplan.Observer.sun_rise_time`
 
         Parameters
         ----------
