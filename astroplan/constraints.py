@@ -706,16 +706,20 @@ class MoonSeparationConstraint(Constraint):
         if times.isscalar:
             moon = get_moon(times, observer.location, ephemeris=self.ephemeris)
         else:
-            moon_coords = [get_moon(t, observer.location, ephemeris=self.ephemeris).transform_to(ICRS)
+            # must get moon coordinates in an earth centred frame
+            altaz_frame = AltAz(obstime=times[0], location=observer.location)
+            moon_coords = [get_moon(t, observer.location, ephemeris=self.ephemeris).transform_to(altaz_frame)
                            for t in times]
-            ras = u.Quantity([coord.ra for coord in moon_coords])
-            decs = u.Quantity([coord.dec for coord in moon_coords])
+            obstime = [coord.obstime for coord in moon_coords]
+            alts = u.Quantity([coord.alt for coord in moon_coords])
+            azs = u.Quantity([coord.az for coord in moon_coords])
             dists = u.Quantity([coord.distance for coord in moon_coords])
-            moon = SkyCoord(ICRS(ras, decs, dists))
+            moon = SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=observer.location))
 
         targets = get_icrs_skycoord(targets)
 
-        # has to be this way around
+        # has to be this way around, so the target coords are transformed to an
+        # Earth-centred frame before calculating angular separation.
         moon_separation = targets[:, np.newaxis].separation(moon)
         # check broadcastability
         self._check_limit_shape(moon_separation, self.min)
