@@ -6,17 +6,8 @@ from ..observer import Observer
 from astropy.time import Time
 from astropy.coordinates import EarthLocation
 import astropy.units as u
-from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
 
-try:
-    import ephem
-    HAS_PYEPHEM = True
-except ImportError:
-    HAS_PYEPHEM = False
-
-
-@pytest.mark.skipif('not HAS_PYEPHEM')
 def test_illumination():
     time = Time(['1990-01-01 00:00:00', '1990-03-01 06:00:00',
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
@@ -24,10 +15,6 @@ def test_illumination():
     obs = Observer(location)
     # Get illumination via time
     illumination1 = obs.moon_illumination(time)
-
-    # Get illumination via sun and moon
-    illumination2 = obs.moon_illumination(time)
-    assert all(illumination1 == illumination2)
 
     # Run print_pyephem_illumination() for PyEphem's solution
     pyephem_illumination = [0.15475513880925418, 0.19484233284757257,
@@ -45,6 +32,7 @@ def print_pyephem_illumination():
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])
     location = EarthLocation.from_geodetic(-155*u.deg, 19*u.deg, 0*u.m)
 
+    import ephem
     moon = ephem.Moon()
     pe_obs = ephem.Observer()
     pe_obs.lat = location.latitude.to_string(u.deg, sep=':')

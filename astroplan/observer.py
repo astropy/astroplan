@@ -8,7 +8,7 @@ import warnings
 
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 Angle, Latitude, Longitude,
+                                 get_moon, Angle, Latitude, Longitude,
                                  UnitSphericalRepresentation)
 from astropy.extern.six import string_types
 import astropy.units as u
@@ -21,9 +21,6 @@ from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
 
 __all__ = ["Observer", "MAGIC_TIME"]
-
-# TODO: remove this statement once the moon is implemented without pyephem
-__doctest_requires__ = {'Observer.moon_altaz': ['ephem']}
 
 MAGIC_TIME = Time(-999, format='jd')
 
@@ -1214,7 +1211,6 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-18*u.degree)
 
     def twilight_evening_nautical(self, time, which='nearest'):
-
         """
         Time at evening nautical (-12 degree) twilight.
 
@@ -1379,14 +1375,6 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        moon : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.get_moon`.
-
-        sun : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the sun at time ``time``. If `None`, will calculate
-            the position of the Sun with `~astropy.coordinates.get_sun`.
-
         Returns
         -------
         float
@@ -1409,7 +1397,7 @@ class Observer(object):
 
         return moon_illumination(time, self.location)
 
-    def moon_phase(self, time=None, moon=None, sun=None):
+    def moon_phase(self, time=None):
         """
         Calculate lunar orbital phase.
 
@@ -1422,14 +1410,6 @@ class Observer(object):
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
-
-        moon : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the moon at time ``time``. If `None`, will calculate
-            the position of the moon with `~astroplan.get_moon`.
-
-        sun : `~astropy.coordinates.SkyCoord` or `None` (default)
-            Position of the sun at time ``time``. If `None`, will calculate
-            the position of the Sun with `~astropy.coordinates.get_sun`.
 
         Returns
         -------
@@ -1454,12 +1434,9 @@ class Observer(object):
 
         return moon_phase_angle(time, self.location)
 
-    def moon_altaz(self, time):
+    def moon_altaz(self, time, ephemeris=None):
         """
         Returns the position of the moon in alt/az.
-
-        TODO: Currently `moon_altaz` uses PyEphem to calculate the position
-        of the moon.
 
         Parameters
         ----------
@@ -1468,6 +1445,12 @@ class Observer(object):
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
+
+        ephemeris : str, optional
+            Ephemeris to use.  If not given, use the one set with
+            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            set to 'builtin' by default).
+
 
         Returns
         -------
@@ -1483,42 +1466,30 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time("2015-08-29 18:35")
-        >>> altaz_moon = apo.moon_altaz(time)
-        >>> print("alt: {0.alt}, az: {0.az}".format(altaz_moon)) # doctest: +FLOAT_CMP
-        alt: -64.1659594407 deg, az: 345.360401117 deg
+        >>> altaz_moon = apo.moon_altaz(time) # doctest: +SKIP
+        >>> print("alt: {0.alt}, az: {0.az}".format(altaz_moon)) # doctest: +SKIP
+        alt: -63.72706397691421 deg, az: 345.3640380598265 deg
         """
         if not isinstance(time, Time):
             time = Time(time)
 
-        try:
-            import ephem
-        except ImportError:
-            raise ImportError("The moon_altaz function currently requires "
-                              "PyEphem to compute the position of the moon.")
-
-        moon = ephem.Moon()
-        obs = ephem.Observer()
-        obs.lat = self.location.latitude.to(u.degree).to_string(sep=':')
-        obs.lon = self.location.longitude.to(u.degree).to_string(sep=':')
-        obs.elevation = self.location.height.to(u.m).value
-        if self.pressure is not None:
-            obs.pressure = self.pressure.to(u.bar).value*1000.0
+        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
+        # handles scalar and non-scalar time inputs differently
 
         if time.isscalar:
-            obs.date = time.datetime
-            moon.compute(obs)
-            moon_alt = float(moon.alt)
-            moon_az = float(moon.az)
+            altaz_frame = AltAz(location=self.location, obstime=time)
+            sun = get_sun(time).transform_to(altaz_frame)
+
+            moon = get_moon(time, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
+            return moon
+
         else:
-            moon_alt = []
-            moon_az = []
+            moon_coords = []
             for t in time:
-                obs.date = t.datetime
-                moon.compute(obs)
-                moon_alt.append(float(moon.alt))
-                moon_az.append(float(moon.az))
-        return SkyCoord(alt=moon_alt*u.rad, az=moon_az*u.rad,
-                        frame=self.altaz(time))
+                altaz_frame = AltAz(location=self.location, obstime=t)
+                moon_coord = get_moon(t, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
+                moon_coords.append(moon_coord)
+            return moon_coords
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):

@@ -16,7 +16,7 @@ environment:
   matrix:
 
       # Note that we don't support Python 2.6 in astroplan,
-      # so we test Python 2.7 (whereas Astropy tests on 2.6)
+      # so we test Python 2.7
 
       - PYTHON_VERSION: "2.7"
         NUMPY_VERSION: "stable"
