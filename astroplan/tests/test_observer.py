@@ -13,7 +13,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytz
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, Angle)
+                                 AltAz, Angle, GCRS)
 from astropy.tests.helper import assert_quantity_allclose
 
 # Package
@@ -1190,3 +1190,21 @@ def test_hour_angle():
     hour_angle = obs.target_hour_angle(time, vernal_eq)
     lst = obs.local_sidereal_time(time)
     assert_quantity_allclose(hour_angle, lst, atol=0.001*u.deg)
+
+
+def test_altaz_near_far():
+    # AltAz test against astropy for objects both near and far from the Earth
+    time = Time("2014-01-20 22:00")
+    location = EarthLocation.from_geodetic(-17.88*u.deg, -28.76*u.deg, 2327*u.m)
+    gcrs_loc = u.Quantity([1712675, 5328049, -3053885], unit=u.m)
+    gcrs_vel = u.Quantity([-388, 125, 0], unit=u.m/u.s)
+    m31 = SkyCoord(10.6847083*u.deg, 41.26875*u.deg)
+    moon = SkyCoord(GCRS(172.4*u.deg, 0.51*u.deg, 0.002671*u.au,
+                    obstime=time, obsgeoloc=gcrs_loc, obsgeovel=gcrs_vel))
+    observer = Observer(location)
+    altaz_frame = AltAz(obstime=time, location=location)
+    for target in (moon, m31):
+        astropy_aa = target.transform_to(altaz_frame)
+        astroplan_aa = observer.altaz(time, target)
+        assert(astroplan_aa.separation(astropy_aa) < 1*u.arcsec)
+
