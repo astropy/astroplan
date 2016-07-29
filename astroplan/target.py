@@ -260,3 +260,4 @@ def get_skycoord(targets):
         """
         distances = [distance if distance != 1 else 100*u.kpc for distance in distances]
         return SkyCoord(longitudes, latitudes, distances, frame=frame)
+
