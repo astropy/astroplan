@@ -1191,20 +1191,30 @@ def test_hour_angle():
     lst = obs.local_sidereal_time(time)
     assert_quantity_allclose(hour_angle, lst, atol=0.001*u.deg)
 
-
+time = Time("2014-01-20 22:00")
+location = EarthLocation.from_geodetic(-17.88*u.deg, -28.76*u.deg, 2327*u.m)
+gcrs_loc = u.Quantity([1712675, 5328049, -3053885], unit=u.m)
+gcrs_vel = u.Quantity([-388, 125, 0], unit=u.m/u.s)
+m31 = SkyCoord(10.6847083*u.deg, 41.26875*u.deg)
+moon = SkyCoord(GCRS(172.4*u.deg, 0.51*u.deg, 0.002671*u.au,
+                obstime=time, obsgeoloc=gcrs_loc, obsgeovel=gcrs_vel))
+observer = Observer(location)
 def test_altaz_near_far():
     # AltAz test against astropy for objects both near and far from the Earth
-    time = Time("2014-01-20 22:00")
-    location = EarthLocation.from_geodetic(-17.88*u.deg, -28.76*u.deg, 2327*u.m)
-    gcrs_loc = u.Quantity([1712675, 5328049, -3053885], unit=u.m)
-    gcrs_vel = u.Quantity([-388, 125, 0], unit=u.m/u.s)
-    m31 = SkyCoord(10.6847083*u.deg, 41.26875*u.deg)
-    moon = SkyCoord(GCRS(172.4*u.deg, 0.51*u.deg, 0.002671*u.au,
-                    obstime=time, obsgeoloc=gcrs_loc, obsgeovel=gcrs_vel))
-    observer = Observer(location)
     altaz_frame = AltAz(obstime=time, location=location)
     for target in (moon, m31):
         astropy_aa = target.transform_to(altaz_frame)
         astroplan_aa = observer.altaz(time, target)
         assert(astroplan_aa.separation(astropy_aa) < 1*u.arcsec)
+
+def test_altaz_shape_scalar_time():
+    # test shapes are correct
+    assert observer.altaz(time, [m31, m31]).alt.shape == (2, 1)
+    assert observer.altaz(time, [moon, moon]).alt.shape == (2, 1)
+
+def test_altaz_non_scalar_targets():
+    for target in (moon, m31):
+        alt_scalar = observer.altaz(time, target).alt
+        alt_vector = observer.altaz(time, [target, target]).alt[0]
+        assert_allclose(alt_scalar, alt_vector)
 
