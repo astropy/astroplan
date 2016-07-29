@@ -205,7 +205,7 @@ def get_skycoord(targets):
 
     # we also need to be careful about handling mixtures of UnitSphericalRepresentations and others
     targets_is_unitsphericalrep = [x.data.__class__ is
-                                   UnitSphericalRepresentation for x in targets]
+                                   UnitSphericalRepresentation for x in coords]
 
     longitudes = []
     latitudes = []
