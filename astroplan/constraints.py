@@ -539,7 +539,7 @@ class MoonIlluminationConstraint(Constraint):
             indicates no limit.
         ephemeris : str, optional
             Ephemeris to use.  If not given, use the one set with
-            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            `~astropy.coordinates.solar_system_ephemeris` (which is
             set to 'builtin' by default).
         """
         self.min = min
@@ -547,46 +547,52 @@ class MoonIlluminationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     @classmethod
-    def dark(cls, **kwargs):
+    def dark(cls, min=None, max=0.25, **kwargs):
         """
-        This will use default values (acceptable fractional illumination)
-        of max=0.25 with no minimum. You can input min= or max= to change
-        the values and ephemeris= if a different ephemeris is desired,
-        by default it uses ``astropy.coordinates.solar_system_ephemeris.set``
+        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of no minimum and a maximum of 0.25
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
         """
-        if 'max' not in kwargs:
-            kwargs['max'] = 0.25
-        if 'min' not in kwargs:
-            kwargs['min'] = None
-        return cls(**kwargs)
+        return cls(min, max, **kwargs)
 
     @classmethod
-    def grey(cls, **kwargs):
+    def grey(cls, min=0.25, max=0.65, **kwargs):
         """
-        This will use default values (acceptable fractional illumination)
-        of max=0.65 and min=0.25. You can input min= or max= to change
-        the values and ephemeris= if a different ephemeris is desired,
-        by default it uses ``astropy.coordinates.solar_system_ephemeris.set``
+        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of a minimum of 0.25 and a maximum of 0.65
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
         """
-        if 'max' not in kwargs:
-            kwargs['max'] = 0.65
-        if 'min' not in kwargs:
-            kwargs['min'] = 0.25
-        return cls(**kwargs)
+        return cls(min, max, **kwargs)
 
     @classmethod
-    def bright(cls, **kwargs):
+    def bright(cls, min=0.65, max=None, **kwargs):
         """
-        This will use default values (acceptable fractional illumination)
-        of min=0.65 with no maximum. You can input min= or max= to change
-        the values and ephemeris= if a different ephemeris is desired,
-        by default it uses ``astropy.coordinates.solar_system_ephemeris.set``
+        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of a minimum of 0.65 and no maximum
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
         """
-        if 'max' not in kwargs:
-            kwargs['max'] = None
-        if 'min' not in kwargs:
-            kwargs['min'] = 0.65
-        return cls(**kwargs)
+        return cls(min, max, **kwargs)
 
     def compute_constraint(self, times, observer, targets):
         # first is the moon up?
