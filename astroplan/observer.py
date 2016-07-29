@@ -19,7 +19,7 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
-from .target import get_icrs_skycoord
+from .target import get_skycoord
 
 __all__ = ["Observer", "MAGIC_TIME"]
 
@@ -403,7 +403,7 @@ class Observer(object):
             # Return just the frame
             return altaz_frame
         else:
-            coordinate = get_icrs_skycoord(target)
+            coordinate = get_skycoord(target)
             if coordinate.isscalar:
                 return coordinate.transform_to(altaz_frame)
             return coordinate[:, np.newaxis].transform_to(altaz_frame)
@@ -437,7 +437,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        coordinate = get_icrs_skycoord(target)
+        coordinate = get_skycoord(target)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
