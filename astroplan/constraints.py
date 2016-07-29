@@ -546,6 +546,45 @@ class MoonIlluminationConstraint(Constraint):
         self.max = max
         self.ephemeris = ephemeris
 
+    @classmethod
+    def dark(cls, **kwargs):
+        """
+        This will use default values of max=0.25 with no minimum
+        You can input min= or max= to change the values and ephemeris=
+        if that is desired
+        """
+        if 'max' not in kwargs:
+            kwargs['max'] = 0.25
+        if 'min' not in kwargs:
+            kwargs['min'] = None
+        return cls(**kwargs)
+
+    @classmethod
+    def grey(cls, **kwargs):
+        """
+        This will use default values of max=0.65 and min=0.25
+        You can input min= or max= to change the values and ephemeris=
+        if that is desired
+        """
+        if 'max' not in kwargs:
+            kwargs['max'] = 0.65
+        if 'min' not in kwargs:
+            kwargs['min'] = 0.25
+        return cls(**kwargs)
+
+    @classmethod
+    def bright(cls, **kwargs):
+        """
+        This will use default values of min=0.65 with no maximum
+        You can input min= or max= to change the values and ephemeris=
+        if that is desired
+        """
+        if 'max' not in kwargs:
+            kwargs['max'] = None
+        if 'min' not in kwargs:
+            kwargs['min'] = 0.65
+        return cls(**kwargs)
+
     def compute_constraint(self, times, observer, targets):
         # first is the moon up?
         cached_moon = _get_moon_data(times, observer)
