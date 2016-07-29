@@ -551,7 +551,8 @@ class MoonIlluminationConstraint(Constraint):
         """
         This will use default values of max=0.25 with no minimum
         You can input min= or max= to change the values and ephemeris=
-        if that is desired
+        if a different ephemeris is desired, by default uses
+        ``astropy.coordinates.solar_system_ephemeris.set``
         """
         if 'max' not in kwargs:
             kwargs['max'] = 0.25
@@ -564,7 +565,8 @@ class MoonIlluminationConstraint(Constraint):
         """
         This will use default values of max=0.65 and min=0.25
         You can input min= or max= to change the values and ephemeris=
-        if that is desired
+        if a different ephemeris is desired, by default uses
+        ``astropy.coordinates.solar_system_ephemeris.set``
         """
         if 'max' not in kwargs:
             kwargs['max'] = 0.65
@@ -577,7 +579,8 @@ class MoonIlluminationConstraint(Constraint):
         """
         This will use default values of min=0.65 with no maximum
         You can input min= or max= to change the values and ephemeris=
-        if that is desired
+        if a different ephemeris is desired, by default uses
+        ``astropy.coordinates.solar_system_ephemeris.set``
         """
         if 'max' not in kwargs:
             kwargs['max'] = None
