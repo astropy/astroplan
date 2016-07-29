@@ -7,7 +7,7 @@ from abc import ABCMeta
 
 # Third-party
 import astropy.units as u
-from astropy.coordinates import SkyCoord, UnitSphericalRepresentation
+from astropy.coordinates import SkyCoord, UnitSphericalRepresentation, ICRS
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
@@ -217,10 +217,12 @@ def get_skycoord(targets):
             longitudes.append(icrs_coordinate.ra)
             latitudes.append(icrs_coordinate.dec)
             distances.append(icrs_coordinate.distance)
+            frame = ICRS()
     else:
         # all the same frame, get the longitude and latitude names
         lon_name, lat_name = [mapping.framename for mapping in
                               coords[0].frame_specific_representation_info['spherical']]
+        frame = coords[0].frame
         for coordinate in coords:
             longitudes.append(getattr(coordinate, lon_name))
             latitudes.append(getattr(coordinate, lat_name))
@@ -237,5 +239,7 @@ def get_skycoord(targets):
         Instead, let's assign large distances to those objects with none.
         """
         distances = [distance if distance != 1 else 100*u.kpc for distance in distances]
-
-    return SkyCoord(longitudes, latitudes, distances)
+    if all([distance == 1 for distance in distances]):
+        return SkyCoord(longitudes, latitudes, frame=frame)
+    else:
+        return SkyCoord(longitudes, latitudes, distances, frame=frame)
