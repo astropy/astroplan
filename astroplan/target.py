@@ -193,14 +193,17 @@ def get_icrs_skycoord(targets):
         a single SkyCoord object, which may be non-scalar
     """
     if not isinstance(targets, list):
-        return getattr(targets, 'coord', targets)
-    coos = [getattr(target, 'coord', target) for target in targets]
+        return getattr(targets, 'coord', targets).icrs
+    coords = [getattr(target, 'coord', target) for target in targets]
     # it is roughly 20 times faster to get ICRS RAs and DECs first,
     # rather than initialise directly from list of SkyCoords
     # (provided target list is all in ICRS frame)
     ras = []
     decs = []
-    for coo in coos:
-        ras.append(coo.icrs.ra)
-        decs.append(coo.icrs.dec)
-    return SkyCoord(ras, decs)
+    distances = []
+    for coordinate in coords:
+        icrs_coordinate = coordinate.icrs
+        ras.append(icrs_coordinate.ra)
+        decs.append(icrs_coordinate.dec)
+        distances.append(icrs_coordinate.distance)
+    return SkyCoord(ras, decs, distances)
