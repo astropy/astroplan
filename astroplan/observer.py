@@ -406,7 +406,9 @@ class Observer(object):
             coordinate = get_skycoord(target)
             if coordinate.isscalar:
                 return coordinate.transform_to(altaz_frame)
-            return coordinate[:, np.newaxis].transform_to(altaz_frame)
+            # TODO: remove ICRS conversion which is to avoid bug in GCRS-CIRS conversion
+            # (should be fixed by astropy/astropy#5104)
+            return coordinate.icrs[:, np.newaxis].transform_to(altaz_frame)
 
     def parallactic_angle(self, time, target):
         '''
