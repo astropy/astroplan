@@ -210,14 +210,16 @@ def get_skycoord(targets):
     longitudes = []
     latitudes = []
     distances = []
+    get_distances = not all(targets_is_unitsphericalrep)
     if convert_to_icrs:
         # mixture of frames
         for coordinate in coords:
             icrs_coordinate = coordinate.icrs
             longitudes.append(icrs_coordinate.ra)
             latitudes.append(icrs_coordinate.dec)
-            distances.append(icrs_coordinate.distance)
-            frame = ICRS()
+            if get_distances:
+                distances.append(icrs_coordinate.distance)
+        frame = ICRS()
     else:
         # all the same frame, get the longitude and latitude names
         lon_name, lat_name = [mapping.framename for mapping in
@@ -226,11 +228,16 @@ def get_skycoord(targets):
         for coordinate in coords:
             longitudes.append(getattr(coordinate, lon_name))
             latitudes.append(getattr(coordinate, lat_name))
-            distances.append(coordinate.distance)
+            if get_distances:
+                distances.append(coordinate.distance)
 
     # now let's deal with the fact that we may have a mixture of coords with distances and
     # coords with UnitSphericalRepresentations
-    if not all(targets_is_unitsphericalrep) and any(targets_is_unitsphericalrep):
+    if all(targets_is_unitsphericalrep):
+        return SkyCoord(longitudes, latitudes, frame=frame)
+    elif not any(targets_is_unitsphericalrep):
+        return SkyCoord(longitudes, latitudes, distances, frame=frame)
+    else:
         """
         We have a mixture of coords with distances and without.
         Since we don't know in advance the origin of the frame where further transformation
@@ -239,7 +246,4 @@ def get_skycoord(targets):
         Instead, let's assign large distances to those objects with none.
         """
         distances = [distance if distance != 1 else 100*u.kpc for distance in distances]
-    if all([distance == 1 for distance in distances]):
-        return SkyCoord(longitudes, latitudes, frame=frame)
-    else:
         return SkyCoord(longitudes, latitudes, distances, frame=frame)
