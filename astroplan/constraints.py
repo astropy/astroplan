@@ -549,10 +549,10 @@ class MoonIlluminationConstraint(Constraint):
     @classmethod
     def dark(cls, **kwargs):
         """
-        This will use default values of max=0.25 with no minimum
-        You can input min= or max= to change the values and ephemeris=
-        if a different ephemeris is desired, by default uses
-        ``astropy.coordinates.solar_system_ephemeris.set``
+        This will use default values (acceptable fractional illumination)
+        of max=0.25 with no minimum. You can input min= or max= to change
+        the values and ephemeris= if a different ephemeris is desired,
+        by default it uses ``astropy.coordinates.solar_system_ephemeris.set``
         """
         if 'max' not in kwargs:
             kwargs['max'] = 0.25
@@ -563,10 +563,10 @@ class MoonIlluminationConstraint(Constraint):
     @classmethod
     def grey(cls, **kwargs):
         """
-        This will use default values of max=0.65 and min=0.25
-        You can input min= or max= to change the values and ephemeris=
-        if a different ephemeris is desired, by default uses
-        ``astropy.coordinates.solar_system_ephemeris.set``
+        This will use default values (acceptable fractional illumination)
+        of max=0.65 and min=0.25. You can input min= or max= to change
+        the values and ephemeris= if a different ephemeris is desired,
+        by default it uses ``astropy.coordinates.solar_system_ephemeris.set``
         """
         if 'max' not in kwargs:
             kwargs['max'] = 0.65
@@ -577,10 +577,10 @@ class MoonIlluminationConstraint(Constraint):
     @classmethod
     def bright(cls, **kwargs):
         """
-        This will use default values of min=0.65 with no maximum
-        You can input min= or max= to change the values and ephemeris=
-        if a different ephemeris is desired, by default uses
-        ``astropy.coordinates.solar_system_ephemeris.set``
+        This will use default values (acceptable fractional illumination)
+        of min=0.65 with no maximum. You can input min= or max= to change
+        the values and ephemeris= if a different ephemeris is desired,
+        by default it uses ``astropy.coordinates.solar_system_ephemeris.set``
         """
         if 'max' not in kwargs:
             kwargs['max'] = None
