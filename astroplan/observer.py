@@ -437,7 +437,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        coordinate = get_skycoord(target)
+        coordinate = get_skycoord(target).icrs
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
