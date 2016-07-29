@@ -214,8 +214,8 @@ def get_skycoord(targets):
         # mixture of frames
         for coordinate in coords:
             icrs_coordinate = coordinate.icrs
-            ras.append(icrs_coordinate.ra)
-            decs.append(icrs_coordinate.dec)
+            longitudes.append(icrs_coordinate.ra)
+            latitudes.append(icrs_coordinate.dec)
             distances.append(icrs_coordinate.distance)
     else:
         # all the same frame, get the longitude and latitude names
