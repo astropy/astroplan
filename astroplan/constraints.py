@@ -551,6 +551,7 @@ class MoonIlluminationConstraint(Constraint):
         """
         initialize a `~astroplan.constraints.MoonIlluminationConstraint`
         with defaults of no minimum and a maximum of 0.25
+
         Parameters
         ----------
         min : float or `None` (optional)
@@ -567,6 +568,7 @@ class MoonIlluminationConstraint(Constraint):
         """
         initialize a `~astroplan.constraints.MoonIlluminationConstraint`
         with defaults of a minimum of 0.25 and a maximum of 0.65
+
         Parameters
         ----------
         min : float or `None` (optional)
@@ -583,6 +585,7 @@ class MoonIlluminationConstraint(Constraint):
         """
         initialize a `~astroplan.constraints.MoonIlluminationConstraint`
         with defaults of a minimum of 0.65 and no maximum
+
         Parameters
         ----------
         min : float or `None` (optional)
