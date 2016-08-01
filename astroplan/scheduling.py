@@ -15,6 +15,7 @@ from astropy import units as u
 from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
+from .constraints import AltitudeConstraint
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner', 'Scorer']
@@ -507,6 +508,12 @@ class SequentialScheduler(Scheduler):
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
+            # to make sure the scheduler has some constraint to work off of
+            # and to prevent scheduling of targets below the horizon
+            if b._all_constraints is None:
+                b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+            elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+                b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2,
                                               b.duration])
             b.observer = self.observer
@@ -583,6 +590,12 @@ class PriorityScheduler(Scheduler):
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
+            # to make sure the scheduler has some constraint to work off of
+            # and to prevent scheduling of targets below the horizon
+            if b._all_constraints is None:
+                b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+            elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+                b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
             b._duration_offsets = u.Quantity([0 * u.second, b.duration / 2, b.duration])
             _block_priorities[i] = b.priority
             _all_times.append(b.duration)
@@ -729,7 +742,8 @@ class Transitioner(object):
             If not None, gives a mapping from property names to another
             dictionary. The second dictionary maps 2-tuples of states to the
             time it takes to transition between those states (as an
-            `~astropy.units.Quantity`).
+            `~astropy.units.Quantity`), can also take a 'default' key
+            mapped to a default transition time.
         """
         self.slew_rate = slew_rate
         self.instrument_reconfig_times = instrument_reconfig_times
@@ -781,14 +795,20 @@ class Transitioner(object):
     def compute_instrument_transitions(self, oldblock, newblock):
         components = {}
         for conf_name, old_conf in oldblock.configuration.items():
-            if conf_name in newblock:
+            if conf_name in newblock.configuration:
                 conf_times = self.instrument_reconfig_times.get(conf_name,
                                                                 None)
                 if conf_times is not None:
-                    new_conf = newblock[conf_name]
+                    new_conf = newblock.configuration[conf_name]
                     ctime = conf_times.get((old_conf, new_conf), None)
+                    def_time = conf_times.get('default', None)
                     if ctime is not None:
                         s = '{0}:{1} to {2}'.format(conf_name, old_conf,
                                                     new_conf)
                         components[s] = ctime
+                    elif def_time and not old_conf == new_conf:
+                        s = '{0}:{1} to {2}'.format(conf_name, old_conf,
+                                                    new_conf)
+                        components[s] = def_time
+
         return components
