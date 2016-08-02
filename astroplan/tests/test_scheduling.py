@@ -65,6 +65,7 @@ def test_transitioner():
     assert np.abs(transition2.duration - 2*u.minute - transition.duration) < 1*u.second
     # to test the default transition
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
+    assert transition1.components is not None
 
 transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
 
@@ -84,6 +85,9 @@ def test_priority_scheduler():
     assert all([schedule.observing_blocks[0].target == polaris,
                 schedule.observing_blocks[1].target == rigel,
                 schedule.observing_blocks[2].target == vega])
+    # polaris and rigel both peak just before the start time
+    assert schedule.slots[0].block.target == polaris
+    assert schedule.slots[2].block.target == rigel
 
 
 def test_sequential_scheduler():
@@ -133,7 +137,7 @@ def test_scheduling_during_day():
                                    transitioner)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
-
+# bring this back when MoonIlluminationConstraint is working properly
 '''
 def test_scheduling_moon_up():
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
@@ -151,6 +155,7 @@ def test_scheduling_moon_up():
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
 '''
+
 
 def test_slot():
     start_time = default_time

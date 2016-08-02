@@ -204,8 +204,7 @@ class TransitionBlock(object):
     def from_duration(cls, duration):
         # for testing how to put transitions between observations during
         # scheduling without considering the complexities of duration
-        tb = TransitionBlock({None: 0*u.second})
-        tb.duration = duration
+        tb = TransitionBlock({'duration': duration})
         return tb
 
 
