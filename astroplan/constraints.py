@@ -555,15 +555,12 @@ class MoonIlluminationConstraint(Constraint):
 
         illumination = cached_moon['illum']
         if self.min is None and self.max is not None:
-            mask = self.max >= illumination
-            mask = np.logical_or(moon_down_mask, mask)
+            mask = (self.max >= illumination) | moon_down_mask
         elif self.max is None and self.min is not None:
-            mask = self.min <= illumination
-            mask = np.logical_and(moon_up_mask, mask)
+            mask = (self.min <= illumination) & moon_up_mask
         elif self.min is not None and self.max is not None:
             mask = ((self.min <= illumination) &
-                    (illumination <= self.max))
-            mask = np.logical_and(moon_up_mask, mask)
+                    (illumination <= self.max)) & moon_up_mask
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
