@@ -550,21 +550,24 @@ class MoonIlluminationConstraint(Constraint):
         # first is the moon up?
         cached_moon = _get_moon_data(times, observer)
         moon_alt = cached_moon['altaz'].alt
-        moon_alt_mask = moon_alt < 0
+        moon_down_mask = moon_alt < 0
+        moon_up_mask = moon_alt >=0
 
         illumination = cached_moon['illum']
         if self.min is None and self.max is not None:
             mask = self.max >= illumination
+            mask = np.logical_or(moon_down_mask, mask)
         elif self.max is None and self.min is not None:
             mask = self.min <= illumination
+            mask = np.logical_and(moon_up_mask, mask)
         elif self.min is not None and self.max is not None:
             mask = ((self.min <= illumination) &
                     (illumination <= self.max))
+            mask = np.logical_and(moon_up_mask, mask)
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
 
-        mask = np.logical_or(moon_alt_mask, mask)
         if targets is not None:
             mask = np.tile(mask, len(targets))
             mask = mask.reshape(len(targets), len(times))
