@@ -233,8 +233,6 @@ class Schedule(object):
         self.start_time = start_time
         self.end_time = end_time
         self.slots = [Slot(start_time, end_time)]
-        self.slew_duration = 4*u.min
-        # TODO: replace/overwrite slew_duration with Transitioner calls
         self.observer = None
 
     def __repr__(self):
@@ -659,8 +657,9 @@ class PriorityScheduler(Scheduler):
                 # set duration such that the Block will fit in the strided array
                 duration_indices = np.int(np.ceil(b.duration / time_resolution))
                 b.duration = duration_indices * time_resolution
+                # add 1 second to the start time to allow for scheduling at the start of a slot
                 slot_index = [q for q, slot in enumerate(self.schedule.slots)
-                              if slot.start < new_start_time < slot.end][0]
+                              if slot.start < new_start_time + 1*u.second < slot.end][0]
                 slots_before = self.schedule.slots[:slot_index]
                 slots_after = self.schedule.slots[slot_index + 1:]
                 # this has to remake transitions between already existing ObservingBlocks
