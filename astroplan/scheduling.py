@@ -107,10 +107,10 @@ class TransitionBlock(object):
         start_time : `~astropy.units.Quantity`
             Start time of observation
         """
+        self._components = None
         self.duration = None
         self.start_time = start_time
         self.components = components
-        self._components = None
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
