@@ -1683,7 +1683,7 @@ class Observer(object):
 
         Parameters
         ----------
-        time : `~astropy.time.Time` (optional), default = `~astropy.time.Time.now()`
+        time : `~astropy.time.Time` (optional), default = `~astropy.time.Time.now`
             The start time for tonight, which is allowed to be arbitrary. See description
             above for behavior
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
