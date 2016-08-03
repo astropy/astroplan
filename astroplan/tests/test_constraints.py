@@ -181,24 +181,29 @@ def test_moon_separation():
 
 
 def test_moon_illumination():
-    times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
+    times = Time(["2015-08-28 03:30", "2015-08-28 12:00",
+                  "2015-09-05 10:30", "2015-09-15 18:35"])
     lco = Observer.at_site("LCO")
     # At these times, moon illuminations are:
-    # [ 0.9600664 ,  0.49766145,  0.05427445]
+    # [ 0.9600664, 0.97507911, 0.49766145,  0.05427445]
     # and altitudes are:
-    # [ 73.53496408, 42.93207952, 66.46854598] deg
+    # [ 73.53496408, -24.55896688, 42.93207952, 66.46854598] deg
 
     constraint = MoonIlluminationConstraint(min=0.2, max=0.8)
     is_constraint_met = constraint(lco, None, times=times)
-    assert np.all(is_constraint_met == [False, True, False])
+    assert np.all(is_constraint_met == [False, False, True, False])
 
     constraint = MoonIlluminationConstraint(min=0.2)
     is_constraint_met = constraint(lco, None, times=times)
-    assert np.all(is_constraint_met == [True, True, False])
+    assert np.all(is_constraint_met == [True, False, True, False])
 
     constraint = MoonIlluminationConstraint(max=0.8)
     is_constraint_met = constraint(lco, None, times=times)
-    assert np.all(is_constraint_met == [False, True, True])
+    assert np.all(is_constraint_met == [False, True, True, True])
+
+    constraint = MoonIlluminationConstraint(max=0)
+    is_constraint_met = constraint(lco, None, times=times)
+    assert np.all(is_constraint_met == [False, True, False, False])
 
 
 def test_local_time_constraint_utc():
