@@ -394,6 +394,23 @@ class Scheduler(object):
         raise NotImplementedError
         return schedule
 
+    @classmethod
+    @u.quantity_input(duration=u.second)
+    def from_timespan(cls, center_time, duration, **kwargs):
+        """
+        Create a new instance of this class given a center time and duration.
+
+        Parameters
+        ----------
+        center_time : `~astropy.time.Time`
+            Mid-point of time-span to schedule.
+
+        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
+            Duration of time-span to schedule
+        """
+        start_time = center_time - duration / 2.
+        end_time = center_time + duration / 2.
+        return cls(start_time, end_time, **kwargs)
 
 class SequentialScheduler(Scheduler):
     """
@@ -432,24 +449,6 @@ class SequentialScheduler(Scheduler):
                                  # constraints=self.constraints
                                  )
         self.schedule.observer = observer
-
-    @classmethod
-    @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time, duration, **kwargs):
-        """
-        Create a new instance of this class given a center time and duration.
-
-        Parameters
-        ----------
-        center_time : `~astropy.time.Time`
-            Mid-point of time-span to schedule.
-
-        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
-            Duration of time-span to schedule
-        """
-        start_time = center_time - duration/2.
-        end_time = center_time + duration/2.
-        return cls(start_time, end_time, **kwargs)
 
     def _make_schedule(self, blocks):
         for b in blocks:
@@ -552,24 +551,6 @@ class PriorityScheduler(Scheduler):
                                  # constraints=self.constraints
                                  )
         self.schedule.observer = self.observer
-
-    @classmethod
-    @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time, duration, **kwargs):
-        """
-        Create a new instance of this class given a center time and duration.
-
-        Parameters
-        ----------
-        center_time : `~astropy.time.Time`
-            Mid-point of time-span to schedule.
-
-        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
-            Duration of time-span to schedule
-        """
-        start_time = center_time - duration / 2.
-        end_time = center_time + duration / 2.
-        return cls(start_time, end_time, **kwargs)
 
     def _make_schedule(self, blocks):
         # Combine individual constraints with global constraints, and
