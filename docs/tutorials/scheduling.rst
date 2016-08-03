@@ -69,7 +69,7 @@ night from 8PM local time to 7AM local time, in UTC this will be from 3AM to 2PM
     >>> from astropy.time import Time
 
     >>> start_time = Time('2015-06-16 03:00')
-    >>> end_time = Time('20150=-06-16 14:00')
+    >>> end_time = Time('2015-06-16 14:00')
 
 :ref:`Return to Top <scheduling_tutorial>`
 
@@ -94,4 +94,33 @@ the constraint will output floats that get better closer to the ideal.
 Now that we have constraints that we will apply to every target, we need to
 create `~astropy.ObservingBlock`s for each target. An observing block needs
 a target, a duration, and a priority; configuration information can also be
-given (i.e. filter, instrument, etc.). 
+given (i.e. filter, instrument, etc.). We want all of the targets in the 'g'
+filter, and also want 'r' and 'i' for our UMi target. The UMi target also
+needs to be done when it is very dark, so we want to constrain how bright
+the moon is while we are observing it. For each target we want 7 exposures
+(with length depending on the target) and the instrument has a read-out time
+klof 1 minute.
+
+.. code-block::
+
+    >>> from astroplan import ObservingBlock
+    >>> from astroplan.constraints import MoonIlluminationConstraint
+    >>> from astropy import units as u
+
+    >>> rot = 1 * u.minute
+    >>> blocks = []
+    >>> # first we will make the blocks for our UMi target
+    >>> moon_constraint = MoonIlluminationConstraint.dark()
+    >>> for filter in ['g', 'r', 'i']:
+    >>>     blocks.append(ObservingBlock.from_exposures(targets[-1], 0, 8*u.minute, 7, rot,
+    >>>                                                 configuration = {'filter': filter},
+    >>>                                                 constraints = [moon_constraint]))
+    >>> for target in targets[4:7]:
+    >>>     blocks.append(ObservingBlock.from_exposures(target, 1, 4*u.minute, 7, rot,
+    >>>                                                 configuration = {'filter': 'g'}))
+    >>> for target in targets[:4]:
+    >>>     blocks.append(ObservingBlock.from_exposures(target, 2, 2*u.minute, 7, rot,
+    >>>                                                 configuration = {'filter': 'g'}))
+
+
+.. _scheduling-creating_a_transitioner:
