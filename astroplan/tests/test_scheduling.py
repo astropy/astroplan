@@ -42,6 +42,56 @@ def test_observing_block():
                (times_per_exposure[index] + readout_time))
 
 
+def test_slot():
+    start_time = default_time
+    end_time = start_time + 24 * u.hour
+    slot = Slot(start_time, end_time)
+    slots = slot.split_slot(start_time, start_time+1*u.hour)
+    assert len(slots) == 2
+    assert slots[0].end == slots[1].start
+
+
+def test_schedule():
+    start_time = default_time
+    end_time = start_time + 24 * u.hour
+    schedule = Schedule(start_time, end_time)
+    assert schedule.slots[0].start == start_time
+    assert schedule.slots[0].end == end_time
+    assert schedule.slots[0].duration == 24*u.hour
+    schedule.new_slots(0, start_time, end_time)
+    assert len(schedule.slots) == 1
+    new_slots = schedule.new_slots(0, start_time+1*u.hour, start_time+4*u.hour)
+    assert np.abs(new_slots[0].duration - 1*u.hour) < 1*u.second
+    assert np.abs(new_slots[1].duration - 3*u.hour) < 1*u.second
+    assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
+
+
+def test_schedule_insert_slot():
+    schedule = Schedule(default_time, default_time + 5*u.hour)
+    duration = 2*u.hour + 1*u.second
+    end_time = default_time + duration
+    block = TransitionBlock.from_duration(duration)
+    schedule.insert_slot(end_time - duration, block)
+    # when merged with blockgrouping, uncomment:
+    #assert schedule.slots[0]._old_block == block
+    # even when float evaluation doesn't work, it should still schedule properly
+    assert not end_time - duration == default_time
+    assert len(schedule.slots) == 2
+    assert schedule.slots[0].start == default_time
+
+
+def test_schedule_change_slot_block():
+    schedule = Schedule(default_time, default_time + 5 * u.hour)
+    duration = 2 * u.hour
+    block = TransitionBlock.from_duration(duration)
+    schedule.insert_slot(default_time, block)
+    assert np.abs(schedule.slots[0].end - 2*u.hour - default_time) < 1*u.second
+    new_block = TransitionBlock.from_duration(1*u.minute)
+    schedule.change_slot_block(0, new_block)
+    assert np.abs(schedule.slots[0].end - 1*u.minute - default_time) < 1*u.second
+    assert schedule.slots[1].start == schedule.slots[0].end
+
+
 def test_transitioner():
     blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
     slew_rate = 1 * u.deg / u.second
@@ -155,30 +205,6 @@ def test_scheduling_moon_up():
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
 '''
-
-
-def test_slot():
-    start_time = default_time
-    end_time = start_time + 24 * u.hour
-    slot = Slot(start_time, end_time)
-    slots = slot.split_slot(start_time, start_time+1*u.hour)
-    assert len(slots) == 2
-    assert slots[0].end == slots[1].start
-
-
-def test_schedule():
-    start_time = default_time
-    end_time = start_time + 24 * u.hour
-    schedule = Schedule(start_time, end_time)
-    assert schedule.slots[0].start == start_time
-    assert schedule.slots[0].end == end_time
-    assert schedule.slots[0].duration == 24*u.hour
-    schedule.new_slots(0, start_time, end_time)
-    assert len(schedule.slots) == 1
-    new_slots = schedule.new_slots(0, start_time+1*u.hour, start_time+4*u.hour)
-    assert np.abs(new_slots[0].duration - 1*u.hour) < 1*u.second
-    assert np.abs(new_slots[1].duration - 3*u.hour) < 1*u.second
-    assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
 
 
 def test_scorer():
