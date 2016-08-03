@@ -19,6 +19,7 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
+from .target import get_skycoord
 
 __all__ = ["Observer", "MAGIC_TIME"]
 
@@ -339,58 +340,6 @@ class Observer(object):
 
         return Time(date_time, location=self.location)
 
-    def _transform_target_list_to_altaz(self, times, targets):
-        """
-        Workaround for transforming a list of coordinates ``targets`` to
-        altitudes and azimuths.
-
-        Parameters
-        ----------
-        times : `~astropy.time.Time` or list of `~astropy.time.Time` objects
-            Time of observation
-
-        targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
-            List of target coordinates
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
-
-        Returns
-        -------
-        altitudes : list
-            List of altitudes for each target, at each time
-        """
-        if times.isscalar:
-            times = Time([times])
-
-        if not isinstance(targets, list) and targets.isscalar:
-            targets = [targets]
-
-        targets_is_unitsphericalrep = [x.data.__class__ is
-                                       UnitSphericalRepresentation for x in targets]
-        if all(targets_is_unitsphericalrep) or not any(targets_is_unitsphericalrep):
-            repeated_times = np.tile(times, len(targets))
-            ra_list = Longitude([x.icrs.ra for x in targets])
-            dec_list = Latitude([x.icrs.dec for x in targets])
-            repeated_ra = np.repeat(ra_list, len(times))
-            repeated_dec = np.repeat(dec_list, len(times))
-            inner_sc = SkyCoord(ra=repeated_ra, dec=repeated_dec)
-            target_SkyCoord = SkyCoord(inner_sc.data.represent_as(UnitSphericalRepresentation),
-                                       representation=UnitSphericalRepresentation)
-            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
-                                                                   obstime=repeated_times))
-        else:
-            # TODO: This is super slow.
-            repeated_times = np.tile(times, len(targets))
-            repeated_targets = np.repeat(targets, len(times))
-            target_SkyCoord = SkyCoord(SkyCoord(repeated_targets).data.represent_as(
-                                       UnitSphericalRepresentation),
-                                       representation=UnitSphericalRepresentation)
-
-            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
-                                                                   obstime=repeated_times))
-        return transformed_coord
-
     def altaz(self, time, target=None, obswl=None):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
@@ -454,24 +403,12 @@ class Observer(object):
             # Return just the frame
             return altaz_frame
         else:
-            # If target is a list of targets:
-            if _target_is_vector(target):
-                get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-                transformed_coords = self._transform_target_list_to_altaz(time,
-                                          list(map(get_coord, target)))
-                n_targets = len(target)
-                new_shape = (n_targets, int(len(transformed_coords)/n_targets))
-
-                for comp in transformed_coords.data.components:
-                    getattr(transformed_coords.data, comp).resize(new_shape)
-                return transformed_coords
-
-            # If single target is a FixedTarget or a SkyCoord:
-            if hasattr(target, 'coord'):
-                coordinate = target.coord
-            else:
-                coordinate = target
-            return coordinate.transform_to(altaz_frame)
+            coordinate = get_skycoord(target)
+            if coordinate.isscalar:
+                return coordinate.transform_to(altaz_frame)
+            # TODO: remove ICRS conversion which is to avoid bug in GCRS-CIRS conversion
+            # (should be fixed by astropy/astropy#5104)
+            return coordinate.icrs[:, np.newaxis].transform_to(altaz_frame)
 
     def parallactic_angle(self, time, target):
         '''
@@ -502,14 +439,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        if _target_is_vector(target):
-            get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-            coordinate = SkyCoord(list(map(get_coord, target)))
-        else:
-            if hasattr(target, 'coord'):
-                coordinate = target.coord
-            else:
-                coordinate = target
+        coordinate = get_skycoord(target).icrs
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
