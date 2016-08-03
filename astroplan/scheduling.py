@@ -176,9 +176,9 @@ class Schedule(object):
         self.observer = None
 
     def __repr__(self):
-        return 'Schedule containing ' + str(len(self.observing_blocks)) + \
-               ' observing blocks between ' + str(self.slots[0].start.iso) + \
-               ' and ' + str(self.slots[-1].end.iso)
+        return ('Schedule containing ' + str(len(self.observing_blocks)) +
+                ' observing blocks between ' + str(self.slots[0].start.iso) +
+                ' and ' + str(self.slots[-1].end.iso))
 
     def apply_constraints(self):
         # this needs to be able to handle being passed constraints
@@ -241,8 +241,8 @@ class Schedule(object):
         # due to float representation, this will change block start time
         # and duration by up to 1 second in order to fit in a slot
         for j, slot in enumerate(self.slots):
-            if (slot.start < start_time or np.abs(slot.start-start_time) < 1*u.second) \
-                    and (slot.end > start_time):
+            if ((slot.start < start_time or abs(slot.start-start_time) < 1*u.second)
+                    and (slot.end > start_time)):
                 slot_index = j
         if (block.duration - self.slots[slot_index].duration) > 1*u.second:
             print(self.slots[slot_index].duration.to(u.second), block.duration)
@@ -250,15 +250,16 @@ class Schedule(object):
         elif self.slots[slot_index].end - block.duration < start_time:
             start_time = self.slots[slot_index].end - block.duration
 
-        if np.abs((self.slots[slot_index].duration - block.duration) < 1 * u.second):
+        if abs((self.slots[slot_index].duration - block.duration) < 1 * u.second):
             block.duration = self.slots[slot_index].duration
             start_time = self.slots[slot_index].start
             end_time = self.slots[slot_index].end
-        elif np.abs(self.slots[slot_index].start - start_time) < 1*u.second:
+        elif abs(self.slots[slot_index].start - start_time) < 1*u.second:
             start_time = self.slots[slot_index].start
             end_time = start_time + block.duration
-        elif np.abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
+        elif abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
             end_time = self.slots[slot_index].end
+
         else:
             end_time = start_time + block.duration
         if isinstance(block, ObservingBlock):
@@ -631,8 +632,8 @@ class PriorityScheduler(Scheduler):
                         end_idx = times_indices + start_idx
                         # this may make some OBs get sub-optimal scheduling, but it closes gaps
                         # TODO: determine a reasonable range inside which it gets shifted
-                        if tb.duration > new_start_time - tb.start_time or \
-                           np.abs(new_start_time - tb.end_time) < self.gap_time:
+                        if (tb.duration > new_start_time - tb.start_time or
+                                abs(new_start_time - tb.end_time) < self.gap_time):
                             new_start_time = tb.end_time
                             start_time_idx = end_idx
                         self.schedule.insert_slot(tb.start_time, tb)
@@ -648,8 +649,8 @@ class PriorityScheduler(Scheduler):
                         start_idx = self.schedule.slots[slot_index - 2].block.end_idx
                         end_idx = times_indices + start_idx
                         self.schedule.change_slot_block(slot_index - 1, new_block=tb)
-                        if tb.duration > new_start_time - tb.start_time or \
-                           np.abs(new_start_time - tb.end_time) < self.gap_time:
+                        if (tb.duration > new_start_time - tb.start_time or
+                                abs(new_start_time - tb.end_time) < self.gap_time):
                             new_start_time = tb.end_time
                             start_time_idx = end_idx
                         is_open_time[start_idx: end_idx] = False
