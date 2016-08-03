@@ -1670,3 +1670,38 @@ class Observer(object):
             hour_angle = Longitude(self.local_sidereal_time(time) - coord.ra)
 
         return hour_angle
+
+    @u.quantity_input(horizon=u.degree)
+    def tonight(self, time=None, horizon=0 * u.degree):
+        """
+        Return a time range corresponding to the nearest night
+
+        This will return a range of `~astropy.time.Time` corresponding to the
+        beginning and ending of the night. If in the middle of a given night,
+        return times from `~astropy.time.Time.now` until the nearest
+        `~astroplan.Observer.sun_rise_time`
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` (optional), default = `~astropy.time.Time.now()`
+            The start time for tonight, which is allowed to be arbitrary. See description
+            above for behavior
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use for calculating rise/set times
+            (e.g., -6 deg horizon = civil twilight, etc.)
+
+        Returns
+        -------
+        times : `~astropy.time.Time`
+            A tuple of times corresponding to the start and end of current night
+        """
+        current_time = Time.now() if time is None else time
+        if self.is_night(current_time):
+            start_time = current_time
+            start_time.format = 'jd'
+        else:
+            start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
+
+        end_time = self.sun_rise_time(current_time, which='next', horizon=horizon)
+
+        return start_time, end_time
