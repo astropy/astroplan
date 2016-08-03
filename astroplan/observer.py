@@ -1698,7 +1698,6 @@ class Observer(object):
         current_time = Time.now() if time is None else time
         if self.is_night(current_time):
             start_time = current_time
-            start_time.format = 'jd'
         else:
             start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
 
