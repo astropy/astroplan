@@ -1,5 +1,7 @@
 .. doctest-skip-all
 
+.. _constraints:
+
 ******************************
 Defining Observing Constraints
 ******************************
