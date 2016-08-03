@@ -312,7 +312,6 @@ class Schedule(object):
             end_time = start_time + block.duration
         elif abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
             end_time = self.slots[slot_index].end
-
         else:
             end_time = start_time + block.duration
         if isinstance(block, ObservingBlock):
