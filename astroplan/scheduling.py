@@ -242,7 +242,7 @@ class Schedule(object):
         # and duration by up to 1 second in order to fit in a slot
         for j, slot in enumerate(self.slots):
             if ((slot.start < start_time or abs(slot.start-start_time) < 1*u.second)
-                    and (slot.end > start_time)):
+                    and (slot.end > start_time + 1*u.second)):
                 slot_index = j
         if (block.duration - self.slots[slot_index].duration) > 1*u.second:
             print(self.slots[slot_index].duration.to(u.second), block.duration)
@@ -583,11 +583,15 @@ class PriorityScheduler(Scheduler):
             # And then remove any times that are already scheduled
             constraint_scores[is_open_time == False] = 0
             # Select the most optimal time
+
             # need to leave time around the Block for transitions
+            max_config_time = sum([max(value.values()) for value in
+                                   self.transitioner.instrument_reconfig_times.values()])
+            buffer_time = (160*u.deg/self.transitioner.slew_rate + max_config_time)
             # TODO: make it so that this isn't required to prevent errors in slot creation
-            total_duration = b.duration + self.gap_time
+            total_duration = b.duration + buffer_time
             # calculate the number of time slots needed for this exposure
-            _stride_by = np.int(np.ceil(total_duration / time_resolution))
+            _stride_by = np.int(np.ceil(float(total_duration / time_resolution)))
 
             # Stride the score arrays by that number
             _strided_scores = stride_array(constraint_scores, _stride_by)
@@ -612,7 +616,7 @@ class PriorityScheduler(Scheduler):
 
             if _is_scheduled:
                 # set duration such that the Block will fit in the strided array
-                duration_indices = np.int(np.ceil(b.duration / time_resolution))
+                duration_indices = np.int(np.ceil(float(b.duration / time_resolution)))
                 b.duration = duration_indices * time_resolution
                 # add 1 second to the start time to allow for scheduling at the start of a slot
                 slot_index = [q for q, slot in enumerate(self.schedule.slots)
@@ -625,7 +629,7 @@ class PriorityScheduler(Scheduler):
                         # make a transition object after the previous ObservingBlock
                         tb = self.transitioner(self.schedule.slots[slot_index - 1].block, b,
                                                self.schedule.slots[slot_index - 1].end, self.observer)
-                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        times_indices = np.int(np.ceil(float(tb.duration / time_resolution)))
                         tb.duration = times_indices * time_resolution
                         start_idx = self.schedule.slots[slot_index - 1].block.end_idx
                         end_idx = times_indices + start_idx
@@ -643,7 +647,7 @@ class PriorityScheduler(Scheduler):
                         # change the existing TransitionBlock to what it needs to be now
                         tb = self.transitioner(self.schedule.slots[slot_index - 2].block, b,
                                                self.schedule.slots[slot_index - 2].end, self.observer)
-                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        times_indices = np.int(np.ceil(float(tb.duration / time_resolution)))
                         tb.duration = times_indices * time_resolution
                         start_idx = self.schedule.slots[slot_index - 2].block.end_idx
                         end_idx = times_indices + start_idx
@@ -660,7 +664,7 @@ class PriorityScheduler(Scheduler):
                         # make a transition object after the new ObservingBlock
                         tb = self.transitioner(b, self.schedule.slots[slot_index + 1].block,
                                                new_start_time + b.duration, self.observer)
-                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        times_indices = np.int(np.ceil(float(tb.duration / time_resolution)))
                         tb.duration = times_indices * time_resolution
                         self.schedule.insert_slot(tb.start_time, tb)
                         start_idx = end_time_idx
