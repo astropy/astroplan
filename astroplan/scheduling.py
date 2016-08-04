@@ -13,10 +13,6 @@ import numpy as np
 
 from astropy import units as u
 from astropy.table import Table
-from astroplan.constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
-                                   SunSeparationConstraint, MoonSeparationConstraint,
-                                   MoonIlluminationConstraint, LocalTimeConstraint, Constraint,
-                                   TimeConstraint)
 
 from .utils import time_grid_from_range, stride_array
 
