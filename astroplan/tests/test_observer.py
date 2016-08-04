@@ -1190,3 +1190,28 @@ def test_hour_angle():
     hour_angle = obs.target_hour_angle(time, vernal_eq)
     lst = obs.local_sidereal_time(time)
     assert_quantity_allclose(hour_angle, lst, atol=0.001*u.deg)
+
+def test_tonight():
+    obs = Observer.at_site('subaru')
+    obs.height = 0 * u.m
+
+    noon = Time('2016-02-03 22:00:00')
+    midnight = Time('2016-02-04 10:00:00')
+
+    sunset = Time('2016-02-04 04:14:00').datetime
+    sunrise = Time('2016-02-04 16:54:00').datetime
+
+    threshold_minutes = 6
+
+    during_day = obs.tonight(time=noon)
+    during_night = obs.tonight(time=midnight)
+    
+    assert (abs(sunset - during_day[0].datetime) < 
+        datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(sunrise - during_day[1].datetime) < 
+        datetime.timedelta(minutes=threshold_minutes))
+
+    assert (abs(midnight.datetime - during_night[0].datetime) < 
+        datetime.timedelta(minutes=threshold_minutes))
+    assert (abs(sunrise - during_night[1].datetime) < 
+        datetime.timedelta(minutes=threshold_minutes))

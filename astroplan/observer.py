@@ -65,13 +65,16 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
 
     return t0 + time_grid
 
+
 def _target_is_vector(target):
     if hasattr(target, '__iter__'):
         return True
     else:
         return False
 
+
 class Observer(object):
+
     """
     A container class for information about an observer's location and
     environment.
@@ -458,7 +461,7 @@ class Observer(object):
             if _target_is_vector(target):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
                 transformed_coords = self._transform_target_list_to_altaz(time,
-                                          list(map(get_coord, target)))
+                                                                          list(map(get_coord, target)))
                 n_targets = len(target)
                 new_shape = (n_targets, int(len(transformed_coords)/n_targets))
 
@@ -515,7 +518,7 @@ class Observer(object):
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
         H = (LST - coordinate.ra).radian
         q = np.arctan(np.sin(H) /
-                      (np.tan(self.location.latitude.radian)*
+                      (np.tan(self.location.latitude.radian) *
                        np.cos(coordinate.dec.radian) -
                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
 
@@ -564,7 +567,7 @@ class Observer(object):
             target_inds, _ = np.nonzero(condition)
             noncrossing_target_ind = np.setdiff1d(np.arange(n_targets),
                                                   target_inds,
-                                                  assume_unique=True)#[0]
+                                                  assume_unique=True)  # [0]
 
             warnmsg = ('Target(s) index {} does not cross horizon={} within '
                        '24 hours'.format(noncrossing_target_ind, horizon))
@@ -715,7 +718,7 @@ class Observer(object):
             altitudes = altaz.alt
 
         time_limits, altitude_limits = self._horiz_cross(times, altitudes, rise_set,
-                                                    horizon)
+                                                         horizon)
         if not target_is_vector:
             return self._two_point_interp(time_limits[0], altitude_limits[0],
                                           horizon=horizon)
@@ -786,7 +789,7 @@ class Observer(object):
 
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
 
-        horizon = 0*u.degree # Find when derivative passes through zero
+        horizon = 0*u.degree  # Find when derivative passes through zero
         time_limits, altitude_limits = self._horiz_cross(dt, d_altitudes,
                                                          rise_set, horizon)
         if not target_is_vector:
@@ -1493,7 +1496,7 @@ class Observer(object):
             alts = u.Quantity([coord.alt for coord in moon_coords])
             azs = u.Quantity([coord.az for coord in moon_coords])
             dists = u.Quantity([coord.distance for coord in moon_coords])
-            return SkyCoord(AltAz(azs, alts, dists, obstime=obstime,location=self.location))
+            return SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=self.location))
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
@@ -1667,3 +1670,37 @@ class Observer(object):
             hour_angle = Longitude(self.local_sidereal_time(time) - coord.ra)
 
         return hour_angle
+
+    @u.quantity_input(horizon=u.degree)
+    def tonight(self, time=None, horizon=0 * u.degree):
+        """
+        Return a time range corresponding to the nearest night
+
+        This will return a range of `~astropy.time.Time` corresponding to the
+        beginning and ending of the night. If in the middle of a given night,
+        return times from `~astropy.time.Time.now` until the nearest
+        `~astroplan.Observer.sun_rise_time`
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` (optional), default = `~astropy.time.Time.now`
+            The start time for tonight, which is allowed to be arbitrary. See description
+            above for behavior
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use for calculating rise/set times
+            (e.g., -6 deg horizon = civil twilight, etc.)
+
+        Returns
+        -------
+        times : `~astropy.time.Time`
+            A tuple of times corresponding to the start and end of current night
+        """
+        current_time = Time.now() if time is None else time
+        if self.is_night(current_time):
+            start_time = current_time
+        else:
+            start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
+
+        end_time = self.sun_rise_time(current_time, which='next', horizon=horizon)
+
+        return start_time, end_time
