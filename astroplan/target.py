@@ -7,7 +7,7 @@ from abc import ABCMeta
 
 # Third-party
 import astropy.units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
