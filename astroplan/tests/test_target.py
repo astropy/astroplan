@@ -2,6 +2,8 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+from numpy.testing import assert_raises
+
 # Third-party
 import astropy.units as u
 from astropy.coordinates import SkyCoord, GCRS, ICRS
