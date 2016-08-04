@@ -97,7 +97,6 @@ class Scorer(object):
     """
     def __init__(self, blocks, observer, schedule):
         """
-
         Parameters
         ----------
         blocks : list of `~astroplan.scheduling.ObservingBlock` objects
@@ -120,7 +119,8 @@ class Scorer(object):
     def create_score_array(self, time_resolution=1*u.minute):
         """
         this makes a score array over the entire schedule for all of the
-        blocks and each `~astropy.units.Constraint`.
+        blocks and each `~astroplan.Constraint`.
+
         Parameters
         ----------
         time_resolution : `~astropy.units.Quantity`
