@@ -205,6 +205,18 @@ def test_moon_illumination():
     is_constraint_met = constraint(lco, None, times=times)
     assert np.all(is_constraint_met == [False, True, False, False])
 
+    constraint = MoonIlluminationConstraint.dark()
+    is_constraint_met = constraint(lco, None, times=times)
+    assert np.all(is_constraint_met == [False, True, False, True])
+
+    constraint = MoonIlluminationConstraint.grey()
+    is_constraint_met = constraint(lco, None, times=times)
+    assert np.all(is_constraint_met == [False, False, True, False])
+
+    constraint = MoonIlluminationConstraint.bright()
+    is_constraint_met = constraint(lco, None, times=times)
+    assert np.all(is_constraint_met == [True, False, False, False])
+
 
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')

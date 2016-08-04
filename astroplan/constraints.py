@@ -539,12 +539,63 @@ class MoonIlluminationConstraint(Constraint):
             indicates no limit.
         ephemeris : str, optional
             Ephemeris to use.  If not given, use the one set with
-            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            `~astropy.coordinates.solar_system_ephemeris` (which is
             set to 'builtin' by default).
         """
         self.min = min
         self.max = max
         self.ephemeris = ephemeris
+
+    @classmethod
+    def dark(cls, min=None, max=0.25, **kwargs):
+        """
+        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of no minimum and a maximum of 0.25
+
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        """
+        return cls(min, max, **kwargs)
+
+    @classmethod
+    def grey(cls, min=0.25, max=0.65, **kwargs):
+        """
+        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of a minimum of 0.25 and a maximum of 0.65
+
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        """
+        return cls(min, max, **kwargs)
+
+    @classmethod
+    def bright(cls, min=0.65, max=None, **kwargs):
+        """
+        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of a minimum of 0.65 and no maximum
+
+        Parameters
+        ----------
+        min : float or `None` (optional)
+            Minimum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        max : float or `None` (optional)
+            Maximum acceptable fractional illumination (inclusive). `None`
+            indicates no limit.
+        """
+        return cls(min, max, **kwargs)
 
     def compute_constraint(self, times, observer, targets):
         # first is the moon up?
