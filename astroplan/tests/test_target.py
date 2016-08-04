@@ -6,7 +6,8 @@ from numpy.testing import assert_raises
 
 # Third-party
 import astropy.units as u
-from astropy.coordinates import SkyCoord, GCRS
+from astropy.coordinates import SkyCoord, GCRS, ICRS
+from astropy.time import Time
 
 # Package
 from ..target import FixedTarget, get_skycoord
