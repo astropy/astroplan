@@ -216,8 +216,9 @@ targets.
     >>> from astroplan.plots import plot_schedule_airmass
     >>> import matplotlib.pyplot as plt
 
+    >>> plt.figure(figsize = (14,6))
     >>> plot_schedule_airmass(priority_schedule)
-    >>> plt.legend(loc=0)
+    >>> plt.legend(loc = 1)
     >>> plt.show()
 
 .. plot::
@@ -270,6 +271,7 @@ targets.
                                         observer = apo, transitioner = transitioner)
     priority_schedule = prior_scheduler(blocks)
 
+    plt.figure(figsize = (14,6))
     plot_schedule_airmass(priority_schedule)
-    plt.legend(loc=0)
+    plt.legend(loc=1)
     plt.show()
