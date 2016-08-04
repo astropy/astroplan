@@ -22,7 +22,7 @@ import numpy as np
 # Package
 from .moon import moon_illumination
 from .utils import time_grid_from_range
-from .target import FixedTarget, get_icrs_skycoord
+from .target import FixedTarget, get_skycoord
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -718,7 +718,7 @@ class MoonSeparationConstraint(Constraint):
             dists = u.Quantity([coord.distance for coord in moon_coords])
             moon = SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=observer.location))
 
-        targets = get_icrs_skycoord(targets)
+        targets = get_skycoord(targets)
 
         # has to be this way around, so the target coords are transformed to an
         # Earth-centred frame before calculating angular separation.

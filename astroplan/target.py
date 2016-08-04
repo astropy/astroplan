@@ -7,7 +7,11 @@ from abc import ABCMeta
 
 # Third-party
 import astropy.units as u
+<<<<<<< HEAD
 from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation
+=======
+from astropy.coordinates import SkyCoord, ICRS
+>>>>>>> used get_skycoord defined in PR215
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
@@ -201,7 +205,6 @@ def get_skycoord(targets):
     -----------
     targets : list, `~astropy.coordinates.SkyCoord`, `Fixedtarget`
         either a single target or a list of targets
-
     Returns
     --------
     coord : `~astropy.coordinates.SkyCoord`
