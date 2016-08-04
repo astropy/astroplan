@@ -756,8 +756,8 @@ class MoonIlluminationConstraint(Constraint):
             `~astropy.coordinates.solar_system_ephemeris` (which is
             set to 'builtin' by default).
         """
-        self.min = min if min is not None else 0.0
-        self.max = max if max is not None else 1.0
+        self.min = min if min is not None else -0.5
+        self.max = max if max is not None else 1.5
         self.ephemeris = ephemeris
 
     @classmethod
@@ -822,7 +822,7 @@ class MoonIlluminationConstraint(Constraint):
         cached_moon = _get_moon_data(times, observer)
         moon_alt = cached_moon['altaz'].alt
         moon_down_mask = moon_alt < 0
-        moon_up_mask = moon_alt >= 0
+        moon_up_mask = ~moon_down_mask
 
         illumination = cached_moon['illum']
 
@@ -831,11 +831,11 @@ class MoonIlluminationConstraint(Constraint):
         limits are (ntargets, 1). These will broadcast to make
         an (ntargets, ntimes) array
         """
-        if self.min is None and self.max is not None:
+        if self.min < 0 and self.max < 1.5:
             mask = (self.max >= illumination) | moon_down_mask
-        elif self.max is None and self.min is not None:
+        elif self.max > 1.0 and self.min > -0.5:
             mask = (self.min <= illumination) & moon_up_mask
-        elif self.min is not None and self.max is not None:
+        elif self.min > -0.5 and self.max < 1.5:
             mask = ((self.min <= illumination) &
                     (illumination <= self.max)) & moon_up_mask
         else:
