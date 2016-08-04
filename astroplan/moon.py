@@ -27,7 +27,7 @@ def moon_phase_angle(time, ephemeris=None):
 
     ephemeris : str, optional
         Ephemeris to use.  If not given, use the one set with
-        `~astropy.coordinates.solar_system_ephemeris.set` (which is
+        `~astropy.coordinates.solar_system_ephemeris` (which is
         set to 'builtin' by default).
 
     Returns
@@ -58,7 +58,7 @@ def moon_illumination(time, ephemeris=None):
 
     ephemeris : str, optional
         Ephemeris to use.  If not given, use the one set with
-        `~astropy.coordinates.solar_system_ephemeris.set` (which is
+        `~astropy.coordinates.solar_system_ephemeris` (which is
         set to 'builtin' by default).
 
     Returns
