@@ -33,7 +33,7 @@ First we define our `~astroplan.Observer` object (where we are observing from):
 
     >>> from astroplan import Observer
 
-    >>> apo = Observer.at_site('apo)
+    >>> apo = Observer.at_site('apo')
 
 Now we want to define our list of targets (`~astroplan.FixedTarget` objects),
 Most stars can be called by an identifier, but some targets may require coordinates.
@@ -93,7 +93,7 @@ indicate how well the combination of target and time fulfill the constraint.
 We want to make sure that our targets will be high in the sky while observed
 and that they will be observed during the night. We don't want any object to
 be observed at an airmass greater than 2.5, but we prefer a better airmass.
-Usually constraints scores are boolean, but with `boolean_constraint = False`
+Usually constraints scores are boolean, but with ``boolean_constraint = False``
 the constraint will output floats instead, indicated when it is closer to ideal.
 
 .. code-block:: python
@@ -104,7 +104,7 @@ the constraint will output floats instead, indicated when it is closer to ideal.
     >>>                       AtNightConstraint()]
 
 Now that we have constraints that we will apply to every target, we need to
-create `~astropy.ObservingBlock`s for each target. An observing block needs
+create an   `~astroplan.ObservingBlock` for each target. An observing block needs
 a target, a duration, and a priority; configuration information can also be
 given (i.e. filter, instrument, etc.). We want all of the targets in the 'g'
 filter, and also want 'r' and 'i' for our UMi target. We also want to make sure
@@ -215,7 +215,7 @@ targets.
     >>> import matplotlib.pyplot as plt
 
     >>> plot_schedule_airmass(priority_schedule)
-    >>> plt.legend(loc=1)
+    >>> plt.legend(loc=0)
     >>> plt.show()
 
 .. plot::
@@ -269,5 +269,5 @@ targets.
     priority_schedule = prior_scheduler(blocks)
 
     plot_schedule_airmass(priority_schedule)
-    plt.legend(loc=1)
+    plt.legend(loc=0)
     plt.show()
