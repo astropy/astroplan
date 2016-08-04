@@ -13,13 +13,15 @@ import numpy as np
 
 from astropy import units as u
 from astropy.table import Table
-import astroplan.constraints
-from astroplan.constraints import *
+from astroplan.constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
+                                   SunSeparationConstraint, MoonSeparationConstraint,
+                                   MoonIlluminationConstraint, LocalTimeConstraint, Constraint,
+                                   TimeConstraint)
 
 from .utils import time_grid_from_range, stride_array
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
-           'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
+           'SequentialScheduler', 'PriorityScheduler', 'Transitioner', 'Scorer']
 
 
 class ObservingBlock(object):
@@ -112,13 +114,12 @@ class Scorer(object):
         self.blocks = blocks
         self.observer = observer
         self.schedule = schedule
-        # the ranges below should change if there are new constraints made
-        self.constraint_list = [eval(name) for name in
-                                astroplan.constraints.__all__[:-6]
-                                if 'Constraint' in name]
-        self.scheduling_constraints = [eval(name) for name in
-                                       astroplan.constraints.__all__[-5:]
-                                       if 'Constraint' in name]
+        # the lists below should change if there are new constraints made
+        self.constraint_list = ['AltitudeConstraint', 'AirmassConstraint', 'AtNightConstraint',
+                                'SunSeparationConstraint', 'MoonSeparationConstraint',
+                                'MoonIlluminationConstraint', 'LocalTimeConstraint', 'Constraint',
+                                'TimeConstraint']
+        self.scheduling_constraints = None
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -131,7 +132,7 @@ class Scorer(object):
         """
         start = self.schedule.start_time
         end = self.schedule.end_time
-        times = time_grid_from_range(start, end, time_resolution)
+        times = time_grid_from_range((start, end), time_resolution)
         score_array = np.ones((len(self.blocks), len(times)))
         for constraint in self.constraint_list:
             indices = []
