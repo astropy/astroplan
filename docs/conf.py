@@ -179,4 +179,10 @@ if eval(setup_cfg.get('edit_on_github')):
 # Add additional Sphinx extensions:
 extensions += ['matplotlib.sphinxext.plot_directive']
 
+# -- Resolving issue number to links in changelog -----------------------------
+github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_p\
+roject'])
+
+
+# -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 nitpicky = True
