@@ -348,8 +348,7 @@ class Scheduler(object):
 
     @u.quantity_input(gap_time=u.second, time_resolution=u.second)
     def __init__(self, start_time, end_time, constraints, observer,
-                 transitioner=None, gap_time=5*u.min, time_resolution=20*u.second, 
-                 *args, **kwargs):
+                 transitioner=None, gap_time=5*u.min, time_resolution=20*u.second):
         """
         Parameters
         ----------
