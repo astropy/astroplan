@@ -58,6 +58,7 @@ General Documentation
    tutorials/index
    faq/index
    api
+   changelog
 
 .. _astroplan_authors:
 
