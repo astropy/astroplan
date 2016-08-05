@@ -109,12 +109,6 @@ class Scorer(object):
         self.blocks = blocks
         self.observer = observer
         self.schedule = schedule
-        # the lists below should change if there are new constraints made
-        self.constraint_list = ['AltitudeConstraint', 'AirmassConstraint', 'AtNightConstraint',
-                                'SunSeparationConstraint', 'MoonSeparationConstraint',
-                                'MoonIlluminationConstraint', 'LocalTimeConstraint', 'Constraint',
-                                'TimeConstraint']
-        self.scheduling_constraints = None
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -132,28 +126,27 @@ class Scorer(object):
         end = self.schedule.end_time
         times = time_grid_from_range((start, end), time_resolution)
         score_array = np.ones((len(self.blocks), len(times)))
-        for constraint in self.constraint_list:
-            indices = []
-            constraints = []
-            for i, block in enumerate(self.blocks):
-                constrain = [x for x in block.constraints if
-                             x.__class__.__name__ == constraint]
-                if not len(constrain) == 0:
-                    indices.append(i)
-                    constraints.append(constrain[0])
-                    # the following can be removed when vectorization is added
-                    applied_constraint = constrain[0](self.observer, [block.target],
-                                                      times=times)
-                    applied_score = applied_constraint[0]
-                    score_array[i] *= applied_score
-#            indices = [i for i, block in enumerate(self.blocks) if
-#                       any(a.__class__.__name__ == constraint) for
-#                           a in block.constraints)]
-            # for when this is implemented into
-            # constraint_vector = constraint.vectorize(constraints)
-            # constraint_array = constraint_vector.compute_constraint
-            # for x in len(indices):
-                # score_array[indices[x]] *= constraint_array[x]
+        # constraints = {}
+        for i, block in enumerate(self.blocks):
+            for constraint in block.constraints:
+                # the commented out lines are useful if there is vectorization
+                # name = constraint.__class__.__name__
+                # if name in constraints:
+                #     constraints[name].append((constraint, i))
+                # else:
+                #     constraints[name] = [(constraint, i)]
+                applied_score = constraint(self.observer, [block.target],
+                                           times=times)[0]
+                score_array[i] *= applied_score
+        # for constraint in constraints:
+        #     constraint_list = [a[0] for a in constraints[constraint]]
+        #     index_list = [a[1] for a in constraints[constraint]]
+            # I'm not sure about the api of this, but this should eliminate need for importing constraints
+        #     vectorized = constraints[constraint][0][0].vectorize(constraint_list)
+        #     targets = [self.blocks[i].target for i in index_list]
+        #     scores = vectorized(self.observer, targets, times = times)
+        #     for i in len(index_list):
+        #         score_array[index_list[i]] *= scores[i]
         return score_array
 
     @classmethod
