@@ -120,8 +120,6 @@ class Scorer(object):
         time_resolution : `~astropy.units.Quantity`
             the time between each scored time
         """
-        # TODO: iterate through blocks and pull out constraints instead
-        # make it not need the constraint_list
         start = self.schedule.start_time
         end = self.schedule.end_time
         times = time_grid_from_range((start, end), time_resolution)
