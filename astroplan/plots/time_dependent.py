@@ -45,7 +45,7 @@ def _has_twin(ax):
     return False
 
 
-def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
+def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
                  altitude_yaxis=False):
     """
@@ -69,8 +69,9 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
 
     Parameters
     ----------
-    target : `~astroplan.FixedTarget`
-        The celestial body of interest.
+    targets : list of `~astroplan.FixedTarget` objects
+        The celestial bodies of interest.
+        If a single object is passed it will be converted to a list.
 
     observer : `~astroplan.Observer`
         The person, telescope, observatory, etc. doing the observing.
@@ -145,40 +146,50 @@ def plot_airmass(target, observer, time, ax=None, style_kwargs=None,
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
 
-    # Calculate airmass
-    airmass = observer.altaz(time, target).secz
-    # Mask out nonsense airmasses
-    masked_airmass = np.ma.array(airmass, mask=airmass < 1)
+    if not isinstance(targets, list):
+        targets = [targets]
 
-    # Some checks & info for labels.
-    if not hasattr(target, 'name'):
-        target_name = ''
-    else:
-        target_name = target.name
-    style_kwargs.setdefault('label', target_name)
+    for target in targets:
+        # Calculate airmass
+        airmass = observer.altaz(time, target).secz
+        # Mask out nonsense airmasses
+        masked_airmass = np.ma.array(airmass, mask=airmass < 1)
 
-    # Plot data.
-    ax.plot_date(time.plot_date, masked_airmass, **style_kwargs)
+        # Some checks & info for labels.
+        if not hasattr(target, 'name'):
+            target_name = ''
+        else:
+            target_name = target.name
+        style_kwargs.setdefault('label', target_name)
 
-    # Format the time axis
-    date_formatter = dates.DateFormatter('%H:%M')
-    ax.xaxis.set_major_formatter(date_formatter)
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+        # Plot data.
+        ax.plot_date(time.plot_date, masked_airmass, **style_kwargs)
+
+        # Format the time axis
+        date_formatter = dates.DateFormatter('%H:%M')
+        ax.xaxis.set_major_formatter(date_formatter)
+        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Shade background during night time
     if brightness_shading:
-        for test_time in time:
-            midnight = observer.midnight(test_time)
-            previous_sunset = observer.sun_set_time(midnight, which='previous')
-            next_sunrise = observer.sun_rise_time(midnight, which='next')
+        start = time[0].datetime
 
-            previous_twilight = observer.twilight_evening_astronomical(midnight, which='previous')
-            next_twilight = observer.twilight_morning_astronomical(midnight, which='next')
+        # Calculate and order twilights and set plotting alpha for each
+        twilights = [
+            (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
+            (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
+            (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
+            (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
+            (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
+            (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
+            (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
+            (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+        ]
+        twilights.sort(key=lambda x: x[0])
 
-            ax.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
-                       facecolor='k', alpha=0.05)
-            ax.axvspan(previous_twilight.plot_date, next_twilight.plot_date,
-                       facecolor='k', alpha=0.05)
+        for i, twi in enumerate(twilights):
+            if i > 0:
+                plt.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='blue', alpha=twi[1])
 
     # Invert y-axis and set limits.
     if ax.get_ylim()[1] > ax.get_ylim()[0]:
