@@ -157,9 +157,9 @@ def test_sequential_scheduler():
 
 def test_scheduling_target_down():
     lco = Observer.at_site('lco')
-    block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 20 * u.min, 0)]
     start_time = default_time
-    end_time = start_time + 5*u.day
+    end_time = start_time + 2*u.day
     scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, lco,
                                      transitioner)
     schedule1 = scheduler1(block)
@@ -171,7 +171,7 @@ def test_scheduling_target_down():
 
 
 def test_scheduling_during_day():
-    block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 20 * u.min, 0)]
     day = default_time
     start_time = apo.midnight(day) + 10*u.hour
     end_time = start_time + 6*u.hour
@@ -183,21 +183,20 @@ def test_scheduling_during_day():
                                    transitioner)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
-# bring this back when MoonIlluminationConstraint is working properly
-'''
+
+
 def test_scheduling_moon_up():
-    block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 20 * u.min, 0)]
     # on february 23 the moon was up between the start/end times defined below
     day = default_time + 17 * u.day
     start_time = apo.midnight(day) - 2 * u.hour
     end_time = start_time + 6 * u.hour
     constraints = [AtNightConstraint(), MoonIlluminationConstraint(max=0)]
-    scheduler1 = SequentialScheduler(start_time, end_time, constraints, apo,
-                                     transitioner)
+    scheduler1 = PriorityScheduler(start_time, end_time, constraints, apo,
+                                   transitioner)
     schedule1 = scheduler1(block)
     assert len(schedule1.observing_blocks) == 0
-    scheduler2 = PriorityScheduler(start_time, end_time, constraints, apo,
-                                   transitioner)
+    scheduler2 = SequentialScheduler(start_time, end_time, constraints, apo,
+                                     transitioner)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
-'''
