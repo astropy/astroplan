@@ -346,6 +346,43 @@ class Scheduler(object):
 
     __metaclass__ = ABCMeta
 
+    @u.quantity_input(gap_time=u.second, time_resolution=u.second)
+    def __init__(self, start_time, end_time, constraints, observer,
+                 transitioner=None, gap_time=5*u.min, time_resolution=20*u.second):
+        """
+        Parameters
+        ----------
+        start_time : `~astropy.time.Time`
+            the start of the observation scheduling window.
+        end_time : `~astropy.time.Time`
+            the end of the observation scheduling window.
+        constraints : sequence of `~astroplan.constraints.Constraint`
+            The constraints to apply to *every* observing block.  Note that
+            constraints for specific blocks can go on each block individually.
+        observer : `~astroplan.Observer`
+            The observer/site to do the scheduling for.
+        transitioner : `~astroplan.scheduling.Transitioner` or None
+            The object to use for computing transition times between blocks.
+        gap_time : `~astropy.units.Quantity` with time units
+            The maximum length of time a transition between ObservingBlocks
+            could take.
+        time_resolution : `~astropy.units.Quantity` with time units
+            The smallest factor of time used in scheduling, all Blocks scheduled
+            will have a duration that is a multiple of it.
+        """
+        self.constraints = constraints
+        self.start_time = start_time
+        self.end_time = end_time
+        self.observer = observer
+        self.transitioner = transitioner
+        self.gap_time = gap_time
+        self.time_resolution = time_resolution
+        # make a schedule object, when apply_constraints works, add constraints
+        self.schedule = Schedule(self.start_time, self.end_time,
+                                 # constraints=self.constraints
+                                 )
+        self.schedule.observer = self.observer
+
     def __call__(self, blocks):
         """
         Parameters
@@ -394,45 +431,6 @@ class Scheduler(object):
         raise NotImplementedError
         return schedule
 
-
-class SequentialScheduler(Scheduler):
-    """
-    A scheduler that does "stupid simple sequential scheduling".  That is, it
-    simply looks at all the blocks, picks the best one, schedules it, and then
-    moves on.
-    """
-    @u.quantity_input(gap_time=u.second)
-    def __init__(self, start_time, end_time, constraints, observer,
-                 transitioner=None, gap_time=30*u.min):
-        """
-        Parameters
-        ----------
-        start_time : `~astropy.time.Time`
-            the start of the observation scheduling window.
-        end_time : `~astropy.time.Time`
-            the end of the observation scheduling window.
-        constraints : sequence of `~astroplan.constraints.Constraint` objects
-            The constraints to apply to *every* observing block.  Note that
-            constraints for specific blocks can go on each block individually.
-        observer : `~astroplan.Observer`
-            The observer/site to do the scheduling for.
-        transitioner : `~astroplan.scheduling.Transitioner` or None
-            The object to use for computing transition times between blocks
-        gap_time : `~astropy.units.Quantity` with time units
-            The minimal spacing to try over a gap where nothing can be scheduled.
-        """
-        self.constraints = constraints
-        self.start_time = start_time
-        self.end_time = end_time
-        self.observer = observer
-        self.transitioner = transitioner
-        self.gap_time = gap_time
-        # make a schedule object, when apply_constraints works, add constraints
-        self.schedule = Schedule(self.start_time, self.end_time,
-                                 # constraints=self.constraints
-                                 )
-        self.schedule.observer = observer
-
     @classmethod
     @u.quantity_input(duration=u.second)
     def from_timespan(cls, center_time, duration, **kwargs):
@@ -447,9 +445,18 @@ class SequentialScheduler(Scheduler):
         duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
             Duration of time-span to schedule
         """
-        start_time = center_time - duration/2.
-        end_time = center_time + duration/2.
+        start_time = center_time - duration / 2.
+        end_time = center_time + duration / 2.
         return cls(start_time, end_time, **kwargs)
+
+class SequentialScheduler(Scheduler):
+    """
+    A scheduler that does "stupid simple sequential scheduling".  That is, it
+    simply looks at all the blocks, picks the best one, schedules it, and then
+    moves on.
+    """
+    def __init__(self, *args, **kwargs):
+        super(SequentialScheduler, self).__init__(*args, **kwargs)
 
     def _make_schedule(self, blocks):
         for b in blocks:
@@ -516,60 +523,11 @@ class PriorityScheduler(Scheduler):
     finds the best time for each ObservingBlock, in order of priority.
     """
 
-    @u.quantity_input(gap_time=u.second)
-    def __init__(self, start_time, end_time, constraints, observer,
-                 transitioner=None, gap_time=5*u.min, time_resolution=20*u.second):
+    def __init__(self, *args, **kwargs):
         """
-        Parameters
-        ----------
-        start_time : `~astropy.time.Time`
-            the start of the observation scheduling window.
-        end_time : `~astropy.time.Time`
-            the end of the observation scheduling window.
-        constraints : sequence of `~astroplan.constraints.Constraint`
-            The constraints to apply to *every* observing block.  Note that
-            constraints for specific blocks can go on each block individually.
-        observer : `~astroplan.Observer`
-            The observer/site to do the scheduling for.
-        transitioner : `~astroplan.scheduling.Transitioner` or None
-            The object to use for computing transition times between blocks.
-        gap_time : `~astropy.units.Quantity` with time units
-            The maximum length of time a transition between ObservingBlocks
-            could take.
-        time_resolution : `~astropy.units.Quantity` with time units
-            The smallest factor of time used in scheduling, all Blocks scheduled
-            will have a duration that is a multiple of it.
-        """
-        self.constraints = constraints
-        self.start_time = start_time
-        self.end_time = end_time
-        self.observer = observer
-        self.transitioner = transitioner
-        self.gap_time = gap_time
-        self.time_resolution = time_resolution
-        # make a schedule object, when apply_constraints works, add constraints
-        self.schedule = Schedule(self.start_time, self.end_time,
-                                 # constraints=self.constraints
-                                 )
-        self.schedule.observer = self.observer
 
-    @classmethod
-    @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time, duration, **kwargs):
         """
-        Create a new instance of this class given a center time and duration.
-
-        Parameters
-        ----------
-        center_time : `~astropy.time.Time`
-            Mid-point of time-span to schedule.
-
-        duration : `~astropy.units.Quantity` or `~astropy.time.TimeDelta`
-            Duration of time-span to schedule
-        """
-        start_time = center_time - duration / 2.
-        end_time = center_time + duration / 2.
-        return cls(start_time, end_time, **kwargs)
+        super(PriorityScheduler, self).__init__(*args, **kwargs)
 
     def _make_schedule(self, blocks):
         # Combine individual constraints with global constraints, and
