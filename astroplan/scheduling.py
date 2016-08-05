@@ -17,7 +17,7 @@ from astropy.table import Table
 from .utils import time_grid_from_range, stride_array
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
-           'SequentialScheduler', 'PriorityScheduler', 'Transitioner']
+           'SequentialScheduler', 'PriorityScheduler', 'Transitioner', 'Scorer']
 
 
 class ObservingBlock(object):
@@ -88,6 +88,57 @@ class ObservingBlock(object):
         ob.number_exposures = number_exposures
         ob.readout_time = readout_time
         return ob
+
+
+class Scorer(object):
+    """
+    Returns scores and score arrays from the evaluation of constraints on
+    observing blocks
+    """
+    def __init__(self, blocks, observer, schedule):
+        """
+        Parameters
+        ----------
+        blocks : list of `~astroplan.scheduling.ObservingBlock` objects
+            list of blocks that need to be scored
+        observer : `~astroplan.Observer`
+            the observer
+        schedule : `~astroplan.scheduling.Schedule`
+            The schedule inside which the blocks should fit
+        """
+        self.blocks = blocks
+        self.observer = observer
+        self.schedule = schedule
+
+    def create_score_array(self, time_resolution=1*u.minute):
+        """
+        this makes a score array over the entire schedule for all of the
+        blocks and each `~astroplan.Constraint`.
+
+        Parameters
+        ----------
+        time_resolution : `~astropy.units.Quantity`
+            the time between each scored time
+        """
+        start = self.schedule.start_time
+        end = self.schedule.end_time
+        times = time_grid_from_range((start, end), time_resolution)
+        score_array = np.ones((len(self.blocks), len(times)))
+        for i, block in enumerate(self.blocks):
+            for constraint in block.constraints:
+                applied_score = constraint(self.observer, [block.target],
+                                           times=times)[0]
+                score_array[i] *= applied_score
+        return score_array
+
+    @classmethod
+    def from_start_end(cls, blocks, observer, start_time, end_time):
+        """
+        for if you don't have a schedule/ aren't inside a scheduler
+        """
+        dummy_schedule = Schedule(start_time, end_time)
+        sc = cls(blocks, observer, dummy_schedule)
+        return sc
 
 
 class TransitionBlock(object):
