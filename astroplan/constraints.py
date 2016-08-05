@@ -949,7 +949,7 @@ def observability_table(constraints, observer, targets, times=None,
         ``time_resolution``. This will be passed as the first argument into
         `~astroplan.time_grid_from_range`.
 
-    time_resolution : `~astropy.units.Quantity` (optional)
+    time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
         between test times in ``time_range`` by checking constraint at
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
@@ -973,15 +973,15 @@ def observability_table(constraints, observer, targets, times=None,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
 
     colnames = ['target name', 'ever observable', 'always observable',
                 'fraction of time observable']
 
     target_names = [target.name for target in targets]
-    ever_obs = np.any(contraint_arr, axis=1)
-    always_obs = np.all(contraint_arr, axis=1)
-    frac_obs = np.sum(contraint_arr, axis=1) / contraint_arr.shape[1]
+    ever_obs = np.any(constraint_arr, axis=1)
+    always_obs = np.all(constraint_arr, axis=1)
+    frac_obs = np.sum(constraint_arr, axis=1) / constraint_arr.shape[1]
 
     tab = table.Table(names=colnames, data=[target_names, ever_obs, always_obs,
                                             frac_obs])
