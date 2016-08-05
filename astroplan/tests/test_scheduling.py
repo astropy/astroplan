@@ -43,9 +43,10 @@ def test_priority_scheduler():
     blocks = [ObservingBlock(t, 55*u.minute, i) for i, t in enumerate(targets)]
     start_time = Time('2016-02-06 00:00:00')
     end_time = start_time + 24*u.hour
-    scheduler = PriorityScheduler(start_time, end_time, transitioner=transitioner,
+    scheduler = PriorityScheduler(transitioner=transitioner,
                                   constraints=constraints, observer=apo)
-    schedule = scheduler(blocks)
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
     assert len(schedule.observing_blocks) == 3
     assert all(np.abs(block.end_time - block.start_time - block.duration) <
                1*u.second for block in schedule.scheduled_blocks)
@@ -56,10 +57,10 @@ def test_sequential_scheduler():
     blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
     start_time = Time('2016-02-06 00:00:00')
     end_time = start_time + 24 * u.hour
-    scheduler = SequentialScheduler(start_time, end_time,
-                                    constraints=constraints, observer=apo,
+    scheduler = SequentialScheduler(constraints=constraints, observer=apo,
                                     transitioner=transitioner)
-    schedule = scheduler(blocks)
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
     assert len(schedule.observing_blocks) > 0
     assert all(np.abs(block.end_time - block.start_time - block.duration) <
                1*u.second for block in schedule.scheduled_blocks)
