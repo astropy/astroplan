@@ -71,8 +71,6 @@ def test_schedule_insert_slot():
     end_time = default_time + duration
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(end_time - duration, block)
-    # when merged with blockgrouping, uncomment:
-    #assert schedule.slots[0]._old_block == block
     # even when float evaluation doesn't work, it should still schedule properly
     assert not end_time - duration == default_time
     assert len(schedule.slots) == 2
