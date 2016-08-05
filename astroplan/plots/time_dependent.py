@@ -189,7 +189,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         for i, twi in enumerate(twilights):
             if i > 0:
-                plt.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='blue', alpha=twi[1])
+                plt.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
     if ax.get_ylim()[1] > ax.get_ylim()[0]:
