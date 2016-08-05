@@ -83,10 +83,10 @@ def _get_altaz(times, observer, targets,
     return observer._altaz_cache[aakey]
 
 
-def _get_moon_data(times, observer,
-                   force_zero_pressure=False):
+def _get_moon_data(times, observer, force_zero_pressure=False):
     """
-    Calculate moon altitude az and illumination for an array of times for ``observer``.
+    Calculate moon altitude az and illumination for an array of times for
+    ``observer``.
 
     Cache the result on the ``observer`` object.
 
@@ -119,8 +119,7 @@ def _get_moon_data(times, observer,
                 observer.pressure = 0
 
             altaz = observer.moon_altaz(times)
-            illumination = np.array(moon_illumination(times,
-                                                      observer.location))
+            illumination = np.array(moon_illumination(times))
             observer._moon_cache[aakey] = dict(times=times,
                                                illum=illumination,
                                                altaz=altaz)
@@ -133,7 +132,8 @@ def _get_moon_data(times, observer,
 
 def _get_meridian_transit_times(times, observer, targets):
     """
-    Calculate next meridian transit for an array of times for ``targets`` and ``observer``.
+    Calculate next meridian transit for an array of times for ``targets`` and
+    ``observer``.
 
     Cache the result on the ``observer`` object.
 
@@ -162,7 +162,8 @@ def _get_meridian_transit_times(times, observer, targets):
 
     if aakey not in observer._meridian_transit_cache:
         meridian_transit_times = Time([observer.target_meridian_transit_time(
-                                       time, target, which='next') for target in targets
+                                       time, target, which='next')
+                                       for target in targets
                                        for time in times])
         observer._meridian_transit_cache[aakey] = dict(times=meridian_transit_times)
 
@@ -735,15 +736,18 @@ class TimeConstraint(Constraint):
         self.max = max
 
         if self.min is None and self.max is None:
-            raise ValueError("You must at least supply either a minimum or a maximum time.")
+            raise ValueError("You must at least supply either a minimum or a "
+                             "maximum time.")
 
         if self.min is not None:
             if not isinstance(self.min, Time):
-                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+                raise TypeError("Time limits must be specified as "
+                                "astropy.time.Time objects.")
 
         if self.max is not None:
             if not isinstance(self.max, Time):
-                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+                raise TypeError("Time limits must be specified as "
+                                "astropy.time.Time objects.")
 
     def compute_constraint(self, times, observer, targets):
         with warnings.catch_warnings():
@@ -979,7 +983,8 @@ def observability_table(constraints, observer, targets, times=None,
     always_obs = np.all(contraint_arr, axis=1)
     frac_obs = np.sum(contraint_arr, axis=1) / contraint_arr.shape[1]
 
-    tab = table.Table(names=colnames, data=[target_names, ever_obs, always_obs, frac_obs])
+    tab = table.Table(names=colnames, data=[target_names, ever_obs, always_obs,
+                                            frac_obs])
 
     if times is None and time_range is not None:
         times = time_grid_from_range(time_range,
