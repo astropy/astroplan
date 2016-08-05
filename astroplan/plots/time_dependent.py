@@ -160,10 +160,9 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
         else:
             target_name = target.name
-        style_kwargs.setdefault('label', target_name)
 
         # Plot data.
-        ax.plot_date(time.plot_date, masked_airmass, **style_kwargs)
+        ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
         # Format the time axis
         date_formatter = dates.DateFormatter('%H:%M')
