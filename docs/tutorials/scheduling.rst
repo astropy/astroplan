@@ -190,6 +190,8 @@ priority (multiple blocks with the same priority will stay in the
 order they were in), then schedules them one-by-one at the best
 time for that block (highest score).
 
+.. code-block:: python
+
     >>> from astroplan.scheduling import PriorityScheduler
 
     >>> prior_scheduler = PriorityScheduler(start_time, end_time,
