@@ -627,9 +627,15 @@ class PriorityScheduler(Scheduler):
             # Select the most optimal time
 
             # need to leave time around the Block for transitions
-            max_config_time = sum([max(value.values()) for value in
-                                   self.transitioner.instrument_reconfig_times.values()])
-            buffer_time = (160*u.deg/self.transitioner.slew_rate + max_config_time)
+            if self.transitioner.instrument_reconfig_times:
+                max_config_time = sum([max(value.values()) for value in
+                                       self.transitioner.instrument_reconfig_times.values()])
+            else:
+                max_config_time = 0*u.second
+            if self.transitioner.slew_rate:
+                buffer_time = (160*u.deg/self.transitioner.slew_rate + max_config_time)
+            else:
+                buffer_time = max_config_time
             # TODO: make it so that this isn't required to prevent errors in slot creation
             total_duration = b.duration + buffer_time
             # calculate the number of time slots needed for this exposure
@@ -792,7 +798,7 @@ class Transitioner(object):
         if components:
             return TransitionBlock(components, start_time)
         else:
-            return None
+            return TransitionBlock.from_duration(0*u.second)
 
     def compute_instrument_transitions(self, oldblock, newblock):
         components = {}
