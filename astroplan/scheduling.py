@@ -124,27 +124,11 @@ class Scorer(object):
         end = self.schedule.end_time
         times = time_grid_from_range((start, end), time_resolution)
         score_array = np.ones((len(self.blocks), len(times)))
-        # constraints = {}
         for i, block in enumerate(self.blocks):
             for constraint in block.constraints:
-                # the commented out lines are useful if there is vectorization
-                # name = constraint.__class__.__name__
-                # if name in constraints:
-                #     constraints[name].append((constraint, i))
-                # else:
-                #     constraints[name] = [(constraint, i)]
                 applied_score = constraint(self.observer, [block.target],
                                            times=times)[0]
                 score_array[i] *= applied_score
-        # for constraint in constraints:
-        #     constraint_list = [a[0] for a in constraints[constraint]]
-        #     index_list = [a[1] for a in constraints[constraint]]
-            # I'm not sure about the api of this, but this should eliminate need for importing constraints
-        #     vectorized = constraints[constraint][0][0].vectorize(constraint_list)
-        #     targets = [self.blocks[i].target for i in index_list]
-        #     scores = vectorized(self.observer, targets, times = times)
-        #     for i in len(index_list):
-        #         score_array[index_list[i]] *= scores[i]
         return score_array
 
     @classmethod
