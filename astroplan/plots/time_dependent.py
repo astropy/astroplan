@@ -6,6 +6,7 @@ import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import get_sun
+from collections import Sequence
 import warnings
 
 from ..exceptions import PlotWarning
@@ -147,7 +148,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
 
-    if not isinstance(targets, list):
+    if not isinstance(targets, Sequence):
         targets = [targets]
 
     for target in targets:
@@ -185,11 +186,9 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
             (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
         ]
-        twilights.sort(key=lambda x: x[0])
 
-        for i, twi in enumerate(twilights):
-            if i > 0:
-                plt.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
+        for i, twi in enumerate(twilights[1:], 1):
+            plt.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
     if ax.get_ylim()[1] > ax.get_ylim()[0]:
