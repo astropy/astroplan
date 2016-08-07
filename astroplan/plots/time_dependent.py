@@ -158,18 +158,18 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         masked_airmass = np.ma.array(airmass, mask=airmass < 1)
 
         # Some checks & info for labels.
-        if not hasattr(target, 'name'):
-            target_name = ''
-        else:
+        try:
             target_name = target.name
+        except AttributeError:
+            target_name = ''
 
-        # Plot data.
+        # Plot data
         ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
-        # Format the time axis
-        date_formatter = dates.DateFormatter('%H:%M')
-        ax.xaxis.set_major_formatter(date_formatter)
-        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    # Format the time axis
+    date_formatter = dates.DateFormatter('%H:%M')
+    ax.xaxis.set_major_formatter(date_formatter)
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Shade background during night time
     if brightness_shading:
