@@ -101,8 +101,11 @@ class FixedTarget(Target):
     @classmethod
     def from_name(cls, query_name, name=None, **kwargs):
         """
-        Initialize a `FixedTarget` by querying for a name, using the machinery
-        in `~astropy.coordinates.SkyCoord.from_name`.
+        Initialize a `FixedTarget` by querying for a name from the CDS name
+        resolver, using the machinery in
+        `~astropy.coordinates.SkyCoord.from_name`.
+
+        This
 
         Parameters
         ----------
@@ -158,7 +161,8 @@ class FixedTarget(Target):
             "sirius": {"ra": 101.28715533*u.deg, "dec": -16.71611586*u.deg},
             "vega": {"ra": 279.23473479*u.deg, "dec": 38.78368896*u.deg},
             "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg},
-            "polaris": {"ra": 37.95456067*u.deg, "dec": 89.26410897*u.deg}
+            "polaris": {"ra": 37.95456067*u.deg, "dec": 89.26410897*u.deg},
+            "altair": {"ra": 297.6958273*u.deg, "dec": 8.8683212*u.deg}
         }
 
         if query_name.lower() in stars:
