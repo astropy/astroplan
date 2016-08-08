@@ -999,11 +999,11 @@ def observability_table(constraints, observer, targets, times=None,
 
 def _rescale_minmax(vals, min_val, max_val):
     """ Rescale altitude into an observability score."""
-    rescaled = (vals - min_val) / (max_val - min_val)
+    rescaled = (max_val - vals) / (max_val - min_val)
     below = rescaled < 0
     above = rescaled > 1
-    rescaled[below] = 0
-    rescaled[above] = 1
+    rescaled[below] = 1
+    rescaled[above] = 0
 
     return rescaled
 
