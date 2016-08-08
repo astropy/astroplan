@@ -1696,7 +1696,7 @@ class Observer(object):
             A tuple of times corresponding to the start and end of current night
         """
         current_time = Time.now() if time is None else time
-        if self.is_night(current_time):
+        if self.is_night(current_time, horizon=horizon):
             start_time = current_time
         else:
             start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
