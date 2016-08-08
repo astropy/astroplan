@@ -88,3 +88,20 @@ def test_schedule():
     assert np.abs(new_slots[1].duration - 3*u.hour) < 1*u.second
     assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
 
+#change this after rebase with the rest of the tests
+from ..scheduling import Scorer
+
+
+def test_scorer():
+    constraint = AirmassConstraint(max=4)
+    c = constraint(apo, [vega], Time('2016-02-06 00:00:00'))
+    block = ObservingBlock(vega, 1*u.hour, 0, constraints=[constraint])
+    scorer = Scorer.from_start_end([block], apo, Time('2016-02-06 00:00:00'),
+                                   Time('2016-02-06 00:00:00')+1*u.second)
+    assert np.array(c) == scorer.create_score_array()
+    constraint = AirmassConstraint(max=2, boolean_constraint=False)
+    c = constraint(apo, [vega],Time('2016-02-06 00:00:00'))
+    block = ObservingBlock(vega, 1*u.hour, 0, constraints=[constraint])
+    scorer = Scorer.from_start_end([block], apo, Time('2016-02-06 00:00:00'),
+                                   Time('2016-02-06 00:00:00')+1*u.second)
+    assert np.array(c) == scorer.create_score_array()
