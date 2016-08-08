@@ -23,6 +23,11 @@ an `~astroplan.FixedTarget` object::
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
 
+Alternatively, for objects known to the CDS name resolver, you can quickly
+retrieve their coordinates with `~astroplan.FixedTarget.from_name`::
+
+    altair = FixedTarget.from_name('Altair')
+
 Similarly, an `~astroplan.Observer` object contains information about the
 observatory, telescope or place where you are observing, such as longitude,
 latitude, elevation and other optional parameters.  You can initialize an

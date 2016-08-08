@@ -48,20 +48,25 @@ First, we define our `~astroplan.Observer` object:
 
     >>> subaru = Observer.at_site('subaru')
 
-Then, we define our `~astroplan.Target` objects (`~astroplan.FixedTarget`'s
-in this case, since the Summer Triangle is fixed with respect to the
-celestial sphere if we ignore the relatively small proper motion):
+Then, we define our `~astroplan.FixedTarget`'s, since the Summer Triangle is
+fixed with respect to the celestial sphere (if we ignore the relatively small
+proper motion). We will use the `~astroplan.FixedTarget.from_name` class method,
+which queries the CDS name resolver for your target's coordinates (giving you
+the power of SIMBAD!):
 
 .. code-block:: python
 
     >>> from astropy.coordinates import SkyCoord
     >>> from astroplan import FixedTarget
 
-    >>> coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
-    >>> altair = FixedTarget(name='Altair', coord=coordinates)
+    >>> altair = FixedTarget.from_name('Altair')
+    >>> vega = FixedTarget.from_name('Vega')
 
-    >>> coordinates = SkyCoord('18h36m56.5s', '+38d47m06.6s', frame='icrs')
-    >>> vega = FixedTarget(name='Vega', coord=coordinates)
+
+For objects that can't be resolved with `~astroplan.FixedTarget.from_name`, you
+can enter coordinates manually:
+
+.. code-block:: python
 
     >>> coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
     >>> deneb = FixedTarget(name='Deneb', coord=coordinates)
