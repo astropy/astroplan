@@ -1031,5 +1031,3 @@ def _rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
     rescaled[better] = better_than
 
     return rescaled
-
-_rescale_minmax()
