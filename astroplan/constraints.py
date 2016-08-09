@@ -345,7 +345,7 @@ class AirmassConstraint(AltitudeConstraint):
 
             mi = 1 if self.min is None else self.min
             # we reverse order so that airmass close to 1/min is good
-            return _rescale_minmax(secz, mi, mx, better_than=0, worse_than=0)
+            return _rescale_minmax(secz, mi, mx, better_than=0)
 
 
 class AtNightConstraint(Constraint):
@@ -1000,17 +1000,19 @@ def observability_table(constraints, observer, targets, times=None,
 def _rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
     """
     rescales the input ``vals`` between 0 and 1
+
     Parameters
     ----------
     vals : array of values
+        the values that need to be rescaled to be between 0 and 1
     worst_val : value
         worst acceptable value (rescales to 0)
     best_val : value
         best value cared about (rescales to 1)
     better_than : 0 or 1
-        What is returned for ``vals`` beyond than ``best_val``
+        what is returned for ``vals`` beyond the ``best_val``
     worse_than : 0 or 1
-        What is returned for ``vals`` beyond than ``worst_val``
+        what is returned for ``vals`` beyond the ``worst_val``
 
     Returns
     -------
@@ -1029,3 +1031,5 @@ def _rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
     rescaled[better] = better_than
 
     return rescaled
+
+_rescale_minmax()
