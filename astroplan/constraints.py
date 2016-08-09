@@ -1019,14 +1019,36 @@ def _rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
     array of floats between 0 and 1 inclusive rescaled so that
     ``vals`` equal to ``worst_val`` equal 0 and those equal to
     ``best_val`` equal 1
+
+    Examples
+    --------
+    rescale altitude = [20, 30, 40, 45, 55, 70] to between
+    0 and 1, with the best at 60->1 and worst at 35->0. 0
+    below 35 and 1 above 60.
+    >>> from astroplan.constraints import _rescale_minmax
+    >>> import numpy as np
+    >>> airmasses = np.array([20, 30, 40, 45, 55, 70])
+    >>> _rescale_minmax(airmasses, 35, 60)
+    array([ 0. , 0. , 0.2, 0.4, 0.8, 1. ])
+
+    rescale airmasses = [1,1,1.5,2,2,2,3,3,3,2,2,1] to between
+    0 and 1, with the best at 1->1 and worst at 2.25->0. 0 beyond
+    1 and 2.25.
+    >>> from astroplan.constraints import _rescale_minmax
+    >>> import numpy as np
+    >>> airmasses = np.array([1,1,1.5,2,2,2,3,3,3,2,2,1,0])
+    >>> _rescale_minmax(airmasses, 2.25, 1, better_than = 0)
+    array([ 1. ,  1. ,  0.6,  0.2,  0.2,  0.2,  0. ,  0. ,  0. ,
+            0.2,  0.2,  1. ,  0. ])
+
     """
     rescaled = (vals - worst_val) / (best_val - worst_val)
     if best_val - worst_val > 0:
         worse = vals < worst_val
         better = vals > best_val
     else:
-        worse = vals < best_val
-        better = vals > worst_val
+        worse = vals > worst_val
+        better = vals < best_val
     rescaled[worse] = worse_than
     rescaled[better] = better_than
 
