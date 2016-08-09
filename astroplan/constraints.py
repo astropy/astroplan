@@ -345,7 +345,7 @@ class AirmassConstraint(AltitudeConstraint):
 
             mi = 1 if self.min is None else self.min
             # we reverse order so that airmass close to 1/min is good
-            return _rescale_airmass(secz, mi, mx)
+            return _rescale_minmax(secz, mi, mx, better_than=0, worse_than=0)
 
 
 class AtNightConstraint(Constraint):
@@ -997,24 +997,35 @@ def observability_table(constraints, observer, targets, times=None,
     return tab
 
 
-def _rescale_minmax(vals, min_val, max_val):
-    """ Rescale altitude into an observability score."""
-    rescaled = (vals - min_val) / (max_val - min_val)
-    below = rescaled < 0
-    above = rescaled > 1
-    rescaled[below] = 0
-    rescaled[above] = 1
+def _rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
+    """
+    rescales the input ``vals`` between 0 and 1
+    Parameters
+    ----------
+    vals : array of values
+    worst_val : value
+        worst acceptable value (rescales to 0)
+    best_val : value
+        best value cared about (rescales to 1)
+    better_than : 0 or 1
+        What is returned for ``vals`` beyond than ``best_val``
+    worse_than : 0 or 1
+        What is returned for ``vals`` beyond than ``worst_val``
+
+    Returns
+    -------
+    array of floats between 0 and 1 inclusive rescaled so that
+    ``vals`` equal to ``worst_val`` equal 0 and those equal to
+    ``best_val`` equal 1
+    """
+    rescaled = (vals - worst_val) / (best_val - worst_val)
+    if best_val - worst_val > 0:
+        worse = vals < worst_val
+        better = vals > best_val
+    else:
+        worse = vals < best_val
+        better = vals > worst_val
+    rescaled[worse] = worse_than
+    rescaled[better] = better_than
 
     return rescaled
-
-
-def _rescale_airmass(vals, min_val, max_val):
-    """ Rescale airmass into an observability score."""
-    rescaled = (vals - min_val) / (max_val - min_val)
-    below = rescaled < 0
-    above = rescaled > 1
-    # In both cases, we want out-of-range airmasses to return a 0 score
-    rescaled[below] = 1
-    rescaled[above] = 1
-
-    return 1 - rescaled
