@@ -1022,24 +1022,24 @@ def _rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
 
     Examples
     --------
-    rescale altitude = [20, 30, 40, 45, 55, 70] to between
-    0 and 1, with the best at 60->1 and worst at 35->0. 0
-    below 35 and 1 above 60.
+    rescale an array of altitudes to be between 0 and 1,
+    with the best (60) going to 1 and worst (35) going to
+    0. For values outside the range, the rescale should
+    return 0 below 35 and 1 above 60.
     >>> from astroplan.constraints import _rescale_minmax
     >>> import numpy as np
-    >>> airmasses = np.array([20, 30, 40, 45, 55, 70])
-    >>> _rescale_minmax(airmasses, 35, 60)
+    >>> altitudes = np.array([20, 30, 40, 45, 55, 70])
+    >>> _rescale_minmax(altitudes, 35, 60)
     array([ 0. , 0. , 0.2, 0.4, 0.8, 1. ])
 
-    rescale airmasses = [1,1,1.5,2,2,2,3,3,3,2,2,1] to between
-    0 and 1, with the best at 1->1 and worst at 2.25->0. 0 beyond
-    1 and 2.25.
+    rescale airmasses to between 0 and 1, with the best (1)
+    and worst (2.25). All values outside the range should
+    return 0.
     >>> from astroplan.constraints import _rescale_minmax
     >>> import numpy as np
-    >>> airmasses = np.array([1,1,1.5,2,2,2,3,3,3,2,2,1,0])
+    >>> airmasses = np.array([1, 1.5, 2, 3, 0])
     >>> _rescale_minmax(airmasses, 2.25, 1, better_than = 0)
-    array([ 1. ,  1. ,  0.6,  0.2,  0.2,  0.2,  0. ,  0. ,  0. ,
-            0.2,  0.2,  1. ,  0. ])
+    array([ 1. ,  0.6,  0.2,  0. , 0. ])
 
     """
     rescaled = (vals - worst_val) / (best_val - worst_val)
