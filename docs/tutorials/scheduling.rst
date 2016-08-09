@@ -1,6 +1,6 @@
-.. doctest-skip-all
-
 .. _scheduling_tutorial:
+
+.. doctest-skip-all
 
 ***************************
 Scheduling an Observing Run
@@ -26,8 +26,9 @@ Contents
 Defining Targets
 ================
 
-Say we want to observe Vega, Arcturus, Deneb, and Polaris, as well as a few
-other stars in Ursa Minor. For this we will be using the Apache Point Observatory.
+We want to observe Deneb and M13 in the B, V and R filters. We are scheduled
+for the first half-night on July 6 2016 and want to know the order we should
+schedule the targets in.
 
 First we define our `~astroplan.Observer` object (where we are observing from):
 
@@ -38,47 +39,31 @@ First we define our `~astroplan.Observer` object (where we are observing from):
     >>> apo = Observer.at_site('apo')
 
 Now we want to define our list of targets (`~astroplan.FixedTarget` objects),
-Most stars can be called by an identifier, but some targets may require coordinates.
+any object that is in SIMBAD can be called by an identifier.
 
 .. code-block:: python
 
     >>> from astroplan import FixedTarget
 
-    >>> targets = [FixedTarget.from_name('vega'),
-    >>>            FixedTarget.from_name('Arcturus'),
-    >>>            FixedTarget.from_name('Deneb'),
-    >>>            FixedTarget.from_name('Polaris'),
-    >>>            FixedTarget.from_name('eta umi'),
-    >>>            FixedTarget.from_name('NLTT 42620'),
-    >>>            FixedTarget.from_name('eps umi')
-    >>>            ]
+    >>> Deneb = FixedTarget.from_name('deneb')
+    >>> M13 = FixedTarget.from_name('m13')
 
-    >>> from astropy.coordinates import SkyCoord
+    >>> Deneb
+    <FixedTarget "deneb" at SkyCoord (ICRS): (ra, dec) in deg (310.35797975, 45.28033881)>
 
-    >>> coords = SkyCoord('05h28m51.016s', '89d26m59.58s')
-    >>> interesting_target = FixedTarget(coords, name = 'UMi target')
-    >>> targets.append(interesting_target)
-
-    >>> targets
-    [<FixedTarget "vega" at SkyCoord (ICRS): (ra, dec) in deg (279.23473479, 38.78368896)>,
-     <FixedTarget "Arcturus" at SkyCoord (ICRS): (ra, dec) in deg (213.9153003, 19.18240916)>,
-     <FixedTarget "Deneb" at SkyCoord (ICRS): (ra, dec) in deg (310.35797975, 45.28033881)>,
-     <FixedTarget "Polaris" at SkyCoord (ICRS): (ra, dec) in deg (37.95456067, 89.26410897)>,
-     <FixedTarget "eta umi" at SkyCoord (ICRS): (ra, dec) in deg (244.37619567, 75.75533014)>,
-     <FixedTarget "NLTT 42620" at SkyCoord (ICRS): (ra, dec) in deg (244.587292, 75.718917)>,
-     <FixedTarget "eps umi" at SkyCoord (ICRS): (ra, dec) in deg (251.49267367, 82.03725646)>,
-     <FixedTarget "UMi target" at SkyCoord (ICRS): (ra, dec) in deg (82.21256667, 89.44988333)>]
+    >>> M13
+    <FixedTarget "m13" at SkyCoord (ICRS): (ra, dec) in deg (250.423475, 36.4613194)>
 
 We also need to define when we will be observing the targets, `~astropy.time.Time`
-objects for the start and end of our observing window. Here we will take an entire
-night from 8PM local time to 7AM local time, in UTC this will be from 3AM to 2PM
+objects for the start and end of our observing window. The half night goes from 7PM
+local time to 1AM local time, in UTC this will be from 2AM to 8AM.
 
 .. code-block:: python
 
     >>> from astropy.time import Time
 
-    >>> start_time = Time('2015-06-16 03:00')
-    >>> end_time = Time('2015-06-16 14:00')
+    >>> start_time = Time('2016-06-07 02:00')
+    >>> end_time = Time('2016-06-07 08:00')
 
 :ref:`Return to Top <scheduling_tutorial>`
 
@@ -94,7 +79,7 @@ Constraints, when evaluated, take targets and times, and give scores that
 indicate how well the combination of target and time fulfill the constraint.
 We want to make sure that our targets will be high in the sky while observed
 and that they will be observed during the night. We don't want any object to
-be observed at an airmass greater than 2.5, but we prefer a better airmass.
+be observed at an airmass greater than 3, but we prefer a better airmass.
 Usually constraints scores are boolean, but with ``boolean_constraint = False``
 the constraint will output floats instead, indicated when it is closer to ideal.
 
@@ -102,38 +87,39 @@ the constraint will output floats instead, indicated when it is closer to ideal.
 
     >>> from astroplan.constraints import AtNightConstraint, AirmassConstraint
 
-    >>> global_constraints = [AirmassConstraint(max = 2.5, boolean_constraint = False),
-    >>>                       AtNightConstraint()]
+    >>> global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
+    ...                       AtNightConstraint()]
 
 Now that we have constraints that we will apply to every target, we need to
-create an   `~astroplan.ObservingBlock` for each target. An observing block needs
-a target, a duration, and a priority; configuration information can also be
-given (i.e. filter, instrument, etc.). We want all of the targets in the 'g'
-filter, and also want 'r' and 'i' for our UMi target. We also want to make sure
-that our observations of the UMi target occur between 10PM and 3AM local time
-(5AM and 10 AM UTC).For each target we want 7 exposures (with length depending
-on the target) and the instrument has a read-out time of 1 minute.
+create an   `~astroplan.ObservingBlock` for each target+configuration
+combination. An observing block needs a target, a duration, and a priority;
+configuration information can also be given (i.e. filter, instrument, etc.).
+For each filter we want 17 exposures per target (100 seconds for M13 and 60
+seconds for Deneb) and the instrument has a read-out time of 20 seconds.
+We also need to consider that the moon can be a problem for observations
+in the B filter, so we want the moon to be down or dim for the B filter.
 
 .. code-block:: python
 
     >>> from astroplan import ObservingBlock
-    >>> from astroplan.constraints import TimeConstraint
+    >>> from astroplan.constraints import MoonIlluminationConstraint
     >>> from astropy import units as u
 
-    >>> rot = 1 * u.minute
+    >>> rot = 20 * u.second
     >>> blocks = []
-    >>> # first we will make the blocks for our UMi target
-    >>> time_constraint = TimeConstraint(start_time + 2*u.hour, end_time - 4*u.hour)
-    >>> for filter in ['g', 'r', 'i']:
-    >>>     blocks.append(ObservingBlock.from_exposures(targets[-1], 0, 8*u.minute, 7, rot,
-    >>>                                                 configuration = {'filter': filter},
-    >>>                                                 constraints = [time_constraint]))
-    >>> for target in targets[4:7]:
-    >>>     blocks.append(ObservingBlock.from_exposures(target, 1, 4*u.minute, 7, rot,
-    >>>                                                 configuration = {'filter': 'g'}))
-    >>> for target in targets[:4]:
-    >>>     blocks.append(ObservingBlock.from_exposures(target, 2, 2*u.minute, 7, rot,
-    >>>                                                 configuration = {'filter': 'g'}))
+
+    >>> for filter in ['B', 'G', 'R']:
+    >>>     if filter == 'B':
+    >>>         constraints = [MoonIlluminationConstraint(max = 0.25)]
+    >>>     else:
+    >>>         constraints = None
+    >>>     # M13 is the science target, so I will give it priority=0, and deneb priority=1
+    >>>     blocks.append(ObservingBlock.from_exposures(Deneb, 1, 60*u.second, 17, rot,
+    ...                                                 configuration = {'filter': filter},
+    ...                                                 constraints = constraints))
+    >>>     blocks.append(ObservingBlock.from_exposures(M13, 0, 100*u.second, 17, rot,
+    ...                                                 configuration = {'filter': filter},
+    ...                                                 constraints = constraints))
 
 .. _scheduling-creating_a_transitioner:
 
@@ -152,13 +138,14 @@ each pair of configurations.
     >>> from astroplan.scheduling import Transitioner
 
     >>> transitioner = Transitioner(.8*u.deg/u.second,
-    >>>                             {'filter':{('g','i'): 10*u.second,
-    >>>                                        'default': 30*u.second}})
+    ...                             {'filter':{('B','G'): 10*u.second,
+    ...                                        ('G','R'): 10*u.second,
+    ...                                        'default': 30*u.second}})
 
-The transitioner knows that it takes 10 seconds to go from 'g' to 'i'
-but has to use the default transition time of 30 seconds for any other
-transition between filters. Non-transitions, like 'g' to 'g', will not
-take any time though.
+The transitioner now knows that it takes 10 seconds to go from 'B' to 'G',
+or from 'G' to 'R' but has to use the default transition time of 30 seconds
+for any other transition between filters. Non-transitions, like 'g' to 'g',
+will not take any time though.
 
 .. _scheduling-scheduling:
 
@@ -179,9 +166,9 @@ and repeats the scoring and scheduling on the remaining blocks.
     >>> from astroplan.scheduling import SequentialScheduler
 
     >>> seq_scheduler = SequentialScheduler(start_time, end_time,
-    >>>                                     constraints = global_constraints,
-    >>>                                     observer = apo,
-    >>>                                     transitioner = transitioner)
+    ...                                     constraints = global_constraints,
+    ...                                     observer = apo,
+    ...                                     transitioner = transitioner)
 
     >>> sequential_schedule = seq_scheduler(blocks)
 
@@ -195,9 +182,9 @@ time for that block (highest score).
     >>> from astroplan.scheduling import PriorityScheduler
 
     >>> prior_scheduler = PriorityScheduler(start_time, end_time,
-    >>>                                     constraints = global_constraints,
-    >>>                                     observer = apo,
-    >>>                                     transitioner = transitioner)
+    ...                                     constraints = global_constraints,
+    ...                                     observer = apo,
+    ...                                     transitioner = transitioner)
 
     >>> priority_schedule = prior_scheduler(blocks)
 
@@ -226,47 +213,39 @@ targets.
 .. plot::
 
     import astropy.units as u
-    from astropy.coordinates import SkyCoord
     from astropy.time import Time
     from astroplan import (Observer, FixedTarget, ObservingBlock, Transitioner, PriorityScheduler)
-    from astroplan.constraints import AtNightConstraint, AirmassConstraint, TimeConstraint
+    from astroplan.constraints import AtNightConstraint, AirmassConstraint, MoonIlluminationConstraint
     from astroplan.plots import plot_schedule_airmass
     import matplotlib.pyplot as plt
 
-    targets = [FixedTarget.from_name('vega'),
-               FixedTarget.from_name('Arcturus'),
-               FixedTarget.from_name('Deneb'),
-               FixedTarget.from_name('Polaris'),
-               FixedTarget.from_name('eta umi'),
-               FixedTarget.from_name('NLTT 42620'),
-               FixedTarget.from_name('eps umi')]
+    Deneb = FixedTarget.from_name('deneb')
+    M13 = FixedTarget.from_name('m13')
 
-    coords = SkyCoord('05h28m51.016s', '89d26m59.58s')
-    interesting_target = FixedTarget(coords, name = 'UMi target')
-    targets.append(interesting_target)
-
-    start_time = Time('2015-06-16 03:00')
-    end_time = Time('2015-06-16 14:00')
+    start_time = Time('2016-06-07 02:00')
+    end_time = Time('2016-06-07 08:00')
     apo = Observer.at_site('apo')
 
-    global_constraints = [AirmassConstraint(max = 2.5, boolean_constraint = False),
+    global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
                           AtNightConstraint()]
-    rot = 1 * u.minute
+    rot = 20 * u.second
     blocks = []
-    time_constraint = TimeConstraint(start_time + 2*u.hour, end_time - 4*u.hour)
-    for filter in ['g', 'r', 'i']:
-        blocks.append(ObservingBlock.from_exposures(targets[-1], 0, 8*u.minute, 7, rot,
+    for filter in ['B', 'G', 'R']:
+        if filter == 'B':
+            constraints = [MoonIlluminationConstraint(max = 0.25)]
+        else:
+            constraints = None
+        blocks.append(ObservingBlock.from_exposures(Deneb, 1, 60*u.second, 17, rot,
                                                     configuration = {'filter': filter},
-                                                    constraints = [time_constraint]))
-    for target in targets[4:7]:
-        blocks.append(ObservingBlock.from_exposures(target, 1, 4*u.minute, 7, rot,
-                                                    configuration = {'filter': 'g'}))
-    for target in targets[:4]:
-        blocks.append(ObservingBlock.from_exposures(target, 2, 2*u.minute, 7, rot,
-                                                    configuration = {'filter': 'g'}))
+                                                    constraints = constraints))
+        blocks.append(ObservingBlock.from_exposures(M13, 0, 100*u.second, 17, rot,
+                                                    configuration = {'filter': filter},
+                                                    constraints = constraints))
+
 
     transitioner = Transitioner(.8*u.deg/u.second,
-                                {'filter':{('g','i'): 10*u.second,
+                                {'filter':{('B','G'): 10*u.second,
+                                           ('G','R'): 10*u.second,
                                            'default': 30*u.second}})
 
     prior_scheduler = PriorityScheduler(start_time, end_time, constraints = global_constraints,
