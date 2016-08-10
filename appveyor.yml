@@ -12,6 +12,7 @@ environment:
                         # to the matrix section.
       CONDA_DEPENDENCIES: "pytz matplotlib nose"
       PIP_DEPENDENCIES: "pyephem pytest-mpl"
+      CONDA_CHANNELS: "astropy"
 
   matrix:
 

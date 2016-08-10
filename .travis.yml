@@ -26,6 +26,7 @@ env:
         - CONDA_DEPENDENCIES='pytz'
         - PIP_DEPENDENCIES=''
         - SETUP_CMD='test -V'
+        - CONDA_CHANNELS='astropy'
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
