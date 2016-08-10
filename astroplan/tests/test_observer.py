@@ -1195,6 +1195,8 @@ def test_tonight():
     obs = Observer.at_site('subaru')
     obs.height = 0 * u.m
 
+    horizon = 0 * u.degree
+
     noon = Time('2016-02-03 22:00:00')
     midnight = Time('2016-02-04 10:00:00')
 
@@ -1203,8 +1205,8 @@ def test_tonight():
 
     threshold_minutes = 6
 
-    during_day = obs.tonight(time=noon)
-    during_night = obs.tonight(time=midnight)
+    during_day = obs.tonight(time=noon, horizon=horizon)
+    during_night = obs.tonight(time=midnight, horizon=horizon)
     
     assert (abs(sunset - during_day[0].datetime) < 
         datetime.timedelta(minutes=threshold_minutes))
@@ -1214,4 +1216,15 @@ def test_tonight():
     assert (abs(midnight.datetime - during_night[0].datetime) < 
         datetime.timedelta(minutes=threshold_minutes))
     assert (abs(sunrise - during_night[1].datetime) < 
+        datetime.timedelta(minutes=threshold_minutes))
+
+    astro_sunset = Time('2016-08-08 06:13:00')
+    horizon = -18 * u.degree
+
+    post_civil_sunset = Time('2016-08-08 05:00:00')
+    during_twilight = obs.tonight(time=post_civil_sunset, horizon=horizon)
+    during_twilight_wo_horizon = obs.tonight(time=post_civil_sunset)
+
+    # Get correct astro sunset if checking after civil sunset
+    assert (abs(astro_sunset.datetime - during_twilight[0].datetime) <
         datetime.timedelta(minutes=threshold_minutes))

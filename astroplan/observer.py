@@ -1672,7 +1672,7 @@ class Observer(object):
         return hour_angle
 
     @u.quantity_input(horizon=u.degree)
-    def tonight(self, time=None, horizon=0 * u.degree):
+    def tonight(self, time=None, horizon=0 * u.degree, obswl=None):
         """
         Return a time range corresponding to the nearest night
 
@@ -1689,6 +1689,8 @@ class Observer(object):
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
             Degrees above/below actual horizon to use for calculating rise/set times
             (e.g., -6 deg horizon = civil twilight, etc.)
+        obswl : `~astropy.units.Quantity` (optional)
+            Wavelength of the observation used in the calculation
 
         Returns
         -------
@@ -1696,7 +1698,7 @@ class Observer(object):
             A tuple of times corresponding to the start and end of current night
         """
         current_time = Time.now() if time is None else time
-        if self.is_night(current_time):
+        if self.is_night(current_time, horizon=horizon, obswl=obswl):
             start_time = current_time
         else:
             start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
