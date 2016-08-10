@@ -11,7 +11,7 @@ from ..observer import Observer
 from ..target import FixedTarget
 from ..constraints import (AirmassConstraint, _get_altaz)
 from ..scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
-                          Transitioner, TransitionBlock, Schedule, Slot)
+                          Transitioner, TransitionBlock, Schedule, Slot, Scorer)
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -87,9 +87,6 @@ def test_schedule():
     assert np.abs(new_slots[0].duration - 1*u.hour) < 1*u.second
     assert np.abs(new_slots[1].duration - 3*u.hour) < 1*u.second
     assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
-
-#change this after rebase with the rest of the tests
-from ..scheduling import Scorer
 
 
 def test_scorer():
