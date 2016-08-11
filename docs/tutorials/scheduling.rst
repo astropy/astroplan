@@ -1,7 +1,5 @@
 .. _scheduling_tutorial:
 
-.. doctest-skip-all
-
 ***************************
 Scheduling an Observing Run
 ***************************
@@ -109,15 +107,15 @@ in the B filter, so we want the moon to be down or dim for the B filter.
     >>> blocks = []
 
     >>> for filter in ['B', 'G', 'R']:
-    >>>     if filter == 'B':
-    >>>         constraints = [MoonIlluminationConstraint(max = 0.25)]
-    >>>     else:
-    >>>         constraints = None
-    >>>     # M13 is the science target, so I will give it priority=0, and deneb priority=1
-    >>>     blocks.append(ObservingBlock.from_exposures(Deneb, 1, 60*u.second, 17, rot,
+    ...     if filter == 'B':
+    ...         constraints = [MoonIlluminationConstraint(max = 0.25)]
+    ...     else:
+    ...         constraints = None
+    ...     # M13 is the science target, so I will give it priority=0, and deneb priority=1
+    ...     blocks.append(ObservingBlock.from_exposures(Deneb, 1, 60*u.second, 17, rot,
     ...                                                 configuration = {'filter': filter},
     ...                                                 constraints = constraints))
-    >>>     blocks.append(ObservingBlock.from_exposures(M13, 0, 100*u.second, 17, rot,
+    ...     blocks.append(ObservingBlock.from_exposures(M13, 0, 100*u.second, 17, rot,
     ...                                                 configuration = {'filter': filter},
     ...                                                 constraints = constraints))
 

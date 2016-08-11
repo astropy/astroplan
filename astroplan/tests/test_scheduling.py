@@ -124,7 +124,8 @@ def test_priority_scheduler():
     start_time = default_time
     end_time = start_time + 18*u.hour
     scheduler = PriorityScheduler(transitioner=transitioner,
-                                  constraints=constraints, observer=apo)
+                                  constraints=constraints, observer=apo,
+                                  time_resolution=2*u.minute)
     schedule = Schedule(start_time, end_time)
     scheduler(blocks, schedule)
     assert len(schedule.observing_blocks) == 3
@@ -167,7 +168,7 @@ def test_scheduling_target_down():
     schedule1 = scheduler1(block)
     assert len(schedule1.observing_blocks) == 0
     scheduler2 = PriorityScheduler(start_time, end_time, only_at_night, lco,
-                                   transitioner)
+                                   transitioner, time_resolution=30*u.minute)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
 
@@ -182,7 +183,7 @@ def test_scheduling_during_day():
     schedule1 = scheduler1(block)
     assert len(schedule1.observing_blocks) == 0
     scheduler2 = PriorityScheduler(start_time, end_time, only_at_night, apo,
-                                   transitioner)
+                                   transitioner, time_resolution=2*u.minute)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
 # bring this back when MoonIlluminationConstraint is working properly
