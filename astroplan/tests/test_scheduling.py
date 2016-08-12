@@ -68,12 +68,21 @@ def test_schedule():
 
 def test_schedule_insert_slot():
     schedule = Schedule(default_time, default_time + 5*u.hour)
+    # testing for when float comparison doesn't work, does it start/end at the right time
     duration = 2*u.hour + 1*u.second
     end_time = default_time + duration
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(end_time - duration, block)
-    # even when float evaluation doesn't work, it should still schedule properly
     assert not end_time - duration == default_time
+    assert len(schedule.slots) == 2
+    assert schedule.slots[0].start == default_time
+    schedule = Schedule(default_time, default_time + 5*u.hour)
+    # testing for when float evaluation does work
+    duration = 2*u.hour
+    end_time = default_time + duration
+    block = TransitionBlock.from_duration(duration)
+    schedule.insert_slot(end_time - duration, block)
+    assert end_time - duration == default_time
     assert len(schedule.slots) == 2
     assert schedule.slots[0].start == default_time
 
@@ -83,10 +92,13 @@ def test_schedule_change_slot_block():
     duration = 2 * u.hour
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(default_time, block)
-    assert np.abs(schedule.slots[0].end - 2*u.hour - default_time) < 1*u.second
-    new_block = TransitionBlock.from_duration(1*u.minute)
+    # check that it has the correct duration
+    assert np.abs(schedule.slots[0].end - duration - default_time) < 1*u.second
+    new_duration = 1*u.minute
+    new_block = TransitionBlock.from_duration(new_duration)
     schedule.change_slot_block(0, new_block)
-    assert np.abs(schedule.slots[0].end - 1*u.minute - default_time) < 1*u.second
+    # check the duration changed properly, and slots are still consecutive/don't overlap
+    assert np.abs(schedule.slots[0].end - new_duration - default_time) < 1*u.second
     assert schedule.slots[1].start == schedule.slots[0].end
 
 
@@ -115,7 +127,7 @@ def test_transitioner():
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
 
-transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
+default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
 
 
 def test_priority_scheduler():
@@ -123,7 +135,7 @@ def test_priority_scheduler():
     blocks = [ObservingBlock(t, 55*u.minute, i) for i, t in enumerate(targets)]
     start_time = default_time
     end_time = start_time + 18*u.hour
-    scheduler = PriorityScheduler(transitioner=transitioner,
+    scheduler = PriorityScheduler(transitioner=default_transitioner,
                                   constraints=constraints, observer=apo,
                                   time_resolution=2*u.minute)
     schedule = Schedule(start_time, end_time)
@@ -145,7 +157,7 @@ def test_sequential_scheduler():
     start_time = default_time
     end_time = start_time + 18 * u.hour
     scheduler = SequentialScheduler(constraints=constraints, observer=apo,
-                                    transitioner=transitioner)
+                                    transitioner=default_transitioner)
     schedule = Schedule(start_time, end_time)
     scheduler(blocks, schedule)
     assert len(schedule.observing_blocks) > 0
@@ -162,13 +174,13 @@ def test_scheduling_target_down():
     lco = Observer.at_site('lco')
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
     start_time = default_time
-    end_time = start_time + 5*u.day
+    end_time = start_time + 3*u.day
     scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, lco,
-                                     transitioner)
+                                     default_transitioner, gap_time=2*u.hour)
     schedule1 = scheduler1(block)
     assert len(schedule1.observing_blocks) == 0
     scheduler2 = PriorityScheduler(start_time, end_time, only_at_night, lco,
-                                   transitioner, time_resolution=30*u.minute)
+                                   default_transitioner, time_resolution=30 * u.minute)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
 
@@ -179,32 +191,31 @@ def test_scheduling_during_day():
     start_time = apo.midnight(day) + 10*u.hour
     end_time = start_time + 6*u.hour
     scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, apo,
-                                     transitioner)
+                                     default_transitioner, gap_time=30*u.minute)
     schedule1 = scheduler1(block)
     assert len(schedule1.observing_blocks) == 0
     scheduler2 = PriorityScheduler(start_time, end_time, only_at_night, apo,
-                                   transitioner, time_resolution=2*u.minute)
+                                   default_transitioner, time_resolution=2 * u.minute)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
 # bring this back when MoonIlluminationConstraint is working properly
-'''
+
+
 def test_scheduling_moon_up():
-    block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 30 * u.min, 0)]
     # on february 23 the moon was up between the start/end times defined below
     day = default_time + 17 * u.day
     start_time = apo.midnight(day) - 2 * u.hour
     end_time = start_time + 6 * u.hour
     constraints = [AtNightConstraint(), MoonIlluminationConstraint(max=0)]
     scheduler1 = SequentialScheduler(start_time, end_time, constraints, apo,
-                                     transitioner)
+                                     default_transitioner, gap_time=30*u.minute)
     schedule1 = scheduler1(block)
     assert len(schedule1.observing_blocks) == 0
     scheduler2 = PriorityScheduler(start_time, end_time, constraints, apo,
-                                   transitioner)
+                                   default_transitioner, time_resolution=20*u.minute)
     schedule2 = scheduler2(block)
     assert len(schedule2.observing_blocks) == 0
-'''
-
 
 def test_scorer():
     constraint = AirmassConstraint(max=4)

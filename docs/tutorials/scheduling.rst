@@ -1,5 +1,7 @@
 .. _scheduling_tutorial:
 
+.. doctest-skip-all
+
 ***************************
 Scheduling an Observing Run
 ***************************
@@ -43,13 +45,13 @@ any object that is in SIMBAD can be called by an identifier.
 
     >>> from astroplan import FixedTarget
 
-    >>> Deneb = FixedTarget.from_name('deneb')
-    >>> M13 = FixedTarget.from_name('m13')
+    >>> deneb = FixedTarget.from_name('deneb')
+    >>> m13 = FixedTarget.from_name('m13')
 
-    >>> Deneb
+    >>> deneb
     <FixedTarget "deneb" at SkyCoord (ICRS): (ra, dec) in deg (310.35797975, 45.28033881)>
 
-    >>> M13
+    >>> m13
     <FixedTarget "m13" at SkyCoord (ICRS): (ra, dec) in deg (250.423475, 36.4613194)>
 
 We also need to define when we will be observing the targets, `~astropy.time.Time`
@@ -112,10 +114,10 @@ in the B filter, so we want the moon to be down or dim for the B filter.
     ...     else:
     ...         constraints = None
     ...     # M13 is the science target, so I will give it priority=0, and deneb priority=1
-    ...     blocks.append(ObservingBlock.from_exposures(Deneb, 1, 60*u.second, 17, rot,
+    ...     blocks.append(ObservingBlock.from_exposures(deneb, 1, 60*u.second, 17, rot,
     ...                                                 configuration = {'filter': filter},
     ...                                                 constraints = constraints))
-    ...     blocks.append(ObservingBlock.from_exposures(M13, 0, 100*u.second, 17, rot,
+    ...     blocks.append(ObservingBlock.from_exposures(m13, 0, 100*u.second, 17, rot,
     ...                                                 configuration = {'filter': filter},
     ...                                                 constraints = constraints))
 
@@ -168,7 +170,7 @@ and repeats the scoring and scheduling on the remaining blocks.
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
 
-    >>> sequential_schedule = seq_scheduler(blocks) # doctest: +SKIP
+    >>> sequential_schedule = seq_scheduler(blocks)
 
 The second is a priority scheduler. It sorts the blocks by their
 priority (multiple blocks with the same priority will stay in the
@@ -184,7 +186,7 @@ time for that block (highest score).
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
 
-    >>> priority_schedule = prior_scheduler(blocks) # doctest: +SKIP
+    >>> priority_schedule = prior_scheduler(blocks)
 
 Now that you have a schedule there are a few ways of viewing it.
 One way is to have it print a table where you can show, or hide,
@@ -193,7 +195,7 @@ unused time and transitions with ``show_transitions`` and
 
 .. code-block:: python
 
-    >>> sequential_schedule.to_table() # doctest: +SKIP
+    >>> sequential_schedule.to_table()
 
 The other way is to plot the schedule against the airmass of the
 targets.
@@ -203,10 +205,10 @@ targets.
     >>> from astroplan.plots import plot_schedule_airmass
     >>> import matplotlib.pyplot as plt
 
-    >>> plt.figure(figsize = (14,6)) # doctest: +SKIP
-    >>> plot_schedule_airmass(priority_schedule) # doctest: +SKIP
-    >>> plt.legend(loc = 1) # doctest: +SKIP
-    >>> plt.show() # doctest: +SKIP
+    >>> plt.figure(figsize = (14,6))
+    >>> plot_schedule_airmass(priority_schedule)
+    >>> plt.legend(loc = 1)
+    >>> plt.show()
 
 .. plot::
 
