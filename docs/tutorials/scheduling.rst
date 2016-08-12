@@ -168,7 +168,7 @@ and repeats the scoring and scheduling on the remaining blocks.
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
 
-    >>> sequential_schedule = seq_scheduler(blocks)
+    >>> sequential_schedule = seq_scheduler(blocks) # doctest: +SKIP
 
 The second is a priority scheduler. It sorts the blocks by their
 priority (multiple blocks with the same priority will stay in the
@@ -184,7 +184,7 @@ time for that block (highest score).
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
 
-    >>> priority_schedule = prior_scheduler(blocks)
+    >>> priority_schedule = prior_scheduler(blocks) # doctest: +SKIP
 
 Now that you have a schedule there are a few ways of viewing it.
 One way is to have it print a table where you can show, or hide,
@@ -193,7 +193,7 @@ unused time and transitions with ``show_transitions`` and
 
 .. code-block:: python
 
-    >>> sequential_schedule.to_table()
+    >>> sequential_schedule.to_table() # doctest: +SKIP
 
 The other way is to plot the schedule against the airmass of the
 targets.
@@ -203,10 +203,10 @@ targets.
     >>> from astroplan.plots import plot_schedule_airmass
     >>> import matplotlib.pyplot as plt
 
-    >>> plt.figure(figsize = (14,6))
-    >>> plot_schedule_airmass(priority_schedule)
-    >>> plt.legend(loc = 1)
-    >>> plt.show()
+    >>> plt.figure(figsize = (14,6)) # doctest: +SKIP
+    >>> plot_schedule_airmass(priority_schedule) # doctest: +SKIP
+    >>> plt.legend(loc = 1) # doctest: +SKIP
+    >>> plt.show() # doctest: +SKIP
 
 .. plot::
 

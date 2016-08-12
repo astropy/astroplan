@@ -162,6 +162,8 @@ class FixedTarget(Target):
             "vega": {"ra": 279.23473479*u.deg, "dec": 38.78368896*u.deg},
             "aldebaran": {"ra": 68.98016279*u.deg, "dec": 16.50930235*u.deg},
             "polaris": {"ra": 37.95456067*u.deg, "dec": 89.26410897*u.deg},
+            "deneb": {"ra": 310.35797975*u.deg, "dec": 45.28033881*u.deg},
+            "m13": {"ra": 250.423475*u.deg, "dec": 36.4613194*u.deg},
             "altair": {"ra": 297.6958273*u.deg, "dec": 8.8683212*u.deg}
         }
 
