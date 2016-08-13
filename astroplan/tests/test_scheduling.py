@@ -43,7 +43,7 @@ def test_observing_block():
 
 
 def test_slot():
-    start_time = default_time
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 24 * u.hour
     slot = Slot(start_time, end_time)
     slots = slot.split_slot(start_time, start_time+1*u.hour)
@@ -52,7 +52,7 @@ def test_slot():
 
 
 def test_schedule():
-    start_time = default_time
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 24 * u.hour
     schedule = Schedule(start_time, end_time)
     assert schedule.slots[0].start == start_time
@@ -67,38 +67,40 @@ def test_schedule():
 
 
 def test_schedule_insert_slot():
-    schedule = Schedule(default_time, default_time + 5*u.hour)
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 5*u.hour)
     # testing for when float comparison doesn't work, does it start/end at the right time
     duration = 2*u.hour + 1*u.second
-    end_time = default_time + duration
+    end_time = start + duration
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(end_time - duration, block)
-    assert not end_time - duration == default_time
+    assert not end_time - duration == start
     assert len(schedule.slots) == 2
-    assert schedule.slots[0].start == default_time
-    schedule = Schedule(default_time, default_time + 5*u.hour)
+    assert schedule.slots[0].start == start
+    schedule = Schedule(start, start + 5*u.hour)
     # testing for when float evaluation does work
     duration = 2*u.hour
-    end_time = default_time + duration
+    end_time = start + duration
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(end_time - duration, block)
-    assert end_time - duration == default_time
+    assert end_time - duration == start
     assert len(schedule.slots) == 2
-    assert schedule.slots[0].start == default_time
+    assert schedule.slots[0].start == start
 
 
 def test_schedule_change_slot_block():
-    schedule = Schedule(default_time, default_time + 5 * u.hour)
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 5 * u.hour)
     duration = 2 * u.hour
     block = TransitionBlock.from_duration(duration)
-    schedule.insert_slot(default_time, block)
+    schedule.insert_slot(start, block)
     # check that it has the correct duration
-    assert np.abs(schedule.slots[0].end - duration - default_time) < 1*u.second
+    assert np.abs(schedule.slots[0].end - duration - start) < 1*u.second
     new_duration = 1*u.minute
     new_block = TransitionBlock.from_duration(new_duration)
     schedule.change_slot_block(0, new_block)
     # check the duration changed properly, and slots are still consecutive/don't overlap
-    assert np.abs(schedule.slots[0].end - new_duration - default_time) < 1*u.second
+    assert np.abs(schedule.slots[0].end - new_duration - start) < 1*u.second
     assert schedule.slots[1].start == schedule.slots[0].end
 
 
@@ -106,7 +108,7 @@ def test_transitioner():
     blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
     slew_rate = 1 * u.deg / u.second
     trans = Transitioner(slew_rate=slew_rate)
-    start_time = default_time
+    start_time = Time('2016-02-06 03:00:00')
     transition = trans(blocks[0], blocks[2], start_time, apo)
     aaz = _get_altaz(Time([start_time]), apo,
                      [blocks[0].target, blocks[2].target])['altaz']
@@ -133,7 +135,7 @@ default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
 def test_priority_scheduler():
     constraints = [AirmassConstraint(3, boolean_constraint=False)]
     blocks = [ObservingBlock(t, 55*u.minute, i) for i, t in enumerate(targets)]
-    start_time = default_time
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 18*u.hour
     scheduler = PriorityScheduler(transitioner=default_transitioner,
                                   constraints=constraints, observer=apo,
@@ -154,7 +156,7 @@ def test_priority_scheduler():
 def test_sequential_scheduler():
     constraints = [AirmassConstraint(2.5, boolean_constraint=False)]
     blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
-    start_time = default_time
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 18 * u.hour
     scheduler = SequentialScheduler(constraints=constraints, observer=apo,
                                     transitioner=default_transitioner)
@@ -173,7 +175,7 @@ def test_sequential_scheduler():
 def test_scheduling_target_down():
     lco = Observer.at_site('lco')
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
-    start_time = default_time
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 3*u.day
     scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, lco,
                                      default_transitioner, gap_time=2*u.hour)
@@ -187,7 +189,7 @@ def test_scheduling_target_down():
 
 def test_scheduling_during_day():
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
-    day = default_time
+    day = Time('2016-02-06 03:00:00')
     start_time = apo.midnight(day) + 10*u.hour
     end_time = start_time + 6*u.hour
     scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, apo,
@@ -204,7 +206,7 @@ def test_scheduling_during_day():
 def test_scheduling_moon_up():
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 30 * u.min, 0)]
     # on february 23 the moon was up between the start/end times defined below
-    day = default_time + 17 * u.day
+    day = Time('2016-02-23 03:00:00')
     start_time = apo.midnight(day) - 2 * u.hour
     end_time = start_time + 6 * u.hour
     constraints = [AtNightConstraint(), MoonIlluminationConstraint(max=0)]
