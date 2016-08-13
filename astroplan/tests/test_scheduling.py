@@ -7,6 +7,7 @@ from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 
+from ..utils import time_grid_from_range
 from ..observer import Observer
 from ..target import FixedTarget
 from ..constraints import (AirmassConstraint, _get_altaz)
@@ -91,14 +92,31 @@ def test_schedule():
 
 def test_scorer():
     constraint = AirmassConstraint(max=4)
-    c = constraint(apo, [vega], Time('2016-02-06 00:00:00'))
+    times = time_grid_from_range(Time(['2016-02-06 00:00', '2016-02-06 08:00']),
+                                 time_resolution=20*u.minute)
+    c = constraint(apo, [vega, rigel], times)
     block = ObservingBlock(vega, 1*u.hour, 0, constraints=[constraint])
-    scorer = Scorer.from_start_end([block], apo, Time('2016-02-06 00:00:00'),
-                                   Time('2016-02-06 00:00:00')+1*u.second)
-    assert np.array(c) == scorer.create_score_array()
-    constraint = AirmassConstraint(max=2, boolean_constraint=False)
-    c = constraint(apo, [vega],Time('2016-02-06 00:00:00'))
+    block2 = ObservingBlock(rigel, 1*u.hour, 0, constraints=[constraint])
+    scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
+                                   Time('2016-02-06 08:00'))
+    scores = scorer.create_score_array(time_resolution=20*u.minute)
+    assert np.array_equal(c, scores)
+
+    constraint2 = AirmassConstraint(max=2, boolean_constraint=False)
+    c2 = constraint2(apo, [vega, rigel], times)
     block = ObservingBlock(vega, 1*u.hour, 0, constraints=[constraint])
-    scorer = Scorer.from_start_end([block], apo, Time('2016-02-06 00:00:00'),
-                                   Time('2016-02-06 00:00:00')+1*u.second)
-    assert np.array(c) == scorer.create_score_array()
+    block2 = ObservingBlock(rigel, 1*u.hour, 0, constraints=[constraint2])
+    # vega's score should be = c[0], rigel's should be =  c2[1]
+    scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
+                                   Time('2016-02-06 08:00'))
+    scores = scorer.create_score_array(time_resolution=20 * u.minute)
+    assert np.array_equal(c[0], scores[0])
+    assert np.array_equal(c2[1], scores[1])
+
+    block = ObservingBlock(vega, 1*u.hour, 0)
+    block2 = ObservingBlock(rigel, 1*u.hour, 0)
+    scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
+                                   Time('2016-02-06 08:00'), [constraint2])
+    scores = scorer.create_score_array(time_resolution=20 * u.minute)
+    # the ``global_constraint``: constraint2 should have applied to the blocks
+    assert np.array_equal(c2, scores)
