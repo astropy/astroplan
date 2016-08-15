@@ -1041,7 +1041,6 @@ def rescale_minmax(vals, worst_val, best_val, better_than=1, worse_than=0):
     >>> airmasses = np.array([1, 1.5, 2, 3, 0])
     >>> rescale_minmax(airmasses, 2.25, 1, better_than = 0)
     array([ 1. ,  0.6,  0.2,  0. , 0. ])
-
     """
     rescaled = (vals - worst_val) / (best_val - worst_val)
     if best_val - worst_val > 0:
