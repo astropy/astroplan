@@ -859,7 +859,7 @@ def is_observable(constraints, observer, targets, times=None,
 
 
 def months_observable(constraints, observer, targets,
-                      time_grid_resolution=7*u.day):
+                      time_grid_resolution=0.5*u.hour):
     """
     Determines which month the specified ``targets`` are observable for a
     specific ``observer``, given the supplied ``constriants``.
@@ -876,8 +876,10 @@ def months_observable(constraints, observer, targets,
         Target or list of targets
 
     time_grid_resolution : `~astropy.units.Quantity` (optional)
-        Constraint checked at linearly-spaced times separated
-        by ``time_resolution``. Default is 7 days.
+        If ``time_range`` is specified, determine whether constraints are met
+        between test times in ``time_range`` by checking constraint at
+        linearly-spaced times separated by ``time_resolution``. Default is 0.5
+        hours.
 
     Returns
     -------
