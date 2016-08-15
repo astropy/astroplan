@@ -95,7 +95,7 @@ class Scorer(object):
     Returns scores and score arrays from the evaluation of constraints on
     observing blocks
     """
-    def __init__(self, blocks, observer, schedule):
+    def __init__(self, blocks, observer, schedule, global_constraints=[]):
         """
         Parameters
         ----------
@@ -105,10 +105,13 @@ class Scorer(object):
             the observer
         schedule : `~astroplan.scheduling.Schedule`
             The schedule inside which the blocks should fit
+        global_constraints : list of `~astroplan.Constraint` objects
+            any ``Constraint`` that applies to all the blocks
         """
         self.blocks = blocks
         self.observer = observer
         self.schedule = schedule
+        self.global_constraints = global_constraints
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -125,19 +128,25 @@ class Scorer(object):
         times = time_grid_from_range((start, end), time_resolution)
         score_array = np.ones((len(self.blocks), len(times)))
         for i, block in enumerate(self.blocks):
-            for constraint in block.constraints:
-                applied_score = constraint(self.observer, [block.target],
-                                           times=times)[0]
-                score_array[i] *= applied_score
+            # TODO: change the default constraints from None to []
+            if block.constraints:
+                for constraint in block.constraints:
+                    applied_score = constraint(self.observer, [block.target],
+                                               times=times)[0]
+                    score_array[i] *= applied_score
+        targets = [block.target for block in self.blocks]
+        for constraint in self.global_constraints:
+            score_array *= constraint(self.observer, targets, times)
         return score_array
 
     @classmethod
-    def from_start_end(cls, blocks, observer, start_time, end_time):
+    def from_start_end(cls, blocks, observer, start_time, end_time,
+                       global_constraints=[]):
         """
         for if you don't have a schedule/ aren't inside a scheduler
         """
         dummy_schedule = Schedule(start_time, end_time)
-        sc = cls(blocks, observer, dummy_schedule)
+        sc = cls(blocks, observer, dummy_schedule, global_constraints)
         return sc
 
 
