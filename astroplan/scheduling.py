@@ -232,7 +232,6 @@ class Schedule(object):
         self.start_time = start_time
         self.end_time = end_time
         self.slots = [Slot(start_time, end_time)]
-        self.constraints = constraints
         self.slew_duration = 4*u.min
         # TODO: replace/overwrite slew_duration with Transitioner calls
         self.observer = None
@@ -241,12 +240,6 @@ class Schedule(object):
         return 'Schedule containing ' + str(len(self.observing_blocks)) + \
                ' observing blocks between ' + str(self.slots[0].start.iso) + \
                ' and ' + str(self.slots[-1].end.iso)
-
-    def apply_constraints(self):
-        # this needs to be able to handle being passed constraints
-        # that are targeted and non-targeted, use the non-targeted
-        # and place targeted (e.g. MoonSep) somewhere they can be used
-        raise NotImplementedError
     
     @property
     def observing_blocks(self):
@@ -347,12 +340,6 @@ class Schedule(object):
         if self.slots[slot_index + 1].block:
             raise IndexError('slot afterwards is full')
         self.slots[slot_index + 1].start = new_end
-    
-    @classmethod
-    def from_constraints(cls, start_time, end_time, constraints):
-        sch = cls(start_time, end_time, constraints=constraints)
-        sch.apply_constraints()
-        return sch
 
 
 class Slot(object):
@@ -407,15 +394,11 @@ class Scheduler(object):
     __metaclass__ = ABCMeta
 
     @u.quantity_input(gap_time=u.second, time_resolution=u.second)
-    def __init__(self, start_time, end_time, constraints, observer,
-                 transitioner=None, gap_time=5*u.min, time_resolution=20*u.second):
+    def __init__(self, constraints, observer, transitioner=None,
+                 gap_time=5*u.min, time_resolution=20*u.second):
         """
         Parameters
         ----------
-        start_time : `~astropy.time.Time`
-            the start of the observation scheduling window.
-        end_time : `~astropy.time.Time`
-            the end of the observation scheduling window.
         constraints : sequence of `~astroplan.constraints.Constraint`
             The constraints to apply to *every* observing block.  Note that
             constraints for specific blocks can go on each block individually.
@@ -431,19 +414,12 @@ class Scheduler(object):
             will have a duration that is a multiple of it.
         """
         self.constraints = constraints
-        self.start_time = start_time
-        self.end_time = end_time
         self.observer = observer
         self.transitioner = transitioner
         self.gap_time = gap_time
         self.time_resolution = time_resolution
-        # make a schedule object, when apply_constraints works, add constraints
-        self.schedule = Schedule(self.start_time, self.end_time,
-                                 # constraints=self.constraints
-                                 )
-        self.schedule.observer = self.observer
 
-    def __call__(self, blocks):
+    def __call__(self, blocks, schedule):
         """
         Parameters
         ----------
@@ -451,16 +427,20 @@ class Scheduler(object):
             The observing blocks to schedule.  Note that the input
             `~astroplan.scheduling.ObservingBlock` objects will *not* be
             modified - new ones will be created and returned.
+        schedule : `~astroplan.scheduling.Schedule` object
+            A schedule that the blocks will be scheduled in. At this time
+            the ``schedule`` must be empty, only defined by a start and
+            end time.
 
         Returns
         -------
         schedule : `~astroplan.scheduling.Schedule`
             A schedule objects which consists of `~astroplan.scheduling.Slot`
-            objects with and wihtout populated ``block`` objects containing either
+            objects with and without populated ``block`` objects containing either
             `~astroplan.scheduling.TransitionBlock` or `~astroplan.scheduling.ObservingBlock`
             objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes
         """
-
+        self.schedule = schedule
         # these are *shallow* copies
         copied_blocks = [copy.copy(block) for block in blocks]
         schedule = self._make_schedule(copied_blocks)
@@ -509,6 +489,7 @@ class Scheduler(object):
         end_time = center_time + duration / 2.
         return cls(start_time, end_time, **kwargs)
 
+
 class SequentialScheduler(Scheduler):
     """
     A scheduler that does "stupid simple sequential scheduling".  That is, it
@@ -527,8 +508,8 @@ class SequentialScheduler(Scheduler):
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2,
                                               b.duration])
             b.observer = self.observer
-        current_time = self.start_time
-        while (len(blocks) > 0) and (current_time < self.end_time):
+        current_time = self.schedule.start_time
+        while (len(blocks) > 0) and (current_time < self.schedule.end_time):
             # first compute the value of all the constraints for each block
             # given the current starting time
             block_transitions = []
@@ -609,7 +590,7 @@ class PriorityScheduler(Scheduler):
         # Generate grid of time slots, and a mask for previous observations
 
         time_resolution = self.time_resolution
-        times = time_grid_from_range([self.start_time, self.end_time],
+        times = time_grid_from_range([self.schedule.start_time, self.schedule.end_time],
                                      time_resolution=time_resolution)
         is_open_time = np.ones(len(times), bool)
 
