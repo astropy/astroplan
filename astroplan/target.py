@@ -11,6 +11,7 @@ from astropy.coordinates import SkyCoord
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
+
 class Target(object):
     """
     Abstract base class for target objects.
@@ -139,7 +140,6 @@ class FixedTarget(Target):
         Show string representation of a `~astroplan.FixedTarget` for Vega:
 
         >>> from astroplan import FixedTarget
-        >>> from astroplan import FixedTarget
         >>> from astropy.coordinates import SkyCoord
         >>> vega_coord = SkyCoord(ra='279.23473479d', dec='38.78368896d')
         >>> vega = FixedTarget(coord=vega_coord, name="Vega")
@@ -171,6 +171,7 @@ class FixedTarget(Target):
         else:
             raise ValueError("Target named {} not in mocked FixedTarget "
                              "method".format(query_name))
+
 
 class NonFixedTarget(Target):
     """

@@ -17,7 +17,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable)
 
-APY_LT104 = not minversion('astropy','1.0.4')
+APY_LT104 = not minversion('astropy', '1.0.4')
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")

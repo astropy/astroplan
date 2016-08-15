@@ -475,7 +475,7 @@ class Scheduler(object):
         -------
         schedule : `~astroplan.scheduling.Schedule`
             A schedule objects which consists of `~astroplan.scheduling.Slot`
-            objects with and wihtout populated ``block`` objects containing either
+            objects with and without populated ``block`` objects containing either
             `~astroplan.scheduling.TransitionBlock` or `~astroplan.scheduling.ObservingBlock`
             objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes.
         """
