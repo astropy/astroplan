@@ -680,8 +680,8 @@ class PriorityScheduler(Scheduler):
                         end_idx = times_indices + start_idx
                         # this may make some OBs get sub-optimal scheduling, but it closes gaps
                         # TODO: determine a reasonable range inside which it gets shifted
-                        if tb.duration > new_start_time - tb.start_time or \
-                           np.abs(new_start_time - tb.end_time) < self.gap_time:
+                        if (new_start_time - tb.start_time < tb.duration or
+                                np.abs(new_start_time - tb.end_time) < self.gap_time):
                             new_start_time = tb.end_time
                             start_time_idx = end_idx
                         self.schedule.insert_slot(tb.start_time, tb)
@@ -697,8 +697,8 @@ class PriorityScheduler(Scheduler):
                         start_idx = self.schedule.slots[slot_index - 2].block.end_idx
                         end_idx = times_indices + start_idx
                         self.schedule.change_slot_block(slot_index - 1, new_block=tb)
-                        if tb.duration > new_start_time - tb.start_time or \
-                           np.abs(new_start_time - tb.end_time) < self.gap_time:
+                        if (new_start_time - tb.start_time < tb.duration or
+                                np.abs(new_start_time - tb.end_time) < self.gap_time):
                             new_start_time = tb.end_time
                             start_time_idx = end_idx
                         is_open_time[start_idx: end_idx] = False
