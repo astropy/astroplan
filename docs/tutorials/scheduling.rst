@@ -212,6 +212,7 @@ targets.
     >>> plt.show()
 
 .. plot::
+
     # first import everything we will need for the scheduling
     import astropy.units as u
     from astropy.time import Time
