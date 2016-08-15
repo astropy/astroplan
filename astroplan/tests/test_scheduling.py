@@ -177,13 +177,15 @@ def test_scheduling_target_down():
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
     start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 3*u.day
-    scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, lco,
-                                     default_transitioner, gap_time=2*u.hour)
-    schedule1 = scheduler1(block)
+    scheduler1 = SequentialScheduler(only_at_night, lco, default_transitioner,
+                                     gap_time=2*u.hour)
+    schedule = Schedule(start_time, end_time)
+    schedule1 = scheduler1(block, schedule)
     assert len(schedule1.observing_blocks) == 0
-    scheduler2 = PriorityScheduler(start_time, end_time, only_at_night, lco,
-                                   default_transitioner, time_resolution=30 * u.minute)
-    schedule2 = scheduler2(block)
+    scheduler2 = PriorityScheduler(only_at_night, lco, default_transitioner,
+                                   time_resolution=30 * u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule2 = scheduler2(block, schedule)
     assert len(schedule2.observing_blocks) == 0
 
 
@@ -192,13 +194,15 @@ def test_scheduling_during_day():
     day = Time('2016-02-06 03:00:00')
     start_time = apo.midnight(day) + 10*u.hour
     end_time = start_time + 6*u.hour
-    scheduler1 = SequentialScheduler(start_time, end_time, only_at_night, apo,
-                                     default_transitioner, gap_time=30*u.minute)
-    schedule1 = scheduler1(block)
+    scheduler1 = SequentialScheduler(only_at_night, apo, default_transitioner,
+                                     gap_time=30*u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule1 = scheduler1(block, schedule)
     assert len(schedule1.observing_blocks) == 0
-    scheduler2 = PriorityScheduler(start_time, end_time, only_at_night, apo,
-                                   default_transitioner, time_resolution=2 * u.minute)
-    schedule2 = scheduler2(block)
+    scheduler2 = PriorityScheduler(only_at_night, apo, default_transitioner,
+                                   time_resolution=2 * u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule2 = scheduler2(block, schedule)
     assert len(schedule2.observing_blocks) == 0
 # bring this back when MoonIlluminationConstraint is working properly
 
@@ -210,14 +214,17 @@ def test_scheduling_moon_up():
     start_time = apo.midnight(day) - 2 * u.hour
     end_time = start_time + 6 * u.hour
     constraints = [AtNightConstraint(), MoonIlluminationConstraint(max=0)]
-    scheduler1 = SequentialScheduler(start_time, end_time, constraints, apo,
-                                     default_transitioner, gap_time=30*u.minute)
-    schedule1 = scheduler1(block)
+    scheduler1 = SequentialScheduler(constraints, apo, default_transitioner,
+                                     gap_time=30*u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule1 = scheduler1(block, schedule)
     assert len(schedule1.observing_blocks) == 0
-    scheduler2 = PriorityScheduler(start_time, end_time, constraints, apo,
-                                   default_transitioner, time_resolution=20*u.minute)
-    schedule2 = scheduler2(block)
+    scheduler2 = PriorityScheduler(constraints, apo, default_transitioner,
+                                   time_resolution=20*u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule2 = scheduler2(block, schedule)
     assert len(schedule2.observing_blocks) == 0
+
 
 def test_scorer():
     constraint = AirmassConstraint(max=4)
