@@ -441,6 +441,7 @@ class Scheduler(object):
             objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes
         """
         self.schedule = schedule
+        self.schedule.observer = self.observer
         # these are *shallow* copies
         copied_blocks = [copy.copy(block) for block in blocks]
         schedule = self._make_schedule(copied_blocks)

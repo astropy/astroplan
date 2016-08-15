@@ -164,13 +164,14 @@ and repeats the scoring and scheduling on the remaining blocks.
 .. code-block:: python
 
     >>> from astroplan.scheduling import SequentialScheduler
+    >>> from astroplan.scheduling import Schedule
 
-    >>> seq_scheduler = SequentialScheduler(start_time, end_time,
-    ...                                     constraints = global_constraints,
+    >>> seq_scheduler = SequentialScheduler(constraints = global_constraints,
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
+    >>> schedule = Schedule(start_time, end_time)
 
-    >>> sequential_schedule = seq_scheduler(blocks)
+    >>> sequential_schedule = seq_scheduler(blocks, schedule)
 
 The second is a priority scheduler. It sorts the blocks by their
 priority (multiple blocks with the same priority will stay in the
@@ -181,12 +182,12 @@ time for that block (highest score).
 
     >>> from astroplan.scheduling import PriorityScheduler
 
-    >>> prior_scheduler = PriorityScheduler(start_time, end_time,
-    ...                                     constraints = global_constraints,
+    >>> prior_scheduler = PriorityScheduler(constraints = global_constraints,
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
+    >>> schedule = Schedule(start_time, end_time)
 
-    >>> priority_schedule = prior_scheduler(blocks)
+    >>> priority_schedule = prior_scheduler(blocks, schedule)
 
 Now that you have a schedule there are a few ways of viewing it.
 One way is to have it print a table where you can show, or hide,
@@ -211,14 +212,16 @@ targets.
     >>> plt.show()
 
 .. plot::
-
+    # first import everything we will need for the scheduling
     import astropy.units as u
     from astropy.time import Time
-    from astroplan import (Observer, FixedTarget, ObservingBlock, Transitioner, PriorityScheduler)
+    from astroplan import (Observer, FixedTarget, ObservingBlock, Transitioner, PriorityScheduler,
+                           Schedule)
     from astroplan.constraints import AtNightConstraint, AirmassConstraint, MoonIlluminationConstraint
     from astroplan.plots import plot_schedule_airmass
     import matplotlib.pyplot as plt
 
+    # Now we define the targets, start time, end time, and observer.
     Deneb = FixedTarget.from_name('deneb')
     M13 = FixedTarget.from_name('m13')
 
@@ -226,6 +229,8 @@ targets.
     end_time = Time('2016-06-07 08:00')
     apo = Observer.at_site('apo')
 
+    # Then define the constraints (global and specific) and make a list of the
+    # observing blocks that you want scheduled
     global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
                           AtNightConstraint()]
     rot = 20 * u.second
@@ -242,16 +247,21 @@ targets.
                                                     configuration = {'filter': filter},
                                                     constraints = constraints))
 
-
+    # Define how the telescope transitions between the configurations defined in the
+    # observing blocks (target, filter, instrument, etc.).
     transitioner = Transitioner(.8*u.deg/u.second,
                                 {'filter':{('B','G'): 10*u.second,
                                            ('G','R'): 10*u.second,
                                            'default': 30*u.second}})
 
-    prior_scheduler = PriorityScheduler(start_time, end_time, constraints = global_constraints,
+    # Initialize the scheduler
+    prior_scheduler = PriorityScheduler(constraints = global_constraints,
                                         observer = apo, transitioner = transitioner)
-    priority_schedule = prior_scheduler(blocks)
+    # Create a schedule for the scheduler to insert the blocks into, and run the scheduler
+    schedule = Schedule(start_time, end_time)
+    priority_schedule = prior_scheduler(blocks, schedule)
 
+    # To get a plot of the airmass vs where the blocks were scheduled
     plt.figure(figsize = (14,6))
     plot_schedule_airmass(priority_schedule)
     plt.legend(loc=1)
