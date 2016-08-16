@@ -594,6 +594,10 @@ class PriorityScheduler(Scheduler):
                                      time_resolution=time_resolution)
         is_open_time = np.ones(len(times), bool)
 
+        # generate the score arrays for all of the blocks
+        scorer = Scorer(blocks, self.observer, self.schedule, global_constraints=self.constraints)
+        score_array = scorer.create_score_array(time_resolution)
+
         # Sort the list of blocks by priority
         sorted_indices = np.argsort(_block_priorities)
 
@@ -602,13 +606,8 @@ class PriorityScheduler(Scheduler):
         for i in sorted_indices:
             b = blocks[i]
             # Compute possible observing times by combining object constraints
-            # with the master schedule mask
-            # assume all times are good, then multiply by 0 ones that aren't
-            constraint_scores = np.zeros(len(times)) + 1
-            for constraint in b._all_constraints:
-                applied_constraint = constraint(self.observer, [b.target], times=times)
-                applied_score = np.asarray(applied_constraint[0], np.float32)
-                constraint_scores = constraint_scores * applied_score
+            # with the master open times mask
+            constraint_scores = score_array[i]
 
             # Add up the applied constraints to prioritize the best blocks
             # And then remove any times that are already scheduled
