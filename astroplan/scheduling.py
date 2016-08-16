@@ -197,7 +197,7 @@ class TransitionBlock(object):
 
         self._components = val
         self.duration = duration
-        
+
     @classmethod
     @u.quantity_input(duration=u.second)
     def from_duration(cls, duration):
@@ -215,7 +215,7 @@ class Schedule(object):
     """
     # as currently written, there should be no consecutive unoccupied slots
     # this should change to allow for more flexibility (e.g. dark slots, grey slots)
-    
+
     def __init__(self, start_time, end_time, constraints=None):
         """
         Parameters:
@@ -240,7 +240,7 @@ class Schedule(object):
         return 'Schedule containing ' + str(len(self.observing_blocks)) + \
                ' observing blocks between ' + str(self.slots[0].start.iso) + \
                ' and ' + str(self.slots[-1].end.iso)
-    
+
     @property
     def observing_blocks(self):
         return [slot.block for slot in self.slots if isinstance(slot.block, ObservingBlock)]
@@ -346,7 +346,7 @@ class Slot(object):
     """
     A time slot consisting of a start and end time
     """
-    
+
     def __init__(self, start_time, end_time):
         """
         Parameters:
@@ -365,17 +365,17 @@ class Slot(object):
     @property
     def duration(self):
         return self.end - self.start
-        
+
     def split_slot(self, early_time, later_time):
         # check if the new slot would overwrite occupied/other slots
         if self.occupied:
             raise ValueError('slot is already occupied')
-            
+
         new_slot = Slot(early_time, later_time)
         new_slot.middle = True
         early_slot = Slot(self.start, early_time)
         late_slot = Slot(later_time, self.end)
-        
+
         if early_time > self.start and later_time < self.end:
             return [early_slot, new_slot, late_slot]
         elif early_time > self.start:
@@ -385,7 +385,7 @@ class Slot(object):
         else:
             return [new_slot]
 
-           
+
 class Scheduler(object):
     """
     Schedule a set of `~astroplan.scheduling.ObservingBlock` objects
@@ -421,6 +421,8 @@ class Scheduler(object):
 
     def __call__(self, blocks, schedule):
         """
+        Schedule a set of `~astroplan.scheduling.ObservingBlock` objects.
+
         Parameters
         ----------
         blocks : list of `~astroplan.scheduling.ObservingBlock` objects
