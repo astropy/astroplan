@@ -185,7 +185,7 @@ class Constraint(object):
         Parameters
         ----------
         observer : `~astroplan.Observer`
-            the observaton location from which to apply the constraints
+            the observation location from which to apply the constraints
         targets : sequence of `~astroplan.Target`
             The targets on which to apply the constraints.
         times : `~astropy.time.Time`
@@ -603,7 +603,7 @@ class MoonIlluminationConstraint(Constraint):
         cached_moon = _get_moon_data(times, observer)
         moon_alt = cached_moon['altaz'].alt
         moon_down_mask = moon_alt < 0
-        moon_up_mask = moon_alt >=0
+        moon_up_mask = moon_alt >= 0
 
         illumination = cached_moon['illum']
         if self.min is None and self.max is not None:
@@ -646,7 +646,8 @@ class LocalTimeConstraint(Constraint):
         >>> from astroplan.constraints import LocalTimeConstraint
         >>> import datetime as dt
         >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
-        >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8)) # bound times between 23:50 and 04:08 local Hawaiian time
+        >>> # bound times between 23:50 and 04:08 local Hawaiian time
+        >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
         """
 
         self.min = min
@@ -726,7 +727,6 @@ class TimeConstraint(Constraint):
 
         >>> from astroplan import Observer
         >>> from astropy.time import Time
-        >>> import datetime as dt
         >>> subaru = Observer.at_site("Subaru")
         >>> t1 = Time("2016-03-28T12:00:00")
         >>> t2 = Time("2016-03-30T12:00:00")
@@ -787,7 +787,7 @@ def is_always_observable(constraints, observer, targets, times=None,
         ``time_resolution``. This will be passed as the first argument into
         `~astroplan.time_grid_from_range`.
 
-    time_resolution : `~astropy.units.Quantity` (optional)
+    time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
         between test times in ``time_range`` by checking constraint at
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
@@ -806,8 +806,8 @@ def is_always_observable(constraints, observer, targets, times=None,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
-    return np.all(contraint_arr, axis=1)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
+    return np.all(constraint_arr, axis=1)
 
 
 def is_observable(constraints, observer, targets, times=None,
@@ -835,7 +835,7 @@ def is_observable(constraints, observer, targets, times=None,
         ``time_resolution``. This will be passed as the first argument into
         `~astroplan.time_grid_from_range`.
 
-    time_resolution : `~astropy.units.Quantity` (optional)
+    time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
         between test times in ``time_range`` by checking constraint at
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
@@ -854,8 +854,8 @@ def is_observable(constraints, observer, targets, times=None,
                                       time_range=time_range,
                                       time_grid_resolution=time_grid_resolution)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
-    return np.any(contraint_arr, axis=1)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
+    return np.any(constraint_arr, axis=1)
 
 
 def months_observable(constraints, observer, targets,
@@ -875,15 +875,7 @@ def months_observable(constraints, observer, targets,
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
 
-    times : `~astropy.time.Time` (optional)
-        Array of times on which to test the constraint
-
-    time_range : `~astropy.time.Time` (optional)
-        Lower and upper bounds on time sequence, with spacing
-        ``time_resolution``. This will be passed as the first argument into
-        `~astroplan.time_grid_from_range`.
-
-    time_resolution : `~astropy.units.Quantity` (optional)
+    time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
         between test times in ``time_range`` by checking constraint at
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
@@ -913,10 +905,10 @@ def months_observable(constraints, observer, targets,
     applied_constraints = [constraint(observer, targets,
                                       times=times)
                            for constraint in constraints]
-    contraint_arr = np.logical_and.reduce(applied_constraints)
+    constraint_arr = np.logical_and.reduce(applied_constraints)
 
     months_observable = []
-    for target, observable in zip(targets, contraint_arr):
+    for target, observable in zip(targets, constraint_arr):
         s = set([t.datetime.month for t in times[observable]])
         months_observable.append(s)
 
@@ -926,8 +918,8 @@ def months_observable(constraints, observer, targets,
 def observability_table(constraints, observer, targets, times=None,
                         time_range=None, time_grid_resolution=0.5*u.hour):
     """
-    Creates a table with information about observablity for all  the ``targets``
-    over the requeisted ``time_range``, given the constraints in
+    Creates a table with information about observability for all  the ``targets``
+    over the requested ``time_range``, given the constraints in
     ``constraints_list`` for ``observer``.
 
     Parameters

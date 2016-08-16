@@ -477,7 +477,7 @@ class Observer(object):
             return coordinate.transform_to(altaz_frame)
 
     def parallactic_angle(self, time, target):
-        '''
+        """
         Calculate the parallactic angle.
 
         Parameters
@@ -501,7 +501,7 @@ class Observer(object):
 
         .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
 
-        '''
+        """
         if not isinstance(time, Time):
             time = Time(time)
 

@@ -200,6 +200,7 @@ def _unmock_remote_data():
         del EarthLocation._real_of_site
     # otherwise assume it's already correct
 
+
 def _set_mpl_style_sheet(style_sheet):
     """
     Import matplotlib, set the style sheet to ``style_sheet`` using
@@ -208,6 +209,7 @@ def _set_mpl_style_sheet(style_sheet):
     import matplotlib
     matplotlib.rcdefaults()
     matplotlib.rcParams.update(style_sheet)
+
 
 def stride_array(arr, window_width):
     """
