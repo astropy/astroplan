@@ -243,7 +243,7 @@ def plot_schedule_airmass(schedule, show_night=False):
     targ_to_color = {}
     color_idx = np.linspace(0, 1, len(targets))
     # lighter, bluer colors indicate higher priority
-    for target, ci in zip(targets, color_idx):
+    for target, ci in zip(set(targets), color_idx):
         plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
         targ_to_color[target.name] = plt.cm.cool(ci)
     if show_night:
