@@ -259,6 +259,7 @@ class Schedule(object):
         durations = []
         ra = []
         dec = []
+        config = []
         for slot in self.slots:
             if hasattr(slot.block, 'target'):
                 start_times.append(slot.start.iso)
@@ -267,6 +268,7 @@ class Schedule(object):
                 target_names.append(slot.block.target.name)
                 ra.append(slot.block.target.ra)
                 dec.append(slot.block.target.dec)
+                config.append(slot.block.configuration)
             elif show_transitions and slot.block:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
@@ -274,6 +276,9 @@ class Schedule(object):
                 target_names.append('TransitionBlock')
                 ra.append('')
                 dec.append('')
+                changes = list(slot.block.components.keys())
+                changes.remove('slew_time')
+                config.append(changes)
             elif slot.block is None and show_unused:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
@@ -281,9 +286,10 @@ class Schedule(object):
                 target_names.append('Unused Time')
                 ra.append('')
                 dec.append('')
-        return Table([target_names, start_times, end_times, durations, ra, dec],
+                config.append('')
+        return Table([target_names, start_times, end_times, durations, ra, dec, config],
                      names=('target', 'start time (UTC)', 'end time (UTC)',
-                            'duration (minutes)', 'ra', 'dec'))
+                            'duration (minutes)', 'ra', 'dec', 'configuration'))
 
     def new_slots(self, slot_index, start_time, end_time):
         # this is intended to be used such that there aren't consecutive unoccupied slots

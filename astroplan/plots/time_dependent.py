@@ -267,7 +267,8 @@ def plot_schedule_airmass(schedule, show_night=False):
                         fc=targ_to_color[block.target.name], lw=0, alpha=.6)
         else:
             plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
-                        color='k', lw=0, alpha=.6)
+                        color='k')
+    plt.axhline(3, color='k', label='Transitions')
     # TODO: make this output a `axes` object
 
 
