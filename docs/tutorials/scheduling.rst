@@ -21,6 +21,8 @@ Contents
 
 * :ref:`scheduling-scheduling`
 
+* :ref:`scheduling-user_defined_schedulers`
+
 .. _scheduling-defining_targets:
 
 Defining Targets
@@ -277,6 +279,7 @@ targets.
     # To get a plot of the airmass vs where the blocks were scheduled
     plt.figure(figsize = (14,6))
     plot_schedule_airmass(priority_schedule)
+    plt.tight_layout()
     plt.legend(loc="upper right")
     plt.show()
 
@@ -370,7 +373,7 @@ and run the priority scheduler again.
 
 .. plot::
 
-        # first import everything we will need for the scheduling
+    # first import everything we will need for the scheduling
     import astropy.units as u
     from astropy.time import Time
     from astroplan import (Observer, FixedTarget, ObservingBlock, Transitioner, PriorityScheduler,
@@ -424,7 +427,236 @@ and run the priority scheduler again.
     # To get a plot of the airmass vs where the blocks were scheduled
     plt.figure(figsize = (14,6))
     plot_schedule_airmass(priority_schedule)
+    plt.tight_layout()
     plt.legend(loc="upper right")
     plt.show()
 
 Nothing new shows up because Alpha Centauri isn't visible from APO.
+
+.. _scheduling-user_defined_schedulers:
+
+User-Defined Schedulers
+=======================
+
+There are many ways that targets can be scheduled with, only two of which
+are currently implemented. This example will walk through the steps for
+creating your own scheduler that will be compatible with the tools of
+the ``scheduling`` module.
+
+As you may have noticed above, the schedulers are assembled by making a
+call to the initializer of the class (e.g. `~astroplan.scheduling.PriorityScheduler`).
+Each of the schedulers is subclassed from the abstract `astroplan.scheduling.Scheduler`
+class, and our custom scheduler needs to be as well.
+
+For our scheduler, we will make one starts at the beginning and schedules
+the first ``ObservingBlock`` that it finds that doesn't have a score of zero: a
+``MinimumBarScheduler``. We need to include two methods, ``__init__`` and
+``_make_schedule`` for it to work:
+
+* The ``__init__`` is already defined by the super class, and accepts global constraints,
+  the `~astroplan.Observer`, the `~astroplan.scheduling.Transitioner`, a ``gap_time``,
+  and a ``time_resolution`` for spacing during the creation of the schedule.
+
+* It also needs a ``_make_schedule`` to do the heavy lifting. This takes a list of
+  `~astroplan.scheduling.ObservingBlock` objects and a `~astroplan.scheduling.Schedule`
+  object to input them into. This method needs to be able to check whether a
+  block can be scheduled in a given spot, and be able to insert it into the
+  schedule once a suitable spot has been found.
+
+Here's the ``MinimumBarScheduler`` implementation::
+
+    from astroplan.scheduling import Scheduler, Scorer
+    from astroplan.utils import time_grid_from_range
+    from astroplan.constraints import AltitudeConstraint
+    from astropy import units as u
+
+    import numpy as np
+
+    class MinimumBarScheduler(Scheduler):
+        """
+        schedule blocks randomly
+        """
+        def __init__(self, *args, **kwargs):
+            super(MinimumBarScheduler, self).__init__(*args, **kwargs)
+
+        def _make_schedule(self, blocks):
+            # gather all the constraints on each block into a single attribute
+            for b in blocks:
+                if b.constraints is None:
+                    b._all_constraints = self.constraints
+                else:
+                    b._all_constraints = self.constraints + b.constraints
+                # to make sure the scheduler has some constraint to work off of
+                # and to prevent scheduling of targets below the horizon
+                if b._all_constraints is None:
+                    b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+                    b.constraints = [AltitudeConstraint(min=0*u.deg)]
+                elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+                    b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
+                b.observer = self.observer
+
+            # before we can schedule, we need to know where blocks meet the constraints
+            scorer = Scorer(blocks,self.observer, self.schedule, global_constraints=self.constraints)
+            score_array = scorer.create_score_array(self.time_resolution)
+            # now we have an array with the scores for all of the blocks at intervals of time_resolution
+
+            # we want to start from the beginning and start scheduling
+            current_time = self.schedule.start_time
+            while current_time < self.schedule.end_time:
+                scheduled = False
+                i=0
+                while i < len(blocks) and scheduled is False:
+                    block = blocks[i]
+                    # the schedule starts with only 1 slot
+                    if len(self.schedule.slots) > 1:
+                        # make a transition between the last scheduled block and this one
+                        transition = self.transitioner(schedule.observing_blocks[-1], block,
+                                                       current_time, self.observer)
+                        test_time = current_time + transition.duration
+                    else:
+                        test_time = current_time
+                    # how far from the start is the time we are testing
+                    start_idx = int((test_time - self.schedule.start_time)/self.time_resolution)
+                    duration_idx = int(block.duration/self.time_resolution)
+                    # if any score during the block's duration would be 0, reject it
+                    if any(score_array[i][start_idx:start_idx+duration_idx] == 0):
+                        i +=1
+                    # if all of the scores are >0, accept and schedule it
+                    else:
+                        if len(self.schedule.slots) >1:
+                            self.schedule.insert_slot(current_time, transition)
+                        self.schedule.insert_slot(test_time, block)
+                        # advance the time, break this while loop and remove the block from the list
+                        current_time = test_time + block.duration
+                        scheduled = True
+                        blocks.remove(block)
+                # if every block failed, progress the time
+                if i == len(blocks):
+                    current_time += self.gap_time
+            return schedule
+
+Then to use our new scheduler, we just need to call it how we did
+up above::
+
+    >>> from astroplan.constraints import AtNightConstraint
+    >>> from astroplan.scheduling import Schedule, ObservingBlock
+    >>> from astroplan import FixedTarget, Observer, Transitioner
+    >>> from astropy.time import Time
+
+    >>> apo = Observer.at_site('apo')
+    >>> Deneb = FixedTarget.from_name('Deneb')
+    >>> M13 = FixedTarget.from_name('M13')
+    >>> blocks = [ObservingBlock(Deneb, 20*u.minute, 0)]
+    >>> blocks.append(ObservingBlock(M13, 20*u.minute, 0))
+
+    >>> # this will produce 0 second transitions
+    >>> transitioner = Transitioner()
+
+    >>> schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
+
+    >>> scheduler = MinimumBarScheduler(observer = apo, transitioner = transitioner,
+    ...                                 constraints = [])
+    >>> scheduler(blocks, schedule)
+
+    >>> import matplotlib.pyplot as plt
+    >>> from astroplan.plots import plot_schedule_airmass
+    >>> plot_schedule_airmass(schedule)
+    >>> plt.legend()
+    >>> plt.show()
+
+.. plot::
+
+    from astroplan.scheduling import Scheduler, Scorer
+    from astroplan.utils import time_grid_from_range
+    from astroplan.constraints import AltitudeConstraint
+    from astropy import units as u
+
+    import numpy as np
+
+    class MinimumBarScheduler(Scheduler):
+        """
+        schedule blocks randomly
+        """
+        def __init__(self, *args, **kwargs):
+            super(MinimumBarScheduler, self).__init__(*args, **kwargs)
+
+        def _make_schedule(self, blocks):
+            # gather all the constraints on each block into a single attribute
+            for b in blocks:
+                if b.constraints is None:
+                    b._all_constraints = self.constraints
+                else:
+                    b._all_constraints = self.constraints + b.constraints
+                # to make sure the scheduler has some constraint to work off of
+                # and to prevent scheduling of targets below the horizon
+                if b._all_constraints is None:
+                    b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+                    b.constraints = [AltitudeConstraint(min=0*u.deg)]
+                elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+                    b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
+                b.observer = self.observer
+
+            # before we can schedule, we need to know where blocks meet the constraints
+            scorer = Scorer(blocks,self.observer, self.schedule, global_constraints=self.constraints)
+            score_array = scorer.create_score_array(self.time_resolution)
+            # now we have an array with the scores for all of the blocks at intervals of time_resolution
+
+            # we want to start from the beginning and start scheduling
+            current_time = self.schedule.start_time
+            while current_time < self.schedule.end_time:
+                scheduled = False
+                i=0
+                while i < len(blocks) and scheduled is False:
+                    block = blocks[i]
+                    # the schedule starts with only 1 slot
+                    if len(self.schedule.slots) > 1:
+                        # make a transition between the last scheduled block and this one
+                        transition = self.transitioner(schedule.observing_blocks[-1], block,
+                                                       current_time, self.observer)
+                        test_time = current_time + transition.duration
+                    else:
+                        test_time = current_time
+                    # how far from the start is the time we are testing
+                    start_idx = int((test_time - self.schedule.start_time)/self.time_resolution)
+                    duration_idx = int(block.duration/self.time_resolution)
+                    # if any score during the block's duration would be 0, reject it
+                    if any(score_array[i][start_idx:start_idx+duration_idx] == 0):
+                        i +=1
+                    # if all of the scores are >0, accept and schedule it
+                    else:
+                        if len(self.schedule.slots) >1:
+                            self.schedule.insert_slot(current_time, transition)
+                        self.schedule.insert_slot(test_time, block)
+                        # advance the time, break this while loop and remove the block from the list
+                        current_time = test_time + block.duration
+                        scheduled = True
+                        blocks.remove(block)
+                # if every block failed, progress the time
+                if i == len(blocks):
+                    current_time += self.gap_time
+            return schedule
+    from astroplan.constraints import AtNightConstraint
+    from astroplan.scheduling import Schedule, ObservingBlock
+    from astroplan import FixedTarget, Observer, Transitioner
+    from astropy.time import Time
+
+    apo = Observer.at_site('apo')
+    Deneb = FixedTarget.from_name('Deneb')
+    M13 = FixedTarget.from_name('M13')
+    blocks = [ObservingBlock(Deneb, 20*u.minute, 0)]
+    blocks.append(ObservingBlock(M13, 20*u.minute, 0))
+
+    transitioner = Transitioner()
+    global_constraints = [AtNightConstraint.twilight_civil()]
+
+    schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
+    scheduler = MinimumBarScheduler(observer = apo, transitioner = transitioner,
+                                    constraints = [])
+    scheduler(blocks, schedule)
+
+    import matplotlib.pyplot as plt
+    from astroplan.plots import plot_schedule_airmass
+    plot_schedule_airmass(schedule)
+    plt.tight_layout()
+    plt.legend()
+    plt.show()

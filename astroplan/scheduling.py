@@ -278,7 +278,8 @@ class Schedule(object):
                 ra.append('')
                 dec.append('')
                 changes = list(slot.block.components.keys())
-                changes.remove('slew_time')
+                if 'slew_time' in changes:
+                    changes.remove('slew_time')
                 config.append(changes)
             elif slot.block is None and show_unused:
                 start_times.append(slot.start.iso)

@@ -134,6 +134,7 @@ time and issue the plotting command.
     observe_time = Time('2000-06-15 23:30:00')
 
     plot_airmass(target, observer, observe_time)
+    plt.tight_layout()
     plt.show()
 
 As you can see, the 24-hour plot is centered on the *time* input.  You can also
@@ -213,6 +214,7 @@ To center your window at some instance in time:
     observe_time = observe_time + np.linspace(-5, 5, 55)*u.hour
 
     plot_airmass(target, observer, observe_time)
+    plt.tight_layout()
     plt.show()
 
 Specify start and end times
@@ -269,6 +271,7 @@ If you know the start and end times of your observation run, you can use a
     observe_time = start_time + delta_t*np.linspace(0, 1, 75)
 
     plot_airmass(target, observer, observe_time)
+    plt.tight_layout()
     plt.show()
 
 Plotting a quantity for multiple targets
@@ -334,6 +337,7 @@ many targets on the plot as you wish::
     plot_airmass(third_target, observer, observe_time)
 
     plt.legend(shadow=True, loc=2)
+    plt.tight_layout()
     plt.show()
 
 When you're ready to make a different plot, use ``ax.cla()`` to clear the
@@ -405,6 +409,7 @@ The default line for time-dependent plots is solid and the default label
     plot_airmass(other_target, observer, observe_time, style_kwargs=pollux_styles)
 
     plt.legend(shadow=True, loc=2)
+    plt.tight_layout()
     plt.show()
 
 See the `Matplotlib`_ documentation for information on plotting styles in line
@@ -444,6 +449,7 @@ any plotting function:
 
     plot_airmass(vega, apo, Time('2005-01-02 19:00') + np.linspace(-5, 5, 20)*u.hour,
                  style_sheet=dark_style_sheet)
+    plt.tight_layout()
     plt.show()
 
 
@@ -480,6 +486,7 @@ right side of the axis with the altitudes in degrees using the
     target = FixedTarget.from_name('HD 189733')
     apo = Observer.at_site('APO')
     plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
+    plt.tight_layout()
     plt.show()
 
 
@@ -620,6 +627,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 Showing movement over time
@@ -688,6 +696,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 For more examples on how to populate time objects, see `~astropy.time.Time`
@@ -798,6 +807,7 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 Some observatories may need to offset or rotate the azimuth labels due to their
@@ -870,6 +880,7 @@ A positive offset is in the same direction as azimuth increase (see the
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 .. warning::
@@ -948,6 +959,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 .. warning::
@@ -1083,6 +1095,7 @@ make multiple plots:
 
     # Note that this plt.show (or another action, such as saving a figure) is
     # critical in maintaining two separate plots.
+    plt.tight_layout()
     plt.show()
 
     other_ax = plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
@@ -1095,6 +1108,7 @@ make multiple plots:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 :ref:`Return to Top <plots>`
@@ -1129,6 +1143,7 @@ on The Crab Nebula (M1):
 
     messier1 = FixedTarget.from_name("M1")
     ax, hdu = plot_finder_image(messier1)
+    plt.tight_layout()
     plt.show()
 
 

@@ -256,6 +256,7 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
     ax.set_position([box.x0, box.y0, box.width * 0.8, box.height * 0.8])
 
     plt.legend(loc=1, bbox_to_anchor=(1.35, 1))
+    plt.tight_layout()
     plt.show()
 
 We want a minimum airmass when observing, and it looks like sometime between
@@ -342,6 +343,7 @@ customizing plots and the like):
     plot_parallactic(deneb, subaru, time)
 
     plt.legend(loc=2)
+    plt.tight_layout()
     plt.show()
 
 We can also calculate the parallactic angle directly:
@@ -506,6 +508,7 @@ targets lay in the sky:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
     plot_sky(altair, subaru, end, style_kwargs=altair_style)
@@ -519,6 +522,7 @@ targets lay in the sky:
     ax.set_position([box.x0, box.y0, box.width * 0.75, box.height * 0.75])
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    plt.tight_layout()
     plt.show()
 
 We can also show how our targets move over time during the night in question::
