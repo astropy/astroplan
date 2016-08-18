@@ -15,7 +15,8 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
-                           TimeConstraint, LocalTimeConstraint, months_observable)
+                           TimeConstraint, LocalTimeConstraint, months_observable,
+                           rescale_minmax)
 
 APY_LT104 = not minversion('astropy', '1.0.4')
 
@@ -368,6 +369,16 @@ def test_months_observable():
 
     assert months == should_be
 
+
+def test_rescale_minmax():
+    a = np.array([2])
+    rescaled = np.zeros(5)
+    rescaled[0] = (rescale_minmax(a, 6, 1))[0]
+    rescaled[1] = (rescale_minmax(a, 1, 6))[0]
+    rescaled[2] = (rescale_minmax(a, 0, 1))[0]
+    rescaled[3] = (rescale_minmax(a, 1, 0))[0]
+    rescaled[4] = (rescale_minmax(a, 0, 1, better_than=0))[0]
+    assert all(np.array([0.8, 0.2, 1, 0, 0]) == rescaled)
 
 constraint_tests = [
     AltitudeConstraint(),
