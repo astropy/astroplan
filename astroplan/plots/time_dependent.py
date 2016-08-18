@@ -243,7 +243,7 @@ def plot_schedule_airmass(schedule, show_night=False):
     targ_to_color = {}
     color_idx = np.linspace(0, 1, len(targets))
     # lighter, bluer colors indicate higher priority
-    for target, ci in zip(targets, color_idx):
+    for target, ci in zip(set(targets), color_idx):
         plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
         targ_to_color[target.name] = plt.cm.cool(ci)
     if show_night:
@@ -267,7 +267,8 @@ def plot_schedule_airmass(schedule, show_night=False):
                         fc=targ_to_color[block.target.name], lw=0, alpha=.6)
         else:
             plt.axvspan(block.start_time.plot_date, block.end_time.plot_date,
-                        color='k', lw=0, alpha=.6)
+                        color='k')
+    plt.axhline(3, color='k', label='Transitions')
     # TODO: make this output a `axes` object
 
 

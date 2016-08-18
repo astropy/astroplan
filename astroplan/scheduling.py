@@ -15,6 +15,7 @@ from astropy import units as u
 from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
+from .constraints import AltitudeConstraint
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner', 'Scorer']
@@ -166,10 +167,10 @@ class TransitionBlock(object):
         start_time : `~astropy.units.Quantity`
             Start time of observation
         """
+        self._components = None
         self.duration = None
         self.start_time = start_time
         self.components = components
-        self._components = None
 
     def __repr__(self):
         orig_repr = object.__repr__(self)
@@ -203,8 +204,7 @@ class TransitionBlock(object):
     def from_duration(cls, duration):
         # for testing how to put transitions between observations during
         # scheduling without considering the complexities of duration
-        tb = TransitionBlock({None: 0*u.second})
-        tb.duration = duration
+        tb = TransitionBlock({'duration': duration})
         return tb
 
 
@@ -232,14 +232,12 @@ class Schedule(object):
         self.start_time = start_time
         self.end_time = end_time
         self.slots = [Slot(start_time, end_time)]
-        self.slew_duration = 4*u.min
-        # TODO: replace/overwrite slew_duration with Transitioner calls
         self.observer = None
 
     def __repr__(self):
-        return 'Schedule containing ' + str(len(self.observing_blocks)) + \
-               ' observing blocks between ' + str(self.slots[0].start.iso) + \
-               ' and ' + str(self.slots[-1].end.iso)
+        return ('Schedule containing ' + str(len(self.observing_blocks)) +
+                ' observing blocks between ' + str(self.slots[0].start.iso) +
+                ' and ' + str(self.slots[-1].end.iso))
 
     @property
     def observing_blocks(self):
@@ -261,6 +259,7 @@ class Schedule(object):
         durations = []
         ra = []
         dec = []
+        config = []
         for slot in self.slots:
             if hasattr(slot.block, 'target'):
                 start_times.append(slot.start.iso)
@@ -269,6 +268,7 @@ class Schedule(object):
                 target_names.append(slot.block.target.name)
                 ra.append(slot.block.target.ra)
                 dec.append(slot.block.target.dec)
+                config.append(slot.block.configuration)
             elif show_transitions and slot.block:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
@@ -276,6 +276,9 @@ class Schedule(object):
                 target_names.append('TransitionBlock')
                 ra.append('')
                 dec.append('')
+                changes = list(slot.block.components.keys())
+                changes.remove('slew_time')
+                config.append(changes)
             elif slot.block is None and show_unused:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
@@ -283,9 +286,10 @@ class Schedule(object):
                 target_names.append('Unused Time')
                 ra.append('')
                 dec.append('')
-        return Table([target_names, start_times, end_times, durations, ra, dec],
+                config.append('')
+        return Table([target_names, start_times, end_times, durations, ra, dec, config],
                      names=('target', 'start time (UTC)', 'end time (UTC)',
-                            'duration (minutes)', 'ra', 'dec'))
+                            'duration (minutes)', 'ra', 'dec', 'configuration'))
 
     def new_slots(self, slot_index, start_time, end_time):
         # this is intended to be used such that there aren't consecutive unoccupied slots
@@ -296,8 +300,8 @@ class Schedule(object):
         # due to float representation, this will change block start time
         # and duration by up to 1 second in order to fit in a slot
         for j, slot in enumerate(self.slots):
-            if (slot.start < start_time or np.abs(slot.start-start_time) < 1*u.second) \
-                    and (slot.end > start_time):
+            if ((slot.start < start_time or abs(slot.start-start_time) < 1*u.second)
+                    and (slot.end > start_time + 1*u.second)):
                 slot_index = j
         if (block.duration - self.slots[slot_index].duration) > 1*u.second:
             print(self.slots[slot_index].duration.to(u.second), block.duration)
@@ -305,14 +309,14 @@ class Schedule(object):
         elif self.slots[slot_index].end - block.duration < start_time:
             start_time = self.slots[slot_index].end - block.duration
 
-        if np.abs((self.slots[slot_index].duration - block.duration) < 1 * u.second):
+        if abs((self.slots[slot_index].duration - block.duration) < 1 * u.second):
             block.duration = self.slots[slot_index].duration
             start_time = self.slots[slot_index].start
             end_time = self.slots[slot_index].end
-        elif np.abs(self.slots[slot_index].start - start_time) < 1*u.second:
+        elif abs(self.slots[slot_index].start - start_time) < 1*u.second:
             start_time = self.slots[slot_index].start
             end_time = start_time + block.duration
-        elif np.abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
+        elif abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
             end_time = self.slots[slot_index].end
         else:
             end_time = start_time + block.duration
@@ -443,6 +447,7 @@ class Scheduler(object):
             objects with populated ``start_time`` and ``end_time`` or ``duration`` attributes
         """
         self.schedule = schedule
+        self.schedule.observer = self.observer
         # these are *shallow* copies
         copied_blocks = [copy.copy(block) for block in blocks]
         schedule = self._make_schedule(copied_blocks)
@@ -507,6 +512,12 @@ class SequentialScheduler(Scheduler):
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
+            # to make sure the scheduler has some constraint to work off of
+            # and to prevent scheduling of targets below the horizon
+            if b._all_constraints is None:
+                b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+            elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+                b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2,
                                               b.duration])
             b.observer = self.observer
@@ -583,6 +594,12 @@ class PriorityScheduler(Scheduler):
                 b._all_constraints = self.constraints
             else:
                 b._all_constraints = self.constraints + b.constraints
+            # to make sure the scheduler has some constraint to work off of
+            # and to prevent scheduling of targets below the horizon
+            if b._all_constraints is None:
+                b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+            elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+                b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
             b._duration_offsets = u.Quantity([0 * u.second, b.duration / 2, b.duration])
             _block_priorities[i] = b.priority
             _all_times.append(b.duration)
@@ -615,11 +632,21 @@ class PriorityScheduler(Scheduler):
             # And then remove any times that are already scheduled
             constraint_scores[is_open_time == False] = 0
             # Select the most optimal time
+
             # need to leave time around the Block for transitions
+            if self.transitioner.instrument_reconfig_times:
+                max_config_time = sum([max(value.values()) for value in
+                                       self.transitioner.instrument_reconfig_times.values()])
+            else:
+                max_config_time = 0*u.second
+            if self.transitioner.slew_rate:
+                buffer_time = (160*u.deg/self.transitioner.slew_rate + max_config_time)
+            else:
+                buffer_time = max_config_time
             # TODO: make it so that this isn't required to prevent errors in slot creation
-            total_duration = b.duration + self.gap_time
+            total_duration = b.duration + buffer_time
             # calculate the number of time slots needed for this exposure
-            _stride_by = np.int(np.ceil(total_duration / time_resolution))
+            _stride_by = np.int(np.ceil(float(total_duration / time_resolution)))
 
             # Stride the score arrays by that number
             _strided_scores = stride_array(constraint_scores, _stride_by)
@@ -644,10 +671,11 @@ class PriorityScheduler(Scheduler):
 
             if _is_scheduled:
                 # set duration such that the Block will fit in the strided array
-                duration_indices = np.int(np.ceil(b.duration / time_resolution))
+                duration_indices = np.int(np.ceil(float(b.duration / time_resolution)))
                 b.duration = duration_indices * time_resolution
+                # add 1 second to the start time to allow for scheduling at the start of a slot
                 slot_index = [q for q, slot in enumerate(self.schedule.slots)
-                              if slot.start < new_start_time < slot.end][0]
+                              if slot.start < new_start_time + 1*u.second < slot.end][0]
                 slots_before = self.schedule.slots[:slot_index]
                 slots_after = self.schedule.slots[slot_index + 1:]
                 # this has to remake transitions between already existing ObservingBlocks
@@ -656,14 +684,14 @@ class PriorityScheduler(Scheduler):
                         # make a transition object after the previous ObservingBlock
                         tb = self.transitioner(self.schedule.slots[slot_index - 1].block, b,
                                                self.schedule.slots[slot_index - 1].end, self.observer)
-                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        times_indices = np.int(np.ceil(float(tb.duration / time_resolution)))
                         tb.duration = times_indices * time_resolution
                         start_idx = self.schedule.slots[slot_index - 1].block.end_idx
                         end_idx = times_indices + start_idx
                         # this may make some OBs get sub-optimal scheduling, but it closes gaps
                         # TODO: determine a reasonable range inside which it gets shifted
                         if (new_start_time - tb.start_time < tb.duration or
-                                np.abs(new_start_time - tb.end_time) < self.gap_time):
+                                abs(new_start_time - tb.end_time) < self.gap_time):
                             new_start_time = tb.end_time
                             start_time_idx = end_idx
                         self.schedule.insert_slot(tb.start_time, tb)
@@ -674,13 +702,13 @@ class PriorityScheduler(Scheduler):
                         # change the existing TransitionBlock to what it needs to be now
                         tb = self.transitioner(self.schedule.slots[slot_index - 2].block, b,
                                                self.schedule.slots[slot_index - 2].end, self.observer)
-                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        times_indices = np.int(np.ceil(float(tb.duration / time_resolution)))
                         tb.duration = times_indices * time_resolution
                         start_idx = self.schedule.slots[slot_index - 2].block.end_idx
                         end_idx = times_indices + start_idx
                         self.schedule.change_slot_block(slot_index - 1, new_block=tb)
                         if (new_start_time - tb.start_time < tb.duration or
-                                np.abs(new_start_time - tb.end_time) < self.gap_time):
+                                abs(new_start_time - tb.end_time) < self.gap_time):
                             new_start_time = tb.end_time
                             start_time_idx = end_idx
                         is_open_time[start_idx: end_idx] = False
@@ -691,7 +719,7 @@ class PriorityScheduler(Scheduler):
                         # make a transition object after the new ObservingBlock
                         tb = self.transitioner(b, self.schedule.slots[slot_index + 1].block,
                                                new_start_time + b.duration, self.observer)
-                        times_indices = np.int(np.ceil(tb.duration / time_resolution))
+                        times_indices = np.int(np.ceil(float(tb.duration / time_resolution)))
                         tb.duration = times_indices * time_resolution
                         self.schedule.insert_slot(tb.start_time, tb)
                         start_idx = end_time_idx
@@ -729,7 +757,8 @@ class Transitioner(object):
             If not None, gives a mapping from property names to another
             dictionary. The second dictionary maps 2-tuples of states to the
             time it takes to transition between those states (as an
-            `~astropy.units.Quantity`).
+            `~astropy.units.Quantity`), can also take a 'default' key
+            mapped to a default transition time.
         """
         self.slew_rate = slew_rate
         self.instrument_reconfig_times = instrument_reconfig_times
@@ -776,19 +805,25 @@ class Transitioner(object):
         if components:
             return TransitionBlock(components, start_time)
         else:
-            return None
+            return TransitionBlock.from_duration(0*u.second)
 
     def compute_instrument_transitions(self, oldblock, newblock):
         components = {}
         for conf_name, old_conf in oldblock.configuration.items():
-            if conf_name in newblock:
+            if conf_name in newblock.configuration:
                 conf_times = self.instrument_reconfig_times.get(conf_name,
                                                                 None)
                 if conf_times is not None:
-                    new_conf = newblock[conf_name]
+                    new_conf = newblock.configuration[conf_name]
                     ctime = conf_times.get((old_conf, new_conf), None)
+                    def_time = conf_times.get('default', None)
                     if ctime is not None:
                         s = '{0}:{1} to {2}'.format(conf_name, old_conf,
                                                     new_conf)
                         components[s] = ctime
+                    elif def_time and not old_conf == new_conf:
+                        s = '{0}:{1} to {2}'.format(conf_name, old_conf,
+                                                    new_conf)
+                        components[s] = def_time
+
         return components

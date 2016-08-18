@@ -10,7 +10,8 @@ from astropy.coordinates import SkyCoord
 from ..utils import time_grid_from_range
 from ..observer import Observer
 from ..target import FixedTarget
-from ..constraints import (AirmassConstraint, _get_altaz)
+from ..constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
+                           MoonIlluminationConstraint)
 from ..scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                           Transitioner, TransitionBlock, Schedule, Slot, Scorer)
 
@@ -22,53 +23,27 @@ polaris = FixedTarget(coord=SkyCoord(ra=37.95456067 * u.deg,
                                      dec=89.26410897 * u.deg), name="Polaris")
 
 apo = Observer.at_site('apo')
-targets = [vega, rigel, polaris]
+targets = [vega, polaris, rigel]
+default_time = Time('2016-02-06 03:00:00')
+only_at_night = [AtNightConstraint()]
 
 
-def test_transitioner():
-    blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
-    slew_rate = 1 * u.deg / u.second
-    trans = Transitioner(slew_rate=slew_rate)
-    start_time = Time('2016-02-06 00:00:00')
-    transition = trans(blocks[0], blocks[1], start_time, apo)
-    aaz = _get_altaz(Time([start_time]), apo,
-                     [blocks[0].target, blocks[1].target])['altaz']
-    sep = aaz[0].separation(aaz[1])[0]
-    assert isinstance(transition, TransitionBlock)
-    assert transition.duration == sep/slew_rate
-transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
-
-
-def test_priority_scheduler():
-    constraints = [AirmassConstraint(3, boolean_constraint=False)]
-    blocks = [ObservingBlock(t, 55*u.minute, i) for i, t in enumerate(targets)]
-    start_time = Time('2016-02-06 00:00:00')
-    end_time = start_time + 24*u.hour
-    scheduler = PriorityScheduler(transitioner=transitioner,
-                                  constraints=constraints, observer=apo)
-    schedule = Schedule(start_time, end_time)
-    scheduler(blocks, schedule)
-    assert len(schedule.observing_blocks) == 3
-    assert all(np.abs(block.end_time - block.start_time - block.duration) <
-               1*u.second for block in schedule.scheduled_blocks)
-
-
-def test_sequential_scheduler():
-    constraints = [AirmassConstraint(2.5, boolean_constraint=False)]
-    blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
-    start_time = Time('2016-02-06 00:00:00')
-    end_time = start_time + 24 * u.hour
-    scheduler = SequentialScheduler(constraints=constraints, observer=apo,
-                                    transitioner=transitioner)
-    schedule = Schedule(start_time, end_time)
-    scheduler(blocks, schedule)
-    assert len(schedule.observing_blocks) > 0
-    assert all(np.abs(block.end_time - block.start_time - block.duration) <
-               1*u.second for block in schedule.scheduled_blocks)
+def test_observing_block():
+    block = ObservingBlock(rigel, 1*u.minute, 0, configuration={'filter': 'b'})
+    assert(block.configuration['filter'] == 'b')
+    assert(block.target == rigel)
+    times_per_exposure = [1*u.minute, 4*u.minute, 15*u.minute, 5*u.minute]
+    numbers_of_exposures = [100, 4, 3, 12]
+    readout_time = 0.5*u.minute
+    for index in range(len(times_per_exposure)):
+        block = ObservingBlock.from_exposures(vega, 0, times_per_exposure[index],
+                                              numbers_of_exposures[index], readout_time)
+        assert(block.duration == numbers_of_exposures[index] *
+               (times_per_exposure[index] + readout_time))
 
 
 def test_slot():
-    start_time = Time('2016-02-06 00:00:00')
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 24 * u.hour
     slot = Slot(start_time, end_time)
     slots = slot.split_slot(start_time, start_time+1*u.hour)
@@ -77,7 +52,7 @@ def test_slot():
 
 
 def test_schedule():
-    start_time = Time('2016-02-06 00:00:00')
+    start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 24 * u.hour
     schedule = Schedule(start_time, end_time)
     assert schedule.slots[0].start == start_time
@@ -89,6 +64,166 @@ def test_schedule():
     assert np.abs(new_slots[0].duration - 1*u.hour) < 1*u.second
     assert np.abs(new_slots[1].duration - 3*u.hour) < 1*u.second
     assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
+
+
+def test_schedule_insert_slot():
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 5*u.hour)
+    # testing for when float comparison doesn't work, does it start/end at the right time
+    duration = 2*u.hour + 1*u.second
+    end_time = start + duration
+    block = TransitionBlock.from_duration(duration)
+    schedule.insert_slot(end_time - duration, block)
+    assert not end_time - duration == start
+    assert len(schedule.slots) == 2
+    assert schedule.slots[0].start == start
+    schedule = Schedule(start, start + 5*u.hour)
+    # testing for when float evaluation does work
+    duration = 2*u.hour
+    end_time = start + duration
+    block = TransitionBlock.from_duration(duration)
+    schedule.insert_slot(end_time - duration, block)
+    assert end_time - duration == start
+    assert len(schedule.slots) == 2
+    assert schedule.slots[0].start == start
+
+
+def test_schedule_change_slot_block():
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 5 * u.hour)
+    duration = 2 * u.hour
+    block = TransitionBlock.from_duration(duration)
+    schedule.insert_slot(start, block)
+    # check that it has the correct duration
+    assert np.abs(schedule.slots[0].end - duration - start) < 1*u.second
+    new_duration = 1*u.minute
+    new_block = TransitionBlock.from_duration(new_duration)
+    schedule.change_slot_block(0, new_block)
+    # check the duration changed properly, and slots are still consecutive/don't overlap
+    assert np.abs(schedule.slots[0].end - new_duration - start) < 1*u.second
+    assert schedule.slots[1].start == schedule.slots[0].end
+
+
+def test_transitioner():
+    blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
+    slew_rate = 1 * u.deg / u.second
+    trans = Transitioner(slew_rate=slew_rate)
+    start_time = Time('2016-02-06 03:00:00')
+    transition = trans(blocks[0], blocks[2], start_time, apo)
+    aaz = _get_altaz(Time([start_time]), apo,
+                     [blocks[0].target, blocks[2].target])['altaz']
+    sep = aaz[0].separation(aaz[1])[0]
+    assert isinstance(transition, TransitionBlock)
+    assert transition.duration == sep/slew_rate
+    blocks = [ObservingBlock(vega, 10*u.minute, 0, configuration={'filter': 'v'}),
+              ObservingBlock(vega, 10*u.minute, 0, configuration={'filter': 'i'}),
+              ObservingBlock(rigel, 10*u.minute, 0, configuration={'filter': 'i'})]
+    trans = Transitioner(slew_rate, instrument_reconfig_times={'filter': {('v', 'i'): 2*u.minute,
+                                                                          'default': 5*u.minute}})
+    transition1 = trans(blocks[0], blocks[1], start_time, apo)
+    transition2 = trans(blocks[0], blocks[2], start_time, apo)
+    transition3 = trans(blocks[1], blocks[0], start_time, apo)
+    assert np.abs(transition1.duration - 2*u.minute) < 1*u.second
+    assert np.abs(transition2.duration - 2*u.minute - transition.duration) < 1*u.second
+    # to test the default transition
+    assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
+    assert transition1.components is not None
+
+default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
+
+
+def test_priority_scheduler():
+    constraints = [AirmassConstraint(3, boolean_constraint=False)]
+    blocks = [ObservingBlock(t, 55*u.minute, i) for i, t in enumerate(targets)]
+    start_time = Time('2016-02-06 03:00:00')
+    end_time = start_time + 18*u.hour
+    scheduler = PriorityScheduler(transitioner=default_transitioner,
+                                  constraints=constraints, observer=apo,
+                                  time_resolution=2*u.minute)
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
+    assert len(schedule.observing_blocks) == 3
+    assert all(np.abs(block.end_time - block.start_time - block.duration) <
+               1*u.second for block in schedule.scheduled_blocks)
+    assert all([schedule.observing_blocks[0].target == polaris,
+                schedule.observing_blocks[1].target == rigel,
+                schedule.observing_blocks[2].target == vega])
+    # polaris and rigel both peak just before the start time
+    assert schedule.slots[0].block.target == polaris
+    assert schedule.slots[2].block.target == rigel
+
+
+def test_sequential_scheduler():
+    constraints = [AirmassConstraint(2.5, boolean_constraint=False)]
+    blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
+    start_time = Time('2016-02-06 03:00:00')
+    end_time = start_time + 18 * u.hour
+    scheduler = SequentialScheduler(constraints=constraints, observer=apo,
+                                    transitioner=default_transitioner)
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
+    assert len(schedule.observing_blocks) > 0
+    assert all(np.abs(block.end_time - block.start_time - block.duration) <
+               1*u.second for block in schedule.scheduled_blocks)
+    assert all([schedule.observing_blocks[0].target == rigel,
+                schedule.observing_blocks[1].target == polaris,
+                schedule.observing_blocks[2].target == vega])
+    # vega rises late, so its start should be later
+    assert schedule.observing_blocks[2].start_time > start_time + 8*u.hour
+
+
+def test_scheduling_target_down():
+    lco = Observer.at_site('lco')
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
+    start_time = Time('2016-02-06 03:00:00')
+    end_time = start_time + 3*u.day
+    scheduler1 = SequentialScheduler(only_at_night, lco, default_transitioner,
+                                     gap_time=2*u.hour)
+    schedule = Schedule(start_time, end_time)
+    schedule1 = scheduler1(block, schedule)
+    assert len(schedule1.observing_blocks) == 0
+    scheduler2 = PriorityScheduler(only_at_night, lco, default_transitioner,
+                                   time_resolution=30 * u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule2 = scheduler2(block, schedule)
+    assert len(schedule2.observing_blocks) == 0
+
+
+def test_scheduling_during_day():
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
+    day = Time('2016-02-06 03:00:00')
+    start_time = apo.midnight(day) + 10*u.hour
+    end_time = start_time + 6*u.hour
+    scheduler1 = SequentialScheduler(only_at_night, apo, default_transitioner,
+                                     gap_time=30*u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule1 = scheduler1(block, schedule)
+    assert len(schedule1.observing_blocks) == 0
+    scheduler2 = PriorityScheduler(only_at_night, apo, default_transitioner,
+                                   time_resolution=2 * u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule2 = scheduler2(block, schedule)
+    assert len(schedule2.observing_blocks) == 0
+# bring this back when MoonIlluminationConstraint is working properly
+
+
+def test_scheduling_moon_up():
+    block = [ObservingBlock(FixedTarget.from_name('polaris'), 30 * u.min, 0)]
+    # on february 23 the moon was up between the start/end times defined below
+    day = Time('2016-02-23 03:00:00')
+    start_time = apo.midnight(day) - 2 * u.hour
+    end_time = start_time + 6 * u.hour
+    constraints = [AtNightConstraint(), MoonIlluminationConstraint(max=0)]
+    scheduler1 = SequentialScheduler(constraints, apo, default_transitioner,
+                                     gap_time=30*u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule1 = scheduler1(block, schedule)
+    assert len(schedule1.observing_blocks) == 0
+    scheduler2 = PriorityScheduler(constraints, apo, default_transitioner,
+                                   time_resolution=20*u.minute)
+    schedule = Schedule(start_time, end_time)
+    schedule2 = scheduler2(block, schedule)
+    assert len(schedule2.observing_blocks) == 0
 
 
 def test_scorer():

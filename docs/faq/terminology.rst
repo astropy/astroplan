@@ -1,4 +1,4 @@
-.. _Observation_Terminology:
+.. _terminology:
 
 ***********
 Terminology
