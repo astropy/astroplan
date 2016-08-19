@@ -346,7 +346,7 @@ class AirmassConstraint(AltitudeConstraint):
 
             mi = 1 if self.min is None else self.min
             # values below 1 should be disregarded
-            return min_best_rescale(secz, mi, mx, less_than=0)
+            return min_best_rescale(secz, mi, mx, less_than_min=0)
 
 
 class AtNightConstraint(Constraint):
@@ -998,10 +998,10 @@ def observability_table(constraints, observer, targets, times=None,
     return tab
 
 
-def min_best_rescale(vals, min_val, max_val, greater_than=0, less_than=1):
+def min_best_rescale(vals, min_val, max_val, less_than_min=1):
     """
-    rescales an input array ``vals`` between zero and one,
-    where the ``min_val`` is the best.
+    rescales an input array ``vals`` to be a score (between zero and one),
+    where the ``min_val`` goes to one, and the ``max_val`` goes to zero.
 
     Parameters
     ----------
@@ -1011,10 +1011,10 @@ def min_best_rescale(vals, min_val, max_val, greater_than=0, less_than=1):
         worst acceptable value (rescales to 0)
     max_val : value
         best value cared about (rescales to 1)
-    greater_than : 0 or 1
-        what is returned for ``vals`` above max_val
-    less_than : 0 or 1
-        what is returned for ``vals`` below min_val
+    less_than_min : 0 or 1
+        what is returned for ``vals`` below min_val. (in some cases
+        anything less than ``min_val`` should also return one,
+        in some cases it should return zero)
 
     Returns
     -------
@@ -1030,22 +1030,22 @@ def min_best_rescale(vals, min_val, max_val, greater_than=0, less_than=1):
     >>> from astroplan.constraints import min_best_rescale
     >>> import numpy as np
     >>> airmasses = np.array([1, 1.5, 2, 3, 0])
-    >>> min_best_rescale(airmasses, 1, 2.25, less_than = 0)
+    >>> min_best_rescale(airmasses, 1, 2.25, less_than_min = 0)
     array([ 1. ,  0.6,  0.2,  0. , 0. ])
     """
     rescaled = (vals - max_val) / (min_val - max_val)
     below = vals < min_val
     above = vals > max_val
-    rescaled[below] = less_than
-    rescaled[above] = greater_than
+    rescaled[below] = less_than_min
+    rescaled[above] = 0
 
     return rescaled
 
 
-def max_best_rescale(vals, min_val, max_val, greater_than=1, less_than=0):
+def max_best_rescale(vals, min_val, max_val, greater_than_max=1):
     """
-    rescales an input array ``vals`` between zero and one,
-    where the ``max_val`` is the best.
+    rescales an input array ``vals`` to be a score (between zero and one),
+    where the ``max_val`` goes to one, and the ``min_val`` goes to zero.
 
     Parameters
     ----------
@@ -1055,10 +1055,10 @@ def max_best_rescale(vals, min_val, max_val, greater_than=1, less_than=0):
         worst acceptable value (rescales to 0)
     max_val : value
         best value cared about (rescales to 1)
-    greater_than : 0 or 1
-        what is returned for ``vals`` above max_val
-    less_than : 0 or 1
-        what is returned for ``vals`` below min_val
+    greater_than_max : 0 or 1
+        what is returned for ``vals`` above max_val. (in some cases
+        anything higher than ``max_val`` should also return one,
+        in some cases it should return zero)
 
     Returns
     -------
@@ -1081,7 +1081,7 @@ def max_best_rescale(vals, min_val, max_val, greater_than=1, less_than=0):
     rescaled = (vals - min_val) / (max_val - min_val)
     below = vals < min_val
     above = vals > max_val
-    rescaled[below] = less_than
-    rescaled[above] = greater_than
+    rescaled[below] = 0
+    rescaled[above] = greater_than_max
 
     return rescaled
