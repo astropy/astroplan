@@ -448,10 +448,11 @@ call to the initializer of the class (e.g. `~astroplan.scheduling.PrioritySchedu
 Each of the schedulers is subclassed from the abstract `astroplan.scheduling.Scheduler`
 class, and our custom scheduler needs to be as well.
 
-For our scheduler, we will make one starts at the beginning and schedules
-the first ``ObservingBlock`` that it finds that doesn't have a score of zero: a
-``MinimumBarScheduler``. We need to include two methods, ``__init__`` and
-``_make_schedule`` for it to work:
+A scheduler needs to be able to schedule observing blocks where they have a non-zero
+score (i.e. they satisfy all of their constraints). For our scheduler, we will make
+one that schedules ``ObservingBlocks`` at the first unoccupied place they have a score
+greater than zero: a ``SimpleScheduler``. We need to include two methods, ``__init__``
+and ``_make_schedule`` for it to work:
 
 * The ``__init__`` is already defined by the super class, and accepts global constraints,
   the `~astroplan.Observer`, the `~astroplan.scheduling.Transitioner`, a ``gap_time``,
@@ -463,7 +464,7 @@ the first ``ObservingBlock`` that it finds that doesn't have a score of zero: a
   block can be scheduled in a given spot, and be able to insert it into the
   schedule once a suitable spot has been found.
 
-Here's the ``MinimumBarScheduler`` implementation::
+Here's the ``SimpleScheduler`` implementation::
 
     from astroplan.scheduling import Scheduler, Scorer
     from astroplan.utils import time_grid_from_range
@@ -472,12 +473,12 @@ Here's the ``MinimumBarScheduler`` implementation::
 
     import numpy as np
 
-    class MinimumBarScheduler(Scheduler):
+    class SimpleScheduler(Scheduler):
         """
         schedule blocks randomly
         """
         def __init__(self, *args, **kwargs):
-            super(MinimumBarScheduler, self).__init__(*args, **kwargs)
+            super(SimpleScheduler, self).__init__(*args, **kwargs)
 
         def _make_schedule(self, blocks):
             # gather all the constraints on each block into a single attribute
@@ -554,7 +555,7 @@ up above::
 
     >>> schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
 
-    >>> scheduler = MinimumBarScheduler(observer = apo, transitioner = transitioner,
+    >>> scheduler = SimpleScheduler(observer = apo, transitioner = transitioner,
     ...                                 constraints = [])
     >>> scheduler(blocks, schedule)
 
@@ -573,12 +574,12 @@ up above::
 
     import numpy as np
 
-    class MinimumBarScheduler(Scheduler):
+    class SimpleScheduler(Scheduler):
         """
         schedule blocks randomly
         """
         def __init__(self, *args, **kwargs):
-            super(MinimumBarScheduler, self).__init__(*args, **kwargs)
+            super(SimpleScheduler, self).__init__(*args, **kwargs)
 
         def _make_schedule(self, blocks):
             # gather all the constraints on each block into a single attribute
@@ -650,7 +651,7 @@ up above::
     global_constraints = [AtNightConstraint.twilight_civil()]
 
     schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
-    scheduler = MinimumBarScheduler(observer = apo, transitioner = transitioner,
+    scheduler = SimpleScheduler(observer = apo, transitioner = transitioner,
                                     constraints = [])
     scheduler(blocks, schedule)
 
