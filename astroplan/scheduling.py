@@ -124,6 +124,11 @@ class Scorer(object):
         ----------
         time_resolution : `~astropy.units.Quantity`
             the time between each scored time
+
+        Returns
+        -------
+        score_array : `~numpy.ndarray`
+            array with dimensions (# of blocks, schedule length/ ``time_resolution``
         """
         start = self.schedule.start_time
         end = self.schedule.end_time

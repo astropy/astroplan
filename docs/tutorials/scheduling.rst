@@ -23,6 +23,8 @@ Contents
 
 * :ref:`scheduling-user_defined_schedulers`
 
+* :ref:`scheduling-using_the_scorer`
+
 .. _scheduling-defining_targets:
 
 Defining Targets
@@ -462,7 +464,8 @@ and ``_make_schedule`` for it to work:
   `~astroplan.scheduling.ObservingBlock` objects and a `~astroplan.scheduling.Schedule`
   object to input them into. This method needs to be able to check whether a
   block can be scheduled in a given spot, and be able to insert it into the
-  schedule once a suitable spot has been found.
+  schedule once a suitable spot has been found. For score evaluation we will
+  use the built-in `~astroplan.scheduling.Scorer`.
 
 Here's the ``SimpleScheduler`` implementation::
 
@@ -500,6 +503,8 @@ Here's the ``SimpleScheduler`` implementation::
             scorer = Scorer(blocks,self.observer, self.schedule, global_constraints=self.constraints)
             score_array = scorer.create_score_array(self.time_resolution)
             # now we have an array with the scores for all of the blocks at intervals of time_resolution
+            # the scores may range from zero to one, but we only care if they are greater than zero
+            # a different scheduler may consider which blocks have higher scores than others
 
             # we want to start from the beginning and start scheduling
             current_time = self.schedule.start_time
@@ -509,13 +514,14 @@ Here's the ``SimpleScheduler`` implementation::
                 while i < len(blocks) and scheduled is False:
                     block = blocks[i]
                     # the schedule starts with only 1 slot
-                    if len(self.schedule.slots) > 1:
+                    if len(self.schedule.slots) == 1:
+                        test_time = current_time
+                    # when a block is inserted, the number of slots increases
+                    else:
                         # make a transition between the last scheduled block and this one
                         transition = self.transitioner(schedule.observing_blocks[-1], block,
                                                        current_time, self.observer)
                         test_time = current_time + transition.duration
-                    else:
-                        test_time = current_time
                     # how far from the start is the time we are testing
                     start_idx = int((test_time - self.schedule.start_time)/self.time_resolution)
                     duration_idx = int(block.duration/self.time_resolution)
@@ -610,13 +616,14 @@ up above::
                 while i < len(blocks) and scheduled is False:
                     block = blocks[i]
                     # the schedule starts with only 1 slot
-                    if len(self.schedule.slots) > 1:
+                    if len(self.schedule.slots) == 1:
+                        test_time = current_time
+                    # when a block is inserted, the number of slots increases
+                    else:
                         # make a transition between the last scheduled block and this one
                         transition = self.transitioner(schedule.observing_blocks[-1], block,
                                                        current_time, self.observer)
                         test_time = current_time + transition.duration
-                    else:
-                        test_time = current_time
                     # how far from the start is the time we are testing
                     start_idx = int((test_time - self.schedule.start_time)/self.time_resolution)
                     duration_idx = int(block.duration/self.time_resolution)
@@ -661,3 +668,28 @@ up above::
     plt.tight_layout()
     plt.legend()
     plt.show()
+
+In this case, the ObservingBlocks are scheduled as they rise above the horizon.
+We gave the scheduler no constraints, global or local, so it added the default
+``AltitudeConstraint`` which is only satisfied when the targets are above the
+horizon.
+
+.. _scheduling-using_the_scorer:
+
+Using the Scorer
+================
+
+The Scheduler defined above uses `~astroplan.scheduling.Scorer.create_score_array`,
+which creates an array with dimensions (# of blocks, schedule duration/``time_resolution``).
+The Score of any element (block, time) in that array is made by
+multiplying the scores returned by all of the constraints for that
+target and time.
+
+If you wish to use a different method of score evaluation, I would
+suggest adding a new method to the ``Scorer``. Use the general
+framework of the ``create_score_array`` method, but change how it
+combines the scores from the separate constraints (e.g. add the
+reciprocals of the scores together and then use smaller values
+as better). If you create a useful method, consider submitting it
+to http://github.com/astropy.astroplan so that other's will be able
+to use it as well.
