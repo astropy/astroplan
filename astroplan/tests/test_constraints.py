@@ -377,7 +377,7 @@ def test_rescale_minmax():
     rescaled[1] = (max_best_rescale(a, 1, 6))[0]
     rescaled[2] = (max_best_rescale(a, 0, 1))[0]
     rescaled[3] = (min_best_rescale(a, 0, 1))[0]
-    rescaled[4] = (max_best_rescale(a, 0, 1, greater_than=0))[0]
+    rescaled[4] = (max_best_rescale(a, 0, 1, greater_than_max=0))[0]
     assert all(np.array([0.8, 0.2, 1, 0, 0]) == rescaled)
 
 constraint_tests = [
