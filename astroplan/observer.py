@@ -176,25 +176,24 @@ class Observer(object):
                                                         elevation)
         elif isinstance(location, EarthLocation):
             self.location = location
+        elif isinstance(location, string_types):
+            self.location = EarthLocation.of_site(location)
+            low_case_mapping = {}
+            full_raw_data = EarthLocation._get_site_registry()._loaded_jsondb
+            for key in full_raw_data:
+                low_case_mapping[key.lower()] = key
+            raw_site = full_raw_data[low_case_mapping[location.lower()]]
+            self.name = raw_site['name'] if (self.name is None) else self.name
+            timezone = raw_site.get('timezone', timezone)
         else:
-            try:
-                self.location = EarthLocation.of_site(location)
-                low_case_mapping = {}
-                full_raw_data = EarthLocation._get_site_registry()._loaded_jsondb
-                for key in full_raw_data:
-                    low_case_mapping[key.lower()] = key
-                raw_site = full_raw_data[low_case_mapping[location.lower()]]
-                self.name = raw_site['name'] if (self.name is None) else self.name
-                timezone = raw_site.get('timezone', timezone)
-            except:
-                raise TypeError('Observatory location must be specified with '
-                                'either (1) an instance of '
-                                'astropy.coordinates.EarthLocation or (2) '
-                                'latitude and longitude in degrees as '
-                                'accepted by astropy.coordinates.Latitude and '
-                                'astropy.coordinates.Latitude or (3) an '
-                                'observing site from the list '
-                                '`show_sites`.')
+            raise TypeError('Observatory location must be specified with '
+                            'either (1) an instance of '
+                            'astropy.coordinates.EarthLocation or (2) '
+                            'latitude and longitude in degrees as '
+                            'accepted by astropy.coordinates.Latitude and '
+                            'astropy.coordinates.Latitude or (3) an '
+                            'observing site from the list '
+                            '`show_sites`.')
 
         # Accept various timezone inputs, default to UTC if not known site
         if isinstance(timezone, datetime.tzinfo):
