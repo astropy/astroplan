@@ -409,7 +409,8 @@ class Scheduler(object):
         observer : `~astroplan.Observer`
             The observer/site to do the scheduling for.
         transitioner : `~astroplan.scheduling.Transitioner` or None
-            The object to use for computing transition times between blocks.
+            The object to use for computing transition times between blocks. If
+            None, 0 second long transitions will be used.
         gap_time : `~astropy.units.Quantity` with time units
             The maximum length of time a transition between ObservingBlocks
             could take.
@@ -419,7 +420,10 @@ class Scheduler(object):
         """
         self.constraints = constraints
         self.observer = observer
-        self.transitioner = transitioner
+        if transitioner is None:
+            self.transitioner = Transitioner()
+        else:
+            self.transitioner = transitioner
         self.gap_time = gap_time
         self.time_resolution = time_resolution
 
