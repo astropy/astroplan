@@ -20,9 +20,17 @@ import pytz
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
 
-__all__ = ["Observer", "MAGIC_TIME"]
+__all__ = ["Observer", "MAGIC_TIME", "show_sites"]
 
 MAGIC_TIME = Time(-999, format='jd')
+
+
+def show_sites():
+    """
+    Shows all available observing sites
+    """
+    for key, item in EarthLocation._get_site_registry()._loaded_jsondb.items():
+        print('%-15s: %s' % (key, item.get('name', "")))
 
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
@@ -89,7 +97,7 @@ class Observer(object):
     >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
 
     To find out which observatories can be accessed by name, check out
-    `~astropy.coordinates.EarthLocation.get_site_names`.
+    `show_sites`.
 
     Next, you can initialize an observer by specifying the location with
     `~astropy.coordinates.EarthLocation`:
@@ -120,7 +128,10 @@ class Observer(object):
             A short name for the telescope, observatory or location.
 
         location : `~astropy.coordinates.EarthLocation`
-            The location (latitude, longitude, elevation) of the observatory.
+            The location (latitude, longitude, elevation) of the observatory,
+            or, the observing site name, see `show_sites` (in this case, the
+            fields timezone, name, latitude, longitude, elevation will be
+            defaulted to the observatory values)
 
         longitude : float, str, `~astropy.units.Quantity` (optional)
             The longitude of the observing location. Should be valid input for
@@ -163,19 +174,26 @@ class Observer(object):
                                  longitude is not None):
             self.location = EarthLocation.from_geodetic(longitude, latitude,
                                                         elevation)
-
         elif isinstance(location, EarthLocation):
             self.location = location
-
         else:
-            raise TypeError('Observatory location must be specified with '
-                            'either (1) an instance of '
-                            'astropy.coordinates.EarthLocation or (2) '
-                            'latitude and longitude in degrees as '
-                            'accepted by astropy.coordinates.Latitude and '
-                            'astropy.coordinates.Latitude.')
+            try:
+                location = str(location).lower()
+                self.location = EarthLocation.of_site(location)
+                raw_site = EarthLocation._get_site_registry()._loaded_jsondb[location]
+                self.name = raw_site['name'] if (self.name is None) else self.name
+                timezone = raw_site.get('timezone', timezone)
+            except:
+                raise TypeError('Observatory location must be specified with '
+                                'either (1) an instance of '
+                                'astropy.coordinates.EarthLocation or (2) '
+                                'latitude and longitude in degrees as '
+                                'accepted by astropy.coordinates.Latitude and '
+                                'astropy.coordinates.Latitude or (3) an '
+                                'observing site from the list '
+                                '`show_sites`.')
 
-        # Accept various timezone inputs, default to UTC
+        # Accept various timezone inputs, default to UTC if not known site
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
         elif isinstance(timezone, string_types):
@@ -249,11 +267,11 @@ class Observer(object):
         >>> kpno_generic = Observer.at_site('kpno')
         >>> kpno_today = Observer.at_site('kpno', pressure=1*u.bar, temperature=0*u.deg_C)
         """
-        name = kwargs.pop('name', site_name)
+        name = kwargs.pop('name', None)
         if 'location' in kwargs:
             raise ValueError("Location kwarg should not be used if "
                              "initializing an Observer with Observer.at_site()")
-        return cls(location=EarthLocation.of_site(site_name), name=name, **kwargs)
+        return cls(location=site_name, name=name, **kwargs)
 
     def astropy_time_to_datetime(self, astropy_time):
         """
