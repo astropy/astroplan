@@ -178,11 +178,9 @@ class Observer(object):
             self.location = location
         elif isinstance(location, string_types):
             self.location = EarthLocation.of_site(location)
-            low_case_mapping = {}
-            full_raw_data = EarthLocation._get_site_registry()._loaded_jsondb
-            for key in full_raw_data:
-                low_case_mapping[key.lower()] = key
-            raw_site = full_raw_data[low_case_mapping[location.lower()]]
+            for key, raw_site in EarthLocation._get_site_registry()._loaded_jsondb.items():
+                if key.lower() == location.lower():
+                    break
             self.name = raw_site['name'] if (self.name is None) else self.name
             timezone = raw_site.get('timezone', timezone)
         else:
