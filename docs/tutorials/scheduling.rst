@@ -49,13 +49,13 @@ any object that is in SIMBAD can be called by an identifier.
 
     >>> from astroplan import FixedTarget
 
-    >>> Deneb = FixedTarget.from_name('Deneb')
-    >>> M13 = FixedTarget.from_name('M13')
+    >>> deneb = FixedTarget.from_name('Deneb')
+    >>> m13 = FixedTarget.from_name('M13')
 
-    >>> Deneb
-    <FixedTarget "Deneb" at SkyCoord (ICRS): (ra, dec) in deg (310.35797975, 45.28033881)>
+    >>> deneb
+    <FixedTarget "deneb" at SkyCoord (ICRS): (ra, dec) in deg (310.35797975, 45.28033881)>
 
-    >>> M13
+    >>> m13
     <FixedTarget "M13" at SkyCoord (ICRS): (ra, dec) in deg (250.423475, 36.4613194)>
 
 We also need to define bounds within which our blocks will be scheduled
@@ -110,19 +110,27 @@ be from 2AM to 8AM, so we use `~astroplan.constraints.TimeConstraint`.
     >>> from astroplan.constraints import TimeConstraint
     >>> from astropy import units as u
 
-    >>> rot = 20 * u.second
+    >>> # defining the read-out time, exposure duration and number of exposures
+    >>> read_out = 20 * u.second
+    >>> deneb_exp = 60*u.second
+    >>> m13_exp = 100*u.second
+    >>> n = 16
     >>> blocks = []
 
-    >>> first_half_night = TimeConstraint(Time('2016-07-07 02:00'), Time('2016-07-07 08:00'))
+    >>> half_night_start = Time('2016-07-07 02:00')
+    >>> half_night_end = Time('2016-07-07 08:00')
+    >>> first_half_night = TimeConstraint(half_night_start, half_night_end)
     >>> for priority, bandpass in enumerate(['B', 'G', 'R']):
     ...     # We want each filter to have separate priority (so that target
     ...     # and reference are both scheduled)
-    ...     blocks.append(ObservingBlock.from_exposures(Deneb, priority, 60*u.second, 16, rot,
-    ...                                                 configuration = {'filter': bandpass},
-    ...                                                 constraints = [first_half_night]))
-    ...     blocks.append(ObservingBlock.from_exposures(M13, priority, 100*u.second, 16, rot,
-    ...                                                 configuration = {'filter': bandpass},
-    ...                                                 constraints = [first_half_night]))
+    ...     b = ObservingBlock.from_exposures(deneb, priority, deneb_exp, n, read_out,
+    ...                                         configuration = {'filter': bandpass},
+    ...                                         constraints = [first_half_night])
+    ...     blocks.append(b)
+    ...     b = ObservingBlock.from_exposures(m13, priority, m13_exp, n, read_out,
+    ...                                         configuration = {'filter': bandpass},
+    ...                                         constraints = [first_half_night])
+    ...     blocks.append(b)
 
 .. _scheduling-creating_a_transitioner:
 
@@ -240,8 +248,8 @@ targets.
     import matplotlib.pyplot as plt
 
     # Now we define the targets, observer, start time, and end time of the schedule.
-    Deneb = FixedTarget.from_name('Deneb')
-    M13 = FixedTarget.from_name('M13')
+    deneb = FixedTarget.from_name('Deneb')
+    m13 = FixedTarget.from_name('M13')
 
     noon_before = Time('2016-07-06 19:00')
     noon_after = Time('2016-07-07 19:00')
@@ -251,18 +259,24 @@ targets.
     # observing blocks that you want scheduled
     global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
                           AtNightConstraint.twilight_civil()]
-    rot = 20 * u.second
+    # defining the read-out time, exposure duration and number of exposures
+    read_out = 20 * u.second
+    deneb_exp = 60*u.second
+    m13_exp = 100*u.second
+    n = 16
     blocks = []
     first_half_night = TimeConstraint(Time('2016-07-07 02:00'), Time('2016-07-07 08:00'))
     for priority, bandpass in enumerate(['B', 'G', 'R']):
         # We want each filter to have separate priority (so that target
         # and reference are both scheduled)
-        blocks.append(ObservingBlock.from_exposures(Deneb, priority, 60*u.second, 16, rot,
-                                                    configuration = {'filter': bandpass},
-                                                    constraints = [first_half_night]))
-        blocks.append(ObservingBlock.from_exposures(M13, priority, 100*u.second, 16, rot,
-                                                    configuration = {'filter': bandpass},
-                                                    constraints = [first_half_night]))
+        b = ObservingBlock.from_exposures(deneb, priority, deneb_exp, n, read_out,
+                                            configuration = {'filter': bandpass},
+                                            constraints = [first_half_night])
+        blocks.append(b)
+        b = ObservingBlock.from_exposures(m13, priority, m13_exp, n, read_out,
+                                            configuration = {'filter': bandpass},
+                                            constraints = [first_half_night])
+        blocks.append(b)
 
     # Define how the telescope transitions between the configurations defined in the
     # observing blocks (target, filter, instrument, etc.).
@@ -309,8 +323,8 @@ scheduler using the same blocks and the schedule we already added to.
     import matplotlib.pyplot as plt
 
     # Now we define the targets, observer, start time, and end time of the schedule.
-    Deneb = FixedTarget.from_name('Deneb')
-    M13 = FixedTarget.from_name('M13')
+    deneb = FixedTarget.from_name('Deneb')
+    m13 = FixedTarget.from_name('M13')
 
     noon_before = Time('2016-07-06 19:00')
     noon_after = Time('2016-07-07 19:00')
@@ -396,18 +410,24 @@ and run the priority scheduler again.
     # observing blocks that you want scheduled
     global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
                           AtNightConstraint.twilight_civil()]
-    rot = 20 * u.second
+    # defining the read-out time, exposure duration and number of exposures
+    read_out = 20 * u.second
+    deneb_exp = 60*u.second
+    m13_exp = 100*u.second
+    n = 16
     blocks = []
     first_half_night = TimeConstraint(Time('2016-07-07 02:00'), Time('2016-07-07 08:00'))
     for priority, bandpass in enumerate(['B', 'G', 'R']):
         # We want each filter to have separate priority (so that target
         # and reference are both scheduled)
-        blocks.append(ObservingBlock.from_exposures(Deneb, priority, 60*u.second, 16, rot,
-                                                    configuration = {'filter': bandpass},
-                                                    constraints = [first_half_night]))
-        blocks.append(ObservingBlock.from_exposures(M13, priority, 100*u.second, 16, rot,
-                                                    configuration = {'filter': bandpass},
-                                                    constraints = [first_half_night]))
+        b = ObservingBlock.from_exposures(deneb, priority, deneb_exp, n, read_out,
+                                            configuration = {'filter': bandpass},
+                                            constraints = [first_half_night])
+        blocks.append(b)
+        b = ObservingBlock.from_exposures(m13, priority, m13_exp, n, read_out,
+                                            configuration = {'filter': bandpass},
+                                            constraints = [first_half_night])
+        blocks.append(b)
     # add the new target's block
     alf_cent = FixedTarget.from_name('Alpha Centauri A')
     blocks.append(ObservingBlock(alf_cent, 20*u.minute, -1))
@@ -490,6 +510,7 @@ Here's the ``SimpleScheduler`` implementation::
                     b._all_constraints = self.constraints
                 else:
                     b._all_constraints = self.constraints + b.constraints
+
                 # to make sure the scheduler has some constraint to work off of
                 # and to prevent scheduling of targets below the horizon
                 if b._all_constraints is None:
@@ -500,14 +521,16 @@ Here's the ``SimpleScheduler`` implementation::
                 b.observer = self.observer
 
             # before we can schedule, we need to know where blocks meet the constraints
-            scorer = Scorer(blocks,self.observer, self.schedule, global_constraints=self.constraints)
+            scorer = Scorer(blocks, self.observer, self.schedule,
+                            global_constraints=self.constraints)
             score_array = scorer.create_score_array(self.time_resolution)
-            # now we have an array with the scores for all of the blocks at intervals of time_resolution
-            # the scores may range from zero to one, but we only care if they are greater than zero
-            # a different scheduler may consider which blocks have higher scores than others
+            # now we have an array of the scores for the blocks at intervals of
+            # ``time_resolution``. The scores range from zero to one, some blocks may have
+            # higher scores than others, but we only care if they are greater than zero
 
             # we want to start from the beginning and start scheduling
-            current_time = self.schedule.start_time
+            start_time = self.schedule.start_time
+            current_time = start_time
             while current_time < self.schedule.end_time:
                 scheduled = False
                 i=0
@@ -518,12 +541,12 @@ Here's the ``SimpleScheduler`` implementation::
                         test_time = current_time
                     # when a block is inserted, the number of slots increases
                     else:
-                        # make a transition between the last scheduled block and this one
-                        transition = self.transitioner(schedule.observing_blocks[-1], block,
-                                                       current_time, self.observer)
+                        # a test transition between the last scheduled block and this one
+                        transition = self.transitioner(schedule.observing_blocks[-1],
+                                                       block, current_time, self.observer)
                         test_time = current_time + transition.duration
-                    # how far from the start is the time we are testing
-                    start_idx = int((test_time - self.schedule.start_time)/self.time_resolution)
+                    # how many time intervals are we from the start
+                    start_idx = int((test_time - start_time)/self.time_resolution)
                     duration_idx = int(block.duration/self.time_resolution)
                     # if any score during the block's duration would be 0, reject it
                     if any(score_array[i][start_idx:start_idx+duration_idx] == 0):
@@ -533,7 +556,7 @@ Here's the ``SimpleScheduler`` implementation::
                         if len(self.schedule.slots) >1:
                             self.schedule.insert_slot(current_time, transition)
                         self.schedule.insert_slot(test_time, block)
-                        # advance the time, break this while loop and remove the block from the list
+                        # advance the time and remove the block from the list
                         current_time = test_time + block.duration
                         scheduled = True
                         blocks.remove(block)
@@ -551,13 +574,13 @@ up above::
     >>> from astropy.time import Time
 
     >>> apo = Observer.at_site('apo')
-    >>> Deneb = FixedTarget.from_name('Deneb')
-    >>> M13 = FixedTarget.from_name('M13')
-    >>> blocks = [ObservingBlock(Deneb, 20*u.minute, 0)]
-    >>> blocks.append(ObservingBlock(M13, 20*u.minute, 0))
+    >>> deneb = FixedTarget.from_name('Deneb')
+    >>> m13 = FixedTarget.from_name('M13')
+    >>> blocks = [ObservingBlock(deneb, 20*u.minute, 0)]
+    >>> blocks.append(ObservingBlock(m13, 20*u.minute, 0))
 
-    >>> # this will produce 0 second transitions
-    >>> transitioner = Transitioner()
+    >>> # for a telescope that can slew at a rate of 2 degrees/second
+    >>> transitioner = Transitioner(slew_rate=2*u.deg/u.second)
 
     >>> schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
 
@@ -649,12 +672,12 @@ up above::
     from astropy.time import Time
 
     apo = Observer.at_site('apo')
-    Deneb = FixedTarget.from_name('Deneb')
-    M13 = FixedTarget.from_name('M13')
-    blocks = [ObservingBlock(Deneb, 20*u.minute, 0)]
-    blocks.append(ObservingBlock(M13, 20*u.minute, 0))
+    deneb = FixedTarget.from_name('Deneb')
+    m13 = FixedTarget.from_name('M13')
+    blocks = [ObservingBlock(deneb, 20*u.minute, 0)]
+    blocks.append(ObservingBlock(m13, 20*u.minute, 0))
 
-    transitioner = Transitioner()
+    transitioner = Transitioner(2*u.deg/u.second)
     global_constraints = [AtNightConstraint.twilight_civil()]
 
     schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
