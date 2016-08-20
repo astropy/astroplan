@@ -378,6 +378,7 @@ and run the priority scheduler again.
 .. code-block:: python
 
     >>> alf_cent = FixedTarget.from_name('Alpha Centauri A')
+    >>> # ObservingBlocks can also be called with a simple (target, duration, priority)
     >>> blocks.append(ObservingBlock(alf_cent, 20*u.minute, -1))
     >>> schedule = Schedule(start_time, end_time)
     >>> prior_scheduler(blocks, schedule)
