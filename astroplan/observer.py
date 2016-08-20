@@ -89,12 +89,12 @@ class Observer(object):
 
     Examples
     --------
-    We can create an observer at Subaru Observatory in Hawaii two ways. First,
+    We can create an observer at Subaru Observatory in Hawaii three ways. First,
     locations for some observatories are stored in astroplan, and these can be
     accessed by name, like so:
 
     >>> from astroplan import Observer
-    >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+    >>> subaru = Observer("Subaru")
 
     To find out which observatories can be accessed by name, check out
     `show_sites`.
