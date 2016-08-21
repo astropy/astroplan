@@ -30,7 +30,7 @@ def show_sites():
     Shows all available observing sites
     """
     for key, item in EarthLocation._get_site_registry()._loaded_jsondb.items():
-        print('%-15s: %s' % (key, item.get('name', "")))
+        print('{0:<15}: {1}'.format(key, item.get('name', "")))
 
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
@@ -90,14 +90,14 @@ class Observer(object):
     Examples
     --------
     We can create an observer at Subaru Observatory in Hawaii three ways. First,
-    locations for some observatories are stored in astroplan, and these can be
+    locations for some observatories are stored in astropy, and these can be
     accessed by name, like so:
 
     >>> from astroplan import Observer
     >>> subaru = Observer("Subaru")
 
     To find out which observatories can be accessed by name, check out
-    `show_sites`.
+    `~astroplan.show_sites`.
 
     Next, you can initialize an observer by specifying the location with
     `~astropy.coordinates.EarthLocation`:
