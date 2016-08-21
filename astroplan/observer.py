@@ -129,7 +129,7 @@ class Observer(object):
 
         location : `~astropy.coordinates.EarthLocation`
             The location (latitude, longitude, elevation) of the observatory,
-            or, the observing site name, see `show_sites` (in this case, the
+            or, the observing site name, see `~astroplan.show_sites` (in this case, the
             fields timezone, name, latitude, longitude, elevation will be
             defaulted to the observatory values)
 
@@ -191,7 +191,7 @@ class Observer(object):
                             'accepted by astropy.coordinates.Latitude and '
                             'astropy.coordinates.Latitude or (3) an '
                             'observing site from the list '
-                            '`show_sites`.')
+                            '`~astroplan.show_sites`.')
 
         # Accept various timezone inputs, default to UTC if not known site
         if isinstance(timezone, datetime.tzinfo):
