@@ -118,7 +118,8 @@ class Scorer(object):
     def create_score_array(self, time_resolution=1*u.minute):
         """
         this makes a score array over the entire schedule for all of the
-        blocks and each `~astroplan.Constraint`.
+        blocks and each `~astroplan.Constraint` in the .constraints of
+        each block and in self.global_constraints.
 
         Parameters
         ----------

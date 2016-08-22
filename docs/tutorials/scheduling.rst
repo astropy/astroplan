@@ -512,13 +512,14 @@ Here's the ``SimpleScheduler`` implementation::
                 else:
                     b._all_constraints = self.constraints + b.constraints
 
-                # to make sure the scheduler has some constraint to work off of
+                # to make sure the Scorer has some constraint to work off of
                 # and to prevent scheduling of targets below the horizon
                 if b._all_constraints is None:
                     b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
                     b.constraints = [AltitudeConstraint(min=0*u.deg)]
                 elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
                     b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
+                    b.constraints.append(AltitudeConstraint(min=0*u.deg))
                 b.observer = self.observer
 
             # before we can schedule, we need to know where blocks meet the constraints
@@ -618,13 +619,14 @@ up above::
                     b._all_constraints = self.constraints
                 else:
                     b._all_constraints = self.constraints + b.constraints
-                # to make sure the scheduler has some constraint to work off of
+                # to make sure the Scorer has some constraint to work off of
                 # and to prevent scheduling of targets below the horizon
                 if b._all_constraints is None:
                     b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
                     b.constraints = [AltitudeConstraint(min=0*u.deg)]
                 elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
                     b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
+                    b.constraints.append(AltitudeConstraint(min=0*u.deg))
                 b.observer = self.observer
 
             # before we can schedule, we need to know where blocks meet the constraints
