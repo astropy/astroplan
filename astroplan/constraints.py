@@ -1005,14 +1005,14 @@ def min_best_rescale(vals, min_val, max_val, less_than_min=1):
 
     Parameters
     ----------
-    vals : array of values
+    vals : array-like
         the values that need to be rescaled to be between 0 and 1
-    min_val : value
+    min_val : float
         worst acceptable value (rescales to 0)
-    max_val : value
+    max_val : float
         best value cared about (rescales to 1)
     less_than_min : 0 or 1
-        what is returned for ``vals`` below min_val. (in some cases
+        what is returned for ``vals`` below ``min_val``. (in some cases
         anything less than ``min_val`` should also return one,
         in some cases it should return zero)
 
@@ -1049,14 +1049,14 @@ def max_best_rescale(vals, min_val, max_val, greater_than_max=1):
 
     Parameters
     ----------
-    vals : array of values
+    vals : array-like
         the values that need to be rescaled to be between 0 and 1
-    min_val : value
+    min_val : float
         worst acceptable value (rescales to 0)
-    max_val : value
+    max_val : float
         best value cared about (rescales to 1)
     greater_than_max : 0 or 1
-        what is returned for ``vals`` above max_val. (in some cases
+        what is returned for ``vals`` above ``max_val``. (in some cases
         anything higher than ``max_val`` should also return one,
         in some cases it should return zero)
 
