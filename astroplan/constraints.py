@@ -529,7 +529,7 @@ class MoonIlluminationConstraint(Constraint):
 
     Constraint is also satisfied if the Moon has set.
     """
-    def __init__(self, min=None, max=None, ephemeris=None):
+    def __init__(self, min=None, max=None, ephemeris=None, boolean_constraint=True):
         """
         Parameters
         ----------
@@ -543,10 +543,15 @@ class MoonIlluminationConstraint(Constraint):
             Ephemeris to use.  If not given, use the one set with
             `~astropy.coordinates.solar_system_ephemeris` (which is
             set to 'builtin' by default).
+        boolean_constraint : bool
+            If True, the constraint is treated as a boolean (True for within the
+            limits and False for outside).  If False, the constraint returns a
+            float on [0, 1], where 0 is the min altitude and 1 is the max.
         """
         self.min = min
         self.max = max
         self.ephemeris = ephemeris
+        self.boolean_constraint = boolean_constraint
 
     @classmethod
     def dark(cls, min=None, max=0.25, **kwargs):
@@ -607,16 +612,40 @@ class MoonIlluminationConstraint(Constraint):
         moon_up_mask = moon_alt >= 0
 
         illumination = cached_moon['illum']
-        if self.min is None and self.max is not None:
-            mask = (self.max >= illumination) | moon_down_mask
-        elif self.max is None and self.min is not None:
-            mask = (self.min <= illumination) & moon_up_mask
-        elif self.min is not None and self.max is not None:
-            mask = ((self.min <= illumination) &
-                    (illumination <= self.max)) & moon_up_mask
+        if self.boolean_constraint:
+            if self.min is None and self.max is not None:
+                mask = (self.max >= illumination) | moon_down_mask
+            elif self.max is None and self.min is not None:
+                mask = (self.min <= illumination) & moon_up_mask
+            elif self.min is not None and self.max is not None:
+                mask = ((self.min <= illumination) &
+                        (illumination <= self.max)) & moon_up_mask
+            else:
+                raise ValueError("No max and/or min specified in "
+                                 "MoonSeparationConstraint.")
         else:
-            raise ValueError("No max and/or min specified in "
-                             "MoonSeparationConstraint.")
+            if self.min is None and self.max is not None:
+                moon_down = np.where(moon_down_mask == 1)
+                mask = min_best_rescale(illumination, 0, self.max, 0)
+                mask[moon_down] = 1
+            elif self.max is None and self.min is not None:
+                moon_down = np.where(moon_down_mask == 1)
+                mask = min_best_rescale(illumination, self.min, 1, 0)
+                if self.min == 0:
+                    mask[moon_down] = 1
+                else:
+                    mask[moon_down] = 0
+            elif self.min is not None and self.max is not None:
+                moon_down = np.where(moon_down_mask == 1)
+                mask = min_best_rescale(illumination, self.min,
+                                        self.max, 0)
+                if self.min == 0:
+                    mask[moon_down] = 1
+                else:
+                    mask[moon_down] = 0
+            else:
+                raise ValueError("No max and/or min specified in "
+                                 "MoonSeparationConstraint.")
 
         if targets is not None:
             mask = np.tile(mask, len(targets))
