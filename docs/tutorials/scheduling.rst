@@ -519,7 +519,10 @@ Here's the ``SimpleScheduler`` implementation::
                     b.constraints = [AltitudeConstraint(min=0*u.deg)]
                 elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
                     b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
-                    b.constraints.append(AltitudeConstraint(min=0*u.deg))
+                    if b.constraints is None:
+                        b.constraints = [AltitudeConstraint(min=0*u.deg)]
+                    else:
+                        b.constraints.append(AltitudeConstraint(min=0*u.deg))
                 b.observer = self.observer
 
             # before we can schedule, we need to know where blocks meet the constraints
@@ -626,7 +629,10 @@ up above::
                     b.constraints = [AltitudeConstraint(min=0*u.deg)]
                 elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
                     b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
-                    b.constraints.append(AltitudeConstraint(min=0*u.deg))
+                    if b.constraints is None:
+                        b.constraints = [AltitudeConstraint(min=0*u.deg)]
+                    else:
+                        b.constraints.append(AltitudeConstraint(min=0*u.deg))
                 b.observer = self.observer
 
             # before we can schedule, we need to know where blocks meet the constraints

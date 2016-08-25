@@ -531,10 +531,16 @@ class SequentialScheduler(Scheduler):
                 b._all_constraints = self.constraints + b.constraints
             # to make sure the scheduler has some constraint to work off of
             # and to prevent scheduling of targets below the horizon
+            # TODO : change default constraints to [] and switch to append
             if b._all_constraints is None:
-                b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+                b._all_constraints = [AltitudeConstraint(min=0 * u.deg)]
+                b.constraints = [AltitudeConstraint(min=0 * u.deg)]
             elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
-                b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
+                b._all_constraints.append(AltitudeConstraint(min=0 * u.deg))
+                if b.constraints is None:
+                    b.constraints = [AltitudeConstraint(min=0 * u.deg)]
+                else:
+                    b.constraints.append(AltitudeConstraint(min=0 * u.deg))
             b._duration_offsets = u.Quantity([0*u.second, b.duration/2,
                                               b.duration])
             b.observer = self.observer
@@ -620,9 +626,14 @@ class PriorityScheduler(Scheduler):
             # to make sure the scheduler has some constraint to work off of
             # and to prevent scheduling of targets below the horizon
             if b._all_constraints is None:
-                b._all_constraints = [AltitudeConstraint(min=0*u.deg)]
+                b._all_constraints = [AltitudeConstraint(min=0 * u.deg)]
+                b.constraints = [AltitudeConstraint(min=0 * u.deg)]
             elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
-                b._all_constraints.append(AltitudeConstraint(min=0*u.deg))
+                b._all_constraints.append(AltitudeConstraint(min=0 * u.deg))
+                if b.constraints is None:
+                    b.constraints = [AltitudeConstraint(min=0 * u.deg)]
+                else:
+                    b.constraints.append(AltitudeConstraint(min=0 * u.deg))
             b._duration_offsets = u.Quantity([0 * u.second, b.duration / 2, b.duration])
             _block_priorities[i] = b.priority
             _all_times.append(b.duration)
