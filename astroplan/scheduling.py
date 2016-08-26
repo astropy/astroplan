@@ -12,6 +12,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 from astropy import units as u
+from astropy.time import Time
 from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
@@ -507,6 +508,17 @@ class SequentialScheduler(Scheduler):
         super(SequentialScheduler, self).__init__(*args, **kwargs)
 
     def _make_schedule(self, blocks):
+        pre_filled = np.array([[block.start_time, block.end_time] for
+                      block in self.schedule.scheduled_blocks])
+        if len(pre_filled) == 0:
+            a = self.schedule.start_time
+            filled_times = Time([a - 1*u.hour, a - 1*u.hour,
+                               a - 1*u.minute, a - 1*u.minute])
+            pre_filled = filled_times.reshape((2, 2))
+        else:
+            filled_times = Time(pre_filled.flatten())
+            pre_filled = filled_times.reshape((len(filled_times)/2, 2))
+        print(pre_filled)
         for b in blocks:
             if b.constraints is None:
                 b._all_constraints = self.constraints
@@ -539,12 +551,21 @@ class SequentialScheduler(Scheduler):
 
                 times = current_time + transition_time + b._duration_offsets
 
-                constraint_res = []
-                for constraint in b._all_constraints:
-                    constraint_res.append(constraint(self.observer, [b.target],
-                                                     times))
-                # take the product over all the constraints *and* times
-                block_constraint_results.append(np.prod(constraint_res))
+                # make sure it isn't in a pre-filled slot
+                a = set(np.where(current_time < filled_times)[0])
+                c = set(np.where(filled_times < times[2])[0])
+                print(set.intersection(a, c))
+                if (set.intersection(a, c) or
+                        any(1*u.second > abs(pre_filled.T[0]-current_time))):
+                    block_constraint_results.append(0)
+
+                else:
+                    constraint_res = []
+                    for constraint in b._all_constraints:
+                        constraint_res.append(constraint(self.observer, [b.target],
+                                                         times))
+                    # take the product over all the constraints *and* times
+                    block_constraint_results.append(np.prod(constraint_res))
 
             # now identify the block that's the best
             bestblock_idx = np.argmax(block_constraint_results)
