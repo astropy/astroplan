@@ -186,7 +186,6 @@ class NonFixedTarget(Target):
     Placeholder for future function.
     """
 
-
 def get_skycoord(targets):
     """
     Return an `~astropy.coordinates.SkyCoord` object.
@@ -201,6 +200,7 @@ def get_skycoord(targets):
     -----------
     targets : list, `~astropy.coordinates.SkyCoord`, `Fixedtarget`
         either a single target or a list of targets
+
     Returns
     --------
     coord : `~astropy.coordinates.SkyCoord`
