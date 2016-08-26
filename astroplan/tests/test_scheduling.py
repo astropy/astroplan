@@ -151,6 +151,10 @@ def test_priority_scheduler():
     # polaris and rigel both peak just before the start time
     assert schedule.slots[0].block.target == polaris
     assert schedule.slots[2].block.target == rigel
+    # test that the scheduler does not error when called with a partially
+    # filled schedule
+    scheduler(blocks, schedule)
+    scheduler(blocks, schedule)
 
 
 def test_sequential_scheduler():

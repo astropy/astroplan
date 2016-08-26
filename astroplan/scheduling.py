@@ -633,7 +633,13 @@ class PriorityScheduler(Scheduler):
         times = time_grid_from_range([self.schedule.start_time, self.schedule.end_time],
                                      time_resolution=time_resolution)
         is_open_time = np.ones(len(times), bool)
-
+        # close times that are already filled
+        pre_filled = np.array([[block.start_time, block.end_time] for
+                               block in self.schedule.scheduled_blocks])
+        for start_end in pre_filled:
+            filled = np.where((start_end[0] < times) & (times < start_end[1]))
+            is_open_time[filled[0]] = False
+            is_open_time[min(filled[0]) - 1] = False
         # generate the score arrays for all of the blocks
         scorer = Scorer(blocks, self.observer, self.schedule, global_constraints=self.constraints)
         score_array = scorer.create_score_array(time_resolution)
