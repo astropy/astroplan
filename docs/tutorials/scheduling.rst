@@ -280,6 +280,77 @@ targets.
     plt.legend(loc="upper right")
     plt.show()
 
+There is a lot of unfilled space in our schedule currently. We can
+fill that time with more observations of our targets by calling our
+scheduler using the same blocks and the schedule we already added to.
+
+.. code-block:: python
+
+    >>> prior_schedule(blocks, priority_schedule)
+    >>> plt.figure(figsize = (14,6))
+    >>> plot_schedule_airmass(priority_schedule)
+    >>> plt.legend(loc = "upper right")
+    >>> plt.show()
+
+.. plot::
+
+    # first import everything we will need for the scheduling
+    import astropy.units as u
+    from astropy.time import Time
+    from astroplan import (Observer, FixedTarget, ObservingBlock, Transitioner, PriorityScheduler,
+                           Schedule)
+    from astroplan.constraints import AtNightConstraint, AirmassConstraint, TimeConstraint
+    from astroplan.plots import plot_schedule_airmass
+    import matplotlib.pyplot as plt
+
+    # Now we define the targets, observer, start time, and end time of the schedule.
+    Deneb = FixedTarget.from_name('Deneb')
+    M13 = FixedTarget.from_name('M13')
+
+    noon_before = Time('2016-07-06 19:00')
+    noon_after = Time('2016-07-07 19:00')
+    apo = Observer.at_site('apo')
+
+    # Then define the constraints (global and specific) and make a list of the
+    # observing blocks that you want scheduled
+    global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
+                          AtNightConstraint.twilight_civil()]
+    rot = 20 * u.second
+    blocks = []
+    first_half_night = TimeConstraint(Time('2016-07-07 02:00'), Time('2016-07-07 08:00'))
+    for priority, bandpass in enumerate(['B', 'G', 'R']):
+        # We want each filter to have separate priority (so that target
+        # and reference are both scheduled)
+        blocks.append(ObservingBlock.from_exposures(Deneb, priority, 60*u.second, 16, rot,
+                                                    configuration = {'filter': bandpass},
+                                                    constraints = [first_half_night]))
+        blocks.append(ObservingBlock.from_exposures(M13, priority, 100*u.second, 16, rot,
+                                                    configuration = {'filter': bandpass},
+                                                    constraints = [first_half_night]))
+
+    # Define how the telescope transitions between the configurations defined in the
+    # observing blocks (target, filter, instrument, etc.).
+    transitioner = Transitioner(.8*u.deg/u.second,
+                                {'filter':{('B','G'): 10*u.second,
+                                           ('G','R'): 10*u.second,
+                                           'default': 30*u.second}})
+
+    # Initialize the scheduler
+    prior_scheduler = PriorityScheduler(constraints = global_constraints,
+                                        observer = apo, transitioner = transitioner)
+    # Create a schedule for the scheduler to insert the blocks into, and run the scheduler
+    priority_schedule = Schedule(noon_before, noon_after)
+    prior_scheduler(blocks, priority_schedule)
+    # add more of the blocks into the schedule
+    prior_scheduler(blocks, priority_schedule)
+
+    # To get a plot of the airmass vs where the blocks were scheduled
+    plt.figure(figsize = (14,6))
+    plot_schedule_airmass(priority_schedule)
+    plt.tight_layout()
+    plt.legend(loc="upper right")
+    plt.show()
+
 We want to check if there is any way that we could observe Alpha
 Centauri A as well during our time slot. So we create a new block
 for it with priority over the others, add it to our list of blocks
