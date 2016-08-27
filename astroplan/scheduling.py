@@ -552,11 +552,8 @@ class SequentialScheduler(Scheduler):
                 times = current_time + transition_time + b._duration_offsets
 
                 # make sure it isn't in a pre-filled slot
-                a = set(np.where(current_time < filled_times)[0])
-                c = set(np.where(filled_times < times[2])[0])
-                print(set.intersection(a, c))
-                if (set.intersection(a, c) or
-                        any(1*u.second > abs(pre_filled.T[0]-current_time))):
+                if (any((current_time < filled_times) & (filled_times < times[2])) or
+                        any(abs(pre_filled.T[0]-current_time) < 1*u.second)):
                     block_constraint_results.append(0)
 
                 else:
