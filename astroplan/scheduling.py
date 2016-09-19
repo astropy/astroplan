@@ -305,7 +305,6 @@ class Schedule(object):
                     and (slot.end > start_time + 1*u.second)):
                 slot_index = j
         if (block.duration - self.slots[slot_index].duration) > 1*u.second:
-            print(self.slots[slot_index].duration.to(u.second), block.duration)
             raise ValueError('longer block than slot')
         elif self.slots[slot_index].end - block.duration < start_time:
             start_time = self.slots[slot_index].end - block.duration
@@ -518,7 +517,6 @@ class SequentialScheduler(Scheduler):
         else:
             filled_times = Time(pre_filled.flatten())
             pre_filled = filled_times.reshape((len(filled_times)/2, 2))
-        print(pre_filled)
         for b in blocks:
             if b.constraints is None:
                 b._all_constraints = self.constraints
