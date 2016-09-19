@@ -49,6 +49,7 @@ any object that is in SIMBAD can be called by an identifier.
 
     >>> from astroplan import FixedTarget
 
+    >>> # Initialize the targets
     >>> deneb = FixedTarget.from_name('Deneb')
     >>> m13 = FixedTarget.from_name('M13')
 
@@ -92,6 +93,7 @@ the constraint will output floats instead, indicated when it is closer to ideal.
 
     >>> from astroplan.constraints import AtNightConstraint, AirmassConstraint
 
+    >>> # create the list of constraints that all targets must satisfy
     >>> global_constraints = [AirmassConstraint(max = 3, boolean_constraint = False),
     ...                       AtNightConstraint.twilight_civil()]
 
@@ -110,7 +112,7 @@ be from 2AM to 8AM, so we use `~astroplan.constraints.TimeConstraint`.
     >>> from astroplan.constraints import TimeConstraint
     >>> from astropy import units as u
 
-    >>> # defining the read-out time, exposure duration and number of exposures
+    >>> # Define the read-out time, exposure duration and number of exposures
     >>> read_out = 20 * u.second
     >>> deneb_exp = 60*u.second
     >>> m13_exp = 100*u.second
@@ -120,6 +122,8 @@ be from 2AM to 8AM, so we use `~astroplan.constraints.TimeConstraint`.
     >>> half_night_start = Time('2016-07-07 02:00')
     >>> half_night_end = Time('2016-07-07 08:00')
     >>> first_half_night = TimeConstraint(half_night_start, half_night_end)
+    >>> # Create ObservingBlocks for each filter and target with our time
+    >>> # constraint, and durations determined by the exposures needed
     >>> for priority, bandpass in enumerate(['B', 'G', 'R']):
     ...     # We want each filter to have separate priority (so that target
     ...     # and reference are both scheduled)
@@ -148,7 +152,10 @@ each pair of configurations.
 
     >>> from astroplan.scheduling import Transitioner
 
-    >>> transitioner = Transitioner(.8*u.deg/u.second,
+    >>> # Initialize a transitioner object with the slew rate and/or the
+    >>> # duration of other transitions (e.g. filter changes)
+    >>> slew_rate = .8*u.deg/u.second
+    >>> transitioner = Transitioner(slew_rate,
     ...                             {'filter':{('B','G'): 10*u.second,
     ...                                        ('G','R'): 10*u.second,
     ...                                        'default': 30*u.second}})
@@ -177,11 +184,14 @@ and repeats the scoring and scheduling on the remaining blocks.
     >>> from astroplan.scheduling import SequentialScheduler
     >>> from astroplan.scheduling import Schedule
 
+    >>> # Initialize the sequential scheduler with the constraints and transitioner
     >>> seq_scheduler = SequentialScheduler(constraints = global_constraints,
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
+    >>> # Initialize a Schedule object, to contain the new schedule
     >>> sequential_schedule = Schedule(noon_before, noon_after)
 
+    >>> # Call the schedule with the observing blocks and schedule to schedule the blocks
     >>> seq_scheduler(blocks, sequential_schedule)
 
 The second is a priority scheduler. It sorts the blocks by their
@@ -193,11 +203,14 @@ time for that block (highest score).
 
     >>> from astroplan.scheduling import PriorityScheduler
 
+    >>> # Initialize the priority scheduler with the constraints and transitioner
     >>> prior_scheduler = PriorityScheduler(constraints = global_constraints,
     ...                                     observer = apo,
     ...                                     transitioner = transitioner)
+    >>> # Initialize a Schedule object, to contain the new schedule
     >>> priority_schedule = Schedule(noon_before, noon_after)
 
+    >>> # Call the schedule with the observing blocks and schedule to schedule the blocks
     >>> prior_scheduler(blocks, priority_schedule)
 
 Now that you have a schedule there are a few ways of viewing it.
@@ -231,6 +244,7 @@ targets.
     >>> from astroplan.plots import plot_schedule_airmass
     >>> import matplotlib.pyplot as plt
 
+    >>> # plot the schedule with the airmass of the targets
     >>> plt.figure(figsize = (14,6))
     >>> plot_schedule_airmass(priority_schedule)
     >>> plt.legend(loc = "upper right")
@@ -377,9 +391,10 @@ and run the priority scheduler again.
 
 .. code-block:: python
 
-    >>> alf_cent = FixedTarget.from_name('Alpha Centauri A')
-    >>> # ObservingBlocks can also be called with a simple (target, duration, priority)
-    >>> blocks.append(ObservingBlock(alf_cent, 20*u.minute, -1))
+    >>> alpha_cen = FixedTarget.from_name('Alpha Centauri A')
+    >>> # ObservingBlocks can also be called with arguments: target, duration, priority
+    >>> blocks.append(ObservingBlock(alpha_cen, 20*u.minute, -1))
+    >>> # Initialize a new schedule for this test
     >>> schedule = Schedule(start_time, end_time)
     >>> prior_scheduler(blocks, schedule)
 
@@ -430,8 +445,8 @@ and run the priority scheduler again.
                                             constraints = [first_half_night])
         blocks.append(b)
     # add the new target's block
-    alf_cent = FixedTarget.from_name('Alpha Centauri A')
-    blocks.append(ObservingBlock(alf_cent, 20*u.minute, -1))
+    alpha_cen = FixedTarget.from_name('Alpha Centauri A')
+    blocks.append(ObservingBlock(alpha_cen, 20*u.minute, -1))
 
     # Define how the telescope transitions between the configurations defined in the
     # observing blocks (target, filter, instrument, etc.).
@@ -461,7 +476,7 @@ Nothing new shows up because Alpha Centauri isn't visible from APO.
 User-Defined Schedulers
 =======================
 
-There are many ways that targets can be scheduled with, only two of which
+There are many ways that targets can be scheduled, only two of which
 are currently implemented. This example will walk through the steps for
 creating your own scheduler that will be compatible with the tools of
 the ``scheduling`` module.
@@ -578,21 +593,23 @@ up above::
     >>> from astroplan import FixedTarget, Observer, Transitioner
     >>> from astropy.time import Time
 
+    >>> # Initialize the observer and targets, and create observing blocks
     >>> apo = Observer.at_site('apo')
     >>> deneb = FixedTarget.from_name('Deneb')
     >>> m13 = FixedTarget.from_name('M13')
     >>> blocks = [ObservingBlock(deneb, 20*u.minute, 0)]
     >>> blocks.append(ObservingBlock(m13, 20*u.minute, 0))
 
-    >>> # for a telescope that can slew at a rate of 2 degrees/second
+    >>> # For a telescope that can slew at a rate of 2 degrees/second
     >>> transitioner = Transitioner(slew_rate=2*u.deg/u.second)
 
+    >>> # Schedule the observing blocks using the simple scheduler
     >>> schedule = Schedule(Time('2016-07-06 19:00'), Time('2016-07-07 19:00'))
-
     >>> scheduler = SimpleScheduler(observer = apo, transitioner = transitioner,
     ...                                 constraints = [])
     >>> scheduler(blocks, schedule)
 
+    >>> # Plot the created schedule
     >>> import matplotlib.pyplot as plt
     >>> from astroplan.plots import plot_schedule_airmass
     >>> plot_schedule_airmass(schedule)
@@ -701,10 +718,10 @@ up above::
     plt.legend()
     plt.show()
 
-In this case, the ObservingBlocks are scheduled as they rise above the horizon.
 We gave the scheduler no constraints, global or local, so it added the default
 ``AltitudeConstraint`` which is only satisfied when the targets are above the
-horizon.
+horizon. Therefore the ObservingBlocks are scheduled at the first available time
+after the target rises, which occurs at much higher airmass than the plot shows.
 
 .. _scheduling-using_the_scorer:
 
@@ -717,11 +734,12 @@ The Score of any element (block, time) in that array is made by
 multiplying the scores returned by all of the constraints for that
 target and time.
 
-If you wish to use a different method of score evaluation, I would
-suggest adding a new method to the ``Scorer``. Use the general
-framework of the ``create_score_array`` method, but change how it
-combines the scores from the separate constraints (e.g. add the
-reciprocals of the scores together and then use smaller values
-as better). If you create a useful method, consider submitting it
-to http://github.com/astropy.astroplan so that other's will be able
-to use it as well.
+If you wish to use a different method of score evaluation, you can
+add a new method to the ``Scorer``. The general framework of the
+``create_score_array`` method will ensure evaluation of all of the
+constraints, but change how it combines the scores from the separate
+constraints (e.g. add the reciprocals of the scores together and then
+use smaller values as better). If you create a method that might be
+generically useful to other users, `consider submitting it
+<http://github.com/astropy/astroplan/pulls>`_ so that others will
+be able to use it as well.
