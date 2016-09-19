@@ -244,16 +244,21 @@ be within some angular separation from Vega – we'll call it
   ``compute_constraints`` method when you check if a target is observable
   using `~astroplan.is_observable` or `~astroplan.is_always_observable`.
 
+* We also want to provide the option of having the constraint output
+  a non-boolean score. Where being closer to the minimum separation
+  returns a higher score than being closer to the maximum separation.
+
 Here's our ``VegaSeparationConstraint`` implementation::
 
-    from astroplan import Constraint, is_observable
+    from astroplan import Constraint, is_observable, min_best_rescale
     from astropy.coordinates import Angle
+    import astropy.units as u
 
     class VegaSeparationConstraint(Constraint):
         """
         Constraint the separation from Vega
         """
-        def __init__(self, min=None, max=None):
+        def __init__(self, min=None, max=None, boolean_constraint=True):
             """
             min : `~astropy.units.Quantity` or `None` (optional)
                 Minimum acceptable separation between Vega and target. `None`
@@ -264,6 +269,7 @@ Here's our ``VegaSeparationConstraint`` implementation::
             """
             self.min = min
             self.max = max
+            self.boolean_constraint = boolean_constraint
 
         def compute_constraint(self, times, observer, targets):
 
@@ -275,31 +281,51 @@ Here's our ``VegaSeparationConstraint`` implementation::
             # Calculate separation between target and vega
             vega_separation = Angle([vega.separation(target.coord)
                                      for target in targets])
+            if self.boolean_constraint:
+                # If a maximum is specified but no minimum
+                if self.min is None and self.max is not None:
+                    mask = vega_separation < self.max
 
-            # If a maximum is specified but no minimum
-            if self.min is None and self.max is not None:
-                mask = vega_separation < self.max
+                # If a minimum is specified but no maximum
+                elif self.max is None and self.min is not None:
+                    mask = self.min < vega_separation
 
-            # If a minimum is specified but no maximum
-            elif self.max is None and self.min is not None:
-                mask = self.min < vega_separation
+                # If both a minimum and a maximum are specified
+                elif self.min is not None and self.max is not None:
+                    mask = ((self.min < vega_separation) & (vega_separation < self.max))
 
-            # If both a minimum and a maximum are specified
-            elif self.min is not None and self.max is not None:
-                mask = ((self.min < vega_separation) & (vega_separation < self.max))
+                # Otherwise, raise an error
+                else:
+                    raise ValueError("No max and/or min specified in "
+                                     "VegaSeparationConstraint.")
 
-            # Otherwise, raise an error
+
+                # Return an array that is True where the target is observable and
+                # False where it is not
+                # Must have shape (len(targets), len(times))
+
+                # currently mask has shape (len(targets), 1)
+                return np.tile(mask, len(times))
+
+            # if we want to return a non-boolean score
             else:
-                raise ValueError("No max and/or min specified in "
-                                 "VegaSeparationConstraint.")
+                # no min and no max still should error
+                if self.min is None and self.max is None:
+                    raise ValueError("No max and/or min specified in "
+                                     "VegaSeparationConstraint.")
+                if self.min is None:
+                    # if no minimum is given, set it at 0 degrees
+                    self.min = 0*u.deg
+                if self.max is None:
+                    # if no maximum is given, set it to 180 degrees
+                    self.max = 180*u.deg
 
+                # rescale the vega_separation values so that they become
+                # scores between zero and one
+                rescale = min_best_rescale(vega_separation, self.min,
+                                           self.max, less_than_min=0)
+                return np.tile(rescale, len(times))
 
-            # Return an array that is True where the target is observable and
-            # False where it is not
-            # Must have shape (len(targets), len(times))
-
-            # currently mask has shape (len(targets), 1)
-            return np.tile(mask, len(times))
 
 Then as in the earlier example, we can call our constraint::
 
@@ -312,3 +338,24 @@ Then as in the earlier example, we can call our constraint::
 The resulting list of booleans indicates that the only target separated by
 5 and 30 degrees from Vega is Albireo. Following this pattern, you can design
 arbitrarily complex criteria for constraints.
+
+To see the (target x time) array for the non-boolean score::
+
+    >>> constraint = VegaSeparationConstraint(min=5*u.deg, max=30*u.deg,
+    ...                                       boolean_constraint=False)
+    >>> print(constraint(subaru, targets, time_range=time_range)
+    [[ 0.          0.          0.          0.          0.          0.          0.
+       0.          0.          0.          0.          0.        ]
+     [ 0.          0.          0.          0.          0.          0.          0.
+       0.          0.          0.          0.          0.        ]
+     [ 0.57748686  0.57748686  0.57748686  0.57748686  0.57748686  0.57748686
+       0.57748686  0.57748686  0.57748686  0.57748686  0.57748686  0.57748686]
+     [ 0.          0.          0.          0.          0.          0.          0.
+       0.          0.          0.          0.          0.        ]
+     [ 0.          0.          0.          0.          0.          0.          0.
+       0.          0.          0.          0.          0.        ]
+     [ 0.          0.          0.          0.          0.          0.          0.
+       0.          0.          0.          0.          0.        ]]
+
+The score of .5775 for Albireo indicates that it is slightly closer to
+the 5 degree minimum than to the 30 degree maximum.

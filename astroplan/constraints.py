@@ -28,7 +28,8 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "TimeConstraint", "observability_table", "months_observable"]
+           "TimeConstraint", "observability_table", "months_observable",
+           "max_best_rescale", "min_best_rescale"]
 
 
 def _get_altaz(times, observer, targets,
@@ -286,7 +287,7 @@ class AltitudeConstraint(Constraint):
             uppermask = alt <= self.max
             return lowermask & uppermask
         else:
-            return _rescale_minmax(alt, self.min, self.max)
+            return max_best_rescale(alt, self.min, self.max)
 
 
 class AirmassConstraint(AltitudeConstraint):
@@ -344,8 +345,8 @@ class AirmassConstraint(AltitudeConstraint):
                 mx = self.max
 
             mi = 1 if self.min is None else self.min
-            # we reverse order so that airmass close to 1/min is good
-            return _rescale_airmass(secz, mi, mx)
+            # values below 1 should be disregarded
+            return min_best_rescale(secz, mi, mx, less_than_min=0)
 
 
 class AtNightConstraint(Constraint):
@@ -989,24 +990,90 @@ def observability_table(constraints, observer, targets, times=None,
     return tab
 
 
-def _rescale_minmax(vals, min_val, max_val):
-    """ Rescale altitude into an observability score."""
-    rescaled = (vals - min_val) / (max_val - min_val)
-    below = rescaled < 0
-    above = rescaled > 1
-    rescaled[below] = 0
-    rescaled[above] = 1
+def min_best_rescale(vals, min_val, max_val, less_than_min=1):
+    """
+    rescales an input array ``vals`` to be a score (between zero and one),
+    where the ``min_val`` goes to one, and the ``max_val`` goes to zero.
+
+    Parameters
+    ----------
+    vals : array-like
+        the values that need to be rescaled to be between 0 and 1
+    min_val : float
+        worst acceptable value (rescales to 0)
+    max_val : float
+        best value cared about (rescales to 1)
+    less_than_min : 0 or 1
+        what is returned for ``vals`` below ``min_val``. (in some cases
+        anything less than ``min_val`` should also return one,
+        in some cases it should return zero)
+
+    Returns
+    -------
+    array of floats between 0 and 1 inclusive rescaled so that
+    ``vals`` equal to ``max_val`` equal 0 and those equal to
+    ``min_val`` equal 1
+
+    Examples
+    --------
+    rescale airmasses to between 0 and 1, with the best (1)
+    and worst (2.25). All values outside the range should
+    return 0.
+    >>> from astroplan.constraints import min_best_rescale
+    >>> import numpy as np
+    >>> airmasses = np.array([1, 1.5, 2, 3, 0])
+    >>> min_best_rescale(airmasses, 1, 2.25, less_than_min = 0)
+    array([ 1. ,  0.6,  0.2,  0. , 0. ])
+    """
+    rescaled = (vals - max_val) / (min_val - max_val)
+    below = vals < min_val
+    above = vals > max_val
+    rescaled[below] = less_than_min
+    rescaled[above] = 0
 
     return rescaled
 
 
-def _rescale_airmass(vals, min_val, max_val):
-    """ Rescale airmass into an observability score."""
-    rescaled = (vals - min_val) / (max_val - min_val)
-    below = rescaled < 0
-    above = rescaled > 1
-    # In both cases, we want out-of-range airmasses to return a 0 score
-    rescaled[below] = 1
-    rescaled[above] = 1
+def max_best_rescale(vals, min_val, max_val, greater_than_max=1):
+    """
+    rescales an input array ``vals`` to be a score (between zero and one),
+    where the ``max_val`` goes to one, and the ``min_val`` goes to zero.
 
-    return 1 - rescaled
+    Parameters
+    ----------
+    vals : array-like
+        the values that need to be rescaled to be between 0 and 1
+    min_val : float
+        worst acceptable value (rescales to 0)
+    max_val : float
+        best value cared about (rescales to 1)
+    greater_than_max : 0 or 1
+        what is returned for ``vals`` above ``max_val``. (in some cases
+        anything higher than ``max_val`` should also return one,
+        in some cases it should return zero)
+
+    Returns
+    -------
+    array of floats between 0 and 1 inclusive rescaled so that
+    ``vals`` equal to ``min_val`` equal 0 and those equal to
+    ``max_val`` equal 1
+
+    Examples
+    --------
+    rescale an array of altitudes to be between 0 and 1,
+    with the best (60) going to 1 and worst (35) going to
+    0. For values outside the range, the rescale should
+    return 0 below 35 and 1 above 60.
+    >>> from astroplan.constraints import max_best_rescale
+    >>> import numpy as np
+    >>> altitudes = np.array([20, 30, 40, 45, 55, 70])
+    >>> max_best_rescale(altitudes, 35, 60)
+    array([ 0. , 0. , 0.2, 0.4, 0.8, 1. ])
+    """
+    rescaled = (vals - min_val) / (max_val - min_val)
+    below = vals < min_val
+    above = vals > max_val
+    rescaled[below] = 0
+    rescaled[above] = greater_than_max
+
+    return rescaled
