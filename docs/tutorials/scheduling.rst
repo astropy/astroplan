@@ -354,10 +354,10 @@ scheduler using the same blocks and the schedule we already added to.
     for priority, bandpass in enumerate(['B', 'G', 'R']):
         # We want each filter to have separate priority (so that target
         # and reference are both scheduled)
-        blocks.append(ObservingBlock.from_exposures(Deneb, priority, 60*u.second, 16, rot,
+        blocks.append(ObservingBlock.from_exposures(deneb, priority, 60*u.second, 16, rot,
                                                     configuration = {'filter': bandpass},
                                                     constraints = [first_half_night]))
-        blocks.append(ObservingBlock.from_exposures(M13, priority, 100*u.second, 16, rot,
+        blocks.append(ObservingBlock.from_exposures(m13, priority, 100*u.second, 16, rot,
                                                     configuration = {'filter': bandpass},
                                                     constraints = [first_half_night]))
 
@@ -415,8 +415,8 @@ and run the priority scheduler again.
     import matplotlib.pyplot as plt
 
     # Now we define the targets, observer, start time, and end time of the schedule.
-    Deneb = FixedTarget.from_name('Deneb')
-    M13 = FixedTarget.from_name('M13')
+    deneb = FixedTarget.from_name('Deneb')
+    m13 = FixedTarget.from_name('M13')
 
     noon_before = Time('2016-07-06 19:00')
     noon_after = Time('2016-07-07 19:00')
