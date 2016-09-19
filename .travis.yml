@@ -71,11 +71,11 @@ matrix:
         # 2.7.
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
-               CONDA_DEPENDENCIES='pytz matplotlib nose qt=4'
+               CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
           env: PYTHON_VERSION=3.5 SETUP_CMD='test --remote-data -V'
-               CONDA_DEPENDENCIES='pytz matplotlib nose qt=4'
+               CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
 
         # Try older numpy versions
