@@ -12,6 +12,7 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 
 from astropy import units as u
+from astropy.time import Time
 from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
@@ -304,7 +305,6 @@ class Schedule(object):
                     and (slot.end > start_time + 1*u.second)):
                 slot_index = j
         if (block.duration - self.slots[slot_index].duration) > 1*u.second:
-            print(self.slots[slot_index].duration.to(u.second), block.duration)
             raise ValueError('longer block than slot')
         elif self.slots[slot_index].end - block.duration < start_time:
             start_time = self.slots[slot_index].end - block.duration
@@ -507,6 +507,16 @@ class SequentialScheduler(Scheduler):
         super(SequentialScheduler, self).__init__(*args, **kwargs)
 
     def _make_schedule(self, blocks):
+        pre_filled = np.array([[block.start_time, block.end_time] for
+                      block in self.schedule.scheduled_blocks])
+        if len(pre_filled) == 0:
+            a = self.schedule.start_time
+            filled_times = Time([a - 1*u.hour, a - 1*u.hour,
+                               a - 1*u.minute, a - 1*u.minute])
+            pre_filled = filled_times.reshape((2, 2))
+        else:
+            filled_times = Time(pre_filled.flatten())
+            pre_filled = filled_times.reshape((len(filled_times)/2, 2))
         for b in blocks:
             if b.constraints is None:
                 b._all_constraints = self.constraints
@@ -539,12 +549,18 @@ class SequentialScheduler(Scheduler):
 
                 times = current_time + transition_time + b._duration_offsets
 
-                constraint_res = []
-                for constraint in b._all_constraints:
-                    constraint_res.append(constraint(self.observer, [b.target],
-                                                     times))
-                # take the product over all the constraints *and* times
-                block_constraint_results.append(np.prod(constraint_res))
+                # make sure it isn't in a pre-filled slot
+                if (any((current_time < filled_times) & (filled_times < times[2])) or
+                        any(abs(pre_filled.T[0]-current_time) < 1*u.second)):
+                    block_constraint_results.append(0)
+
+                else:
+                    constraint_res = []
+                    for constraint in b._all_constraints:
+                        constraint_res.append(constraint(self.observer, [b.target],
+                                                         times))
+                    # take the product over all the constraints *and* times
+                    block_constraint_results.append(np.prod(constraint_res))
 
             # now identify the block that's the best
             bestblock_idx = np.argmax(block_constraint_results)
@@ -612,7 +628,13 @@ class PriorityScheduler(Scheduler):
         times = time_grid_from_range([self.schedule.start_time, self.schedule.end_time],
                                      time_resolution=time_resolution)
         is_open_time = np.ones(len(times), bool)
-
+        # close times that are already filled
+        pre_filled = np.array([[block.start_time, block.end_time] for
+                               block in self.schedule.scheduled_blocks])
+        for start_end in pre_filled:
+            filled = np.where((start_end[0] < times) & (times < start_end[1]))
+            is_open_time[filled[0]] = False
+            is_open_time[min(filled[0]) - 1] = False
         # generate the score arrays for all of the blocks
         scorer = Scorer(blocks, self.observer, self.schedule, global_constraints=self.constraints)
         score_array = scorer.create_score_array(time_resolution)

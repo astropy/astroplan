@@ -151,6 +151,10 @@ def test_priority_scheduler():
     # polaris and rigel both peak just before the start time
     assert schedule.slots[0].block.target == polaris
     assert schedule.slots[2].block.target == rigel
+    # test that the scheduler does not error when called with a partially
+    # filled schedule
+    scheduler(blocks, schedule)
+    scheduler(blocks, schedule)
 
 
 def test_sequential_scheduler():
@@ -159,7 +163,8 @@ def test_sequential_scheduler():
     start_time = Time('2016-02-06 03:00:00')
     end_time = start_time + 18 * u.hour
     scheduler = SequentialScheduler(constraints=constraints, observer=apo,
-                                    transitioner=default_transitioner)
+                                    transitioner=default_transitioner,
+                                    gap_time=15*u.minute)
     schedule = Schedule(start_time, end_time)
     scheduler(blocks, schedule)
     assert len(schedule.observing_blocks) > 0
@@ -170,6 +175,10 @@ def test_sequential_scheduler():
                 schedule.observing_blocks[2].target == vega])
     # vega rises late, so its start should be later
     assert schedule.observing_blocks[2].start_time > start_time + 8*u.hour
+    # test that the scheduler does not error when called with a partially
+    # filled schedule
+    scheduler(blocks, schedule)
+    scheduler(blocks, schedule)
 
 
 def test_scheduling_target_down():
