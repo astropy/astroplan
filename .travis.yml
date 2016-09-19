@@ -23,7 +23,7 @@ env:
         - NUMPY_VERSION=stable
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
-        - CONDA_DEPENDENCIES='pytz qt=4'
+        - CONDA_DEPENDENCIES='pytz'
         - PIP_DEPENDENCIES=''
         - SETUP_CMD='test -V'
         - CONDA_CHANNELS='astropy'
