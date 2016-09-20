@@ -408,8 +408,9 @@ class Scheduler(object):
             constraints for specific blocks can go on each block individually.
         observer : `~astroplan.Observer`
             The observer/site to do the scheduling for.
-        transitioner : `~astroplan.scheduling.Transitioner` or None
+        transitioner : `~astroplan.scheduling.Transitioner` (required)
             The object to use for computing transition times between blocks.
+            Leaving it as ``None`` will cause an error.
         gap_time : `~astropy.units.Quantity` with time units
             The maximum length of time a transition between ObservingBlocks
             could take.
@@ -420,6 +421,8 @@ class Scheduler(object):
         self.constraints = constraints
         self.observer = observer
         self.transitioner = transitioner
+        if not isinstance(self.transitioner, Transitioner):
+            raise ValueError("A Transitioner is required")
         self.gap_time = gap_time
         self.time_resolution = time_resolution
 
