@@ -3,7 +3,7 @@
 
 - No changes yet
 
-0.2 (2016-07-27)
+0.2 (2016-09-20)
 ------------------
 
 - Fixed bug arising from changes to distutils.ConfigParser [#177, #187, #191]
