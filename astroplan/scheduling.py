@@ -157,7 +157,9 @@ class Scorer(object):
         start = self.schedule.start_time
         end = self.schedule.end_time
         times = time_grid_from_range((start, end), time_resolution)
+        # create an array to hold all of the scores
         score_array = np.zeros((len(self.blocks), len(times)))
+        # create an array to record where any of the constraints are zero
         zeros = np.ones((len(self.blocks), len(times)), dtype=int)
         local_constraints = []
         weights = []
@@ -176,12 +178,12 @@ class Scorer(object):
                         zeros[i] &= applied_score
                     # TODO: make a default weight=1 and merge these
                     elif constraint.weight:
-                        zeros[i][np.where(applied_score == 0)] = 0
+                        zeros[i][(applied_score == 0)] = 0
                         weight = constraint.weight
                         weights[i] += weight
                         score_array[i] += applied_score * weight
                     else:
-                        zeros[i][np.where(applied_score == 0)] = 0
+                        zeros[i][(applied_score == 0)] = 0
                         weights[i] += 1
                         score_array[i] += applied_score
         targets = [block.target for block in self.blocks]
@@ -199,13 +201,13 @@ class Scorer(object):
                     if i not in skip_global:
                         weights[i] += weight
                         score_array[i] += score*weight
-                        zeros[i][np.where(score == 0)] = 0
+                        zeros[i][(score == 0)] = 0
             else:
                 for i, score in enumerate(global_score):
                     if i not in skip_global:
                         weights[i] += 1
                         score_array[i] += score
-                        zeros[i][np.where(score == 0)] = 0
+                        zeros[i][(score == 0)] = 0
 
         for i, scores in enumerate(score_array):
             if weights[i]:
