@@ -73,6 +73,7 @@ Maintainers
 Contributors
 ------------
 * Christoph Deil
+* Stephanie Douglas
 * Eric Jeschke
 * Adrian Price-Whelan
 * Erik Tollerud
