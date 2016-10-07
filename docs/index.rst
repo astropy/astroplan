@@ -78,3 +78,4 @@ Contributors
 * Adrian Price-Whelan
 * Erik Tollerud
 * Brigitta Sipocz
+* Karl Vyhmeister
