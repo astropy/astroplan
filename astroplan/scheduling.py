@@ -195,7 +195,9 @@ class Scorer(object):
                     skip_global.append(i)
             global_score = constraint(self.observer, targets, times)
             if constraint.boolean_constraint:
-                constraint_zeros &= 1 - global_score
+                # This should apply to every block (if the global fails, then
+                # the local should have failed anyway)
+                constraint_zeros &= global_score
             elif constraint.weight:
                 weight = constraint.weight
                 for i, score in enumerate(global_score):
@@ -212,11 +214,13 @@ class Scorer(object):
 
         for i, scores in enumerate(score_array):
             if weights[i]:
-                scores *= 1/weights[i]
+                scores *= 1/float(weights[i])
             else:
                 # if no weight, then nothing was added to the score_array
                 # just use the zeros (squaring 0 and 1 gives 0 and 1)
                 scores += constraint_zeros[i]
+        # considering the else above, score_array would be constraint_zeros^2
+        # which is fine since all of its values should be 0 or 1
         score_array *= constraint_zeros
         return score_array
 
