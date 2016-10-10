@@ -160,7 +160,7 @@ class Scorer(object):
         # create an array to hold all of the scores
         score_array = np.zeros((len(self.blocks), len(times)))
         # create an array to record where any of the constraints are zero
-        zeros = np.ones((len(self.blocks), len(times)), dtype=int)
+        constraint_zeros = np.ones((len(self.blocks), len(times)), dtype=int)
         local_constraints = []
         weights = []
         for i, block in enumerate(self.blocks):
@@ -175,15 +175,16 @@ class Scorer(object):
                                                times=times)[0]
                     if constraint.boolean_constraint:
                         # add to the mask designating where the score is zero
-                        zeros[i] &= applied_score
+                        # if either is 0, constraint_zeros becomes 0
+                        constraint_zeros[i] &= applied_score
                     # TODO: make a default weight=1 and merge these
                     elif constraint.weight:
-                        zeros[i][(applied_score == 0)] = 0
+                        constraint_zeros[i][(applied_score == 0)] = 0
                         weight = constraint.weight
                         weights[i] += weight
                         score_array[i] += applied_score * weight
                     else:
-                        zeros[i][(applied_score == 0)] = 0
+                        constraint_zeros[i][(applied_score == 0)] = 0
                         weights[i] += 1
                         score_array[i] += applied_score
         targets = [block.target for block in self.blocks]
@@ -194,20 +195,20 @@ class Scorer(object):
                     skip_global.append(i)
             global_score = constraint(self.observer, targets, times)
             if constraint.boolean_constraint:
-                zeros &= 1-global_score
+                constraint_zeros &= 1 - global_score
             elif constraint.weight:
                 weight = constraint.weight
                 for i, score in enumerate(global_score):
                     if i not in skip_global:
                         weights[i] += weight
                         score_array[i] += score*weight
-                        zeros[i][(score == 0)] = 0
+                        constraint_zeros[i][(score == 0)] = 0
             else:
                 for i, score in enumerate(global_score):
                     if i not in skip_global:
                         weights[i] += 1
                         score_array[i] += score
-                        zeros[i][(score == 0)] = 0
+                        constraint_zeros[i][(score == 0)] = 0
 
         for i, scores in enumerate(score_array):
             if weights[i]:
@@ -215,8 +216,8 @@ class Scorer(object):
             else:
                 # if no weight, then nothing was added to the score_array
                 # just use the zeros (squaring 0 and 1 gives 0 and 1)
-                scores += zeros[i]
-        score_array *= zeros
+                scores += constraint_zeros[i]
+        score_array *= constraint_zeros
         return score_array
 
     @classmethod

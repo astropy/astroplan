@@ -280,7 +280,7 @@ def test_weighted_scorer():
     scores = scorer.weighted_score_array(time_resolution=20 * u.minute)
     # due to float multiplication and division c and scores are not exactly equal
     assert np.array_equal(np.round(c, 10), np.round(scores, 10))
-    '''
+
     constraint2 = MoonIlluminationConstraint(max=.6, boolean_constraint=False)
     constraint2.weight = .7
     c2 = constraint2(apo, [vega, rigel], times)
@@ -289,6 +289,6 @@ def test_weighted_scorer():
     scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
                                    Time('2016-02-06 08:00'))
     scores = scorer.weighted_score_array(time_resolution=20 * u.minute)
-    assert all(scores[0] - (c[0] * .8 + c2[0] * .7)/1.5
+    assert all(scores[0] - (c[0] * .8 + c2[0] * .7)/1.5)
     np.array_equal(np.round(scores[0], 10), np.round((c[0] * .8 + c2[0] * .7)/1.5, 10))
-    assert np.array_equal(np.round(scores[1], 10), np.round(c[1], 10))'''
+    assert np.array_equal(np.round(scores[1], 10), np.round(c[1], 10))
