@@ -187,6 +187,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
         ]
 
+        twilights.sort(key=lambda x: x[0])
         for i, twi in enumerate(twilights[1:], 1):
             ax.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
 
