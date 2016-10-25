@@ -437,7 +437,7 @@ class AzimuthConstraint(Constraint):
         This may misbehave if you try to constrain negative azimuth, as
         the `~astropy.coordinates.AltAz` frame tends to mishandle negative.
         This could occur when you are wanting targets towards the north with
-        a minimum azimuth towards the northwest, e.g, azimuth 3 15 (== -45), and a
+        a minimum azimuth towards the northwest, e.g, azimuth 315 (== -45), and a
         maximum azimuth toward the northeast, e.g., azimuth 45.
 
 
@@ -472,7 +472,7 @@ class AzimuthConstraint(Constraint):
             uppermask = az <= self.max
             return lowermask & uppermask
         else:
-            return max_best_rescale(alt, self.min, self.max)
+            return max_best_rescale(az, self.min, self.max)
 
 
 class SunSeparationConstraint(Constraint):
