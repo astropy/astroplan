@@ -434,11 +434,12 @@ class AzimuthConstraint(Constraint):
     Constrain the azimuth of the target.
 
     .. note::
-        This may misbehave if you try to constrain negative azimuth, as
-        the `~astropy.coordinates.AltAz` frame tends to mishandle negative.
-        This could occur when you are wanting targets towards the north with
+        This will misbehave if you try to constrain negative azimuths.
+        An example could be attempting to schedule targets towards the north with
         a minimum azimuth towards the northwest, e.g, azimuth 315 (== -45), and a
-        maximum azimuth toward the northeast, e.g., azimuth 45.
+        maximum azimuth toward the northeast, e.g., azimuth 45.  Use positive 
+        azimuths for the minimum and maximum with a larger value for the 
+        maximum than for the minimum.
 
 
     Parameters
