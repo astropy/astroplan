@@ -5,7 +5,7 @@ import datetime as dt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, get_sun, get_moon
+from astropy.coordinates import SkyCoord, get_sun, get_moon, Angle
 from astropy.utils import minversion
 from astropy.tests.helper import pytest
 
@@ -16,7 +16,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable,
-                           max_best_rescale, min_best_rescale)
+                           max_best_rescale, min_best_rescale, AzimuthConstraint)
 
 APY_LT104 = not minversion('astropy', '1.0.4')
 
@@ -103,6 +103,67 @@ def test_compare_altitude_constraint_and_observer():
                                                       subaru, targets,
                                                       time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
+
+
+def test_compare_azimuth_constraint_and_observer():
+    time = Time('2001-02-03 04:05:06')
+    time_ranges = [Time([time, time+1*u.hour]) + offset
+                   for offset in np.arange(0, 400, 100)*u.day]
+    for time_range in time_ranges:
+        mmt = Observer(longitude=249.115*u.deg, latitude=31.6883*u.deg,  \
+                                 elevation=2608*u.m, name="mmt", timezone="US/Arizona")
+        targets = [vega, rigel, polaris]
+
+        # Testing for easterly targets, from northeast (45) to southeast (135).
+        min_az = Angle(45*u.deg)
+        max_az = Angle(135*u.deg)
+        
+        # Same checks on azimuth inputs as in AzimuthConstraint.
+        # Constrain the minimum and maximum azimuth angles to 0-360 range.
+        min_az.wrap_at('360d', inplace=True) 
+        max_az.wrap_at('360d', inplace=True) 
+        # Handle the case of minimum azimuth having a larger value than the maximum azimuth.
+        # This can occur when the azimuth range includes north (azimuth == 0).
+        if min_az > max_az:
+            max_az += 360*u.deg
+        
+        # Check if each target meets azimth constraints using Observer
+        always_from_observer = [all([min_az < mmt.altaz(time, target).az < max_az
+                                     for time in time_grid_from_range(time_range)])
+                                for target in targets]
+        # Check if each target meets azimuth constraints using
+        # is_always_observable and AzimuthConstraint
+        always_from_constraint = is_always_observable(AzimuthConstraint(min_az,
+                                                                         max_az),
+                                                      mmt, targets,
+                                                      time_range=time_range)
+        assert all(always_from_observer == always_from_constraint)
+        
+        # Testing for northerly targets, from northwest (315) to northeast (45).
+        min_az = Angle(315*u.deg)
+        max_az = Angle(45*u.deg)
+        
+        # Same checks on azimuth inputs as in AzimuthConstraint.
+        # Constrain the minimum and maximum azimuth angles to 0-360 range.
+        min_az.wrap_at('360d', inplace=True) 
+        max_az.wrap_at('360d', inplace=True) 
+        # Handle the case of minimum azimuth having a larger value than the maximum azimuth.
+        # This can occur when the azimuth range includes north (azimuth == 0).
+        if min_az > max_az:
+            max_az += 360*u.deg
+        
+        # Check if each target meets azimth constraints using Observer
+        always_from_observer = [all([min_az < mmt.altaz(time, target).az < max_az
+                                     for time in time_grid_from_range(time_range)])
+                                for target in targets]
+        # Check if each target meets azimuth constraints using
+        # is_always_observable and AzimuthConstraint
+        always_from_constraint = is_always_observable(AzimuthConstraint(min_az,
+                                                                         max_az),
+                                                      mmt, targets,
+                                                      time_range=time_range)
+        assert all(always_from_observer == always_from_constraint)
+
 
 
 def test_compare_airmass_constraint_and_observer():

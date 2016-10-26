@@ -434,13 +434,12 @@ class AzimuthConstraint(Constraint):
     Constrain the azimuth of the target.
 
     .. note::
-        This will misbehave if you try to constrain negative azimuths.
-        An example could be attempting to schedule targets towards the north with
-        a minimum azimuth towards the northwest, e.g, azimuth 315 (== -45), and a
-        maximum azimuth toward the northeast, e.g., azimuth 45.  Use positive 
-        azimuths for the minimum and maximum with a larger value for the 
-        maximum than for the minimum.
-
+        1) Negative azimuths of up to -360 degrees can be used, e.g,. azimuth
+        -45 == azimuth 315.  In general, use positive azimuth angles, though.
+        2) If the minimum azimuth is greater than the maximum azimuth, 360 degrees
+        is added to the maximum so that the maximum is always larger than the
+        minimum.  This allows a range of azimuths towards the north, e.g.,
+        min = 315; max = 45.
 
     Parameters
     ----------
@@ -455,13 +454,22 @@ class AzimuthConstraint(Constraint):
     """
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
-            self.min = 0*u.deg
+            self.min = Angle(0*u.deg)
         else:
-            self.min = min
+            self.min = Angle(min)
         if max is None:
-            self.max = 360*u.deg
+            self.max = Angle(360*u.deg)
         else:
-            self.max = max
+            self.max = Angle(max)
+
+        # Constrain the minimum and maximum azimuth angles to 0-360 range.
+        self.min.wrap_at('360d', inplace=True) 
+        self.max.wrap_at('360d', inplace=True) 
+        
+        # Handle the case of minimum azimuth having a larger value than the maximum azimuth.
+        # This can occur when the azimuth range includes north (azimuth == 0).
+        if self.min > self.max:
+            self.max += 360*u.deg
 
         self.boolean_constraint = boolean_constraint
 
