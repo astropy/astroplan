@@ -148,10 +148,12 @@ def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     times : `~astropy.time.Time`
         Linearly-spaced sequence of times
     """
-    if len(time_range) != 2:
+    try:
+        start_time, end_time = time_range
+    except ValueError:
         raise ValueError("time_range should have a length of 2: lower and "
                          "upper bounds on the time sequence.")
-    return Time(np.arange(time_range[0].jd, time_range[1].jd,
+    return Time(np.arange(start_time.jd, end_time.jd,
                           time_resolution.to(u.day).value), format='jd')
 
 
