@@ -60,8 +60,9 @@ def test_time_grid_from_range():
               '2010-01-01 03:00:00']
     tgrid = time_grid_from_range(Time(times2))
     assert len(tgrid) == 3
-    assert np.all(tgrid == Time(['2010-01-01 00:00:00', '2010-01-01 00:30:00',
-                                 '2010-01-01 01:00:00']))
+    assert np.all(tgrid.iso == Time(['2010-01-01 00:00:00',
+                                     '2010-01-01 00:30:00',
+                                     '2010-01-01 01:00:00']))
 
     with pytest.raises(ValueError):
         time_grid_from_range(Time(times3))
