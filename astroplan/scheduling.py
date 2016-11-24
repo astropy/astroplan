@@ -32,13 +32,13 @@ class ObservingBlock(object):
         """
         Parameters
         ----------
-        target: `~astroplan.FixedTarget'
+        target : `~astroplan.FixedTarget'
             Target to observe
 
         duration : `~astropy.units.Quantity`
             exposure time
 
-        priority: integer or float
+        priority : integer or float
             priority of this object in the target list. 1 is highest priority,
             no maximum
 
