@@ -1340,7 +1340,7 @@ class Observer(object):
         ----------
         time : `~astropy.time.Time` or other (see below)
 
-        Keywords: str, optional
+        Keywords : str, optional
             previous
             next
         """
@@ -1360,7 +1360,7 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        Keywords: str, optional
+        Keywords : str, optional
             previous
             next
         """
