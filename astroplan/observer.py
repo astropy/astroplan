@@ -1481,8 +1481,6 @@ class Observer(object):
 
         if time.isscalar:
             altaz_frame = AltAz(location=self.location, obstime=time)
-            sun = get_sun(time).transform_to(altaz_frame)
-
             moon = get_moon(time, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
             return moon
 
