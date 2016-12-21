@@ -5,6 +5,11 @@ from __future__ import (absolute_import, division, print_function,
 import copy
 
 from astropy.visualization import astropy_mpl_style
+from astropy.utils import minversion
+
+# This returns False if matplotlib cannot be imported
+MATPLOTLIB_GE_1_5 = minversion('matplotlib', '1.5')
+
 
 __all__ = ['light_style_sheet', 'dark_style_sheet',
            'available_style_sheets']
@@ -46,13 +51,6 @@ dark_style_sheet = {
     'axes.labelsize': 'large',
     'axes.labelcolor': 'w',
     'axes.axisbelow': True,
-    'axes.color_cycle': ['#00CCFF',   # blue
-                         '#FF0000',   # red
-                         '#40C000',   # green
-                         '#E066E0',   # purple
-                         '#CF4457',   # pink
-                         '#188487',   # turquoise
-                         '#E24A33'],  # orange
 
     # Ticks
     'xtick.major.size': 0,
@@ -89,3 +87,19 @@ dark_style_sheet = {
     'grid.color': 'w',
     'text.color': 'w'
 }
+
+color_cycle = ['#00CCFF',   # blue
+               '#FF0000',   # red
+               '#40C000',   # green
+               '#E066E0',   # purple
+               '#CF4457',   # pink
+               '#188487',   # turquoise
+               '#E24A33']   # orange
+
+if MATPLOTLIB_GE_1_5:
+    # This is a dependency of matplotlib, so should be present.
+    from cycler import cycler
+    dark_style_sheet['axes.prop_cycle'] = cycler('color', color_cycle)
+
+else:
+    dark_style_sheet['axes.color_cycle'] = color_cycle
