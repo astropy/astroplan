@@ -67,7 +67,8 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
 
 
 def _target_is_vector(target):
-    if hasattr(target, '__iter__'):
+    if hasattr(target, '__iter__') and not (isinstance(target, SkyCoord)
+                                            and target.isscalar):
         return True
     else:
         return False
