@@ -123,7 +123,7 @@ class FixedTarget(Target):
         >>> sirius = FixedTarget.from_name("Sirius")
         >>> sirius.coord                              # doctest: +FLOAT_CMP
         <SkyCoord (ICRS): (ra, dec) in deg
-            (101.28715533, -16.71611586)>
+            ( 101.28715533, -16.71611586)>
         """
         # Allow manual override for name keyword so that the target name can
         # be different from the query name, otherwise assume name=queryname.
@@ -144,7 +144,7 @@ class FixedTarget(Target):
         >>> vega_coord = SkyCoord(ra='279.23473479d', dec='38.78368896d')
         >>> vega = FixedTarget(coord=vega_coord, name="Vega")
         >>> print(vega)                             # doctest: +FLOAT_CMP
-        <FixedTarget "Vega" at SkyCoord (ICRS): (ra, dec) in deg (279.23473479, 38.78368894)>
+        <FixedTarget "Vega" at SkyCoord (ICRS): (ra, dec) in deg ( 279.23473479, 38.78368894)>
         """
         class_name = self.__class__.__name__
         fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
