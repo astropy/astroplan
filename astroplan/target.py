@@ -11,6 +11,12 @@ from astropy.coordinates import SkyCoord
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
+# Docstring code examples include printed SkyCoords, but the format changed
+# in astropy 1.3. Thus the doctest needs astropy >=1.3 and this is the
+# easiest way to make it work.
+
+__doctest_requires__ = {'FixedTarget.*': ['astropy.modeling.Hermite1D']}
+
 
 class Target(object):
     """
