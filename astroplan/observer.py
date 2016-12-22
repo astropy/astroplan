@@ -459,7 +459,7 @@ class Observer(object):
             return altaz_frame
         else:
             # If target is a list of targets:
-            if _target_is_vector(target):
+            if _target_is_vector(target) and not isinstance(target, SkyCoord):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
                 transformed_coords = self._transform_target_list_to_altaz(time,
                                                                           list(map(get_coord, target)))
@@ -470,7 +470,7 @@ class Observer(object):
                     getattr(transformed_coords.data, comp).resize(new_shape)
                 return transformed_coords
 
-            # If single target is a FixedTarget or a SkyCoord:
+            # If target is a FixedTarget or a SkyCoord:
             if hasattr(target, 'coord'):
                 coordinate = target.coord
             else:
