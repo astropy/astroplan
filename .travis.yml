@@ -20,6 +20,7 @@ addons:
 env:
     global:
         # Set defaults to avoid repeating in most cases
+        - PYTHON_VERSION=3.6
         - NUMPY_VERSION=stable
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
@@ -31,6 +32,7 @@ env:
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
         - PYTHON_VERSION=3.5 SETUP_CMD='egg_info'
+        - PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
 
 matrix:
 
@@ -53,7 +55,7 @@ matrix:
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
-          env: PYTHON_VERSION=3.5 SETUP_CMD='build_sphinx -w'
+          env: SETUP_CMD='build_sphinx -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
 
@@ -64,7 +66,7 @@ matrix:
           env: PYTHON_VERSION=2.7
 
         - os: linux
-          env: PYTHON_VERSION=3.5
+          env: PYTHON_VERSION=3.6
 
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
@@ -74,15 +76,15 @@ matrix:
                CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
-          env: PYTHON_VERSION=3.5 SETUP_CMD='test --remote-data -V'
+          env: SETUP_CMD='test --remote-data -V'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
 
         # Try older numpy versions
         - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10
+          env: PYTHON_VERSION=3.5 NUMPY_VERSION=1.10
         - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.9
+          env: PYTHON_VERSION=3.5 NUMPY_VERSION=1.9
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8
         - os: linux
@@ -95,7 +97,7 @@ matrix:
         # Try pre-release version of Numpy. This only runs if a pre-release
         # is available on pypi.
         - os: linux
-          env: PYTHON_VERSION=3.5 NUMPY_VERSION=prerelease
+          env: NUMPY_VERSION=prerelease
 
         # Try developer version of Astropy
         - os: linux
@@ -113,7 +115,7 @@ matrix:
       - env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
              CONDA_DEPENDENCIES='pytz matplotlib nose'
              PIP_DEPENDENCIES='pytest-mpl'
-      - env: PYTHON_VERSION=3.5 SETUP_CMD='test --remote-data -V'
+      - env: SETUP_CMD='test --remote-data -V'
              CONDA_DEPENDENCIES='pytz matplotlib nose'
              PIP_DEPENDENCIES='pytest-mpl'
 
