@@ -97,22 +97,22 @@ matrix:
           env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
 
     allow_failures:
-        # Try latest stable version of astropy
-        - os: linux
-          env: PYTHON_VERSION=2.7 ASTROPY_VERSION=1.3
+      # Try latest stable version of astropy
+      - os: linux
+        env: PYTHON_VERSION=2.7 ASTROPY_VERSION=1.3
 
-        # Try developer version of Numpy
-        - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
+      # Try developer version of Numpy
+      - os: linux
+        env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
 
-        # Try pre-release version of Numpy. This only runs if a pre-release
-        # is available on pypi.
-        - os: linux
-          env: PYTHON_VERSION=3.5 NUMPY_VERSION=prerelease
+      # Try pre-release version of Numpy. This only runs if a pre-release
+      # is available on pypi.
+      - os: linux
+        env: PYTHON_VERSION=3.5 NUMPY_VERSION=prerelease
 
-        # Try developer version of Astropy
-        - os: linux
-          env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev
+      # Try developer version of Astropy
+      - os: linux
+        env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
       # TODO: these fail for now ... make them work!
       - env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
