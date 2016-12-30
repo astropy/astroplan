@@ -32,7 +32,7 @@ class ObservingBlock(object):
         """
         Parameters
         ----------
-        target : `~astroplan.FixedTarget'
+        target : `~astroplan.FixedTarget`
             Target to observe
 
         duration : `~astropy.units.Quantity`
@@ -225,7 +225,7 @@ class Schedule(object):
 
     def __init__(self, start_time, end_time, constraints=None):
         """
-        Parameters:
+        Parameters
         -----------
         start_time : `~astropy.time.Time`
             The starting time of the schedule; the start of your
@@ -360,7 +360,7 @@ class Slot(object):
 
     def __init__(self, start_time, end_time):
         """
-        Parameters:
+        Parameters
         -----------
         start_time : `~astropy.time.Time`
             The starting time of the slot
