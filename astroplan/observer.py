@@ -13,6 +13,7 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
 from astropy.extern.six import string_types
 import astropy.units as u
 from astropy.time import Time
+from astropy import utils
 import numpy as np
 import pytz
 
@@ -67,8 +68,7 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
 
 
 def _target_is_vector(target):
-    if hasattr(target, '__iter__') and not (isinstance(target, SkyCoord)
-                                            and target.isscalar):
+    if utils.isiterable(target):
         return True
     else:
         return False
