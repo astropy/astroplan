@@ -13,7 +13,7 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
 from astropy.extern.six import string_types
 import astropy.units as u
 from astropy.time import Time
-from astropy import utils
+from astropy.utils import isiterable
 import numpy as np
 import pytz
 
@@ -65,13 +65,6 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
         time_grid = np.linspace(start, end, N)*u.day
 
     return t0 + time_grid
-
-
-def _target_is_vector(target):
-    if utils.isiterable(target):
-        return True
-    else:
-        return False
 
 
 class Observer(object):
@@ -459,7 +452,7 @@ class Observer(object):
             return altaz_frame
         else:
             # If target is a list of targets:
-            if _target_is_vector(target) and not isinstance(target, SkyCoord):
+            if isiterable(target) and not isinstance(target, SkyCoord):
                 get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
                 transformed_coords = self._transform_target_list_to_altaz(time,
                                                                           list(map(get_coord, target)))
@@ -506,7 +499,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        if _target_is_vector(target):
+        if isiterable(target):
             get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
             coordinate = SkyCoord(list(map(get_coord, target)))
         else:
@@ -705,7 +698,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        target_is_vector = _target_is_vector(target)
+        target_is_vector = isiterable(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
@@ -767,7 +760,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        target_is_vector = _target_is_vector(target)
+        target_is_vector = isiterable(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
@@ -838,7 +831,7 @@ class Observer(object):
                 return previous_event
 
         if which == 'nearest':
-            if _target_is_vector(target):
+            if isiterable(target):
                 return_times = []
                 for next_e, prev_e in zip(next_event, previous_event):
                     if abs(time - prev_e) < abs(time - next_e):
@@ -1548,7 +1541,7 @@ class Observer(object):
             time = Time(time)
 
         altaz = self.altaz(time, target)
-        if _target_is_vector(target):
+        if isiterable(target):
             observable = [bool(alt > horizon) for alt in altaz.alt]
         else:
             observable = bool(altaz.alt > horizon)
@@ -1659,7 +1652,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        if _target_is_vector(target):
+        if isiterable(target):
             coords = [t.coord if hasattr(t, 'coord') else t
                       for t in target]
 
