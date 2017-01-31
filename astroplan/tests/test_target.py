@@ -2,11 +2,12 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+import pytest
+
 # Third-party
 import astropy.units as u
 from astropy.coordinates import SkyCoord, GCRS, ICRS
 from astropy.time import Time
-from astropy.tests.helper import pytest
 
 # Package
 from ..target import FixedTarget, get_skycoord

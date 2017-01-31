@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, get_sun, get_moon
 from astropy.utils import minversion
-from astropy.tests.helper import pytest
+import pytest
 
 from ..observer import Observer
 from ..target import FixedTarget
