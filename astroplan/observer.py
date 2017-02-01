@@ -116,19 +116,23 @@ class Observer(object):
         """
         Parameters
         ----------
-        name : str
-            A short name for the telescope, observatory or location.
-
         location : `~astropy.coordinates.EarthLocation`
             The location (latitude, longitude, elevation) of the observatory.
 
-        longitude : float, str, `~astropy.units.Quantity` (optional)
-            The longitude of the observing location. Should be valid input for
-            initializing a `~astropy.coordinates.Longitude` object.
+        timezone : str or `datetime.tzinfo` (optional)
+            The local timezone to assume. If a string, it will be passed
+            through ``pytz.timezone()`` to produce the timezone object.
+
+        name : str
+            A short name for the telescope, observatory or location.
 
         latitude : float, str, `~astropy.units.Quantity` (optional)
             The latitude of the observing location. Should be valid input for
             initializing a `~astropy.coordinates.Latitude` object.
+
+        longitude : float, str, `~astropy.units.Quantity` (optional)
+            The longitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Longitude` object.
 
         elevation : `~astropy.units.Quantity` (optional), default = 0 meters
             The elevation of the observing location, with respect to sea
@@ -142,10 +146,6 @@ class Observer(object):
 
         temperature : `~astropy.units.Quantity` (optional)
             The ambient temperature.
-
-        timezone : str or `datetime.tzinfo` (optional)
-            The local timezone to assume. If a string, it will be passed
-            through ``pytz.timezone()`` to produce the timezone object.
 
         description : str (optional)
             A short description of the telescope, observatory or observing
@@ -354,9 +354,6 @@ class Observer(object):
 
         targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
             List of target coordinates
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
 
         Returns
         -------
@@ -683,9 +680,6 @@ class Observer(object):
         rise_set : str - either 'rising' or 'setting'
             Compute prev/next rise or prev/next set
 
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
-
         horizon : `~astropy.units.Quantity`
             Degrees above/below actual horizon to use
             for calculating rise/set times (i.e.,
@@ -750,9 +744,6 @@ class Observer(object):
         antitransit : bool
             Toggle compute antitransit (below horizon, equivalent to midnight
             for the Sun)
-
-        location : `~astropy.coordinates.EarthLocation`
-            Location of observer
 
         N : int
             Number of altitudes to compute when searching for
