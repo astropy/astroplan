@@ -724,7 +724,7 @@ class Observer(object):
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altaz = self.altaz(times, target, grid=True)
+        altaz = self.altaz(times, target)
         altitudes = altaz.alt
 
         al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
@@ -780,7 +780,7 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target, grid=True)
+        altaz = self.altaz(times, target)
         altitudes = altaz.alt
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
