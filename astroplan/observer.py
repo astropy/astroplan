@@ -590,9 +590,8 @@ class Observer(object):
 
         before_indices = np.array(np.nonzero(condition))
         # we want to add an vector like (0, 1, ...) to get after indices
-        array_to_add = np.zeros(before_indices.shape[0])[:, np.newaxis].astype(int)
-        array_to_add[1] = 1
-        after_indices = before_indices + array_to_add
+        after_indices = before_indices.copy()
+        after_indices[1, :] += 1
 
         al1 = alt[tuple(before_indices)]
         al2 = alt[tuple(after_indices)]
