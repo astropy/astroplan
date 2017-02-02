@@ -358,11 +358,8 @@ class Observer(object):
                 return False
         return True
 
-<<<<<<< HEAD
+
     def _preprocess_inputs(self, time, target=None, grid=False):
-=======
-    def _preprocess_inputs(self, time, target, grid=False):
->>>>>>> remove automatic gridding of targets and times
         """
         Preprocess time and target inputs
 
@@ -1520,11 +1517,9 @@ class Observer(object):
 
         altaz = self.altaz(time, target)
         observable = altaz.alt > horizon
-<<<<<<< HEAD
+
         if altaz.isscalar:
             observable = bool(observable)
-=======
->>>>>>> remove automatic gridding of targets and times
 
         if not return_altaz:
             return observable
@@ -1573,14 +1568,11 @@ class Observer(object):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-<<<<<<< HEAD
+
         if solar_altitude.isscalar:
             return bool(solar_altitude < horizon)
         else:
             return solar_altitude < horizon
-=======
-        return solar_altitude < horizon
->>>>>>> remove automatic gridding of targets and times
 
     def local_sidereal_time(self, time, kind='apparent', model=None):
         """
