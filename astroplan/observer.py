@@ -389,19 +389,15 @@ class Observer(object):
         # convert any kind of target argument to non-scalar SkyCoord
         target = get_skycoord(target)
 
-        if grid:
-            # now we broadcast the targets array so that the first index
-            # iterates over targets, any other indices over times
-            if not target.isscalar:
-                if time.isscalar:
-                    target = target[:, np.newaxis]
+        if not self._is_broadcastable(target.shape, time.shape):
+            if grid:
                 while target.ndim <= time.ndim:
                     target = target[:, np.newaxis]
-        if not self._is_broadcastable(target.shape, time.shape):
-            raise ValueError(
-                'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
-                    time.shape, target.shape
-                ))
+            else:
+                raise ValueError(
+                    'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
+                        time.shape, target.shape
+                    ))
         return time, target
 
     def altaz(self, time, target=None, obswl=None, grid=False):
@@ -1514,13 +1510,15 @@ class Observer(object):
         >>> apo.target_is_up(time, aldebaran)
         True
         >>> apo.target_is_up(time, [aldebaran, vega])
-        [True, False]
+        np.array([ True, False], dtype=bool)
         """
         if not isinstance(time, Time):
             time = Time(time)
 
         altaz = self.altaz(time, target)
         observable = altaz.alt > horizon
+        if altaz.isscalar:
+            observable = bool(observable)
 
         if not return_altaz:
             return observable
@@ -1569,7 +1567,10 @@ class Observer(object):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-        return solar_altitude < horizon
+        if solar_altitude.isscalar:
+            return bool(solar_altitude < horizon)
+        else:
+            return solar_altitude < horizon
 
     def local_sidereal_time(self, time, kind='apparent', model=None):
         """
