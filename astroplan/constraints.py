@@ -399,7 +399,7 @@ class AtNightConstraint(Constraint):
                     observer.pressure = 0
 
                 # find solar altitude at these times
-                altaz = observer.altaz(times, get_sun(times))
+                altaz = observer.altaz(times, get_sun(times), grid=False)
                 altitude = altaz.alt
                 # cache the altitude
                 observer._altaz_cache[aakey] = dict(times=times,
@@ -442,7 +442,7 @@ class SunSeparationConstraint(Constraint):
         self.max = max
 
     def compute_constraint(self, times, observer, targets):
-        sunaltaz = observer.altaz(times, get_sun(times))
+        sunaltaz = observer.altaz(times, get_sun(times), grid=False)
         target_coos = [target.coord if hasattr(target, 'coord') else target
                        for target in targets]
         target_altazs = [observer.altaz(times, coo) for coo in target_coos]

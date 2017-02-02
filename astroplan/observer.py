@@ -1467,7 +1467,7 @@ class Observer(object):
             time = Time(time)
 
         moon = get_moon(time, location=self.location, ephemeris=ephemeris)
-        return self.altaz(time, moon)
+        return self.altaz(time, moon, grid=False)
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
