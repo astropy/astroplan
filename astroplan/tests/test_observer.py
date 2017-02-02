@@ -103,7 +103,7 @@ def test_altaz_multiple_targets():
     times = Time('1995-06-21 00:00:00') + np.linspace(0, 1, 5)*u.day
 
     obs = Observer(location=location)
-    transformed_coords = obs.altaz(times, targets)
+    transformed_coords = obs.altaz(times[:,np.newaxis], targets).T
     altitudes = transformed_coords.alt
 
     # Double check by doing one star the normal way with astropy
@@ -121,7 +121,7 @@ def test_altaz_multiple_targets():
 
     # check that output elements are the proper lengths and types
     assert isinstance(vega_list_alt, Latitude)
-    assert len(vega_list_alt[0, :]) == len(times)
+    assert len(vega_list_alt) == len(times)
 
     # Check for single time
     single_time = times[0]
@@ -142,7 +142,7 @@ def test_altaz_multiple_targets():
     capella_FixedTarget = FixedTarget(coord=capella, name='Capella')
     sirius_FixedTarget = FixedTarget(coord=sirius, name='Sirius')
     ft_list = [vega_FixedTarget, capella_FixedTarget, sirius_FixedTarget]
-    ft_vector_alt = obs.altaz(times, ft_list).alt
+    ft_vector_alt = obs.altaz(times[:, np.newaxis], ft_list).T.alt
     assert all(ft_vector_alt[0, :] == vega_alt)
     assert all(ft_vector_alt[2, :] == sirius_alt)
 
@@ -1207,15 +1207,15 @@ def test_tonight():
 
     during_day = obs.tonight(time=noon, horizon=horizon)
     during_night = obs.tonight(time=midnight, horizon=horizon)
-    
-    assert (abs(sunset - during_day[0].datetime) < 
+
+    assert (abs(sunset - during_day[0].datetime) <
         datetime.timedelta(minutes=threshold_minutes))
-    assert (abs(sunrise - during_day[1].datetime) < 
+    assert (abs(sunrise - during_day[1].datetime) <
         datetime.timedelta(minutes=threshold_minutes))
 
-    assert (abs(midnight.datetime - during_night[0].datetime) < 
+    assert (abs(midnight.datetime - during_night[0].datetime) <
         datetime.timedelta(minutes=threshold_minutes))
-    assert (abs(sunrise - during_night[1].datetime) < 
+    assert (abs(sunrise - during_night[1].datetime) <
         datetime.timedelta(minutes=threshold_minutes))
 
     astro_sunset = Time('2016-08-08 06:13:00')

@@ -1510,7 +1510,7 @@ class Observer(object):
         >>> apo.target_is_up(time, aldebaran)
         True
         >>> apo.target_is_up(time, [aldebaran, vega])
-        np.array([ True, False], dtype=bool)
+        array([ True, False], dtype=bool)
         """
         if not isinstance(time, Time):
             time = Time(time)
