@@ -359,7 +359,7 @@ class Observer(object):
                 return False
         return True
 
-    def _preprocess_inputs(self, time, target, grid=False):
+    def _preprocess_inputs(self, time, target, grid=True):
         """
         Preprocess time and target inputs
 
@@ -387,20 +387,22 @@ class Observer(object):
         # convert any kind of target argument to non-scalar SkyCoord
         target = get_skycoord(target)
 
-        if not self._is_broadcastable(target.shape, time.shape):
-            if grid:
-                # now we broadcast the targets array so that the first index
-                # iterates over targets, any other indices over times
+        if grid:
+            # now we broadcast the targets array so that the first index
+            # iterates over targets, any other indices over times
+            if not target.isscalar:
+                if time.isscalar:
+                    target = target[:, np.newaxis]
                 while target.ndim <= time.ndim:
                     target = target[:, np.newaxis]
-            else:
-                raise ValueError(
-                    'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
-                        time.shape, target.shape
-                    ))
+        if not self._is_broadcastable(target.shape, time.shape):
+            raise ValueError(
+                'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
+                    time.shape, target.shape
+                ))
         return time, target
 
-    def altaz(self, time, target=None, obswl=None, grid=False):
+    def altaz(self, time, target=None, obswl=None, grid=True):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
@@ -1517,6 +1519,12 @@ class Observer(object):
 
         altaz = self.altaz(time, target)
         observable = altaz.alt > horizon
+        if altaz.isscalar:
+            observable = bool(observable)
+        else:
+            # TODO: simply return observable if we move to
+            # a fully broadcasted API
+            observable = [value for value in observable.flat]
 
         if not return_altaz:
             return observable
@@ -1565,7 +1573,12 @@ class Observer(object):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-        return solar_altitude < horizon
+        if solar_altitude.isscalar:
+            return bool(solar_altitude < horizon)
+        else:
+            # TODO: simply return solar_altitude < horizon if we move to
+            # a fully broadcasted API
+            return [val for val in (solar_altitude < horizon).flat]
 
     def local_sidereal_time(self, time, kind='apparent', model=None):
         """
