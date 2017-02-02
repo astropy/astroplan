@@ -2,16 +2,16 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from numpy.testing import assert_raises
-
 # Third-party
 import astropy.units as u
 from astropy.coordinates import SkyCoord, GCRS, ICRS
 from astropy.time import Time
+from astropy.tests.helper import pytest
 
 # Package
 from ..target import FixedTarget, get_skycoord
 from ..observer import Observer
+
 
 def test_FixedTarget_from_name():
     """
@@ -57,7 +57,8 @@ def test_get_skycoord():
 
     coo = get_skycoord(m31)
     assert coo.is_equivalent_frame(ICRS())
-    assert_raises(TypeError, len, coo)
+    with pytest.raises(TypeError) as exc_info:
+        len(coo)
 
     coo = get_skycoord([m31])
     assert coo.is_equivalent_frame(ICRS())
