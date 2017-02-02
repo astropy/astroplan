@@ -359,7 +359,27 @@ class Observer(object):
                 return False
         return True
 
-    def _broadcast_targets_times(self, time, target):
+    def _preprocess_inputs(self, time, target, grid=False):
+        """
+        Preprocess time and target inputs
+
+        This routine takes the inputs for time and target and attempts to
+        return a single `~astropy.time.Time` and `~astropy.coordinates.SkyCoord`
+        for each argument, which may be non-scalar if necessary.
+
+        time : `~astropy.time.Time` or other (see below)
+            The time(s) to use in the calculation. It can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time` object)
+
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list
+            The target(s) to use in the calculation.
+
+        grid: bool
+            If True, and the time and target objects cannot be broadcast,
+            the target object will have extra dimensions packed onto the end,
+            so that calculations with M targets and N times will return an (M, N)
+            shaped result. Useful for grid searches for rise/set times etc.
+        """
         # make sure we have a non-scalar time
         if not isinstance(time, Time):
             time = Time(time)
@@ -368,13 +388,19 @@ class Observer(object):
         target = get_skycoord(target)
 
         if not self._is_broadcastable(target.shape, time.shape):
-            # now we broadcast the targets array so that the first index
-            # iterates over targets, any other indices over times
-            while target.ndim <= time.ndim:
-                target = target[:, np.newaxis]
+            if grid:
+                # now we broadcast the targets array so that the first index
+                # iterates over targets, any other indices over times
+                while target.ndim <= time.ndim:
+                    target = target[:, np.newaxis]
+            else:
+                raise ValueError(
+                    'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
+                        time.shape, target.shape
+                    ))
         return time, target
 
-    def altaz(self, time, target=None, obswl=None):
+    def altaz(self, time, target=None, obswl=None, grid=False):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
@@ -396,6 +422,12 @@ class Observer(object):
 
         obswl : `~astropy.units.Quantity` (optional)
             Wavelength of the observation used in the calculation.
+
+        grid: bool
+            If True, and the time and target objects cannot be broadcast,
+            the target object will have extra dimensions packed onto the end,
+            so that calculations with M targets and N times will return an (M, N)
+            shaped result. Useful for grid searches for rise/set times etc.
 
         Returns
         -------
@@ -427,7 +459,7 @@ class Observer(object):
         >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
         if target is not None:
-            time, target = self._broadcast_targets_times(time, target)
+            time, target = self._preprocess_inputs(time, target, grid)
 
         altaz_frame = AltAz(location=self.location, obstime=time,
                             pressure=self.pressure, obswl=obswl,
@@ -465,7 +497,7 @@ class Observer(object):
         .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
 
         """
-        time, coordinate = self._broadcast_targets_times(time, target)
+        time, coordinate = self._preprocess_inputs(time, target)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
@@ -641,7 +673,7 @@ class Observer(object):
         alt : `~astropy.unit.Quantity`
             Array of altitudes
         """
-        LST, target = self._broadcast_targets_times(LST, target)
+        LST, target = self._preprocess_inputs(LST, target)
         alt = np.arcsin(np.sin(self.location.latitude.radian) *
                         np.sin(target.dec) +
                         np.cos(self.location.latitude.radian) *
@@ -693,7 +725,7 @@ class Observer(object):
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altaz = self.altaz(times, target)
+        altaz = self.altaz(times, target, grid=True)
         altitudes = altaz.alt
 
         al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
@@ -749,7 +781,7 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target)
+        altaz = self.altaz(times, target, grid=True)
         altitudes = altaz.alt
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
@@ -1432,27 +1464,8 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
-        # handles scalar and non-scalar time inputs differently
-
-        if time.isscalar:
-            altaz_frame = AltAz(location=self.location, obstime=time)
-            sun = get_sun(time).transform_to(altaz_frame)
-
-            moon = get_moon(time, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
-            return moon
-
-        else:
-            moon_coords = []
-            for t in time:
-                altaz_frame = AltAz(location=self.location, obstime=t)
-                moon_coord = get_moon(t, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
-                moon_coords.append(moon_coord)
-            obstime = [coord.obstime for coord in moon_coords]
-            alts = u.Quantity([coord.alt for coord in moon_coords])
-            azs = u.Quantity([coord.az for coord in moon_coords])
-            dists = u.Quantity([coord.distance for coord in moon_coords])
-            return SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=self.location))
+        moon = get_moon(time, location=self.location, ephemeris=ephemeris)
+        return self.altaz(time, moon)
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
@@ -1480,7 +1493,7 @@ class Observer(object):
 
         Returns
         -------
-        observable : boolean
+        observable : boolean or np.ndarray(bool)
             True if ``target`` is above ``horizon`` at ``time``, else False.
 
         Examples
@@ -1503,10 +1516,7 @@ class Observer(object):
             time = Time(time)
 
         altaz = self.altaz(time, target)
-        if isiterable(target):
-            observable = [bool(alt > horizon) for alt in altaz.alt]
-        else:
-            observable = bool(altaz.alt > horizon)
+        observable = altaz.alt > horizon
 
         if not return_altaz:
             return observable
@@ -1536,7 +1546,7 @@ class Observer(object):
 
         Returns
         -------
-        sun_below_horizon : bool
+        sun_below_horizon : bool or np.ndarray(bool)
             `True` if sun is below ``horizon`` at ``time``, else `False`.
 
         Examples
@@ -1555,7 +1565,7 @@ class Observer(object):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-        return bool(solar_altitude < horizon)
+        return solar_altitude < horizon
 
     def local_sidereal_time(self, time, kind='apparent', model=None):
         """
@@ -1611,21 +1621,8 @@ class Observer(object):
         hour_angle : `~astropy.coordinates.Angle`
             The hour angle(s) of the target(s) at ``time``
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if isiterable(target):
-            coords = [t.coord if hasattr(t, 'coord') else t
-                      for t in target]
-
-            hour_angle = Longitude([self.local_sidereal_time(time) - coord.ra
-                                    for coord in coords])
-
-        else:
-            coord = target.coord if hasattr(target, 'coord') else target
-            hour_angle = Longitude(self.local_sidereal_time(time) - coord.ra)
-
-        return hour_angle
+        time, target = self._preprocess_inputs(time, target)
+        return Longitude(self.local_sidereal_time(time) - target.ra)
 
     @u.quantity_input(horizon=u.degree)
     def tonight(self, time=None, horizon=0 * u.degree, obswl=None):
@@ -1654,11 +1651,12 @@ class Observer(object):
             A tuple of times corresponding to the start and end of current night
         """
         current_time = Time.now() if time is None else time
-        if self.is_night(current_time, horizon=horizon, obswl=obswl):
-            start_time = current_time
-        else:
-            start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
-
-        end_time = self.sun_rise_time(current_time, which='next', horizon=horizon)
+        night_mask = self.is_night(current_time, horizon=horizon, obswl=obswl)
+        start_time = np.where(night_mask, current_time,
+                              self.sun_set_time(current_time, which='next', horizon=horizon))
+        # np.where gives us a list of start Times - convert to Time object
+        if not isinstance(start_time, Time):
+            start_time = Time(start_time)
+        end_time = self.sun_rise_time(start_time, which='next', horizon=horizon)
 
         return start_time, end_time
