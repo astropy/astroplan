@@ -477,7 +477,8 @@ class Scheduler(object):
         ----------
         blocks : list of `~astroplan.scheduling.ObservingBlock` objects
             Can be modified as it is already copied by ``__call__``
-         Returns
+
+        Returns
         -------
         schedule : `~astroplan.scheduling.Schedule`
             A schedule objects which consists of `~astroplan.scheduling.Slot`

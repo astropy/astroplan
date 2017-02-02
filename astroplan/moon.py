@@ -22,9 +22,6 @@ def moon_phase_angle(time, ephemeris=None):
     time : `~astropy.time.Time`
         Time of observation
 
-    location : `~astropy.coordinates.EarthLocation`
-        Location of observer
-
     ephemeris : str, optional
         Ephemeris to use.  If not given, use the one set with
         `~astropy.coordinates.solar_system_ephemeris` (which is
@@ -52,9 +49,6 @@ def moon_illumination(time, ephemeris=None):
     ----------
     time : `~astropy.time.Time`
         Time of observation
-
-    location : `~astropy.coordinates.EarthLocation`
-        Location of observer
 
     ephemeris : str, optional
         Ephemeris to use.  If not given, use the one set with

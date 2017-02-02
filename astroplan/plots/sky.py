@@ -236,13 +236,50 @@ def plot_sky_24hr(target, observer, time, delta=1*u.hour, ax=None,
     Plots target positions in the sky with respect to the observer's location
     over a twenty-four hour period centered on ``time``.
 
-    Most arguments are copies of those in `~astroplan.plots.plot_sky`, see
-    docs for them. The unique keywords for this function include:
-
     Parameters
     ----------
+    target : `~astroplan.FixedTarget`
+        The celestial body of interest.
+
+    observer: `~astroplan.Observer`
+        The person, telescope, observatory, etc. doing the observing.
+
+    time : `~astropy.time.Time`
+        If pass in an `~astropy.time.Time` object with just one instance in
+        time, whether it be a scalar or an array (e.g. ``Time('2000-1-1')``,
+        ``Time(['2000-1-1'])``, ``[Time('2000-1-1')]``),
+        `~astroplan.plots.plot_sky` will return plot at one instance in
+        time.  If pass in an `~astropy.time.Time` object with multiple
+        instances in time (e.g. ``Time(['2000-1-1', '2000-1-2'])``) will
+        show positions plotted at the exact times specified.
+
     delta : `~astropy.units.Quantity` (optional)
         Interval between times plotted.
+
+    ax : `~matplotlib.axes.Axes` or None, optional.
+        The `~matplotlib.axes.Axes` object to be drawn on.
+        If None, uses the current `~matplotlib.axes.Axes`.
+
+    style_kwargs : dict or None, optional.
+        A dictionary of keywords passed into `~matplotlib.pyplot.scatter`
+        to set plotting styles.
+
+    north_to_east_ccw : bool, optional.
+        True by default, meaning that azimuth is shown increasing
+        counter-clockwise (CCW), or with North at top, East at left, etc.
+        To show azimuth increasing clockwise (CW), set to False.
+
+    grid : bool, optional.
+        True by default, meaning that grid is drawn.
+
+    az_label_offset : ``~astropy.units.degree``, optional.
+        DANGER: It is not recommended that you change the default behavior,
+        as to do so makes it seem as if N/E/S/W are being decoupled from the
+        definition of azimuth (North from az = 0 deg., East from az = 90 deg.,
+        etc.).
+        An offset for azimuth labels from the North label.  A positive
+        offset will increase in the same direction as azimuth
+        (see ``north_to_east_ccw`` option).
 
     center_time_style_kwargs : dict or `None` (optional)
         Dictionary of style keyword arguments to pass to

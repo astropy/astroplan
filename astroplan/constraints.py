@@ -15,7 +15,7 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord, AltAz
+from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord
 from astropy import table
 import numpy as np
 
@@ -32,8 +32,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "max_best_rescale", "min_best_rescale"]
 
 
-def _get_altaz(times, observer, targets,
-               force_zero_pressure=False):
+def _get_altaz(times, observer, targets, force_zero_pressure=False):
     """
     Calculate alt/az for ``target`` at times linearly spaced between
     the two times in ``time_range`` with grid spacing ``time_resolution``
@@ -44,16 +43,13 @@ def _get_altaz(times, observer, targets,
     Parameters
     ----------
     times : `~astropy.time.Time`
-        Array of times on which to test the constraint
-
+        Array of times on which to test the constraint.
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
-        Target or list of targets
-
+        Target or list of targets.
     observer : `~astroplan.Observer`
-        The observer who has constraints ``constraints``
-
-    time_resolution : `~astropy.units.Quantity` (optional)
-        Set the time resolution in calculations of the altitude/azimuth
+        The observer who has constraints ``constraints``.
+    force_zero_pressure : bool
+        Forcefully use 0 pressure.
 
     Returns
     -------
@@ -94,10 +90,11 @@ def _get_moon_data(times, observer, force_zero_pressure=False):
     Parameters
     ----------
     times : `~astropy.time.Time`
-        Array of times on which to test the constraint
-
+        Array of times on which to test the constraint.
     observer : `~astroplan.Observer`
-        The observer who has constraints ``constraints``
+        The observer who has constraints ``constraints``.
+    force_zero_pressure : bool
+        Forcefully use 0 pressure.
 
     Returns
     -------
@@ -142,10 +139,8 @@ def _get_meridian_transit_times(times, observer, targets):
     ----------
     times : `~astropy.time.Time`
         Array of times on which to test the constraint
-
     observer : `~astroplan.Observer`
         The observer who has constraints ``constraints``
-
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
 
@@ -307,9 +302,9 @@ class AirmassConstraint(AltitudeConstraint):
     ----------
     max : float or `None`
         Maximum airmass of the target. `None` indicates no limit.
-
     min : float or `None`
         Minimum airmass of the target. `None` indicates no limit.
+    boolean_contstraint : bool
 
     Examples
     --------
