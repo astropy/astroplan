@@ -245,6 +245,7 @@ class Constraint(object):
             else:
                 targets = targets[..., np.newaxis]
         times, targets = observer._preprocess_inputs(times, targets, grid=False)
+
         result = self.compute_constraint(times, observer, targets)
 
         # make sure the output has the same shape as would result from
@@ -257,6 +258,7 @@ class Constraint(object):
             output_shape = np.broadcast(a, b).shape
             if output_shape != result.shape:
                 result = broadcast_to(result, output_shape)
+
         return result
 
     @abstractmethod
@@ -490,6 +492,7 @@ class SunSeparationConstraint(Constraint):
         # 'get_sun' returns ICRS coords.
         sun = get_body('sun', times, location=observer.location)
         solar_separation = sun.separation(targets)
+
         if self.min is None and self.max is not None:
             mask = self.max >= solar_separation
         elif self.max is None and self.min is not None:
