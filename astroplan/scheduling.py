@@ -230,7 +230,7 @@ class Schedule(object):
         -----------
         start_time : `~astropy.time.Time`
             The starting time of the schedule; the start of your
-            observing window
+            observing window.
         end_time : `~astropy.time.Time`
            The ending time of the schedule; the end of your
            observing window
