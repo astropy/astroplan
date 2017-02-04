@@ -9,7 +9,7 @@ from astropy.coordinates import SkyCoord
 
 from ..utils import time_grid_from_range
 from ..observer import Observer
-from ..target import FixedTarget
+from ..target import FixedTarget, get_skycoord
 from ..constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
                            MoonIlluminationConstraint)
 from ..scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
@@ -110,9 +110,9 @@ def test_transitioner():
     trans = Transitioner(slew_rate=slew_rate)
     start_time = Time('2016-02-06 03:00:00')
     transition = trans(blocks[0], blocks[2], start_time, apo)
-    aaz = _get_altaz(Time([start_time]), apo,
-                     [blocks[0].target, blocks[2].target])['altaz']
-    sep = aaz[0].separation(aaz[1])[0]
+    aaz = _get_altaz(start_time, apo,
+                     get_skycoord([blocks[0].target, blocks[2].target]))['altaz']
+    sep = aaz[0].separation(aaz[1])
     assert isinstance(transition, TransitionBlock)
     assert transition.duration == sep/slew_rate
     blocks = [ObservingBlock(vega, 10*u.minute, 0, configuration={'filter': 'v'}),
@@ -239,7 +239,7 @@ def test_scorer():
     constraint = AirmassConstraint(max=4)
     times = time_grid_from_range(Time(['2016-02-06 00:00', '2016-02-06 08:00']),
                                  time_resolution=20*u.minute)
-    c = constraint(apo, [vega, rigel], times)
+    c = constraint(apo, [vega, rigel], times, grid_times_targets=True)
     block = ObservingBlock(vega, 1*u.hour, 0, constraints=[constraint])
     block2 = ObservingBlock(rigel, 1*u.hour, 0, constraints=[constraint])
     scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
@@ -248,7 +248,7 @@ def test_scorer():
     assert np.array_equal(c, scores)
 
     constraint2 = AirmassConstraint(max=2, boolean_constraint=False)
-    c2 = constraint2(apo, [vega, rigel], times)
+    c2 = constraint2(apo, [vega, rigel], times, grid_times_targets=True)
     block = ObservingBlock(vega, 1*u.hour, 0, constraints=[constraint])
     block2 = ObservingBlock(rigel, 1*u.hour, 0, constraints=[constraint2])
     # vega's score should be = c[0], rigel's should be =  c2[1]
