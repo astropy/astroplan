@@ -222,13 +222,14 @@ class Constraint(object):
 
         # make sure the output has the same shape as would result from
         # broadcasting times and targets against each other
-        shp1, shp2 = times.shape, targets.shape
-        x = np.array([1])
-        a = as_strided(x, shape=shp1, strides=[0] * len(shp1))
-        b = as_strided(x, shape=shp2, strides=[0] * len(shp2))
-        output_shape = np.broadcast(a, b).shape
-        if output_shape != result.shape:
-            result = np.broadcast_to(result, output_shape)
+        if targets is not None:
+            shp1, shp2 = times.shape, targets.shape
+            x = np.array([1])
+            a = as_strided(x, shape=shp1, strides=[0] * len(shp1))
+            b = as_strided(x, shape=shp2, strides=[0] * len(shp2))
+            output_shape = np.broadcast(a, b).shape
+            if output_shape != result.shape:
+                result = np.broadcast_to(result, output_shape)
         return result
 
     @abstractmethod
