@@ -15,9 +15,10 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord
+from astropy.coordinates import get_sun, get_moon
 from astropy import table
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 
 # Package
 from .moon import moon_illumination
@@ -221,7 +222,11 @@ class Constraint(object):
 
         # make sure the output has the same shape as would result from
         # broadcasting times and targets against each other
-        output_shape = np.broadcast(times, targets).shape
+        shp1, shp2 = times.shape, targets.shape
+        x = np.array([1])
+        a = as_strided(x, shape=shp1, strides=[0] * len(shp1))
+        b = as_strided(x, shape=shp2, strides=[0] * len(shp2))
+        output_shape = np.broadcast(a, b).shape
         if output_shape != result.shape:
             result = np.broadcast_to(result, output_shape)
         return result
