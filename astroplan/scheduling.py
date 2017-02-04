@@ -852,7 +852,7 @@ class Transitioner(object):
             # use the constraints cache for now, but should move that machinery
             # to observer
             from .constraints import _get_altaz
-            from astropy.time import Time
+            from .target import get_skycoord
             if oldblock.target != newblock.target:
                 from .target import get_skycoord
                 targets = get_skycoord([oldblock.target, newblock.target])
