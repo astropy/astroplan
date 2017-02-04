@@ -236,13 +236,17 @@ be within some angular separation from Vega – we'll call it
   a target could have from Vega.
 
 * We'll also define a method ``compute_constraints`` which takes three
-  arguments: an array of M times to test, an `~astroplan.Observer` object, and
-  a list of N `~astroplan.FixedTarget` objects. ``compute_constraints``
-  will return a (N, M) shaped matrix of booleans that describe whether or not each target
-  meets the constraints.  The super class `~astroplan.Constraint` has a
-  ``__call__`` method which will run your custom class's
-  ``compute_constraints`` method when you check if a target is observable
-  using `~astroplan.is_observable` or `~astroplan.is_always_observable`.
+  arguments: a `~astropy.time.Time` or array of times to test,
+  an `~astroplan.Observer` object, and some targets (a single target or a list of
+  `~astroplan.FixedTarget` or `~astropy.coordinates.SkyCoord` objects).
+  ``compute_constraints`` will return an array of booleans that describe whether
+  or not each target meets the constraints.  The super class `~astroplan.Constraint` has a
+  ``__call__`` method which will run your custom class's ``compute_constraints`` method
+  when you check if a target is observable using `~astroplan.is_observable`
+  or `~astroplan.is_always_observable`. This ``__call__`` method also checks the
+  arguments and takes care of ensuring the returned array of booleans is the correct
+  shape, so ``compute_constraints`` should not normally be called directly - use the
+  ``__call__`` method instead.
 
 * We also want to provide the option of having the constraint output
   a non-boolean score. Where being closer to the minimum separation
@@ -279,8 +283,10 @@ Here's our ``VegaSeparationConstraint`` implementation::
             vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
 
             # Calculate separation between target and vega
-            vega_separation = Angle([vega.separation(target.coord)
-                                     for target in targets])
+            # Targets are automatically converted to SkyCoord objects
+            # by __call__ before compute_constraint is called.
+            vega_separation = vega.separation(targets)
+
             if self.boolean_constraint:
                 # If a maximum is specified but no minimum
                 if self.min is None and self.max is not None:
@@ -339,11 +345,15 @@ The resulting list of booleans indicates that the only target separated by
 5 and 30 degrees from Vega is Albireo. Following this pattern, you can design
 arbitrarily complex criteria for constraints.
 
-To see the (target x time) array for the non-boolean score::
+By default, calling a constraint will try to broadcast the time and target arrays
+against each other, and raise a `ValueError` if this is not possible. To see the
+(target x time) array for the constraint, there is an optional "grid_times_targets"
+argument. Here we find the (target x time) array for the non-boolean score::
 
     >>> constraint = VegaSeparationConstraint(min=5*u.deg, max=30*u.deg,
     ...                                       boolean_constraint=False)
-    >>> print(constraint(subaru, targets, time_range=time_range)
+    >>> print(constraint(subaru, targets, time_range=time_range,
+    ...                  grid_times_targets=True))
     [[ 0.          0.          0.          0.          0.          0.          0.
        0.          0.          0.          0.          0.        ]
      [ 0.          0.          0.          0.          0.          0.          0.

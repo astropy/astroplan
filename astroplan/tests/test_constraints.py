@@ -304,7 +304,7 @@ def test_docs_example():
 
             # Calculate separation between target and vega
             # Targets are automatically converted to SkyCoord objects
-            # before compute_constraint is called.
+            # by __call__ before compute_constraint is called.
             vega_separation = vega.separation(targets)
 
             # If a maximum is specified but no minimum
