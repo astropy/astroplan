@@ -17,6 +17,7 @@ from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import get_sun, get_moon
 from astropy import table
+from astropy.utils.compat.numpy import broadcast_to
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
@@ -229,7 +230,7 @@ class Constraint(object):
             b = as_strided(x, shape=shp2, strides=[0] * len(shp2))
             output_shape = np.broadcast(a, b).shape
             if output_shape != result.shape:
-                result = np.broadcast_to(result, output_shape)
+                result = broadcast_to(result, output_shape)
         return result
 
     @abstractmethod
