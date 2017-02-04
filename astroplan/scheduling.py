@@ -76,7 +76,7 @@ class ObservingBlock(object):
             return None
         # TODO: setup a way of caching or defining it as an attribute during scheduling
         elif self.observer:
-            return {constraint: constraint(self.observer, [self.target],
+            return {constraint: constraint(self.observer, self.target,
                                            times=[self.start_time, self.start_time + self.duration])
                     for constraint in self.constraints}
 
@@ -139,12 +139,12 @@ class Scorer(object):
             # TODO: change the default constraints from None to []
             if block.constraints:
                 for constraint in block.constraints:
-                    applied_score = constraint(self.observer, [block.target],
-                                               times=times)[0]
+                    applied_score = constraint(self.observer, block.target,
+                                               times=times)
                     score_array[i] *= applied_score
         targets = [block.target for block in self.blocks]
         for constraint in self.global_constraints:
-            score_array *= constraint(self.observer, targets, times)
+            score_array *= constraint(self.observer, targets, times, grid_times_targets=True)
         return score_array
 
     @classmethod
@@ -846,10 +846,10 @@ class Transitioner(object):
             from .constraints import _get_altaz
             from astropy.time import Time
             if oldblock.target != newblock.target:
-                aaz = _get_altaz(Time([start_time]), observer,
-                                 [oldblock.target, newblock.target])['altaz']
-                # TODO: make this [0] unnecessary by fixing _get_altaz to behave well in scalar-time case
-                sep = aaz[0].separation(aaz[1])[0]
+                from .target import get_skycoord
+                targets = get_skycoord([oldblock.target, newblock.target])
+                aaz = _get_altaz(start_time, observer, targets)['altaz']
+                sep = aaz[0].separation(aaz[1])
                 if sep/self.slew_rate > 1 * u.second:
                     components['slew_time'] = sep / self.slew_rate
 
