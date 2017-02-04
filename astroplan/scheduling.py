@@ -17,6 +17,7 @@ from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
+from .target import get_skycoord
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner', 'Scorer']
@@ -114,6 +115,7 @@ class Scorer(object):
         self.observer = observer
         self.schedule = schedule
         self.global_constraints = global_constraints
+        self.targets = get_skycoord([block.target for block in self.blocks])
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -142,9 +144,9 @@ class Scorer(object):
                     applied_score = constraint(self.observer, block.target,
                                                times=times)
                     score_array[i] *= applied_score
-        targets = [block.target for block in self.blocks]
         for constraint in self.global_constraints:
-            score_array *= constraint(self.observer, targets, times, grid_times_targets=True)
+            score_array *= constraint(self.observer, self.targets, times,
+                                      grid_times_targets=True)
         return score_array
 
     @classmethod
@@ -573,7 +575,7 @@ class SequentialScheduler(Scheduler):
                 else:
                     constraint_res = []
                     for constraint in b._all_constraints:
-                        constraint_res.append(constraint(self.observer, [b.target],
+                        constraint_res.append(constraint(self.observer, b.target,
                                                          times))
                     # take the product over all the constraints *and* times
                     block_constraint_results.append(np.prod(constraint_res))
