@@ -245,7 +245,6 @@ class Constraint(object):
             else:
                 targets = targets[..., np.newaxis]
         times, targets = observer._preprocess_inputs(times, targets, grid=False)
-
         result = self.compute_constraint(times, observer, targets)
 
         # make sure the output has the same shape as would result from
