@@ -448,7 +448,7 @@ class AltitudeConstraint(Constraint):
             return max_best_rescale(alt, self.min, self.max)
 
 
-class AirmassConstraint(AltitudeConstraint):
+class AirmassConstraint(Constraint):
     """
     Constrain the airmass of a target.
 
