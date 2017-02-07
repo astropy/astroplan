@@ -15,7 +15,7 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon
+from astropy.coordinates import get_sun, get_moon, SkyCoord
 from astropy import table
 from astropy.utils.compat.numpy import broadcast_to
 import numpy as np
@@ -66,6 +66,7 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
     # convert times, targets to tuple for hashing
     try:
         aakey = (tuple(times.jd), targets)
+        hash(aakey)
     except:
         aakey = (times.jd, targets)
 
@@ -115,6 +116,7 @@ def _get_moon_data(times, observer, force_zero_pressure=False):
     # convert times to tuple for hashing
     try:
         aakey = tuple(times.jd)
+        hash(aakey)
     except:
         aakey = (times.jd,)
 
@@ -164,6 +166,7 @@ def _get_meridian_transit_times(times, observer, targets):
     # convert times to tuple for hashing
     try:
         aakey = (tuple(times.jd), targets)
+        hash(aakey)
     except:
         aakey = (times.jd, targets)
 
@@ -216,9 +219,13 @@ class Constraint(object):
                                          time_resolution=time_grid_resolution)
 
         if grid_times_targets:
-            targets = get_skycoord(targets)[:, np.newaxis]
+            targets = get_skycoord(targets)
+            if targets.isscalar:
+                # ensure we have a (1, 1) shape coord
+                targets = SkyCoord(np.tile(targets, 1))[:, np.newaxis]
+            else:
+                targets = targets[..., np.newaxis]
         times, targets = observer._preprocess_inputs(times, targets, grid=False)
-
         result = self.compute_constraint(times, observer, targets)
 
         # make sure the output has the same shape as would result from
@@ -408,6 +415,7 @@ class AtNightConstraint(Constraint):
 
         try:
             aakey = (tuple(times.jd), 'sun')
+            hash(aakey)
         except:
             aakey = (times.jd, 'sun')
 
