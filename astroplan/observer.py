@@ -1668,11 +1668,15 @@ class Observer(object):
         """
         current_time = Time.now() if time is None else time
         night_mask = self.is_night(current_time, horizon=horizon, obswl=obswl)
-        start_time = np.where(night_mask, current_time,
-                              self.sun_set_time(current_time, which='next', horizon=horizon))
-        # np.where gives us a list of start Times - convert to Time object
-        if not isinstance(start_time, Time):
-            start_time = Time(start_time)
+        sun_set_time = self.sun_set_time(current_time, which='next', horizon=horizon)
+        # workaround for NPY <= 1.8, otherwise np.where works even in scalar case
+        if current_time.isscalar:
+            start_time = current_time if night_mask else sun_set_time
+        else:
+            start_time = np.where(night_mask, current_time, sun_set_time)
+            # np.where gives us a list of start Times - convert to Time object
+            if not isinstance(start_time, Time):
+                start_time = Time(start_time)
         end_time = self.sun_rise_time(start_time, which='next', horizon=horizon)
 
         return start_time, end_time
