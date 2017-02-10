@@ -359,7 +359,7 @@ class Observer(object):
                 return False
         return True
 
-    def _preprocess_inputs(self, time, target, grid=True):
+    def _preprocess_inputs(self, time, target=None, grid=True):
         """
         Preprocess time and target inputs
 
@@ -383,6 +383,9 @@ class Observer(object):
         # make sure we have a non-scalar time
         if not isinstance(time, Time):
             time = Time(time)
+
+        if target is None:
+            return time, None
 
         # convert any kind of target argument to non-scalar SkyCoord
         target = get_skycoord(target)
