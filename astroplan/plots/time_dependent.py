@@ -137,7 +137,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
     style_kwargs.setdefault('linestyle', '-')
-    style_kwargs.setdefault('linewidth', '1.5')
+    style_kwargs.setdefault('linewidth', 1.5)
     style_kwargs.setdefault('fmt', '-')
 
     # Populate time window if needed.
