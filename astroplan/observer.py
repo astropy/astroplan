@@ -574,7 +574,7 @@ class Observer(object):
             # Find index where altitude goes from above to below horizon
             condition = (alt[:, :-1, ...] > horizon) * (alt[:, 1:, ...] < horizon)
 
-        noncrossing_indices = np.count_nonzero(condition, axis=1) < 1
+        noncrossing_indices = np.sum(condition, axis=1, dtype=np.intp) < 1
         alt_lims1 = u.Quantity(np.zeros(output_shape), unit=u.deg)
         alt_lims2 = u.Quantity(np.zeros(output_shape), unit=u.deg)
         jd_lims1 = np.zeros(output_shape)
