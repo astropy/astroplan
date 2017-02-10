@@ -527,7 +527,7 @@ class SequentialScheduler(Scheduler):
             pre_filled = filled_times.reshape((2, 2))
         else:
             filled_times = Time(pre_filled.flatten())
-            pre_filled = filled_times.reshape((len(filled_times)/2, 2))
+            pre_filled = filled_times.reshape((int(len(filled_times)/2), 2))
         for b in blocks:
             if b.constraints is None:
                 b._all_constraints = self.constraints
