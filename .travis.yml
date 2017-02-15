@@ -132,6 +132,6 @@ script:
     - $MAIN_CMD $SETUP_CMD
 
 after_success:
-    - if [[ $SETUP_CMD == 'test --remote-data -V --coverage' ]]; then
+    - if [[ $SETUP_CMD == *--coverage* ]]; then
         coveralls --rcfile='astroplan/tests/coveragerc';
       fi
