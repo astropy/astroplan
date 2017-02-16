@@ -587,8 +587,8 @@ class Observer(object):
             target_inds = np.array(target_inds)
             time_inds = np.array(time_inds)
 
-        times = [t[i:i+2] if not np.isnan(i) else np.nan for i in time_inds]
-        altitudes = [alt[i, j:j+2] if not np.isnan(j) else np.nan
+        times = [t[int(i):int(i+2)] if not np.isnan(i) else np.nan for i in time_inds]
+        altitudes = [alt[int(i), int(j):int(j+2)] if not np.isnan(j) else np.nan
                      for i, j in zip(target_inds, time_inds)]
 
         return times, altitudes
@@ -700,10 +700,7 @@ class Observer(object):
             times = _generate_24hr_grid(time, -1, 0, N)
 
         altaz = self.altaz(times, target)
-        if target_is_vector:
-            altitudes = [aa.alt for aa in altaz]
-        else:
-            altitudes = altaz.alt
+        altitudes = altaz.alt
 
         time_limits, altitude_limits = self._horiz_cross(times, altitudes, rise_set,
                                                          horizon)
