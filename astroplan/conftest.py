@@ -72,5 +72,6 @@ def pytest_configure(config):
         # config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
 
     # Activate remote data mocking if the `--remote-data` option isn't used:
-    if not config.getoption('remote_data'):
+    if (not config.getoption('remote_data')
+            or config.getvalue('remote_data') == 'none'):
         _mock_remote_data()
