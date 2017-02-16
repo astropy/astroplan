@@ -16,7 +16,7 @@ from astropy.time import Time
 from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
-from .constraints import AltitudeConstraint
+from .constraints import AltitudeConstraint, AirmassConstraint
 from .target import get_skycoord
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
@@ -633,7 +633,8 @@ class PriorityScheduler(Scheduler):
             if b._all_constraints is None:
                 b._all_constraints = [AltitudeConstraint(min=0 * u.deg)]
                 b.constraints = [AltitudeConstraint(min=0 * u.deg)]
-            elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+            elif not (any(isinstance(c, AltitudeConstraint) for c in b._all_constraints) or
+                      any(isinstance(c, AirmassConstraint) for c in b._all_constraints)):
                 b._all_constraints.append(AltitudeConstraint(min=0 * u.deg))
                 if b.constraints is None:
                     b.constraints = [AltitudeConstraint(min=0 * u.deg)]
@@ -784,7 +785,12 @@ class PriorityScheduler(Scheduler):
                 # now assign the block itself times and add it to the schedule
                 b.constraints = b._all_constraints
                 b.end_idx = end_time_idx
-                self.schedule.insert_slot(new_start_time, b)
+                try:
+                    self.schedule.insert_slot(new_start_time, b)
+                except ValueError:
+                    print('Failed to insert {} into schedule'.format(
+                        b.target.name
+                    ))
                 is_open_time[start_time_idx: end_time_idx] = False
 
             else:
@@ -842,7 +848,7 @@ class Transitioner(object):
             no transition is necessary
         """
         components = {}
-        if self.slew_rate is not None:
+        if (self.slew_rate is not None and (oldblock is not None) and (newblock is not None)):
             # use the constraints cache for now, but should move that machinery
             # to observer
             from .constraints import _get_altaz
