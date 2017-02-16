@@ -13,7 +13,7 @@ from astropy.time import Time
 import astropy.units as u
 from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
                                 _open_shelve)
-from astropy.coordinates import EarthLocation, Longitude, Latitude
+from astropy.coordinates import EarthLocation
 
 # Package
 from .exceptions import OldEarthOrientationDataWarning
@@ -148,7 +148,12 @@ def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     times : `~astropy.time.Time`
         Linearly-spaced sequence of times
     """
-    return Time(np.arange(time_range[0].jd, time_range[1].jd,
+    try:
+        start_time, end_time = time_range
+    except ValueError:
+        raise ValueError("time_range should have a length of 2: lower and "
+                         "upper bounds on the time sequence.")
+    return Time(np.arange(start_time.jd, end_time.jd,
                           time_resolution.to(u.day).value), format='jd')
 
 
