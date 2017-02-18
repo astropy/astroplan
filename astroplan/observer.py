@@ -1469,15 +1469,12 @@ class Observer(object):
             return moon
 
         else:
-            moon_coords = []
-            for t in time:
-                altaz_frame = AltAz(location=self.location, obstime=t)
-                moon_coord = get_moon(t, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
-                moon_coords.append(moon_coord)
-            obstime = [coord.obstime for coord in moon_coords]
-            alts = u.Quantity([coord.alt for coord in moon_coords])
-            azs = u.Quantity([coord.az for coord in moon_coords])
-            dists = u.Quantity([coord.distance for coord in moon_coords])
+            altaz_frame = AltAz(location=self.location, obstime=time)
+            moon_coords = get_moon(time, ephemeris=ephemeris).transform_to(altaz_frame)
+            obstime = time
+            alts = moon_coords.alt
+            azs = moon_coords.az
+            dists = moon_coords.distance
             return SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=self.location))
 
     @u.quantity_input(horizon=u.deg)
