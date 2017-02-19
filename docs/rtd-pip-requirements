@@ -1,8 +1,7 @@
 numpy >= 1.6
 matplotlib
 Cython
-astropy-helpers
-astropy >= 1.2
+astropy >= 1.3
 pytz
 astroquery
-wcsaxes
+
