@@ -217,8 +217,7 @@ class TransitionBlock(object):
 
 class Schedule(object):
     """
-    An object that represents a schedule, consisting ofa list of
-    `~astroplan.scheduling.Slot` objects
+    An object that represents a schedule, consisting of a list of `~astroplan.scheduling.Slot` objects.
     """
     # as currently written, there should be no consecutive unoccupied slots
     # this should change to allow for more flexibility (e.g. dark slots, grey slots)
@@ -233,7 +232,7 @@ class Schedule(object):
         end_time : `~astropy.time.Time`
            The ending time of the schedule; the end of your
            observing window
-        constraints : sequence of `Constraint`s
+        constraints : sequence of `~astroplan.constraints.Constraint` s
            these are constraints that apply to the entire schedule
         """
         self.start_time = start_time
@@ -527,7 +526,7 @@ class SequentialScheduler(Scheduler):
             pre_filled = filled_times.reshape((2, 2))
         else:
             filled_times = Time(pre_filled.flatten())
-            pre_filled = filled_times.reshape((len(filled_times)/2, 2))
+            pre_filled = filled_times.reshape((int(len(filled_times)/2), 2))
         for b in blocks:
             if b.constraints is None:
                 b._all_constraints = self.constraints

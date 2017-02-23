@@ -7,7 +7,7 @@ from abc import ABCMeta
 
 # Third-party
 import astropy.units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
@@ -185,3 +185,77 @@ class NonFixedTarget(Target):
     """
     Placeholder for future function.
     """
+
+def get_skycoord(targets):
+    """
+    Return an `~astropy.coordinates.SkyCoord` object.
+
+    When performing calculations it is usually most efficient to have
+    a single `~astropy.coordinates.SkyCoord` object, rather than a
+    list of `FixedTarget` or `~astropy.coordinates.SkyCoord` objects.
+
+    This is a convenience routine to do that.
+
+    Parameters
+    -----------
+    targets : list, `~astropy.coordinates.SkyCoord`, `Fixedtarget`
+        either a single target or a list of targets
+
+    Returns
+    --------
+    coord : `~astropy.coordinates.SkyCoord`
+        a single SkyCoord object, which may be non-scalar
+    """
+    if not isinstance(targets, list):
+        return getattr(targets, 'coord', targets)
+
+    # get the SkyCoord object itself
+    coords = [getattr(target, 'coord', target) for target in targets]
+
+    # are all SkyCoordinate's in equivalent frames? If not, convert to ICRS
+    convert_to_icrs = not all([coord.frame.is_equivalent_frame(coords[0].frame) for coord in coords[1:]])
+
+    # we also need to be careful about handling mixtures of UnitSphericalRepresentations and others
+    targets_is_unitsphericalrep = [x.data.__class__ is
+                                   UnitSphericalRepresentation for x in coords]
+
+    longitudes = []
+    latitudes = []
+    distances = []
+    get_distances = not all(targets_is_unitsphericalrep)
+    if convert_to_icrs:
+        # mixture of frames
+        for coordinate in coords:
+            icrs_coordinate = coordinate.icrs
+            longitudes.append(icrs_coordinate.ra)
+            latitudes.append(icrs_coordinate.dec)
+            if get_distances:
+                distances.append(icrs_coordinate.distance)
+        frame = ICRS()
+    else:
+        # all the same frame, get the longitude and latitude names
+        lon_name, lat_name = [mapping.framename for mapping in
+                              coords[0].frame_specific_representation_info['spherical']]
+        frame = coords[0].frame
+        for coordinate in coords:
+            longitudes.append(getattr(coordinate, lon_name))
+            latitudes.append(getattr(coordinate, lat_name))
+            if get_distances:
+                distances.append(coordinate.distance)
+
+    # now let's deal with the fact that we may have a mixture of coords with distances and
+    # coords with UnitSphericalRepresentations
+    if all(targets_is_unitsphericalrep):
+        return SkyCoord(longitudes, latitudes, frame=frame)
+    elif not any(targets_is_unitsphericalrep):
+        return SkyCoord(longitudes, latitudes, distances, frame=frame)
+    else:
+        """
+        We have a mixture of coords with distances and without.
+        Since we don't know in advance the origin of the frame where further transformation
+        will take place, it's not safe to drop the distances from those coords with them set.
+
+        Instead, let's assign large distances to those objects with none.
+        """
+        distances = [distance if distance != 1 else 100*u.kpc for distance in distances]
+        return SkyCoord(longitudes, latitudes, distances, frame=frame)

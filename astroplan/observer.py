@@ -11,6 +11,8 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_moon, Angle, Latitude, Longitude,
                                  UnitSphericalRepresentation)
 from astropy.extern.six import string_types
+from astropy.utils import isiterable
+from astropy.utils.compat.numpy import broadcast_to
 import astropy.units as u
 from astropy.time import Time
 from astropy.utils import isiterable
@@ -20,6 +22,8 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
+from .target import get_skycoord
+
 
 __all__ = ["Observer", "MAGIC_TIME"]
 
@@ -64,6 +68,14 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     else:
         time_grid = np.linspace(start, end, N)*u.day
 
+    # broadcast so grid is first index, and remaining shape of t0
+    # falls in later indices. e.g. if t0 is shape (10), time_grid
+    # will be shape (N, 10). If t0 is shape (5, 2), time_grid is (N, 5, 2)
+    while time_grid.ndim <= t0.ndim:
+        time_grid = time_grid[:, np.newaxis]
+    # we want to avoid 1D grids since we always want to broadcast against targets
+    if time_grid.ndim == 1:
+        time_grid = time_grid[:, np.newaxis]
     return t0 + time_grid
 
 
@@ -336,56 +348,64 @@ class Observer(object):
 
         return Time(date_time, location=self.location)
 
-    def _transform_target_list_to_altaz(self, times, targets):
+    def _is_broadcastable(self, shp1, shp2):
+        """Test if two shape tuples are broadcastable"""
+        if shp1 == shp2:
+            return True
+        for a, b in zip(shp1[::-1], shp2[::-1]):
+            if a == 1 or b == 1 or a == b:
+                pass
+            else:
+                return False
+        return True
+
+    def _preprocess_inputs(self, time, target=None, grid=True):
         """
-        Workaround for transforming a list of coordinates ``targets`` to
-        altitudes and azimuths.
+        Preprocess time and target inputs
 
-        Parameters
-        ----------
-        times : `~astropy.time.Time` or list of `~astropy.time.Time` objects
-            Time of observation
+        This routine takes the inputs for time and target and attempts to
+        return a single `~astropy.time.Time` and `~astropy.coordinates.SkyCoord`
+        for each argument, which may be non-scalar if necessary.
 
-        targets : `~astropy.coordinates.SkyCoord` or list of `~astropy.coordinates.SkyCoord` objects
-            List of target coordinates
+        time : `~astropy.time.Time` or other (see below)
+            The time(s) to use in the calculation. It can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time` object)
 
-        Returns
-        -------
-        altitudes : list
-            List of altitudes for each target, at each time
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list
+            The target(s) to use in the calculation.
+
+        grid: bool
+            If True, and the time and target objects cannot be broadcast,
+            the target object will have extra dimensions packed onto the end,
+            so that calculations with M targets and N times will return an (M, N)
+            shaped result. Useful for grid searches for rise/set times etc.
         """
-        if times.isscalar:
-            times = Time([times])
+        # make sure we have a non-scalar time
+        if not isinstance(time, Time):
+            time = Time(time)
 
-        if not isinstance(targets, list) and targets.isscalar:
-            targets = [targets]
+        if target is None:
+            return time, None
 
-        targets_is_unitsphericalrep = [x.data.__class__ is
-                                       UnitSphericalRepresentation for x in targets]
-        if all(targets_is_unitsphericalrep) or not any(targets_is_unitsphericalrep):
-            repeated_times = np.tile(times, len(targets))
-            ra_list = Longitude([x.icrs.ra for x in targets])
-            dec_list = Latitude([x.icrs.dec for x in targets])
-            repeated_ra = np.repeat(ra_list, len(times))
-            repeated_dec = np.repeat(dec_list, len(times))
-            inner_sc = SkyCoord(ra=repeated_ra, dec=repeated_dec)
-            target_SkyCoord = SkyCoord(inner_sc.data.represent_as(UnitSphericalRepresentation),
-                                       representation=UnitSphericalRepresentation)
-            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
-                                                                   obstime=repeated_times))
-        else:
-            # TODO: This is super slow.
-            repeated_times = np.tile(times, len(targets))
-            repeated_targets = np.repeat(targets, len(times))
-            target_SkyCoord = SkyCoord(SkyCoord(repeated_targets).data.represent_as(
-                                       UnitSphericalRepresentation),
-                                       representation=UnitSphericalRepresentation)
+        # convert any kind of target argument to non-scalar SkyCoord
+        target = get_skycoord(target)
 
-            transformed_coord = target_SkyCoord.transform_to(AltAz(location=self.location,
-                                                                   obstime=repeated_times))
-        return transformed_coord
+        if grid:
+            # now we broadcast the targets array so that the first index
+            # iterates over targets, any other indices over times
+            if not target.isscalar:
+                if time.isscalar:
+                    target = target[:, np.newaxis]
+                while target.ndim <= time.ndim:
+                    target = target[:, np.newaxis]
+        if not self._is_broadcastable(target.shape, time.shape):
+            raise ValueError(
+                'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
+                    time.shape, target.shape
+                ))
+        return time, target
 
-    def altaz(self, time, target=None, obswl=None):
+    def altaz(self, time, target=None, obswl=None, grid=True):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
@@ -407,6 +427,12 @@ class Observer(object):
 
         obswl : `~astropy.units.Quantity` (optional)
             Wavelength of the observation used in the calculation.
+
+        grid: bool
+            If True, and the time and target objects cannot be broadcast,
+            the target object will have extra dimensions packed onto the end,
+            so that calculations with M targets and N times will return an (M, N)
+            shaped result. Useful for grid searches for rise/set times etc.
 
         Returns
         -------
@@ -437,8 +463,8 @@ class Observer(object):
 
         >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
-        if not isinstance(time, Time):
-            time = Time(time)
+        if target is not None:
+            time, target = self._preprocess_inputs(time, target, grid)
 
         altaz_frame = AltAz(location=self.location, obstime=time,
                             pressure=self.pressure, obswl=obswl,
@@ -448,24 +474,7 @@ class Observer(object):
             # Return just the frame
             return altaz_frame
         else:
-            # If target is a list of targets:
-            if isiterable(target) and not isinstance(target, SkyCoord):
-                get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-                transformed_coords = self._transform_target_list_to_altaz(time,
-                                                                          list(map(get_coord, target)))
-                n_targets = len(target)
-                new_shape = (n_targets, int(len(transformed_coords)/n_targets))
-
-                for comp in transformed_coords.data.components:
-                    getattr(transformed_coords.data, comp).resize(new_shape)
-                return transformed_coords
-
-            # If target is a FixedTarget or a SkyCoord:
-            if hasattr(target, 'coord'):
-                coordinate = target.coord
-            else:
-                coordinate = target
-            return coordinate.transform_to(altaz_frame)
+            return target.transform_to(altaz_frame)
 
     def parallactic_angle(self, time, target):
         """
@@ -493,17 +502,7 @@ class Observer(object):
         .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
 
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if isiterable(target):
-            get_coord = lambda x: x.coord if hasattr(x, 'coord') else x
-            coordinate = SkyCoord(list(map(get_coord, target)))
-        else:
-            if hasattr(target, 'coord'):
-                coordinate = target.coord
-            else:
-                coordinate = target
+        time, coordinate = self._preprocess_inputs(time, target)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.longitude)
@@ -527,9 +526,12 @@ class Observer(object):
         Parameters
         ----------
         t : `~astropy.time.Time`
-            Grid of times
+            Grid of N times, any shape. Search grid along first axis, e.g (N, ...)
         alt : `~astropy.units.Quantity`
             Grid of altitudes
+            Depending on broadcasting we either have ndim >=3 and
+            M targets along first axis, e.g (M, N, ...), or
+            ndim = 2 and targets/times in last axis
         rise_set : {"rising",  "setting"}
             Calculate either rising or setting across the horizon
         horizon : float
@@ -540,61 +542,88 @@ class Observer(object):
         Returns
         -------
         Returns the lower and upper limits on the time and altitudes
-        of the horizon crossing.
+        of the horizon crossing. The altitude limits have shape (M, ...) and the
+        time limits have shape (...). These arrays aresuitable for interpolation
+        to find the horizon crossing time.
         """
-        alt = np.atleast_2d(Latitude(alt))
-        n_targets = alt.shape[0]
+        # handle different cases by enforcing standard shapes on
+        # the altitude grid
+        finesse_time_indexes = False
+        if alt.ndim == 1:
+            raise ValueError('Must supply more at least a 2D grid of altitudes')
+        elif alt.ndim == 2:
+            # TODO: this test for ndim=2 doesn't work. if times is e.g (2,5)
+            # then alt will have ndim=3, but shape (100, 2, 5) so grid
+            # is in first index...
+            ntargets = alt.shape[1]
+            ngrid = alt.shape[0]
+            unit = alt.unit
+            alt = broadcast_to(alt, (ntargets, ngrid, ntargets)).T
+            alt = alt*unit
+            extra_dimension_added = True
+            if t.shape[1] == 1:
+                finesse_time_indexes = True
+        else:
+            extra_dimension_added = False
+        output_shape = (alt.shape[0],) + alt.shape[2:]
 
         if rise_set == 'rising':
             # Find index where altitude goes from below to above horizon
-            condition = (alt[:, :-1] < horizon) * (alt[:, 1:] > horizon)
+            condition = (alt[:, :-1, ...] < horizon) * (alt[:, 1:, ...] > horizon)
         elif rise_set == 'setting':
             # Find index where altitude goes from above to below horizon
-            condition = (alt[:, :-1] > horizon) * (alt[:, 1:] < horizon)
+            condition = (alt[:, :-1, ...] > horizon) * (alt[:, 1:, ...] < horizon)
 
-        target_inds, time_inds = np.nonzero(condition)
+        noncrossing_indices = np.sum(condition, axis=1, dtype=np.intp) < 1
+        alt_lims1 = u.Quantity(np.zeros(output_shape), unit=u.deg)
+        alt_lims2 = u.Quantity(np.zeros(output_shape), unit=u.deg)
+        jd_lims1 = np.zeros(output_shape)
+        jd_lims2 = np.zeros(output_shape)
+        if np.any(noncrossing_indices):
+            for target_index in set(np.where(noncrossing_indices)[0]):
+                warnmsg = ('Target with index {} does not cross horizon={} within '
+                           '24 hours'.format(target_index, horizon))
+                if (alt[target_index, ...] > horizon).all():
+                    warnings.warn(warnmsg, TargetAlwaysUpWarning)
+                else:
+                    warnings.warn(warnmsg, TargetNeverUpWarning)
 
-        if np.count_nonzero(condition) < n_targets:
-            target_inds, _ = np.nonzero(condition)
-            noncrossing_target_ind = np.setdiff1d(np.arange(n_targets),
-                                                  target_inds,
-                                                  assume_unique=True)  # [0]
+            alt_lims1[np.nonzero(noncrossing_indices)] = np.nan
+            alt_lims2[np.nonzero(noncrossing_indices)] = np.nan
+            jd_lims1[np.nonzero(noncrossing_indices)] = np.nan
+            jd_lims2[np.nonzero(noncrossing_indices)] = np.nan
 
-            warnmsg = ('Target(s) index {} does not cross horizon={} within '
-                       '24 hours'.format(noncrossing_target_ind, horizon))
+        before_indices = np.array(np.nonzero(condition))
+        # we want to add an vector like (0, 1, ...) to get after indices
+        array_to_add = np.zeros(before_indices.shape[0])[:, np.newaxis].astype(int)
+        array_to_add[1] = 1
+        after_indices = before_indices + array_to_add
 
-            if (alt[noncrossing_target_ind, :] > horizon).all():
-                warnings.warn(warnmsg, TargetAlwaysUpWarning)
-            else:
-                warnings.warn(warnmsg, TargetNeverUpWarning)
+        al1 = alt[tuple(before_indices)]
+        al2 = alt[tuple(after_indices)]
+        # slice the time in the same way, but delete the object index
+        before_time_index_tuple = np.delete(before_indices, 0, 0)
+        after_time_index_tuple = np.delete(after_indices, 0, 0)
+        if finesse_time_indexes:
+            before_time_index_tuple[1:] = 0
+            after_time_index_tuple[1:] = 0
+        tl1 = t[tuple(before_time_index_tuple)]
+        tl2 = t[tuple(after_time_index_tuple)]
 
-            # Fill in missing time with MAGIC_TIME
-            target_inds = np.insert(target_inds, noncrossing_target_ind,
-                                    noncrossing_target_ind)
-            time_inds = np.insert(time_inds.astype(float),
-                                  noncrossing_target_ind,
-                                  np.nan)
-        elif np.count_nonzero(condition) > n_targets:
-            old_target_inds = np.copy(target_inds)
-            old_time_inds = np.copy(time_inds)
+        alt_lims1[tuple(np.delete(before_indices, 1, 0))] = al1
+        alt_lims2[tuple(np.delete(before_indices, 1, 0))] = al2
+        jd_lims1[tuple(np.delete(before_indices, 1, 0))] = tl1.utc.jd
+        jd_lims2[tuple(np.delete(before_indices, 1, 0))] = tl2.utc.jd
 
-            time_inds = []
-            target_inds = []
-            for tgt, tm in zip(old_target_inds, old_time_inds):
-                if tgt not in target_inds:
-                    time_inds.append(tm)
-                    target_inds.append(tgt)
-            target_inds = np.array(target_inds)
-            time_inds = np.array(time_inds)
-
-        times = [t[int(i):int(i+2)] if not np.isnan(i) else np.nan for i in time_inds]
-        altitudes = [alt[int(i), int(j):int(j+2)] if not np.isnan(j) else np.nan
-                     for i, j in zip(target_inds, time_inds)]
-
-        return times, altitudes
+        if extra_dimension_added:
+            return (alt_lims1.diagonal(), alt_lims2.diagonal(),
+                    jd_lims1.diagonal(), jd_lims2.diagonal())
+        else:
+            return alt_lims1, alt_lims2, jd_lims1, jd_lims2
 
     @u.quantity_input(horizon=u.deg)
-    def _two_point_interp(self, times, altitudes, horizon=0*u.deg):
+    def _two_point_interp(self, jd_before, jd_after,
+                          alt_before, alt_after, horizon=0*u.deg):
         """
         Do linear interpolation between two ``altitudes`` at
         two ``times`` to determine the time where the altitude
@@ -602,11 +631,17 @@ class Observer(object):
 
         Parameters
         ----------
-        times : `~astropy.time.Time`
-            Two times for linear interpolation between
+        jd_before : `float`
+            JD(UTC) before crossing event
 
-        altitudes : array of `~astropy.units.Quantity`
-            Two altitudes for linear interpolation between
+        jd_after : `float`
+            JD(UTC) after crossing event
+
+        alt_before : `~astropy.units.Quantity`
+            altitude before crossing event
+
+        alt_after : `~astropy.units.Quantity`
+            altitude after crossing event
 
         horizon : `~astropy.units.Quantity`
             Solve for the time when the altitude is equal to
@@ -618,12 +653,10 @@ class Observer(object):
             Time when target crosses the horizon
 
         """
-        if not isinstance(times, Time):
-            return MAGIC_TIME
-        else:
-            slope = (altitudes[1] - altitudes[0])/(times[1].jd - times[0].jd)
-            return Time(times[1].jd - ((altitudes[1] - horizon)/slope).value,
-                        format='jd')
+        slope = (alt_after-alt_before)/((jd_after - jd_before)*u.d)
+        crossing_jd = (jd_after*u.d - ((alt_after - horizon)/slope))
+        crossing_jd[np.isnan(crossing_jd)] = u.d*MAGIC_TIME.jd
+        return np.squeeze(Time(crossing_jd, format='jd'))
 
     def _altitude_trig(self, LST, target):
         """
@@ -645,6 +678,7 @@ class Observer(object):
         alt : `~astropy.unit.Quantity`
             Array of altitudes
         """
+        LST, target = self._preprocess_inputs(LST, target)
         alt = np.arcsin(np.sin(self.location.latitude.radian) *
                         np.sin(target.dec) +
                         np.cos(self.location.latitude.radian) *
@@ -688,30 +722,21 @@ class Observer(object):
         ret1 : `~astropy.time.Time`
             Time of rise/set
         """
-
         if not isinstance(time, Time):
             time = Time(time)
-
-        target_is_vector = isiterable(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N)
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altaz = self.altaz(times, target)
+        altaz = self.altaz(times, target, grid=True)
         altitudes = altaz.alt
 
-        time_limits, altitude_limits = self._horiz_cross(times, altitudes, rise_set,
-                                                         horizon)
-        if not target_is_vector:
-            return self._two_point_interp(time_limits[0], altitude_limits[0],
-                                          horizon=horizon)
-        else:
-            return Time([self._two_point_interp(time_limit, altitude_limit,
-                                                horizon=horizon)
-                         for time_limit, altitude_limit in
-                         zip(time_limits, altitude_limits)])
+        al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
+                                               horizon)
+        return self._two_point_interp(jd1, jd2, al1, al2,
+                                      horizon=horizon)
 
     def _calc_transit(self, time, target, prev_next, antitransit=False, N=150):
         """
@@ -745,10 +770,9 @@ class Observer(object):
         ret1 : `~astropy.time.Time`
             Time of transit/antitransit
         """
+        # TODO FIX BROADCASTING HERE
         if not isinstance(time, Time):
             time = Time(time)
-
-        target_is_vector = isiterable(target)
 
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
@@ -762,26 +786,22 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target)
-        if target_is_vector:
-            d_altitudes = [each_alt.diff() for each_alt in altaz.alt]
+        altaz = self.altaz(times, target, grid=True)
+        altitudes = altaz.alt
+        if altitudes.ndim > 2:
+            # shape is (M, N, ...) where M is targets and N is grid
+            d_altitudes = altitudes.diff(axis=1)
         else:
-            altitudes = altaz.alt
-            d_altitudes = altitudes.diff()
+            # shape is (N, M) where M is targets and N is grid
+            d_altitudes = altitudes.diff(axis=0)
 
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
 
         horizon = 0*u.degree  # Find when derivative passes through zero
-        time_limits, altitude_limits = self._horiz_cross(dt, d_altitudes,
-                                                         rise_set, horizon)
-        if not target_is_vector:
-            return self._two_point_interp(time_limits[0], altitude_limits[0],
-                                          horizon=horizon)
-        else:
-            return Time([self._two_point_interp(time_limit, altitude_limit,
-                                                horizon=horizon)
-                         for time_limit, altitude_limit in
-                         zip(time_limits, altitude_limits)])
+        al1, al2, jd1, jd2 = self._horiz_cross(dt, d_altitudes,
+                                               rise_set, horizon)
+        return self._two_point_interp(jd1, jd2, al1, al2,
+                                      horizon=horizon)
 
     def _determine_which_event(self, function, args_dict):
         """
@@ -819,19 +839,10 @@ class Observer(object):
                 return previous_event
 
         if which == 'nearest':
-            if isiterable(target):
-                return_times = []
-                for next_e, prev_e in zip(next_event, previous_event):
-                    if abs(time - prev_e) < abs(time - next_e):
-                        return_times.append(prev_e)
-                    else:
-                        return_times.append(next_e)
-                return Time(return_times)
-            else:
-                if abs(time - previous_event) < abs(time - next_event):
-                    return previous_event
-                else:
-                    return next_event
+            mask = abs(time - previous_event) < abs(time - next_event)
+            return Time(np.where(mask, previous_event.utc.jd,
+                        next_event.utc.jd), format='jd')
+
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
@@ -1458,27 +1469,8 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
-        # handles scalar and non-scalar time inputs differently
-
-        if time.isscalar:
-            altaz_frame = AltAz(location=self.location, obstime=time)
-            sun = get_sun(time).transform_to(altaz_frame)
-
-            moon = get_moon(time, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
-            return moon
-
-        else:
-            moon_coords = []
-            for t in time:
-                altaz_frame = AltAz(location=self.location, obstime=t)
-                moon_coord = get_moon(t, location=self.location, ephemeris=ephemeris).transform_to(altaz_frame)
-                moon_coords.append(moon_coord)
-            obstime = [coord.obstime for coord in moon_coords]
-            alts = u.Quantity([coord.alt for coord in moon_coords])
-            azs = u.Quantity([coord.az for coord in moon_coords])
-            dists = u.Quantity([coord.distance for coord in moon_coords])
-            return SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=self.location))
+        moon = get_moon(time, location=self.location, ephemeris=ephemeris)
+        return self.altaz(time, moon, grid=False)
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False):
@@ -1506,7 +1498,7 @@ class Observer(object):
 
         Returns
         -------
-        observable : boolean
+        observable : boolean or np.ndarray(bool)
             True if ``target`` is above ``horizon`` at ``time``, else False.
 
         Examples
@@ -1529,10 +1521,13 @@ class Observer(object):
             time = Time(time)
 
         altaz = self.altaz(time, target)
-        if isiterable(target):
-            observable = [bool(alt > horizon) for alt in altaz.alt]
+        observable = altaz.alt > horizon
+        if altaz.isscalar:
+            observable = bool(observable)
         else:
-            observable = bool(altaz.alt > horizon)
+            # TODO: simply return observable if we move to
+            # a fully broadcasted API
+            observable = [value for value in observable.flat]
 
         if not return_altaz:
             return observable
@@ -1562,7 +1557,7 @@ class Observer(object):
 
         Returns
         -------
-        sun_below_horizon : bool
+        sun_below_horizon : bool or np.ndarray(bool)
             `True` if sun is below ``horizon`` at ``time``, else `False`.
 
         Examples
@@ -1581,7 +1576,12 @@ class Observer(object):
             time = Time(time)
 
         solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
-        return bool(solar_altitude < horizon)
+        if solar_altitude.isscalar:
+            return bool(solar_altitude < horizon)
+        else:
+            # TODO: simply return solar_altitude < horizon if we move to
+            # a fully broadcasted API
+            return [val for val in (solar_altitude < horizon).flat]
 
     def local_sidereal_time(self, time, kind='apparent', model=None):
         """
@@ -1637,21 +1637,8 @@ class Observer(object):
         hour_angle : `~astropy.coordinates.Angle`
             The hour angle(s) of the target(s) at ``time``
         """
-        if not isinstance(time, Time):
-            time = Time(time)
-
-        if isiterable(target):
-            coords = [t.coord if hasattr(t, 'coord') else t
-                      for t in target]
-
-            hour_angle = Longitude([self.local_sidereal_time(time) - coord.ra
-                                    for coord in coords])
-
-        else:
-            coord = target.coord if hasattr(target, 'coord') else target
-            hour_angle = Longitude(self.local_sidereal_time(time) - coord.ra)
-
-        return hour_angle
+        time, target = self._preprocess_inputs(time, target)
+        return Longitude(self.local_sidereal_time(time) - target.ra)
 
     @u.quantity_input(horizon=u.degree)
     def tonight(self, time=None, horizon=0 * u.degree, obswl=None):
@@ -1680,11 +1667,16 @@ class Observer(object):
             A tuple of times corresponding to the start and end of current night
         """
         current_time = Time.now() if time is None else time
-        if self.is_night(current_time, horizon=horizon, obswl=obswl):
-            start_time = current_time
+        night_mask = self.is_night(current_time, horizon=horizon, obswl=obswl)
+        sun_set_time = self.sun_set_time(current_time, which='next', horizon=horizon)
+        # workaround for NPY <= 1.8, otherwise np.where works even in scalar case
+        if current_time.isscalar:
+            start_time = current_time if night_mask else sun_set_time
         else:
-            start_time = self.sun_set_time(current_time, which='next', horizon=horizon)
-
-        end_time = self.sun_rise_time(current_time, which='next', horizon=horizon)
+            start_time = np.where(night_mask, current_time, sun_set_time)
+            # np.where gives us a list of start Times - convert to Time object
+            if not isinstance(start_time, Time):
+                start_time = Time(start_time)
+        end_time = self.sun_rise_time(start_time, which='next', horizon=horizon)
 
         return start_time, end_time

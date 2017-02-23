@@ -26,7 +26,7 @@ env:
         - CONDA_DEPENDENCIES='pytz'
         - PIP_DEPENDENCIES=''
         - SETUP_CMD='test -V'
-        - CONDA_CHANNELS='astropy'
+        - CONDA_CHANNELS='astropy conda-forge'
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
@@ -50,11 +50,11 @@ matrix:
         # plot_directive in sphinx needs them
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
-               CONDA_DEPENDENCIES='pytz matplotlib nose wcsaxes astroquery'
+               CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
           env: PYTHON_VERSION=3.5 SETUP_CMD='build_sphinx -w'
-               CONDA_DEPENDENCIES='pytz matplotlib nose wcsaxes astroquery'
+               CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
 
         # Try all python versions with the latest numpy

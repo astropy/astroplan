@@ -1121,9 +1121,8 @@ Finder Chart/Image
 `astroplan` includes a function for generating quick finder images from
 Python, `~astroplan.plots.plot_finder_image`, by querying for images from
 sky surveys centered on a `~astroplan.FixedTarget`. This function depends on
-`astroquery`_  (in addition
-to `Matplotlib`_ and `WCSAxes`_). In this example, we'll quickly make a finder image centered
-on The Crab Nebula (M1):
+`astroquery`_ (in addition to `Matplotlib`_). In this example, we'll quickly
+make a finder image centered on The Crab Nebula (M1):
 
 .. code-block:: python
 

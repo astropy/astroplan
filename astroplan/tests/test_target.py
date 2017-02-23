@@ -4,10 +4,13 @@ from __future__ import (absolute_import, division, print_function,
 
 # Third-party
 import astropy.units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, GCRS, ICRS
+from astropy.time import Time
+from astropy.tests.helper import pytest
 
 # Package
-from ..target import FixedTarget
+from ..target import FixedTarget, get_skycoord
+from ..observer import Observer
 
 
 def test_FixedTarget_from_name():
@@ -40,3 +43,39 @@ def test_FixedTarget_ra_dec():
                                                         'SkyCoord')
     assert vega.coord.dec == vega_coords.dec == vega.dec, ('Retrieve Dec from '
                                                            'SkyCoord')
+
+
+def test_get_skycoord():
+    m31 = SkyCoord(10.6847083*u.deg, 41.26875*u.deg)
+    m31_with_distance = SkyCoord(10.6847083*u.deg, 41.26875*u.deg, 780*u.kpc)
+    subaru = Observer.at_site('subaru')
+    time = Time("2016-01-22 12:00")
+    pos, vel = subaru.location.get_gcrs_posvel(time)
+    gcrs_frame = GCRS(obstime=Time("2016-01-22 12:00"), obsgeoloc=pos, obsgeovel=vel)
+    m31_gcrs = m31.transform_to(gcrs_frame)
+    m31_gcrs_with_distance = m31_with_distance.transform_to(gcrs_frame)
+
+    coo = get_skycoord(m31)
+    assert coo.is_equivalent_frame(ICRS())
+    with pytest.raises(TypeError) as exc_info:
+        len(coo)
+
+    coo = get_skycoord([m31])
+    assert coo.is_equivalent_frame(ICRS())
+    assert len(coo) == 1
+
+    coo = get_skycoord([m31, m31_gcrs])
+    assert coo.is_equivalent_frame(ICRS())
+    assert len(coo) == 2
+
+    coo = get_skycoord([m31_with_distance, m31_gcrs_with_distance])
+    assert coo.is_equivalent_frame(ICRS())
+    assert len(coo) == 2
+
+    coo = get_skycoord([m31, m31_gcrs, m31_gcrs_with_distance, m31_with_distance])
+    assert coo.is_equivalent_frame(ICRS())
+    assert len(coo) == 4
+
+    coo = get_skycoord([m31_gcrs, m31_gcrs_with_distance])
+    assert coo.is_equivalent_frame(m31_gcrs.frame)
+    assert len(coo) == 2

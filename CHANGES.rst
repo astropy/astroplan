@@ -1,7 +1,7 @@
 0.3 (unreleased)
 ----------------
 
-- No changes yet
+- Internal changes to the way calculations are done means that astropy>=1.3 is required [#285]
 
 0.2 (2016-09-20)
 ------------------
