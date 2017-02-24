@@ -26,13 +26,13 @@ from .moon import moon_illumination
 from .utils import time_grid_from_range
 from .target import get_skycoord
 
+
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
            "TimeConstraint", "observability_table", "months_observable",
            "max_best_rescale", "min_best_rescale"]
-
 
 def _get_altaz(times, observer, targets, force_zero_pressure=False):
     """
@@ -64,6 +64,9 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
         observer._altaz_cache = {}
 
     # convert times, targets to tuple for hashing
+    # TODO: This is slow. Can we find a quicker way of making a unique hash?
+    # the call to get_skycoord which precedes this means we cannot rely on
+    # object target hash or ID. Perhaps SkyCoord needs a __hash__ method?
     try:
         aakey = (tuple(times.jd), tuple(targets.ra.deg.ravel()))
         hash(aakey)
@@ -220,6 +223,10 @@ class Constraint(object):
 
         if grid_times_targets:
             targets = get_skycoord(targets)
+            # TODO: these broadcasting operations are relatively slow
+            # but there is potential for huge speedup if the end user
+            # disables gridding and re-shapes the coords themselves
+            # prior to evaluating multiple constraints.
             if targets.isscalar:
                 # ensure we have a (1, 1) shape coord
                 targets = SkyCoord(np.tile(targets, 1))[:, np.newaxis]
@@ -687,7 +694,7 @@ class LocalTimeConstraint(Constraint):
         # If time limits occur on same day:
         if self.min < self.max:
             try:
-                mask = np.array([min_time <= t.datetime.time() <= max_time for t in times])
+                mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
             except:
                 # use np.bool so shape queries don't cause problems
                 mask = np.bool_(min_time <= times.datetime.time() <= max_time)
@@ -695,8 +702,8 @@ class LocalTimeConstraint(Constraint):
         # If time boundaries straddle midnight:
         else:
             try:
-                mask = np.array([(t.datetime.time() >= min_time) or
-                                (t.datetime.time() <= max_time) for t in times])
+                mask = np.array([(t.time() >= min_time) or
+                                (t.time() <= max_time) for t in times.datetime])
             except:
                 mask = np.bool_((times.datetime.time() >= min_time) or
                                 (times.datetime.time() <= max_time))
