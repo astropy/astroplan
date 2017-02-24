@@ -34,6 +34,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "TimeConstraint", "observability_table", "months_observable",
            "max_best_rescale", "min_best_rescale"]
 
+
 def _get_altaz(times, observer, targets, force_zero_pressure=False):
     """
     Calculate alt/az for ``target`` at times linearly spaced between
@@ -67,11 +68,17 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
     # TODO: This is slow. Can we find a quicker way of making a unique hash?
     # the call to get_skycoord which precedes this means we cannot rely on
     # object target hash or ID. Perhaps SkyCoord needs a __hash__ method?
+    # convert tuple to something hashable
     try:
-        aakey = (tuple(times.jd), tuple(targets.ra.deg.ravel()))
-        hash(aakey)
+        timekey = tuple(times.jd)
     except:
-        aakey = (times.jd, tuple(targets.ra.deg.ravel()))
+        timekey = times.jd
+    # make hashable thing from targets coords
+    try:
+        targkey = tuple(targets.ra.deg.ravel())
+    except:
+        targkey = targets.ra.deg
+    aakey = (timekey, targkey)
 
     if aakey not in observer._altaz_cache:
         try:
@@ -168,10 +175,15 @@ def _get_meridian_transit_times(times, observer, targets):
 
     # convert times to tuple for hashing
     try:
-        aakey = (tuple(times.jd), tuple(targets.ra.deg.ravel()))
-        hash(aakey)
+        timekey = tuple(times.jd)
     except:
-        aakey = (times.jd, tuple(targets.ra.deg.ravel()))
+        timekey = times.jd
+    # make hashable thing from targets coords
+    try:
+        targkey = tuple(targets.ra.deg.ravel())
+    except:
+        targkey = targets.ra.deg
+    aakey = (timekey, targkey)
 
     if aakey not in observer._meridian_transit_cache:
         meridian_transit_times = observer.target_meridian_transit_time(times, targets)
