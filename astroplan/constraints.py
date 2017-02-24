@@ -65,10 +65,10 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
 
     # convert times, targets to tuple for hashing
     try:
-        aakey = (tuple(times.jd), targets)
+        aakey = (tuple(times.jd), tuple(targets.ra.deg.ravel()))
         hash(aakey)
     except:
-        aakey = (times.jd, targets)
+        aakey = (times.jd, tuple(targets.ra.deg.ravel()))
 
     if aakey not in observer._altaz_cache:
         try:
@@ -165,10 +165,10 @@ def _get_meridian_transit_times(times, observer, targets):
 
     # convert times to tuple for hashing
     try:
-        aakey = (tuple(times.jd), targets)
+        aakey = (tuple(times.jd), tuple(targets.ra.deg.ravel()))
         hash(aakey)
     except:
-        aakey = (times.jd, targets)
+        aakey = (times.jd, tuple(targets.ra.deg.ravel()))
 
     if aakey not in observer._meridian_transit_cache:
         meridian_transit_times = observer.target_meridian_transit_time(times, targets)
