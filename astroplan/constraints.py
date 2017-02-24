@@ -34,7 +34,6 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "TimeConstraint", "observability_table", "months_observable",
            "max_best_rescale", "min_best_rescale"]
 
-
 def _get_altaz(times, observer, targets, force_zero_pressure=False):
     """
     Calculate alt/az for ``target`` at times linearly spaced between
