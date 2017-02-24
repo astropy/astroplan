@@ -59,12 +59,8 @@ def test_get_skycoord():
 
     coo = get_skycoord(m31)
     assert coo.is_equivalent_frame(ICRS())
-<<<<<<< HEAD
     with pytest.raises(TypeError) as exc_info:
         len(coo)
-=======
-    assert_raises(TypeError, len, coo)
->>>>>>> used get_skycoord defined in PR215
 
     coo = get_skycoord([m31])
     assert coo.is_equivalent_frame(ICRS())

@@ -15,7 +15,8 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord
+from astropy.coordinates import (get_sun, get_moon, Angle, SkyCoord,
+                                 AltAz)
 from astropy import table
 import numpy as np
 
