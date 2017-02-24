@@ -50,7 +50,7 @@ def _has_twin(ax):
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
                  altitude_yaxis=False):
-    """
+    r"""
     Plots airmass as a function of time for a given target.
 
     If a `~matplotlib.axes.Axes` object already exists, an additional
@@ -115,7 +115,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     Notes
     -----
     y-axis is inverted and shows airmasses between 1.0 and 3.0 by default.
-    If user wishes to change these, use ``ax.\<set attribute\>`` before drawing
+    If user wishes to change these, use ``ax.<set attribute>`` before drawing
     or saving plot:
 
     References
