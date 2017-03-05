@@ -172,7 +172,7 @@ Scheduling
 
 Now all we have left is to initialize the scheduler, input our list
 of blocks and the schedule to put them in. There are currently two
-schedulers to chose from in astroplan.
+schedulers to choose from in astroplan.
 
 The first is a sequential scheduler. It starts at the start_time and
 scores each block (constraints and target) at that time and then
