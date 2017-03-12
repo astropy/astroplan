@@ -15,7 +15,6 @@ from astropy.utils import isiterable
 from astropy.utils.compat.numpy import broadcast_to
 import astropy.units as u
 from astropy.time import Time
-from astropy.utils import isiterable
 import numpy as np
 import pytz
 
