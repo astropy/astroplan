@@ -849,7 +849,8 @@ class Transitioner(object):
                                  [oldblock.target, newblock.target])['altaz']
                 # TODO: make this [0] unnecessary by fixing _get_altaz to behave well in scalar-time case
                 sep = aaz[0].separation(aaz[1])[0]
-                components['slew_time'] = sep / self.slew_rate
+                if sep/self.slew_rate > 1 * u.second:
+                    components['slew_time'] = sep / self.slew_rate
 
         if self.instrument_reconfig_times is not None:
             components.update(self.compute_instrument_transitions(oldblock, newblock))
