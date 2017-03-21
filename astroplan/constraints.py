@@ -15,7 +15,7 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon, SkyCoord
+from astropy.coordinates import get_body, get_sun, get_moon, SkyCoord
 from astropy import table
 from astropy.utils.compat.numpy import broadcast_to
 import numpy as np
@@ -483,7 +483,12 @@ class SunSeparationConstraint(Constraint):
         self.max = max
 
     def compute_constraint(self, times, observer, targets):
-        sun = get_sun(times)
+        # use get_body rather than get sun here, since
+        # it returns the Sun's coordinates in an observer
+        # centred frame, so the separation is as-seen
+        # by the observer.
+        # 'get_sun' returns ICRS coords.
+        sun = get_body('sun', times, location=observer.location)
         solar_separation = sun.separation(targets)
         if self.min is None and self.max is not None:
             mask = self.max >= solar_separation
