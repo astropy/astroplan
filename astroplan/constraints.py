@@ -483,8 +483,8 @@ class SunSeparationConstraint(Constraint):
         self.max = max
 
     def compute_constraint(self, times, observer, targets):
-        sunaltaz = observer.altaz(times, get_sun(times))
-        solar_separation = targets.separation(sunaltaz)
+        sun = get_sun(times)
+        solar_separation = sun.separation(targets)
         if self.min is None and self.max is not None:
             mask = self.max >= solar_separation
         elif self.max is None and self.min is not None:
@@ -522,10 +522,16 @@ class MoonSeparationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        moon_altaz = observer.altaz(times,
-                                    get_moon(times, location=observer.location,
-                                             ephemeris=self.ephemeris))
-        moon_separation = targets.separation(moon_altaz)
+        # removed the location argument here, which causes small <1 deg
+        # innacuracies, but it is needed until astropy PR #5897 is released
+        # which should be astropy 1.3.2
+        moon = get_moon(times,
+                        ephemeris=self.ephemeris)
+        # note to future editors - the order matters here
+        # moon.separation(targets) is NOT the same as targets.separation(moon)
+        # the former calculates the separation in the frame of the moon coord
+        # which is GCRS, and that is what we want.
+        moon_separation = moon.separation(targets)
 
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
