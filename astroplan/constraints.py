@@ -486,7 +486,7 @@ class SunSeparationConstraint(Constraint):
         # use get_body rather than get sun here, since
         # it returns the Sun's coordinates in an observer
         # centred frame, so the separation is as-seen
-        # by the observer.
+        # by the observer.
         # 'get_sun' returns ICRS coords.
         sun = get_body('sun', times, location=observer.location)
         solar_separation = sun.separation(targets)
