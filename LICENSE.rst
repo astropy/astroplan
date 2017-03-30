@@ -1,4 +1,4 @@
-Copyright (c) 2015-2016, Astroplan Developers
+Copyright (c) 2015-2017, Astroplan Developers
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
