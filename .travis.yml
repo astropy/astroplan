@@ -21,7 +21,7 @@ env:
     global:
         # Set defaults to avoid repeating in most cases
         - NUMPY_VERSION=stable
-        - ASTROPY_VERSION=stable
+        - ASTROPY_VERSION=1.2
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='pytz'
         - PIP_DEPENDENCIES=''
@@ -78,6 +78,10 @@ matrix:
                CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
 
+        # Try older version of Astropy
+        - os: linux
+          env: PYTHON_VERSION=2.7 ASTROPY_VERSION=1.2
+
         # Try older numpy versions
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10
@@ -88,24 +92,27 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7
 
-        # Try developer version of Numpy
-        - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
-
-        # Try pre-release version of Numpy. This only runs if a pre-release
-        # is available on pypi.
-        - os: linux
-          env: PYTHON_VERSION=3.5 NUMPY_VERSION=prerelease
-
-        # Try developer version of Astropy
-        - os: linux
-          env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev
-
         # Do a PEP8 test with pycodestyle
         - os: linux
           env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
 
     allow_failures:
+      # Try latest stable version of astropy
+      - os: linux
+        env: PYTHON_VERSION=2.7 ASTROPY_VERSION=1.3
+
+      # Try developer version of Numpy
+      - os: linux
+        env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
+
+      # Try pre-release version of Numpy. This only runs if a pre-release
+      # is available on pypi.
+      - os: linux
+        env: PYTHON_VERSION=3.5 NUMPY_VERSION=prerelease
+
+      # Try developer version of Astropy
+      - os: linux
+        env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
       # TODO: these fail for now ... make them work!
       - env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
