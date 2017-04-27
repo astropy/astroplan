@@ -1,10 +1,12 @@
 0.3 (unreleased)
 ----------------
 
-- Internal changes to the way calculations are done means that astropy>=1.3 is required [#285]
+- No changes yet
 
 0.2.1 (2016-04-27)
 ------------------
+
+- Internal changes to the way calculations are done means that astropy>=1.3 is required [#285]
 
 - Fixed bug when scheduling block list is empty [#298]
 
