@@ -25,11 +25,11 @@ from .utils import time_grid_from_range
 from .target import FixedTarget
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
-           "is_observable", "is_always_observable", "time_grid_from_range",
+           "is_observable", "is_always_observable", "AzimuthConstraint",
            "SunSeparationConstraint", "MoonSeparationConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
            "TimeConstraint", "observability_table", "months_observable",
-           "max_best_rescale", "min_best_rescale"]
+           "max_best_rescale", "min_best_rescale", "time_grid_from_range"]
 
 
 def _get_altaz(times, observer, targets, force_zero_pressure=False):
@@ -421,6 +421,62 @@ class AtNightConstraint(Constraint):
         solar_altitude = self._get_solar_altitudes(times, observer, targets)
         mask = solar_altitude <= self.max_solar_altitude
         return mask
+
+
+
+class AzimuthConstraint(Constraint):
+    """
+    Constrain the azimuth of the target.
+
+    .. note::
+        1) Negative azimuths of up to -360 degrees can be used, e.g,. azimuth
+        -45 == azimuth 315.  In general, use positive azimuth angles, though.
+        2) If the minimum azimuth is greater than the maximum azimuth, 360 degrees
+        is added to the maximum so that the maximum is always larger than the
+        minimum.  This allows a range of azimuths towards the north, e.g.,
+        min = 315; max = 45.
+
+    Parameters
+    ----------
+    min : `~astropy.units.Quantity` or `None`
+        Minimum azimuth of the target (inclusive). `None` indicates no limit.
+    max : `~astropy.units.Quantity` or `None`
+        Maximum azimuth of the target (inclusive). `None` indicates no limit.
+    boolean_constraint : bool
+        If True, the constraint is treated as a boolean (True for within the
+        limits and False for outside).  If False, the constraint returns a
+        float on [0, 1], where 0 is the min azimuth and 1 is the max.
+    """
+    def __init__(self, min=None, max=None, boolean_constraint=True):
+        if min is None:
+            self.min = Angle(0*u.deg)
+        else:
+            self.min = Angle(min)
+        if max is None:
+            self.max = Angle(360*u.deg)
+        else:
+            self.max = Angle(max)
+
+        # Constrain the minimum and maximum azimuth angles to 0-360 range.
+        self.min.wrap_at('360d', inplace=True) 
+        self.max.wrap_at('360d', inplace=True) 
+        
+        # Handle the case of minimum azimuth having a larger value than the maximum azimuth.
+        # This can occur when the azimuth range includes north (azimuth == 0).
+        if self.min > self.max:
+            self.max += 360*u.deg
+
+        self.boolean_constraint = boolean_constraint
+
+    def compute_constraint(self, times, observer, targets):
+        cached_altaz = _get_altaz(times, observer, targets)
+        az = cached_altaz['altaz'].az
+        if self.boolean_constraint:
+            lowermask = self.min <= az
+            uppermask = az <= self.max
+            return lowermask & uppermask
+        else:
+            return max_best_rescale(az, self.min, self.max)
 
 
 class SunSeparationConstraint(Constraint):
