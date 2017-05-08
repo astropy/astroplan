@@ -75,9 +75,9 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
         timekey = times.jd
     # make hashable thing from targets coords
     try:
-        targkey = tuple(targets.ra.deg.ravel())
+        targkey = tuple(targets.frame.data.lon.ravel())
     except:
-        targkey = targets.ra.deg
+        targkey = targets.frame.data.lon
     aakey = (timekey, targkey)
 
     if aakey not in observer._altaz_cache:
@@ -180,9 +180,9 @@ def _get_meridian_transit_times(times, observer, targets):
         timekey = times.jd
     # make hashable thing from targets coords
     try:
-        targkey = tuple(targets.ra.deg.ravel())
+        targkey = tuple(targets.frame.data.lon.ravel())
     except:
-        targkey = targets.ra.deg
+        targkey = targets.frame.data.lon
     aakey = (timekey, targkey)
 
     if aakey not in observer._meridian_transit_cache:
