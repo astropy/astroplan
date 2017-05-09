@@ -358,7 +358,7 @@ class Observer(object):
                 return False
         return True
 
-    def _preprocess_inputs(self, time, target=None, grid=False):
+    def _preprocess_inputs(self, time, target=None, grid_times_targets=False):
         """
         Preprocess time and target inputs
 
@@ -373,7 +373,7 @@ class Observer(object):
         target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list
             The target(s) to use in the calculation.
 
-        grid: bool
+        grid_times_targets: bool
             If True, and the time and target objects cannot be broadcast,
             the target object will have extra dimensions packed onto the end,
             so that calculations with M targets and N times will return an (M, N)
@@ -390,7 +390,7 @@ class Observer(object):
         target = get_skycoord(target)
 
         if not self._is_broadcastable(target.shape, time.shape):
-            if grid:
+            if grid_times_targets:
                 while target.ndim <= time.ndim:
                     target = target[:, np.newaxis]
             else:
@@ -400,7 +400,7 @@ class Observer(object):
                     ))
         return time, target
 
-    def altaz(self, time, target=None, obswl=None, grid=False):
+    def altaz(self, time, target=None, obswl=None, grid_times_targets=False):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
@@ -423,7 +423,7 @@ class Observer(object):
         obswl : `~astropy.units.Quantity` (optional)
             Wavelength of the observation used in the calculation.
 
-        grid: bool
+        grid_times_targets: bool
             If True, and the time and target objects cannot be broadcast,
             the target object will have extra dimensions packed onto the end,
             so that calculations with M targets and N times will return an (M, N)
@@ -459,7 +459,7 @@ class Observer(object):
         >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
         if target is not None:
-            time, target = self._preprocess_inputs(time, target, grid)
+            time, target = self._preprocess_inputs(time, target, grid_times_targets)
 
         altaz_frame = AltAz(location=self.location, obstime=time,
                             pressure=self.pressure, obswl=obswl,
@@ -724,7 +724,7 @@ class Observer(object):
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altaz = self.altaz(times, target, grid=True)
+        altaz = self.altaz(times, target, grid_times_targets=True)
         altitudes = altaz.alt
 
         al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
@@ -780,7 +780,7 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target, grid=True)
+        altaz = self.altaz(times, target, grid_times_targets=True)
         altitudes = altaz.alt
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
