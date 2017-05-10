@@ -86,7 +86,7 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
                 observer_old_pressure = observer.pressure
                 observer.pressure = 0
 
-            altaz = observer.altaz(times, targets, grid=False)
+            altaz = observer.altaz(times, targets, grid_times_targets=False)
             observer._altaz_cache[aakey] = dict(times=times,
                                                 altaz=altaz)
         finally:
@@ -244,7 +244,7 @@ class Constraint(object):
                 targets = SkyCoord(np.tile(targets, 1))[:, np.newaxis]
             else:
                 targets = targets[..., np.newaxis]
-        times, targets = observer._preprocess_inputs(times, targets, grid=False)
+        times, targets = observer._preprocess_inputs(times, targets, grid_times_targets=False)
         result = self.compute_constraint(times, observer, targets)
 
         # make sure the output has the same shape as would result from
