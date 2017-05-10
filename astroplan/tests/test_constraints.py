@@ -296,6 +296,14 @@ def test_docs_example():
             self.min = min
             self.max = max
 
+        @classmethod
+        def vectorize(cls, constraint_list):
+            # this function should take a list of constraints
+            # and return a vectorized version of this constraint
+            min_vals = _get_limit_vals(constraint_list, 'min')
+            max_vals = _get_limit_vals(constraint_list, 'max')
+            return cls(min_vals, max_vals)
+
         def compute_constraint(self, times, observer, targets):
 
             # Vega's coordinate must be non-scalar for the dimensions
@@ -324,9 +332,13 @@ def test_docs_example():
                 raise ValueError("No max and/or min specified in "
                                  "VegaSeparationConstraint.")
 
+
             # Return an array that is True where the target is observable and
             # False where it is not
-            return mask
+            # Must have shape (len(targets), len(times))
+
+            # currently mask has shape (len(targets), 1)
+            return np.tile(mask, len(times))
 
     constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
     observability = is_observable(constraints, subaru, targets,
@@ -381,13 +393,13 @@ def test_rescale_minmax():
     assert all(np.array([0.8, 0.2, 1, 0, 0]) == rescaled)
 
 constraint_tests = [
-    AltitudeConstraint(),
+    AltitudeConstraint(min=30*u.deg),
     AirmassConstraint(2),
-    AtNightConstraint(),
+    AtNightConstraint(max_solar_altitude=0*u.deg),
     SunSeparationConstraint(min=90*u.deg),
     MoonSeparationConstraint(min=20*u.deg),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
-    TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
+    TimeConstraint(min=Time("2015-08-28 03:30"), max=Time("2015-09-05 10:30"))
 ]
 
 
@@ -396,9 +408,33 @@ def test_regression_shapes(constraint):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
                FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
-    lapalma = Observer.at_site('lapalma')
+    keck = Observer.at_site('keck')
 
-    assert constraint(lapalma, targets, times).shape == (2, 3)
-    assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
-    assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
-    assert constraint(lapalma, targets, times[0]).shape == (2, 1)
+    assert constraint(keck, targets, times).shape == (2, 3)
+    assert constraint(keck, [targets[0]], times).shape == (1, 3)
+    assert constraint(keck, [targets[0]], times[0]).shape == (1, 1)
+    assert constraint(keck, targets, times[0]).shape == (2, 1)
+
+
+vector_constraint_tests = [
+    AltitudeConstraint(min=[30*u.deg]*2),
+    AirmassConstraint([2, 2]),
+    AtNightConstraint(max_solar_altitude=[0*u.deg]*2),
+    SunSeparationConstraint(min=[90*u.deg]*2),
+    MoonSeparationConstraint(min=[20*u.deg]*2),
+    LocalTimeConstraint(min=[dt.time(23, 50)]*2, max=dt.time(4, 8)),
+    TimeConstraint(min=Time(["2015-08-28 03:30", "2015-08-28 03:30"]),
+                   max=Time("2015-09-05 10:30"))
+]
+
+
+@pytest.mark.parametrize('constraint_idx', range(len(constraint_tests)))
+def test_vector_constraints(constraint_idx):
+    times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
+    targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
+               FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
+    keck = Observer.at_site('keck')
+    constraint = constraint_tests[constraint_idx]
+    vconstraint = vector_constraint_tests[constraint_idx]
+    assert np.all(constraint(keck, targets, times) ==
+                  vconstraint(keck, targets, times))

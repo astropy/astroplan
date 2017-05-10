@@ -253,6 +253,7 @@ Here's our ``VegaSeparationConstraint`` implementation::
     from astroplan import Constraint, is_observable, min_best_rescale
     from astropy.coordinates import Angle
     import astropy.units as u
+    from astroplan.constraints import _get_limit_vals
 
     class VegaSeparationConstraint(Constraint):
         """
@@ -270,6 +271,16 @@ Here's our ``VegaSeparationConstraint`` implementation::
             self.min = min
             self.max = max
             self.boolean_constraint = boolean_constraint
+
+        @classmethod
+        def vectorize(cls, constraint_list):
+            """
+            this function should take a list of constraints
+            and return a vectorized version of this constraint.
+            """
+            min_vals = _get_limit_vals(constraint_list, 'min')
+            max_vals = _get_limit_vals(constraint_list, 'max')
+            return cls(min_vals, max_vals)
 
         def compute_constraint(self, times, observer, targets):
 

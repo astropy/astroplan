@@ -15,14 +15,15 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord
+from astropy.coordinates import (get_sun, get_moon, Angle, SkyCoord,
+                                 AltAz)
 from astropy import table
 import numpy as np
 
 # Package
 from .moon import moon_illumination
 from .utils import time_grid_from_range
-from .target import FixedTarget
+from .target import FixedTarget, get_skycoord
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -166,6 +167,88 @@ def _get_meridian_transit_times(times, observer, targets):
     return observer._meridian_transit_cache[aakey]
 
 
+def limit(storage_name):
+    """
+    A property factory for constraint limits.
+
+    This will ensure that any attempt to set the limit goes through
+    a call to recast_limits.
+
+    Examples
+    ---------
+    >>> class MyConstraint(Constraint):
+    ...     # A demo constraint that does nothing
+    ...     min = limit('min')
+    ...     max = limit('max')  # set min and max properties to use limit property factory
+    ...
+    ...     def __init__(self, min=None, max=None):
+    ...             self.min = min
+    ...             self.max = max  # setting self.max goes through _recast_limits
+    ...
+    ...     def compute_constraint(self, times, observer, targets):
+    ...             return np.atleast_2d(True)
+    ...
+    ...     @classmethod
+    ...     def vectorize(cls, constraint_list):
+    ...         min_vals = _get_limit_values(constraint_list, 'min')
+    ...         max_vals = _get_limit_values(constraint_list, 'max')
+    ...         return cls(min_vals, max_vals)
+    ...
+    >>>
+    >>> cons = MyConstraint(max=2)
+    >>> cons.max
+    array([[2]])
+    >>> cons.max = 3
+    >>> cons.max.shape
+    (1, 1)
+    >>> cons.max = [3, 2]
+    >>> cons.max
+    array([[3],
+           [2]])
+    >>> cons.max.shape
+    (2, 1)
+    """
+    def limit_getter(instance):
+        return instance.__dict__[storage_name]
+
+    def limit_setter(instance, value):
+        instance.__dict__[storage_name] = instance._recast_limits(value)
+
+    return property(limit_getter, limit_setter)
+
+
+def _get_limit_values(constraint_list, limit_name):
+    """
+    A utility function to help extract a list of constraint limits from a list of constraints.
+    This routine will raise an error if any of the constraints in the list are themselves
+    vectorized.
+    Parameters
+    ----------
+    constraint_list : list
+        A list of `~astroplan.Constraint` objects.
+    limit_name : str
+        The name of the limit you wish to extract
+    Returns
+    -------
+    limit_vals : list
+        A list of the limit values.
+    """
+    vals = [getattr(c, limit_name) for c in constraint_list]
+    vals_are_none = [val is None for val in vals]
+    if np.any(vals_are_none):
+        if np.all(vals_are_none):
+            return None
+        else:
+            raise ValueError("Cannot vectorize constraints with a mixture of scalar and NoneType limits")
+    else:
+        # compare the shapes to (1,1) - use (1,1) as default for none
+        shape_check = [getattr(val, 'shape', (1, 1)) == (1, 1) for val in vals]
+        if not np.all(shape_check):
+            msg = "Not all {} limits have scalar values".format(limit_name)
+            raise ValueError(msg)
+        return [val[0, 0] if val is not None else None for val in vals]
+
+
 @abstractmethod
 class Constraint(object):
     """
@@ -241,6 +324,72 @@ class Constraint(object):
         # Should be implemented on each subclass of Constraint
         raise NotImplementedError
 
+    # should be replaced with abstractclassmethod when only Python 3 is supported
+    @abstractmethod
+    def vectorize(self, constraint_list):
+        """
+        Given a list of constraints, return a vector constraint of this type.
+
+        Parameters
+        ----------
+        constraint_list : list
+            A list of `~astroplan.Constraint` objects.
+
+        Returns
+        -------
+        constraint : `~astroplan.Constraint`
+            A vectorised version of this constraint.
+        """
+        # A classmethod that should be implemented on each subclass of Constraint
+        raise NotImplementedError
+
+    def _recast_limits(self, limit):
+        """
+        Ensure the limits can be broadcast against the supplied targets
+
+        If we want to broadcast the limits of a constraint against a list
+        of targets, then the limits should be an array of shape (N, 1),
+        where N is the number of targets in the list.
+
+        Returns
+        -------
+        recast_limit : `~numpy.ndarray`
+            The limit recast to the correct shape
+        """
+        # do nothing if limit is None
+        if limit is None:
+            return None
+        # change lists of Quantities to a non-scalar Quantity
+        # This is very slow. Is it needed?
+        if isinstance(limit, list) and isinstance(limit[0], u.Quantity):
+            limit = u.Quantity(limit)
+        # change lists of Times to a non-scalar Time
+        if isinstance(limit, list) and isinstance(limit[0], Time):
+            limit = Time(limit)
+        return np.atleast_2d(limit).T
+
+    def _check_limit_shape(self, values, limit):
+        """
+        Check to make sure that limit shape is broadcastable against values
+
+        For a well-behaved constraint, values should have a leading dimension of N,
+        where N is the number of targets. This should be broadcastable against the
+        (1,N) shape of the limits. This routine checks that, and raises a ValueError
+        if not true.
+        """
+        # do nothing if limit is None
+        if limit is None:
+            return
+        # get shapes, or () if no shape attribute (i.e scalar)
+        limit_shape = getattr(limit, 'shape', ())
+        value_shape = getattr(values, 'shape', ())
+        if limit_shape == () or limit_shape == (1, 1):
+            # scalar limits always OK
+            return
+        # we have non-scalar limits
+        if value_shape == () or value_shape[0] != limit_shape[0]:
+            raise ValueError("Cannot broadcast number of targets and constraint limits")
+
 
 class AltitudeConstraint(Constraint):
     """
@@ -262,6 +411,10 @@ class AltitudeConstraint(Constraint):
         limits and False for outside).  If False, the constraint returns a
         float on [0, 1], where 0 is the min altitude and 1 is the max.
     """
+
+    min = limit('min')  # ensure any attempt to set min goes through recast_limits
+    max = limit('max')
+
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
             self.min = -90*u.deg
@@ -274,9 +427,20 @@ class AltitudeConstraint(Constraint):
 
         self.boolean_constraint = boolean_constraint
 
+    @classmethod
+    def vectorize(cls, constraint_list):
+        # in the spirit of duck typing we don't run checks
+        min_vals = _get_limit_values(constraint_list, 'min')
+        max_vals = _get_limit_values(constraint_list, 'max')
+        boolean_constraint = np.all([c.boolean_constraint for c in constraint_list])
+        return cls(min_vals, max_vals, boolean_constraint)
+
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
         alt = cached_altaz['altaz'].alt
+        # ensure broadcastability
+        self._check_limit_shape(alt, self.min)
+        self._check_limit_shape(alt, self.max)
         if self.boolean_constraint:
             lowermask = self.min <= alt
             uppermask = alt <= self.max
@@ -285,7 +449,7 @@ class AltitudeConstraint(Constraint):
             return max_best_rescale(alt, self.min, self.max)
 
 
-class AirmassConstraint(AltitudeConstraint):
+class AirmassConstraint(Constraint):
     """
     Constrain the airmass of a target.
 
@@ -313,14 +477,29 @@ class AirmassConstraint(AltitudeConstraint):
 
         AirmassConstraint(2)
     """
+
+    min = limit('min')  # ensure any attempt to set min goes through recast_limits
+    max = limit('max')
+
     def __init__(self, max=None, min=1, boolean_constraint=True):
         self.min = min
         self.max = max
         self.boolean_constraint = boolean_constraint
 
+    @classmethod
+    def vectorize(cls, constraint_list):
+        # in the spirit of duck typing we don't run checks
+        min_vals = _get_limit_values(constraint_list, 'min')
+        max_vals = _get_limit_values(constraint_list, 'max')
+        boolean_constraint = np.any([c.boolean_constraint for c in constraint_list])
+        return cls(max_vals, min_vals, boolean_constraint)
+
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
         secz = cached_altaz['altaz'].secz
+        # ensure broadcastability
+        self._check_limit_shape(secz, self.min)
+        self._check_limit_shape(secz, self.max)
         if self.boolean_constraint:
             if self.min is None and self.max is not None:
                 mask = secz <= self.max
@@ -339,7 +518,7 @@ class AirmassConstraint(AltitudeConstraint):
             else:
                 mx = self.max
 
-            mi = 1 if self.min is None else self.min
+            mi = self._recast_limits(1) if self.min is None else self.min
             # values below 1 should be disregarded
             return min_best_rescale(secz, mi, mx, less_than_min=0)
 
@@ -348,6 +527,9 @@ class AtNightConstraint(Constraint):
     """
     Constrain the Sun to be below ``horizon``.
     """
+
+    max_solar_altitude = limit('max_solar_altitude')
+
     @u.quantity_input(horizon=u.deg)
     def __init__(self, max_solar_altitude=0*u.deg, force_pressure_zero=True):
         """
@@ -364,6 +546,12 @@ class AtNightConstraint(Constraint):
         """
         self.max_solar_altitude = max_solar_altitude
         self.force_pressure_zero = force_pressure_zero
+
+    @classmethod
+    def vectorize(cls, constraint_list):
+        max_vals = _get_limit_values(constraint_list, 'max_solar_altitude')
+        pressure_zero = np.any([c.force_pressure_zero for c in constraint_list])
+        return cls(max_vals, pressure_zero)
 
     @classmethod
     def twilight_civil(cls, **kwargs):
@@ -419,6 +607,7 @@ class AtNightConstraint(Constraint):
 
     def compute_constraint(self, times, observer, targets):
         solar_altitude = self._get_solar_altitudes(times, observer, targets)
+        self._check_limit_shape(solar_altitude, self.max_solar_altitude)
         mask = solar_altitude <= self.max_solar_altitude
         return mask
 
@@ -427,6 +616,10 @@ class SunSeparationConstraint(Constraint):
     """
     Constrain the distance between the Sun and some targets.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -438,8 +631,21 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
-        self.min = min
-        self.max = max
+        if min is None:
+            self.min = 0*u.deg
+        else:
+            self.min = min
+        if max is None:
+            self.max = 180*u.deg
+        else:
+            self.max = max
+
+    @classmethod
+    def vectorize(cls, constraint_list):
+        return cls(
+            _get_limit_values(constraint_list, 'min'),
+            _get_limit_values(constraint_list, 'max')
+        )
 
     def compute_constraint(self, times, observer, targets):
         sunaltaz = observer.altaz(times, get_sun(times), grid=False)
@@ -447,16 +653,13 @@ class SunSeparationConstraint(Constraint):
                        for target in targets]
         target_altazs = [observer.altaz(times, coo) for coo in target_coos]
         solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
-        if self.min is None and self.max is not None:
-            mask = self.max >= solar_separation
-        elif self.max is None and self.min is not None:
-            mask = self.min <= solar_separation
-        elif self.min is not None and self.max is not None:
-            mask = ((self.min <= solar_separation) &
-                    (solar_separation <= self.max))
-        else:
-            raise ValueError("No max and/or min specified in "
-                             "SunSeparationConstraint.")
+
+        # check broadcastability
+        self._check_limit_shape(solar_separation, self.min)
+        self._check_limit_shape(solar_separation, self.max)
+
+        mask = ((self.min <= solar_separation) &
+                (solar_separation <= self.max))
         return mask
 
 
@@ -464,6 +667,10 @@ class MoonSeparationConstraint(Constraint):
     """
     Constrain the distance between the Earth's moon and some targets.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -479,42 +686,49 @@ class MoonSeparationConstraint(Constraint):
             ``astropy.coordinates.solar_system_ephemeris.set`` (which is
             set to 'builtin' by default).
         """
-        self.min = min
-        self.max = max
+        if min is None:
+            self.min = 0*u.deg
+        else:
+            self.min = min
+        if max is None:
+            self.max = 180*u.deg
+        else:
+            self.max = max
         self.ephemeris = ephemeris
 
+    @classmethod
+    def vectorize(cls, constraint_list):
+        return cls(
+            _get_limit_values(constraint_list, 'min'),
+            _get_limit_values(constraint_list, 'max')
+        )
+
     def compute_constraint(self, times, observer, targets):
-
-        targets = [target.coord if hasattr(target, 'coord') else target
-                   for target in targets]
-
         # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
         # handles scalar and non-scalar time inputs differently
-
         if times.isscalar:
-            moon = get_moon(times, location=observer.location,
-                            ephemeris=self.ephemeris)
-            moon_separation = Angle([moon.separation(target)
-                                     for target in targets]).T
+            moon = get_moon(times, observer.location, ephemeris=self.ephemeris)
         else:
-            moon_separation = []
-            for t in times:
-                moon_coord = get_moon(t, location=observer.location,
-                                      ephemeris=self.ephemeris)
-                sep = [moon_coord.separation(target) for target in targets]
-                moon_separation.append(sep)
-            moon_separation = Angle(moon_separation).T
+            # must get moon coordinates in an earth centred frame
+            altaz_frame = AltAz(obstime=times[0], location=observer.location)
+            moon_coords = [get_moon(t, observer.location, ephemeris=self.ephemeris).transform_to(altaz_frame)
+                           for t in times]
+            obstime = [coord.obstime for coord in moon_coords]
+            alts = u.Quantity([coord.alt for coord in moon_coords])
+            azs = u.Quantity([coord.az for coord in moon_coords])
+            dists = u.Quantity([coord.distance for coord in moon_coords])
+            moon = SkyCoord(AltAz(azs, alts, dists, obstime=obstime, location=observer.location))
 
-        if self.min is None and self.max is not None:
-            mask = self.max >= moon_separation
-        elif self.max is None and self.min is not None:
-            mask = self.min <= moon_separation
-        elif self.min is not None and self.max is not None:
-            mask = ((self.min <= moon_separation) &
-                    (moon_separation <= self.max))
-        else:
-            raise ValueError("No max and/or min specified in "
-                             "MoonSeparationConstraint.")
+        targets = get_skycoord(targets)
+
+        # has to be this way around, so the target coords are transformed to an
+        # Earth-centred frame before calculating angular separation.
+        moon_separation = targets[:, np.newaxis].separation(moon)
+        # check broadcastability
+        self._check_limit_shape(moon_separation, self.min)
+        self._check_limit_shape(moon_separation, self.max)
+        mask = ((self.min <= moon_separation) &
+                (moon_separation <= self.max))
         return mask
 
 
@@ -524,6 +738,10 @@ class MoonIlluminationConstraint(Constraint):
 
     Constraint is also satisfied if the Moon has set.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -539,8 +757,8 @@ class MoonIlluminationConstraint(Constraint):
             `~astropy.coordinates.solar_system_ephemeris` (which is
             set to 'builtin' by default).
         """
-        self.min = min
-        self.max = max
+        self.min = min if min is not None else -0.5
+        self.max = max if max is not None else 1.5
         self.ephemeris = ephemeris
 
     @classmethod
@@ -594,35 +812,48 @@ class MoonIlluminationConstraint(Constraint):
         """
         return cls(min, max, **kwargs)
 
+    def vectorize(cls, constraint_list):
+        return cls(
+            _get_limit_values(constraint_list, 'min'),
+            _get_limit_values(constraint_list, 'max')
+        )
+
     def compute_constraint(self, times, observer, targets):
         # first is the moon up?
         cached_moon = _get_moon_data(times, observer)
         moon_alt = cached_moon['altaz'].alt
         moon_down_mask = moon_alt < 0
-        moon_up_mask = moon_alt >= 0
+        moon_up_mask = ~moon_down_mask
 
         illumination = cached_moon['illum']
-        if self.min is None and self.max is not None:
+
+        """
+        illumination and mask arrays are (ntimes,) whilst
+        limits are (ntargets, 1). These will broadcast to make
+        an (ntargets, ntimes) array
+        """
+        if self.min < 0 and self.max < 1.5:
             mask = (self.max >= illumination) | moon_down_mask
-        elif self.max is None and self.min is not None:
+        elif self.max > 1.0 and self.min > -0.5:
             mask = (self.min <= illumination) & moon_up_mask
-        elif self.min is not None and self.max is not None:
+        elif self.min > -0.5 and self.max < 1.5:
             mask = ((self.min <= illumination) &
                     (illumination <= self.max)) & moon_up_mask
         else:
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
 
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+        return mask
 
 
 class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.
     """
+
+    min = limit('min')
+    max = limit('max')
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -645,57 +876,70 @@ class LocalTimeConstraint(Constraint):
         >>> # bound times between 23:50 and 04:08 local Hawaiian time
         >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
         """
-
-        self.min = min
-        self.max = max
-
-        if self.min is None and self.max is None:
+        if min is None and max is None:
             raise ValueError("You must at least supply either a minimum or a maximum time.")
 
-        if self.min is not None:
-            if not isinstance(self.min, datetime.time):
+        if min is not None:
+            valid_type = False
+            try:
+                valid_type = all(isinstance(item, datetime.time) for item in min)
+            except:
+                valid_type = isinstance(min, datetime.time)
+            if not valid_type:
                 raise TypeError("Time limits must be specified as datetime.time objects.")
+            self.min = min
+        else:
+            self.min = datetime.time(0, 0, 0)
 
-        if self.max is not None:
-            if not isinstance(self.max, datetime.time):
+        if max is not None:
+            valid_type = False
+            try:
+                valid_type = all(isinstance(item, datetime.time) for item in max)
+            except:
+                valid_type = isinstance(max, datetime.time)
+            if not valid_type:
                 raise TypeError("Time limits must be specified as datetime.time objects.")
+            self.max = max
+        else:
+            self.max = datetime.time(23, 59, 59)
+
+    @classmethod
+    def vectorize(cls, constraint_list):
+        return cls(
+            _get_limit_values(constraint_list, 'min'),
+            _get_limit_values(constraint_list, 'max')
+        )
 
     def compute_constraint(self, times, observer, targets):
 
         timezone = None
+        gettz = np.frompyfunc(lambda x: getattr(x, 'tzinfo'), 1, 1)
 
         # get timezone from time objects, or from observer
-        if self.min is not None:
-            timezone = self.min.tzinfo
-
-        elif self.max is not None:
-            timezone = self.max.tzinfo
+        timezone = gettz(self.min)
 
         if timezone is None:
-            timezone = observer.timezone
+            timezone = gettz(self.max)
 
-        if self.min is not None:
-            min_time = self.min
-        else:
-            min_time = self.min = datetime.time(0, 0, 0)
+        if timezone is None:
+            timezone = self._recast_limits(observer.timezone)
 
-        if self.max is not None:
-            max_time = self.max
-        else:
-            max_time = datetime.time(23, 59, 59)
+        # make numpy ufunc to get time from astropy time object
+        gettime = np.frompyfunc(lambda x: x.time(), 1, 1)
 
         # If time limits occur on same day:
-        if self.min < self.max:
-            mask = [min_time <= t.datetime.time() <= max_time for t in times]
+        same_day_mask = np.tile(self.min < self.max, len(times))
+        same_day_mask_values = np.logical_and(self.min <= gettime(times.datetime),
+                                              gettime(times.datetime) <= self.max)
+        mask = np.logical_or(gettime(times.datetime) >= self.min,
+                             gettime(times.datetime) <= self.max)
+        mask[same_day_mask] = same_day_mask_values[same_day_mask]
 
-        # If time boundaries straddle midnight:
-        else:
-            mask = [(t.datetime.time() >= min_time) or
-                    (t.datetime.time() <= max_time) for t in times]
         if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+            if mask.shape != (len(targets), len(times)):
+                mask = np.tile(mask, len(targets))
+                mask = mask.reshape(len(targets), len(times))
+        return mask
 
 
 class TimeConstraint(Constraint):
@@ -736,25 +980,67 @@ class TimeConstraint(Constraint):
                              "maximum time.")
 
         if self.min is not None:
-            if not isinstance(self.min, Time):
-                raise TypeError("Time limits must be specified as "
-                                "astropy.time.Time objects.")
+            valid_input = False
+            try:
+                valid_input = all(isinstance(item, Time) for item in self.min)
+                self.min = Time(self.min)  # change lists of Times to a non-scalar Time
+            except:
+                valid_input = isinstance(self.min, Time)
+            if not valid_input:
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
 
         if self.max is not None:
-            if not isinstance(self.max, Time):
-                raise TypeError("Time limits must be specified as "
-                                "astropy.time.Time objects.")
+            valid_input = False
+            try:
+                valid_input = all(isinstance(item, Time) for item in self.max)
+                self.max = Time(self.max)  # change lists of Times to a non-scalar Time
+            except:
+                valid_input = isinstance(self.max, Time)
+            if not valid_input:
+                raise TypeError("Time limits must be specified as astropy.time.Time objects.")
+
+    @classmethod
+    def vectorize(cls, constraint_list):
+        min_vals = [c.min for c in constraint_list]
+        max_vals = [c.max for c in constraint_list]
+        if np.any(min_vals is None):
+            if np.all(min_vals is None):
+                min_vals = None
+            else:
+                raise ValueError("Cannot vectorize constraints with mixture of scalar and NoneType limits")
+        if np.any(max_vals is None):
+            if np.all(max_vals is None):
+                max_vals = None
+            else:
+                raise ValueError("Cannot vectorize constraints with mixture of scalar and NoneType limits")
+
+        if np.any([not val.isscalar for val in min_vals]):
+            raise ValueError("Not all min limits are scalar")
+        if np.any([not val.isscalar for val in max_vals]):
+            raise ValueError("Not all max limits are scalar")
+        return cls(min_vals, max_vals)
 
     def compute_constraint(self, times, observer, targets):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
             max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
-        mask = np.logical_and(times > min_time, times < max_time)
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+
+        if min_time.isscalar:
+            min_mask = times > min_time
+            min_mask = np.tile(min_mask, len(targets))
+            min_mask = min_mask.reshape(len(targets), len(times))
+        else:
+            min_mask = times > min_time[:, np.newaxis]
+
+        if max_time.isscalar:
+            max_mask = times < max_time
+            max_mask = np.tile(max_mask, len(targets))
+            max_mask = max_mask.reshape(len(targets), len(times))
+        else:
+            max_mask = times < max_time[:, np.newaxis]
+        mask = np.logical_and(min_mask, max_mask)
+        return mask
 
 
 def is_always_observable(constraints, observer, targets, times=None,
