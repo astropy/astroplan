@@ -35,6 +35,48 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "max_best_rescale", "min_best_rescale"]
 
 
+def _make_cache_key(times, targets):
+    """
+    Make a unique key to reference this combination of ``times`` and ``targets``.
+
+    Often, we wish to store expensive calculations for a combination of
+    ``targets`` and ``times`` in a cache on an ``observer``` object. This
+    routine will provide an appropriate, hashable, key to store these
+    calculations in a dictionary.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint.
+    targets : `~astropy.coordinates.SkyCoord`
+        Target or list of targets.
+
+    Returns
+    -------
+    cache_key : tuple
+        A hashable tuple for use as a cache key
+    """
+    # make a tuple from times
+    try:
+        timekey = tuple(times.jd) + times.shape
+    except:
+        # must be scalar
+        timekey = (times.jd,)
+    # make hashable thing from targets coords
+    try:
+        if hasattr(targets, 'frame'):
+            # treat as a SkyCoord object. Accessing the longitude
+            # attribute of the frame data should be unique and is
+            # quicker than accessing the ra attribute.
+            targkey = tuple(targets.frame.data.lon.value.ravel()) + targets.shape
+        else:
+            # assume targets is a string.
+            targkey = (targets,)
+    except:
+        targkey = (targets.frame.data.lon,)
+    return timekey + targkey
+
+
 def _get_altaz(times, observer, targets, force_zero_pressure=False):
     """
     Calculate alt/az for ``target`` at times linearly spaced between
@@ -65,20 +107,7 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
         observer._altaz_cache = {}
 
     # convert times, targets to tuple for hashing
-    # TODO: This is slow. Can we find a quicker way of making a unique hash?
-    # the call to get_skycoord which precedes this means we cannot rely on
-    # object target hash or ID. Perhaps SkyCoord needs a __hash__ method?
-    # convert tuple to something hashable
-    try:
-        timekey = tuple(times.jd)
-    except:
-        timekey = times.jd
-    # make hashable thing from targets coords
-    try:
-        targkey = tuple(targets.frame.data.lon.ravel())
-    except:
-        targkey = targets.frame.data.lon
-    aakey = (timekey, targkey)
+    aakey = _make_cache_key(times, targets)
 
     if aakey not in observer._altaz_cache:
         try:
@@ -124,11 +153,7 @@ def _get_moon_data(times, observer, force_zero_pressure=False):
         observer._moon_cache = {}
 
     # convert times to tuple for hashing
-    try:
-        aakey = tuple(times.jd)
-        hash(aakey)
-    except:
-        aakey = (times.jd,)
+    aakey = _make_cache_key(times, 'moon')
 
     if aakey not in observer._moon_cache:
         try:
@@ -174,16 +199,7 @@ def _get_meridian_transit_times(times, observer, targets):
         observer._meridian_transit_cache = {}
 
     # convert times to tuple for hashing
-    try:
-        timekey = tuple(times.jd)
-    except:
-        timekey = times.jd
-    # make hashable thing from targets coords
-    try:
-        targkey = tuple(targets.frame.data.lon.ravel())
-    except:
-        targkey = targets.frame.data.lon
-    aakey = (timekey, targkey)
+    aakey = _make_cache_key(times, targets)
 
     if aakey not in observer._meridian_transit_cache:
         meridian_transit_times = observer.target_meridian_transit_time(times, targets)
@@ -433,11 +449,7 @@ class AtNightConstraint(Constraint):
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
 
-        try:
-            aakey = (tuple(times.jd), 'sun')
-            hash(aakey)
-        except:
-            aakey = (times.jd, 'sun')
+        aakey = _make_cache_key(times, 'sun')
 
         if aakey not in observer._altaz_cache:
             try:

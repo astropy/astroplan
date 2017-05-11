@@ -277,7 +277,6 @@ def test_docs_example():
                for name, ra, dec in target_table]
 
     from astroplan import Constraint, is_observable
-    from astropy.coordinates import Angle
 
     class VegaSeparationConstraint(Constraint):
         """
@@ -292,41 +291,20 @@ def test_docs_example():
                 Minimum acceptable separation between Vega and target. `None`
                 indicates no limit.
             """
-            self.min = min
-            self.max = max
+            self.min = min if min else 0*u.deg
+            self.max = max if max else 180*u.deg
 
         def compute_constraint(self, times, observer, targets):
-
-            # Vega's coordinate must be non-scalar for the dimensions
-            # to work out properly when combined with other constraints which
-            # test multiple times
-            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
+            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
 
             # Calculate separation between target and vega
             # Targets are automatically converted to SkyCoord objects
             # by __call__ before compute_constraint is called.
             vega_separation = vega.separation(targets)
 
-            # If a maximum is specified but no minimum
-            if self.min is None and self.max is not None:
-                mask = vega_separation < self.max
-
-            # If a minimum is specified but no maximum
-            elif self.max is None and self.min is not None:
-                mask = self.min < vega_separation
-
-            # If both a minimum and a maximum are specified
-            elif self.min is not None and self.max is not None:
-                mask = ((self.min < vega_separation) & (vega_separation < self.max))
-
-            # Otherwise, raise an error
-            else:
-                raise ValueError("No max and/or min specified in "
-                                 "VegaSeparationConstraint.")
-
             # Return an array that is True where the target is observable and
             # False where it is not
-            return mask
+            return (self.min < vega_separation) & (vega_separation < self.max)
 
     constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
     observability = is_observable(constraints, subaru, targets,
@@ -404,3 +382,15 @@ def test_regression_shapes(constraint):
     assert constraint(lapalma, targets, times[0]).shape == (2,)
     with pytest.raises(ValueError):
         constraint(lapalma, targets, times)
+
+
+def test_caches_shapes():
+    times = Time([2457884.43350526, 2457884.5029497, 2457884.57239415], format='jd')
+    m31 = SkyCoord(10.6847929*u.deg, 41.269065*u.deg)
+    ippeg = SkyCoord(350.785625*u.deg, 18.416472*u.deg)
+    htcas = SkyCoord(17.5566667*u.deg, 60.0752778*u.deg)
+    targets = get_skycoord([m31, ippeg, htcas])
+    observer = Observer.at_site('lapalma')
+    ac = AltitudeConstraint(min=30*u.deg)
+    assert ac(observer, targets, times, grid_times_targets=True).shape == (3, 3)
+    assert ac(observer, targets, times, grid_times_targets=False).shape == (3,)
