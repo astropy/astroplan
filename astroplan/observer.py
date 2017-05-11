@@ -374,10 +374,10 @@ class Observer(object):
             The target(s) to use in the calculation.
 
         grid_times_targets: bool
-            If True, and the time and target objects cannot be broadcast,
-            the target object will have extra dimensions packed onto the end,
+            If True, the target object will have extra dimensions packed onto the end,
             so that calculations with M targets and N times will return an (M, N)
-            shaped result. Useful for grid searches for rise/set times etc.
+            shaped result. Otherwise, we rely on broadcasting the shapes together
+            using standard numpy rules. Useful for grid searches for rise/set times etc.
         """
         # make sure we have a non-scalar time
         if not isinstance(time, Time):
@@ -424,10 +424,10 @@ class Observer(object):
             Wavelength of the observation used in the calculation.
 
         grid_times_targets: bool
-            If True, and the time and target objects cannot be broadcast,
-            the target object will have extra dimensions packed onto the end,
+            If True, the target object will have extra dimensions packed onto the end,
             so that calculations with M targets and N times will return an (M, N)
-            shaped result. Useful for grid searches for rise/set times etc.
+            shaped result. Otherwise, we rely on broadcasting the shapes together
+            using standard numpy rules. Useful for grid searches for rise/set times etc.
 
         Returns
         -------

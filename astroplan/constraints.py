@@ -266,6 +266,10 @@ class Constraint(object):
         # make sure the output has the same shape as would result from
         # broadcasting times and targets against each other
         if targets is not None:
+            # broadcasting times v targets is slow due to
+            # complex nature of these objects. We make
+            # to simple numpy arrays of the same shape and
+            # broadcast these to find the correct shape
             shp1, shp2 = times.shape, targets.shape
             x = np.array([1])
             a = as_strided(x, shape=shp1, strides=[0] * len(shp1))
