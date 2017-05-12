@@ -103,7 +103,7 @@ def test_altaz_multiple_targets():
     times = Time('1995-06-21 00:00:00') + np.linspace(0, 1, 5)*u.day
 
     obs = Observer(location=location)
-    transformed_coords = obs.altaz(times[:,np.newaxis], targets).T
+    transformed_coords = obs.altaz(times, targets, grid_times_targets=True)
     altitudes = transformed_coords.alt
 
     # Double check by doing one star the normal way with astropy
