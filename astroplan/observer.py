@@ -388,16 +388,19 @@ class Observer(object):
 
         # convert any kind of target argument to non-scalar SkyCoord
         target = get_skycoord(target)
-
-        if not self._is_broadcastable(target.shape, time.shape):
-            if grid_times_targets:
+        if grid_times_targets:
+            if target.isscalar:
+                # ensure we have a (1, 1) shape coord
+                target = SkyCoord(np.tile(target, 1))[:, np.newaxis]
+            else:
                 while target.ndim <= time.ndim:
                     target = target[:, np.newaxis]
-            else:
-                raise ValueError(
-                    'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
-                        time.shape, target.shape
-                    ))
+
+        elif not self._is_broadcastable(target.shape, time.shape):
+            raise ValueError(
+                'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
+                    time.shape, target.shape
+                ))
         return time, target
 
     def altaz(self, time, target=None, obswl=None, grid_times_targets=False):
