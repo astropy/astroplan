@@ -7,7 +7,8 @@
   called with M ``target``s and N ``times``. Instead, we attempt to broadcast the time and target
   shapes, and an error is raised if this is not possible. This change breaks backwards compatibility
   but an optional argument ``grid_times_targets`` has been added to these methods. If set to true,
-  the old behaviour is recovered.
+  the old behaviour is recovered. All ``Observer`` methods for which it is relevant have this optional
+  argument.
 
 0.2.1 (2016-04-27)
 ------------------
