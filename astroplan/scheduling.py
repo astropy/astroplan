@@ -301,11 +301,45 @@ class Schedule(object):
                             'duration (minutes)', 'ra', 'dec', 'configuration'))
 
     def new_slots(self, slot_index, start_time, end_time):
+        """
+        Create new slots by splitting a current slot.
+
+        Parameters
+        ----------
+        slot_index : int
+            The index of the slot to split
+
+        start_time : `~astropy.time.Time`
+            The start time for the slot to create
+
+        end_time : `~astropy.time.Time`
+            The end time for the slot to create
+
+        Returns
+        -------
+        new_slots : list of `~astroplan.scheduling.Slot` s
+            The new slots created
+        """
         # this is intended to be used such that there aren't consecutive unoccupied slots
         new_slots = self.slots[slot_index].split_slot(start_time, end_time)
         return new_slots
 
     def insert_slot(self, start_time, block):
+        """
+        Insert a slot into schedule and associate a block to the new slot.
+
+        Parameters
+        ----------
+        start_time : `~astropy.time.Time`
+            The start time for the new slot.
+        block : `~astroplan.scheduling.ObservingBlock`
+            The observing block to insert into new slot.
+
+        Returns
+        -------
+        slots : list of `~astroplan.scheduling.Slot` objects
+            The new slots in the schedule.
+        """
         # due to float representation, this will change block start time
         # and duration by up to 1 second in order to fit in a slot
         for j, slot in enumerate(self.slots):
@@ -317,17 +351,24 @@ class Schedule(object):
         elif self.slots[slot_index].end - block.duration < start_time:
             start_time = self.slots[slot_index].end - block.duration
 
-        if abs((self.slots[slot_index].duration - block.duration) < 1 * u.second):
+        if abs((self.slots[slot_index].duration - block.duration)) < 1 * u.second:
+            # slot duration is very similar to block duration.
+            # force equality so block fits
             block.duration = self.slots[slot_index].duration
             start_time = self.slots[slot_index].start
             end_time = self.slots[slot_index].end
         elif abs(self.slots[slot_index].start - start_time) < 1*u.second:
+            # start time of block is very close to slot start time
+            # force equality to avoid tiny gaps
             start_time = self.slots[slot_index].start
             end_time = start_time + block.duration
         elif abs(self.slots[slot_index].end - start_time - block.duration) < 1*u.second:
+            # end time is very close to slot end time
+            # force equality to avoid tiny gaps
             end_time = self.slots[slot_index].end
         else:
             end_time = start_time + block.duration
+
         if isinstance(block, ObservingBlock):
             # TODO: make it shift observing/transition blocks to fill small amounts of open space
             block.end_time = start_time+block.duration
@@ -343,14 +384,25 @@ class Schedule(object):
         return earlier_slots + new_slots + later_slots
 
     def change_slot_block(self, slot_index, new_block=None):
-        # currently only written to work for TransitionBlocks in PriorityScheduler
-        # made with the assumption that the slot afterwards is open and that the
-        # start time will remain the same
+        """
+        Change the block associated with a slot.
+
+        This is currently designed to work for TransitionBlocks in PriorityScheduler
+        The assumption is that the slot afterwards is open and that the start time
+        will remain the same.
+
+        Parameters
+        ----------
+        slot_index : int
+            The slot to edit
+        new_block : `~astroplan.scheduling.TransitionBlock`, default None
+            The new transition block to insert in this slot
+        """
+        if self.slots[slot_index + 1].block:
+            raise IndexError('slot afterwards is full')
         new_end = self.slots[slot_index].start + new_block.duration
         self.slots[slot_index].end = new_end
         self.slots[slot_index].block = new_block
-        if self.slots[slot_index + 1].block:
-            raise IndexError('slot afterwards is full')
         self.slots[slot_index + 1].start = new_end
 
 
@@ -379,6 +431,20 @@ class Slot(object):
         return self.end - self.start
 
     def split_slot(self, early_time, later_time):
+        """
+        Split this slot and insert a new one.
+
+        Will return the new slots created, which can either
+        be one, two or three slots depending on if there is
+        space remaining before or after the inserted slot.
+
+        Parameters
+        ----------
+        early_time : `~astropy.time.Time`
+            The start time of the new slot to insert.
+        later_time : `~astropy.time.Time`
+            The end time of the new slot to insert.
+        """
         # check if the new slot would overwrite occupied/other slots
         if self.occupied:
             raise ValueError('slot is already occupied')
@@ -623,23 +689,14 @@ class PriorityScheduler(Scheduler):
 
         _all_times = []
         _block_priorities = np.zeros(len(blocks))
+
+        # make sure we don't schedule below the horizon
+        if self.constraints is None:
+            self.constraints = [AltitudeConstraint(min=0 * u.deg)]
+        else:
+            self.constraints.append(AltitudeConstraint(min=0 * u.deg))
+
         for i, b in enumerate(blocks):
-            if b.constraints is None:
-                b._all_constraints = self.constraints
-            else:
-                b._all_constraints = self.constraints + b.constraints
-            # to make sure the scheduler has some constraint to work off of
-            # and to prevent scheduling of targets below the horizon
-            if b._all_constraints is None:
-                b._all_constraints = [AltitudeConstraint(min=0 * u.deg)]
-                b.constraints = [AltitudeConstraint(min=0 * u.deg)]
-            elif not (any(isinstance(c, AltitudeConstraint) for c in b._all_constraints) or
-                      any(isinstance(c, AirmassConstraint) for c in b._all_constraints)):
-                b._all_constraints.append(AltitudeConstraint(min=0 * u.deg))
-                if b.constraints is None:
-                    b.constraints = [AltitudeConstraint(min=0 * u.deg)]
-                else:
-                    b.constraints.append(AltitudeConstraint(min=0 * u.deg))
             b._duration_offsets = u.Quantity([0 * u.second, b.duration / 2, b.duration])
             _block_priorities[i] = b.priority
             _all_times.append(b.duration)
@@ -660,6 +717,7 @@ class PriorityScheduler(Scheduler):
             if len(filled[0]) > 0:
                 is_open_time[filled[0]] = False
                 is_open_time[min(filled[0]) - 1] = False
+
         # generate the score arrays for all of the blocks
         scorer = Scorer(blocks, self.observer, self.schedule, global_constraints=self.constraints)
         score_array = scorer.create_score_array(time_resolution)
@@ -677,7 +735,8 @@ class PriorityScheduler(Scheduler):
 
             # Add up the applied constraints to prioritize the best blocks
             # And then remove any times that are already scheduled
-            constraint_scores[is_open_time == False] = 0
+            constraint_scores[~is_open_time] = 0
+
             # Select the most optimal time
 
             # need to leave time around the Block for transitions
@@ -690,13 +749,19 @@ class PriorityScheduler(Scheduler):
                 buffer_time = (160*u.deg/self.transitioner.slew_rate + max_config_time)
             else:
                 buffer_time = max_config_time
-            # TODO: make it so that this isn't required to prevent errors in slot creation
             total_duration = b.duration + buffer_time
+
             # calculate the number of time slots needed for this exposure
-            _stride_by = np.int(np.ceil(float(total_duration / time_resolution)))
+            _stride_by = np.int(np.ceil(float(b.duration / time_resolution)))
+
+            # calculate the number of time slots needed for the transition
+            _buffer_strides = np.int(np.ceil(float(total_duration / time_resolution)))
 
             # Stride the score arrays by that number
             _strided_scores = stride_array(constraint_scores, _stride_by)
+
+            # Stride the open time array by total duration
+            _strided_open_time = stride_array(is_open_time, _buffer_strides)
 
             # Collapse the sub-arrays
             # (run them through scorekeeper again? Just add them?
@@ -705,32 +770,48 @@ class PriorityScheduler(Scheduler):
             sum_scores = np.zeros(len(_strided_scores))
             sum_scores[good] = np.sum(_strided_scores[good], axis=1)
 
-            if np.all(constraint_scores == 0) or np.all(good == False):
+            if np.all(constraint_scores == 0) or np.all(~good):
                 # No further calculation if no times meet the constraints
                 _is_scheduled = False
-
             else:
-                # If an optimal block is available, _is_scheduled=True
-                best_time_idx = np.argmax(sum_scores)
-                start_time_idx = best_time_idx
-                new_start_time = times[best_time_idx]
-                _is_scheduled = True
+                # schedulable in principle, provided the transition
+                # does not prevent us from fitting it in.
+                # loop over valid times and see if it fits
+                for idx in np.argsort(sum_scores)[::-1]:
+                    if sum_scores[idx] <= 0.0:
+                        # we've run through all optimal blocks
+                        _is_scheduled = False
+                        break
+                    try:
+                        can_schedule = np.all(_strided_open_time[idx])
+                        if can_schedule:
+                            best_time_idx = idx
+                            start_time_idx = best_time_idx
+                            new_start_time = times[best_time_idx]
+                            _is_scheduled = True
+                            break
+                    except:
+                        # idx can extend past end of _strided_open_time
+                        pass
 
             if _is_scheduled:
                 # set duration such that the Block will fit in the strided array
                 duration_indices = np.int(np.ceil(float(b.duration / time_resolution)))
                 b.duration = duration_indices * time_resolution
+
                 # add 1 second to the start time to allow for scheduling at the start of a slot
                 slot_index = [q for q, slot in enumerate(self.schedule.slots)
                               if slot.start < new_start_time + 1*u.second < slot.end][0]
                 slots_before = self.schedule.slots[:slot_index]
                 slots_after = self.schedule.slots[slot_index + 1:]
+
                 # this has to remake transitions between already existing ObservingBlocks
                 if slots_before:
                     if isinstance(self.schedule.slots[slot_index - 1].block, ObservingBlock):
                         # make a transition object after the previous ObservingBlock
                         tb = self.transitioner(self.schedule.slots[slot_index - 1].block, b,
                                                self.schedule.slots[slot_index - 1].end, self.observer)
+
                         # we may have a None type transition, which indicates two identical
                         # ObservingBlocks, so no need to insert TransitionBlock
                         if tb is not None:
@@ -738,6 +819,7 @@ class PriorityScheduler(Scheduler):
                             tb.duration = times_indices * time_resolution
                             start_idx = self.schedule.slots[slot_index - 1].block.end_idx
                             end_idx = times_indices + start_idx
+
                             # this may make some OBs get sub-optimal scheduling, but it closes gaps
                             # TODO: determine a reasonable range inside which it gets shifted
                             if (new_start_time - tb.start_time < tb.duration or
@@ -783,7 +865,11 @@ class PriorityScheduler(Scheduler):
                             is_open_time[start_idx: end_idx] = False
 
                 # now assign the block itself times and add it to the schedule
-                b.constraints = b._all_constraints
+                if b.constraints is None:
+                    b.constraints = self.constraints
+                elif self.constraints is not None:
+                    b.constraints = b.constraints + self.constraints
+
                 b.end_idx = end_time_idx
                 try:
                     self.schedule.insert_slot(new_start_time, b)
