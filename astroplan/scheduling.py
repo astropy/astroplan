@@ -391,6 +391,9 @@ class Schedule(object):
         The assumption is that the slot afterwards is open and that the start time
         will remain the same.
 
+        If the block is changed to None, the slot is merged with the slot
+        afterwards to make a longer slot.
+
         Parameters
         ----------
         slot_index : int
@@ -400,10 +403,14 @@ class Schedule(object):
         """
         if self.slots[slot_index + 1].block:
             raise IndexError('slot afterwards is full')
-        new_end = self.slots[slot_index].start + new_block.duration
-        self.slots[slot_index].end = new_end
-        self.slots[slot_index].block = new_block
-        self.slots[slot_index + 1].start = new_end
+        if new_block is not None:
+            new_end = self.slots[slot_index].start + new_block.duration
+            self.slots[slot_index].end = new_end
+            self.slots[slot_index].block = new_block
+            self.slots[slot_index + 1].start = new_end
+        else:
+            self.slots[slot_index + 1].start = self.slots[slot_index].start
+            del self.slots[slot_index]
 
 
 class Slot(object):
@@ -687,7 +694,8 @@ class PriorityScheduler(Scheduler):
         is_open_time = np.ones(len(times), bool)
         # close times that are already filled
         pre_filled = np.array([[block.start_time, block.end_time] for
-                              block in self.schedule.scheduled_blocks])
+                              block in self.schedule.scheduled_blocks if
+                              isinstance(block, ObservingBlock)])
         for start_end in pre_filled:
             filled = np.where((start_end[0] < times) & (times < start_end[1]))
             if len(filled[0]) > 0:
@@ -798,6 +806,14 @@ class PriorityScheduler(Scheduler):
         slots_before = self.schedule.slots[:slot_index]
         slots_after = self.schedule.slots[slot_index + 1:]
 
+        # now check if there's a transition block where we want to go
+        # if so, we delete it. A new one will be added if needed
+        if self.schedule.slots[slot_index].block:
+            if isinstance(self.schedule.slots[slot_index].block, ObservingBlock):
+                raise ValueError('block already occupied')
+            else:
+                self.schedule.change_slot_block(slot_index, new_block=None)
+
         # no slots yet, so we should be fine to just shove this in
         if not (slots_before or slots_after):
             b.end_idx = start_time_idx + duration_indices
@@ -877,18 +893,20 @@ class PriorityScheduler(Scheduler):
             end_idx = start_time_idx + duration_indices
             if tb_after:
                 end_idx += np.int(tb_after.duration/self.time_resolution)
-            if end_idx >= next_ob.start_idx:
-                # cannot schedule
-                return False
+                if end_idx >= next_ob.start_idx:
+                    # cannot schedule
+                    return False
 
         # OK, we should be OK to schedule now!
         try:
             # insert away
             if tb_before and tb_before_already_exists:
                 self.schedule.change_slot_block(slot_index - 1, new_block=tb_before)
-
             elif tb_before:
                 self.schedule.insert_slot(tb_before.start_time, tb_before)
+            elif tb_before_already_exists and not tb_before:
+                # we already have a TB here, but we no longer need it!
+                self.schedule.change_slot_block(slot_index-1, new_block=None)
 
             b.end_idx = start_time_idx + duration_indices
             b.start_idx = start_time_idx
@@ -896,7 +914,6 @@ class PriorityScheduler(Scheduler):
                 b.constraints = self.constraints
             elif self.constraints is not None:
                 b.constraints = b.constraints + self.constraints
-
             self.schedule.insert_slot(new_start_time, b)
 
             if tb_after:
