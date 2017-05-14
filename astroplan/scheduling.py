@@ -771,6 +771,7 @@ class PriorityScheduler(Scheduler):
                 # schedulable in principle, provided the transition
                 # does not prevent us from fitting it in.
                 # loop over valid times and see if it fits
+                # TODO: speed up by searching multiples of time resolution?
                 for idx in np.argsort(sum_scores)[::-1]:
                     if sum_scores[idx] <= 0.0:
                         # we've run through all optimal blocks
@@ -794,7 +795,6 @@ class PriorityScheduler(Scheduler):
         return self.schedule
 
     def attempt_insert_block(self, b, new_start_time, start_time_idx):
-
         # set duration to be exact multiple of time resolution
         duration_indices = np.int(np.ceil(
             float(b.duration / self.time_resolution)))
@@ -808,11 +808,12 @@ class PriorityScheduler(Scheduler):
 
         # now check if there's a transition block where we want to go
         # if so, we delete it. A new one will be added if needed
+        delete_this_block_first = False
         if self.schedule.slots[slot_index].block:
             if isinstance(self.schedule.slots[slot_index].block, ObservingBlock):
                 raise ValueError('block already occupied')
             else:
-                self.schedule.change_slot_block(slot_index, new_block=None)
+                delete_this_block_first = True
 
         # no slots yet, so we should be fine to just shove this in
         if not (slots_before or slots_after):
@@ -863,10 +864,9 @@ class PriorityScheduler(Scheduler):
         # where we should do it.
         # Find the smallest shift (forward or backward) to close gap
         # Check against tolerances (constraints must still be met)
-        # Shift if OK and update start_time_idx
+        # Shift if OK and update new_start_time and start_time_idx
 
         # Now let's see if the block and transition can fit in the schedule
-
         if slots_before:
             # we're OK if the index at the end of the updated transition
             # is less than or equal to `start_time_idx`
@@ -877,11 +877,6 @@ class PriorityScheduler(Scheduler):
             else:
                 transition_indices = 0
 
-            if tb_before_already_exists:
-                old_tb = self.schedule.slots[slot_index - 1]
-                transition_indices -= np.int(
-                    old_tb.duration / self.time_resolution
-                )
             if start_time_idx < previous_ob.block.end_idx + transition_indices:
                 # cannot schedule
                 return False
@@ -899,7 +894,10 @@ class PriorityScheduler(Scheduler):
 
         # OK, we should be OK to schedule now!
         try:
-            # insert away
+            # delete this block if it's a TransitionBlock
+            if delete_this_block_first:
+                self.schedule.change_slot_block(slot_index, new_block=None)
+
             if tb_before and tb_before_already_exists:
                 self.schedule.change_slot_block(slot_index - 1, new_block=tb_before)
             elif tb_before:
@@ -919,13 +917,14 @@ class PriorityScheduler(Scheduler):
             if tb_after:
                 self.schedule.insert_slot(tb_after.start_time, tb_after)
 
-            return True
         except ValueError as error:
             # this shouldn't ever happen
-            print('Failed to insert {} into schedule.\n{}'.format(
-                   b.target.name, str(error)
+            print('Failed to insert {} (dur: {}) into schedule.\n{}\n{}'.format(
+                   b.target.name, b.duration, new_start_time.iso, str(error)
                   ))
             return False
+
+        return True
 
 
 class Transitioner(object):
