@@ -886,6 +886,7 @@ class PriorityScheduler(Scheduler):
             # insert away
             if tb_before and tb_before_already_exists:
                 self.schedule.change_slot_block(slot_index - 1, new_block=tb_before)
+
             elif tb_before:
                 self.schedule.insert_slot(tb_before.start_time, tb_before)
 
@@ -895,10 +896,12 @@ class PriorityScheduler(Scheduler):
                 b.constraints = self.constraints
             elif self.constraints is not None:
                 b.constraints = b.constraints + self.constraints
+
             self.schedule.insert_slot(new_start_time, b)
 
             if tb_after:
                 self.schedule.insert_slot(tb_after.start_time, tb_after)
+
             return True
         except ValueError as error:
             # this shouldn't ever happen
