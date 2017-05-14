@@ -408,10 +408,11 @@ class Schedule(object):
             self.slots[slot_index].end = new_end
             self.slots[slot_index].block = new_block
             self.slots[slot_index + 1].start = new_end
+            return slot_index
         else:
             self.slots[slot_index + 1].start = self.slots[slot_index].start
             del self.slots[slot_index]
-
+            return slot_index - 1
 
 class Slot(object):
     """
@@ -848,10 +849,12 @@ class PriorityScheduler(Scheduler):
                                               self.schedule.slots[slot_index - 2].end, self.observer)
                 tb_before_already_exists = True
 
-        if slots_after and isinstance(self.schedule.slots[slot_index + 1].block, ObservingBlock):
-            # make a transition object after the new ObservingBlock
-            tb_after = self.transitioner(b, self.schedule.slots[slot_index + 1].block,
-                                         new_start_time + b.duration, self.observer)
+        if slots_after:
+            slot_offset = 2 if delete_this_block_first else 1
+            if isinstance(self.schedule.slots[slot_index + slot_offset].block, ObservingBlock):
+                # make a transition object after the new ObservingBlock
+                tb_after = self.transitioner(b, self.schedule.slots[slot_index + slot_offset].block,
+                                             new_start_time + b.duration, self.observer)
 
         # tweak durations to exact multiple of time resolution
         for block in (tb_before, tb_after):
@@ -884,7 +887,8 @@ class PriorityScheduler(Scheduler):
         if slots_after:
             # we're OK if the index at end of OB (plus transition)
             # is smaller than the start_index of the slot after
-            next_ob = self.schedule.slots[slot_index + 1].block
+            slot_offset = 2 if delete_this_block_first else 1
+            next_ob = self.schedule.slots[slot_index + slot_offset].block
             end_idx = start_time_idx + duration_indices
             if tb_after:
                 end_idx += np.int(tb_after.duration/self.time_resolution)
@@ -896,8 +900,7 @@ class PriorityScheduler(Scheduler):
         try:
             # delete this block if it's a TransitionBlock
             if delete_this_block_first:
-                self.schedule.change_slot_block(slot_index, new_block=None)
-
+                slot_index = self.schedule.change_slot_block(slot_index, new_block=None)
             if tb_before and tb_before_already_exists:
                 self.schedule.change_slot_block(slot_index - 1, new_block=tb_before)
             elif tb_before:
