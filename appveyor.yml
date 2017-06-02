@@ -13,6 +13,7 @@ environment:
       CONDA_DEPENDENCIES: "pytz matplotlib nose"
       PIP_DEPENDENCIES: "pyephem pytest-mpl"
       CONDA_CHANNELS: "astropy conda-forge"
+      ASTROPY_USE_SYSTEM_PYTEST: 1
 
   matrix:
 
