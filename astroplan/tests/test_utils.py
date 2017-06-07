@@ -3,12 +3,13 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 import numpy as np
+import pytest
+
 from astropy import units as u
 from astropy.time import Time
 from astropy.tests.helper import remote_data
 from astropy.utils.data import clear_download_cache
 from astropy.utils import iers
-from astropy.tests.helper import pytest
 
 from ..utils import (download_IERS_A, IERS_A_in_cache,
                      get_IERS_A_or_workaround, BACKUP_Time_get_delta_ut1_utc,
