@@ -1,8 +1,6 @@
 0.3 (unreleased)
 ----------------
 
-- No changes yet
-
 - ``Observer.altaz`` and ``Constraint.__call__`` no longer returns an (MxN) grid of results when
   called with M ``target``s and N ``times``. Instead, we attempt to broadcast the time and target
   shapes, and an error is raised if this is not possible. This change breaks backwards compatibility
