@@ -312,7 +312,7 @@ arbitrarily complex criteria for constraints.
 
 By default, calling a constraint will try to broadcast the time and target arrays
 against each other, and raise a `ValueError` if this is not possible. To see the
-(target x time) array for the constraint, there is an optional `grid_times_targets`
+(target x time) array for the constraint, there is an optional ``grid_times_targets``
 argument. Here we find the (target x time) array for the non-boolean score::
 
     >>> constraint = VegaSeparationConstraint(min=5*u.deg, max=30*u.deg,
