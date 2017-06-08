@@ -236,13 +236,18 @@ be within some angular separation from Vega – we'll call it
   a target could have from Vega.
 
 * We'll also define a method ``compute_constraints`` which takes three
-  arguments: an array of M times to test, an `~astroplan.Observer` object, and
-  a list of N `~astroplan.FixedTarget` objects. ``compute_constraints``
-  will return a (N, M) shaped matrix of booleans that describe whether or not each target
-  meets the constraints.  The super class `~astroplan.Constraint` has a
-  ``__call__`` method which will run your custom class's
-  ``compute_constraints`` method when you check if a target is observable
-  using `~astroplan.is_observable` or `~astroplan.is_always_observable`.
+  arguments: a `~astropy.time.Time` or array of times to test,
+  an `~astroplan.Observer` object, and some targets (a `~astropy.coordinates.SkyCoord`
+  object representing a single target or a list of targets).
+  ``compute_constraints`` will return an array of booleans that describe whether
+  or not each target meets the constraints.  The super class `~astroplan.Constraint` has a
+  ``__call__`` method which will run your custom class's ``compute_constraints`` method
+  when you check if a target is observable using `~astroplan.is_observable`
+  or `~astroplan.is_always_observable`. This ``__call__`` method also checks the
+  arguments, converting single `~astroplan.FixedTarget` or lists of `~astroplan.FixedTarget`
+  objects into an `~astropy.coordinates.SkyCoord` object. The ``__call__`` method ensures the
+  returned array of booleans is the correct shape, so ``compute_constraints`` should not
+  normally be called directly - use the ``__call__`` method instead.
 
 * We also want to provide the option of having the constraint output
   a non-boolean score. Where being closer to the minimum separation
@@ -267,64 +272,30 @@ Here's our ``VegaSeparationConstraint`` implementation::
                 Minimum acceptable separation between Vega and target. `None`
                 indicates no limit.
             """
-            self.min = min
-            self.max = max
+            self.min = min if min else 0*u.deg
+            self.max = max if max else 180*u.deg
             self.boolean_constraint = boolean_constraint
 
         def compute_constraint(self, times, observer, targets):
 
-            # Vega's coordinate must be non-scalar for the dimensions
-            # to work out properly when combined with other constraints which
-            # test multiple times
-            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
+            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
 
             # Calculate separation between target and vega
-            vega_separation = Angle([vega.separation(target.coord)
-                                     for target in targets])
+            # Targets are automatically converted to SkyCoord objects
+            # by __call__ before compute_constraint is called.
+            vega_separation = vega.separation(targets)
+
             if self.boolean_constraint:
-                # If a maximum is specified but no minimum
-                if self.min is None and self.max is not None:
-                    mask = vega_separation < self.max
-
-                # If a minimum is specified but no maximum
-                elif self.max is None and self.min is not None:
-                    mask = self.min < vega_separation
-
-                # If both a minimum and a maximum are specified
-                elif self.min is not None and self.max is not None:
-                    mask = ((self.min < vega_separation) & (vega_separation < self.max))
-
-                # Otherwise, raise an error
-                else:
-                    raise ValueError("No max and/or min specified in "
-                                     "VegaSeparationConstraint.")
-
-
-                # Return an array that is True where the target is observable and
-                # False where it is not
-                # Must have shape (len(targets), len(times))
-
-                # currently mask has shape (len(targets), 1)
-                return np.tile(mask, len(times))
+                mask = ((self.min < vega_separation) & (vega_separation < self.max))
+                return mask
 
             # if we want to return a non-boolean score
             else:
-                # no min and no max still should error
-                if self.min is None and self.max is None:
-                    raise ValueError("No max and/or min specified in "
-                                     "VegaSeparationConstraint.")
-                if self.min is None:
-                    # if no minimum is given, set it at 0 degrees
-                    self.min = 0*u.deg
-                if self.max is None:
-                    # if no maximum is given, set it to 180 degrees
-                    self.max = 180*u.deg
-
                 # rescale the vega_separation values so that they become
                 # scores between zero and one
                 rescale = min_best_rescale(vega_separation, self.min,
                                            self.max, less_than_min=0)
-                return np.tile(rescale, len(times))
+                return rescale
 
 
 Then as in the earlier example, we can call our constraint::
@@ -339,11 +310,15 @@ The resulting list of booleans indicates that the only target separated by
 5 and 30 degrees from Vega is Albireo. Following this pattern, you can design
 arbitrarily complex criteria for constraints.
 
-To see the (target x time) array for the non-boolean score::
+By default, calling a constraint will try to broadcast the time and target arrays
+against each other, and raise a `ValueError` if this is not possible. To see the
+(target x time) array for the constraint, there is an optional ``grid_times_targets``
+argument. Here we find the (target x time) array for the non-boolean score::
 
     >>> constraint = VegaSeparationConstraint(min=5*u.deg, max=30*u.deg,
     ...                                       boolean_constraint=False)
-    >>> print(constraint(subaru, targets, time_range=time_range)
+    >>> print(constraint(subaru, targets, time_range=time_range,
+    ...                  grid_times_targets=True))
     [[ 0.          0.          0.          0.          0.          0.          0.
        0.          0.          0.          0.          0.        ]
      [ 0.          0.          0.          0.          0.          0.          0.

@@ -15,14 +15,17 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_sun, get_moon, Angle, SkyCoord
+from astropy.coordinates import get_body, get_sun, get_moon, SkyCoord
 from astropy import table
+from astropy.utils.compat.numpy import broadcast_to
 import numpy as np
+from numpy.lib.stride_tricks import as_strided
 
 # Package
 from .moon import moon_illumination
 from .utils import time_grid_from_range
-from .target import FixedTarget
+from .target import get_skycoord
+
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -30,6 +33,48 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
            "TimeConstraint", "observability_table", "months_observable",
            "max_best_rescale", "min_best_rescale"]
+
+
+def _make_cache_key(times, targets):
+    """
+    Make a unique key to reference this combination of ``times`` and ``targets``.
+
+    Often, we wish to store expensive calculations for a combination of
+    ``targets`` and ``times`` in a cache on an ``observer``` object. This
+    routine will provide an appropriate, hashable, key to store these
+    calculations in a dictionary.
+
+    Parameters
+    ----------
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraint.
+    targets : `~astropy.coordinates.SkyCoord`
+        Target or list of targets.
+
+    Returns
+    -------
+    cache_key : tuple
+        A hashable tuple for use as a cache key
+    """
+    # make a tuple from times
+    try:
+        timekey = tuple(times.jd) + times.shape
+    except:
+        # must be scalar
+        timekey = (times.jd,)
+    # make hashable thing from targets coords
+    try:
+        if hasattr(targets, 'frame'):
+            # treat as a SkyCoord object. Accessing the longitude
+            # attribute of the frame data should be unique and is
+            # quicker than accessing the ra attribute.
+            targkey = tuple(targets.frame.data.lon.value.ravel()) + targets.shape
+        else:
+            # assume targets is a string.
+            targkey = (targets,)
+    except:
+        targkey = (targets.frame.data.lon,)
+    return timekey + targkey
 
 
 def _get_altaz(times, observer, targets, force_zero_pressure=False):
@@ -62,7 +107,7 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
         observer._altaz_cache = {}
 
     # convert times, targets to tuple for hashing
-    aakey = (tuple(times.jd), tuple(targets))
+    aakey = _make_cache_key(times, targets)
 
     if aakey not in observer._altaz_cache:
         try:
@@ -70,7 +115,7 @@ def _get_altaz(times, observer, targets, force_zero_pressure=False):
                 observer_old_pressure = observer.pressure
                 observer.pressure = 0
 
-            altaz = observer.altaz(times, targets)
+            altaz = observer.altaz(times, targets, grid_times_targets=False)
             observer._altaz_cache[aakey] = dict(times=times,
                                                 altaz=altaz)
         finally:
@@ -108,7 +153,7 @@ def _get_moon_data(times, observer, force_zero_pressure=False):
         observer._moon_cache = {}
 
     # convert times to tuple for hashing
-    aakey = (tuple(times.jd))
+    aakey = _make_cache_key(times, 'moon')
 
     if aakey not in observer._moon_cache:
         try:
@@ -154,13 +199,10 @@ def _get_meridian_transit_times(times, observer, targets):
         observer._meridian_transit_cache = {}
 
     # convert times to tuple for hashing
-    aakey = (tuple(times.jd), tuple(targets))
+    aakey = _make_cache_key(times, targets)
 
     if aakey not in observer._meridian_transit_cache:
-        meridian_transit_times = Time([observer.target_meridian_transit_time(
-                                       time, target, which='next')
-                                       for target in targets
-                                       for time in times])
+        meridian_transit_times = observer.target_meridian_transit_time(times, targets)
         observer._meridian_transit_cache[aakey] = dict(times=meridian_transit_times)
 
     return observer._meridian_transit_cache[aakey]
@@ -174,7 +216,8 @@ class Constraint(object):
     __metaclass__ = ABCMeta
 
     def __call__(self, observer, targets, times=None,
-                 time_range=None, time_grid_resolution=0.5*u.hour):
+                 time_range=None, time_grid_resolution=0.5*u.hour,
+                 grid_times_targets=False):
         """
         Compute the constraint for this class
 
@@ -191,31 +234,51 @@ class Constraint(object):
             Lower and upper bounds on time sequence.
         time_grid_resolution : `~astropy.units.quantity`
             Time-grid spacing
-
+        grid_times_targets : bool
+            if True, grids the constraint result with targets along the first
+            index and times along the second. Otherwise, we rely on broadcasting
+            the shapes together using standard numpy rules.
         Returns
         -------
-        constraint_result : 2D array of float or bool
-            The constraints, with targets along the first index and times along
+        constraint_result : 1D or 2D array of float or bool
+            The constraints. If 2D with targets along the first index and times along
             the second.
         """
 
         if times is None and time_range is not None:
             times = time_grid_from_range(time_range,
                                          time_resolution=time_grid_resolution)
-        elif not isinstance(times, Time):
-            times = Time(times)
 
-        if times.isscalar:
-            times = Time([times])
+        if grid_times_targets:
+            targets = get_skycoord(targets)
+            # TODO: these broadcasting operations are relatively slow
+            # but there is potential for huge speedup if the end user
+            # disables gridding and re-shapes the coords themselves
+            # prior to evaluating multiple constraints.
+            if targets.isscalar:
+                # ensure we have a (1, 1) shape coord
+                targets = SkyCoord(np.tile(targets, 1))[:, np.newaxis]
+            else:
+                targets = targets[..., np.newaxis]
+        times, targets = observer._preprocess_inputs(times, targets, grid_times_targets=False)
+        result = self.compute_constraint(times, observer, targets)
 
-        if hasattr(targets, '__len__'):
-            targets = [FixedTarget(coord=target) if isinstance(target, SkyCoord)
-                       else target for target in targets]
-        else:
-            if isinstance(targets, SkyCoord):
-                targets = FixedTarget(coord=targets)
+        # make sure the output has the same shape as would result from
+        # broadcasting times and targets against each other
+        if targets is not None:
+            # broadcasting times v targets is slow due to
+            # complex nature of these objects. We make
+            # to simple numpy arrays of the same shape and
+            # broadcast these to find the correct shape
+            shp1, shp2 = times.shape, targets.shape
+            x = np.array([1])
+            a = as_strided(x, shape=shp1, strides=[0] * len(shp1))
+            b = as_strided(x, shape=shp2, strides=[0] * len(shp2))
+            output_shape = np.broadcast(a, b).shape
+            if output_shape != result.shape:
+                result = broadcast_to(result, output_shape)
 
-        return self.compute_constraint(times, observer, targets)
+        return result
 
     @abstractmethod
     def compute_constraint(self, times, observer, targets):
@@ -390,7 +453,7 @@ class AtNightConstraint(Constraint):
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
 
-        aakey = (tuple(times.jd), 'sun')
+        aakey = _make_cache_key(times, 'sun')
 
         if aakey not in observer._altaz_cache:
             try:
@@ -399,7 +462,7 @@ class AtNightConstraint(Constraint):
                     observer.pressure = 0
 
                 # find solar altitude at these times
-                altaz = observer.altaz(times, get_sun(times), grid=False)
+                altaz = observer.altaz(times, get_sun(times))
                 altitude = altaz.alt
                 # cache the altitude
                 observer._altaz_cache[aakey] = dict(times=times,
@@ -410,11 +473,6 @@ class AtNightConstraint(Constraint):
         else:
             altitude = observer._altaz_cache[aakey]['altitude']
 
-        # Broadcast the solar altitudes for the number of targets.
-        # Needs to be done after storing/fetching cache so we get the
-        # correct shape if targets changes, but times does not.
-        altitude = np.atleast_2d(altitude)
-        altitude = altitude + np.zeros((len(targets), 1))
         return altitude
 
     def compute_constraint(self, times, observer, targets):
@@ -442,11 +500,14 @@ class SunSeparationConstraint(Constraint):
         self.max = max
 
     def compute_constraint(self, times, observer, targets):
-        sunaltaz = observer.altaz(times, get_sun(times), grid=False)
-        target_coos = [target.coord if hasattr(target, 'coord') else target
-                       for target in targets]
-        target_altazs = [observer.altaz(times, coo) for coo in target_coos]
-        solar_separation = Angle([sunaltaz.separation(taa) for taa in target_altazs])
+        # use get_body rather than get sun here, since
+        # it returns the Sun's coordinates in an observer
+        # centred frame, so the separation is as-seen
+        # by the observer.
+        # 'get_sun' returns ICRS coords.
+        sun = get_body('sun', times, location=observer.location)
+        solar_separation = sun.separation(targets)
+
         if self.min is None and self.max is not None:
             mask = self.max >= solar_separation
         elif self.max is None and self.min is not None:
@@ -484,26 +545,16 @@ class MoonSeparationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-
-        targets = [target.coord if hasattr(target, 'coord') else target
-                   for target in targets]
-
-        # TODO: when astropy/astropy#5069 is resolved, replace this workaround which
-        # handles scalar and non-scalar time inputs differently
-
-        if times.isscalar:
-            moon = get_moon(times, location=observer.location,
-                            ephemeris=self.ephemeris)
-            moon_separation = Angle([moon.separation(target)
-                                     for target in targets]).T
-        else:
-            moon_separation = []
-            for t in times:
-                moon_coord = get_moon(t, location=observer.location,
-                                      ephemeris=self.ephemeris)
-                sep = [moon_coord.separation(target) for target in targets]
-                moon_separation.append(sep)
-            moon_separation = Angle(moon_separation).T
+        # removed the location argument here, which causes small <1 deg
+        # innacuracies, but it is needed until astropy PR #5897 is released
+        # which should be astropy 1.3.2
+        moon = get_moon(times,
+                        ephemeris=self.ephemeris)
+        # note to future editors - the order matters here
+        # moon.separation(targets) is NOT the same as targets.separation(moon)
+        # the former calculates the separation in the frame of the moon coord
+        # which is GCRS, and that is what we want.
+        moon_separation = moon.separation(targets)
 
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
@@ -613,10 +664,7 @@ class MoonIlluminationConstraint(Constraint):
             raise ValueError("No max and/or min specified in "
                              "MoonSeparationConstraint.")
 
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+        return mask
 
 
 class LocalTimeConstraint(Constraint):
@@ -686,16 +734,21 @@ class LocalTimeConstraint(Constraint):
 
         # If time limits occur on same day:
         if self.min < self.max:
-            mask = [min_time <= t.datetime.time() <= max_time for t in times]
+            try:
+                mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
+            except:
+                # use np.bool so shape queries don't cause problems
+                mask = np.bool_(min_time <= times.datetime.time() <= max_time)
 
         # If time boundaries straddle midnight:
         else:
-            mask = [(t.datetime.time() >= min_time) or
-                    (t.datetime.time() <= max_time) for t in times]
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+            try:
+                mask = np.array([(t.time() >= min_time) or
+                                (t.time() <= max_time) for t in times.datetime])
+            except:
+                mask = np.bool_((times.datetime.time() >= min_time) or
+                                (times.datetime.time() <= max_time))
+        return mask
 
 
 class TimeConstraint(Constraint):
@@ -751,10 +804,7 @@ class TimeConstraint(Constraint):
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
             max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
         mask = np.logical_and(times > min_time, times < max_time)
-        if targets is not None:
-            mask = np.tile(mask, len(targets))
-            mask = mask.reshape(len(targets), len(times))
-        return np.atleast_2d(mask)
+        return mask
 
 
 def is_always_observable(constraints, observer, targets, times=None,
@@ -800,7 +850,8 @@ def is_always_observable(constraints, observer, targets, times=None,
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
-                                      time_grid_resolution=time_grid_resolution)
+                                      time_grid_resolution=time_grid_resolution,
+                                      grid_times_targets=True)
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
     return np.all(constraint_arr, axis=1)
@@ -848,7 +899,8 @@ def is_observable(constraints, observer, targets, times=None,
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
-                                      time_grid_resolution=time_grid_resolution)
+                                      time_grid_resolution=time_grid_resolution,
+                                      grid_times_targets=True)
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
     return np.any(constraint_arr, axis=1)
@@ -899,7 +951,8 @@ def months_observable(constraints, observer, targets,
     # altitude calculations.
 
     applied_constraints = [constraint(observer, targets,
-                                      times=times)
+                                      times=times,
+                                      grid_times_targets=True)
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
 
@@ -959,7 +1012,8 @@ def observability_table(constraints, observer, targets, times=None,
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
-                                      time_grid_resolution=time_grid_resolution)
+                                      time_grid_resolution=time_grid_resolution,
+                                      grid_times_targets=True)
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
 

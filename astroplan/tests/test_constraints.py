@@ -10,7 +10,7 @@ from astropy.utils import minversion
 import pytest
 
 from ..observer import Observer
-from ..target import FixedTarget
+from ..target import FixedTarget, get_skycoord
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable, observability_table,
                            time_grid_from_range, SunSeparationConstraint,
@@ -35,8 +35,7 @@ def test_at_night_basic():
     targets = [vega, rigel, polaris]
     for time_range in time_ranges:
         # Calculate constraint using methods on astroplan.Observer:
-        observer_is_night = [subaru.is_night(time)
-                             for time in time_grid_from_range(time_range)]
+        observer_is_night = subaru.is_night(time_grid_from_range(time_range))
         observer_is_night_any = any(observer_is_night)
         observer_is_night_all = all(observer_is_night)
 
@@ -140,17 +139,17 @@ def test_sun_separation():
     constraint = SunSeparationConstraint(min=2*u.deg, max=10*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
-    assert np.all(is_constraint_met == [[False], [True], [False]])
+    assert np.all(is_constraint_met == [False, True, False])
 
     constraint = SunSeparationConstraint(max=10*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
-    assert np.all(is_constraint_met == [[True], [True], [False]])
+    assert np.all(is_constraint_met == [True, True, False])
 
     constraint = SunSeparationConstraint(min=2*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
-    assert np.all(is_constraint_met == [[False], [True], [True]])
+    assert np.all(is_constraint_met == [False, True, True])
 
 
 def test_moon_separation():
@@ -167,18 +166,18 @@ def test_moon_separation():
     constraint = MoonSeparationConstraint(min=2*u.deg, max=10*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
-    print(is_constraint_met)
-    assert np.all(is_constraint_met == [[False], [True], [False]])
+
+    assert np.all(is_constraint_met == [False, True, False])
 
     constraint = MoonSeparationConstraint(max=10*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
-    assert np.all(is_constraint_met == [[True], [True], [False]])
+    assert np.all(is_constraint_met == [True, True, False])
 
     constraint = MoonSeparationConstraint(min=2*u.deg)
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
-    assert np.all(is_constraint_met == [[False], [True], [True]])
+    assert np.all(is_constraint_met == [False, True, True])
 
 
 def test_moon_illumination():
@@ -224,15 +223,15 @@ def test_local_time_constraint_utc():
     subaru = Observer.at_site("Subaru")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == [True]
+    assert is_constraint_met == True
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == [False]
+    assert is_constraint_met == False
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == [True]
+    assert is_constraint_met == True
 
 
 def test_local_time_constraint_hawaii_tz():
@@ -241,15 +240,15 @@ def test_local_time_constraint_hawaii_tz():
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == [True]
+    assert is_constraint_met == True
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == [False]
+    assert is_constraint_met == False
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == [True]
+    assert is_constraint_met == True
 
 
 def test_docs_example():
@@ -278,7 +277,6 @@ def test_docs_example():
                for name, ra, dec in target_table]
 
     from astroplan import Constraint, is_observable
-    from astropy.coordinates import Angle
 
     class VegaSeparationConstraint(Constraint):
         """
@@ -293,40 +291,20 @@ def test_docs_example():
                 Minimum acceptable separation between Vega and target. `None`
                 indicates no limit.
             """
-            self.min = min
-            self.max = max
+            self.min = min if min else 0*u.deg
+            self.max = max if max else 180*u.deg
 
         def compute_constraint(self, times, observer, targets):
-
-            # Vega's coordinate must be non-scalar for the dimensions
-            # to work out properly when combined with other constraints which
-            # test multiple times
-            vega = SkyCoord(ra=[279.23473479]*u.deg, dec=[38.78368896]*u.deg)
+            vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
 
             # Calculate separation between target and vega
-            vega_separation = Angle([vega.separation(target.coord)
-                                     for target in targets])
-
-            # If a maximum is specified but no minimum
-            if self.min is None and self.max is not None:
-                mask = vega_separation < self.max
-
-            # If a minimum is specified but no maximum
-            elif self.max is None and self.min is not None:
-                mask = self.min < vega_separation
-
-            # If both a minimum and a maximum are specified
-            elif self.min is not None and self.max is not None:
-                mask = ((self.min < vega_separation) & (vega_separation < self.max))
-
-            # Otherwise, raise an error
-            else:
-                raise ValueError("No max and/or min specified in "
-                                 "VegaSeparationConstraint.")
+            # Targets are automatically converted to SkyCoord objects
+            # by __call__ before compute_constraint is called.
+            vega_separation = vega.separation(targets)
 
             # Return an array that is True where the target is observable and
             # False where it is not
-            return mask
+            return (self.min < vega_separation) & (vega_separation < self.max)
 
     constraints = [VegaSeparationConstraint(min=5*u.deg, max=30*u.deg)]
     observability = is_observable(constraints, subaru, targets,
@@ -394,11 +372,25 @@ constraint_tests = [
 @pytest.mark.parametrize('constraint', constraint_tests)
 def test_regression_shapes(constraint):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
-    targets = [FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
-               FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))]
+    targets = get_skycoord([FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
+                           FixedTarget(SkyCoord(260.7*u.deg, 22.4*u.deg))])
     lapalma = Observer.at_site('lapalma')
 
-    assert constraint(lapalma, targets, times).shape == (2, 3)
-    assert constraint(lapalma, [targets[0]], times).shape == (1, 3)
-    assert constraint(lapalma, [targets[0]], times[0]).shape == (1, 1)
-    assert constraint(lapalma, targets, times[0]).shape == (2, 1)
+    assert constraint(lapalma, targets[:, np.newaxis], times).shape == (2, 3)
+    assert constraint(lapalma, targets[0], times).shape == (3,)
+    assert constraint(lapalma, targets[0], times[0]).shape == ()
+    assert constraint(lapalma, targets, times[0]).shape == (2,)
+    with pytest.raises(ValueError):
+        constraint(lapalma, targets, times)
+
+
+def test_caches_shapes():
+    times = Time([2457884.43350526, 2457884.5029497, 2457884.57239415], format='jd')
+    m31 = SkyCoord(10.6847929*u.deg, 41.269065*u.deg)
+    ippeg = SkyCoord(350.785625*u.deg, 18.416472*u.deg)
+    htcas = SkyCoord(17.5566667*u.deg, 60.0752778*u.deg)
+    targets = get_skycoord([m31, ippeg, htcas])
+    observer = Observer.at_site('lapalma')
+    ac = AltitudeConstraint(min=30*u.deg)
+    assert ac(observer, targets, times, grid_times_targets=True).shape == (3, 3)
+    assert ac(observer, targets, times, grid_times_targets=False).shape == (3,)

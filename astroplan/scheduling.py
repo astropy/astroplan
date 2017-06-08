@@ -16,7 +16,8 @@ from astropy.time import Time
 from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
-from .constraints import AltitudeConstraint
+from .constraints import AltitudeConstraint, AirmassConstraint
+from .target import get_skycoord
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot', 'Scheduler',
            'SequentialScheduler', 'PriorityScheduler', 'Transitioner', 'Scorer']
@@ -76,7 +77,7 @@ class ObservingBlock(object):
             return None
         # TODO: setup a way of caching or defining it as an attribute during scheduling
         elif self.observer:
-            return {constraint: constraint(self.observer, [self.target],
+            return {constraint: constraint(self.observer, self.target,
                                            times=[self.start_time, self.start_time + self.duration])
                     for constraint in self.constraints}
 
@@ -114,6 +115,7 @@ class Scorer(object):
         self.observer = observer
         self.schedule = schedule
         self.global_constraints = global_constraints
+        self.targets = get_skycoord([block.target for block in self.blocks])
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -139,12 +141,12 @@ class Scorer(object):
             # TODO: change the default constraints from None to []
             if block.constraints:
                 for constraint in block.constraints:
-                    applied_score = constraint(self.observer, [block.target],
-                                               times=times)[0]
+                    applied_score = constraint(self.observer, block.target,
+                                               times=times)
                     score_array[i] *= applied_score
-        targets = [block.target for block in self.blocks]
         for constraint in self.global_constraints:
-            score_array *= constraint(self.observer, targets, times)
+            score_array *= constraint(self.observer, self.targets, times,
+                                      grid_times_targets=True)
         return score_array
 
     @classmethod
@@ -228,7 +230,7 @@ class Schedule(object):
         -----------
         start_time : `~astropy.time.Time`
             The starting time of the schedule; the start of your
-            observing window
+            observing window.
         end_time : `~astropy.time.Time`
            The ending time of the schedule; the end of your
            observing window
@@ -573,7 +575,7 @@ class SequentialScheduler(Scheduler):
                 else:
                     constraint_res = []
                     for constraint in b._all_constraints:
-                        constraint_res.append(constraint(self.observer, [b.target],
+                        constraint_res.append(constraint(self.observer, b.target,
                                                          times))
                     # take the product over all the constraints *and* times
                     block_constraint_results.append(np.prod(constraint_res))
@@ -631,7 +633,8 @@ class PriorityScheduler(Scheduler):
             if b._all_constraints is None:
                 b._all_constraints = [AltitudeConstraint(min=0 * u.deg)]
                 b.constraints = [AltitudeConstraint(min=0 * u.deg)]
-            elif not any(isinstance(c, AltitudeConstraint) for c in b._all_constraints):
+            elif not (any(isinstance(c, AltitudeConstraint) for c in b._all_constraints) or
+                      any(isinstance(c, AirmassConstraint) for c in b._all_constraints)):
                 b._all_constraints.append(AltitudeConstraint(min=0 * u.deg))
                 if b.constraints is None:
                     b.constraints = [AltitudeConstraint(min=0 * u.deg)]
@@ -782,7 +785,12 @@ class PriorityScheduler(Scheduler):
                 # now assign the block itself times and add it to the schedule
                 b.constraints = b._all_constraints
                 b.end_idx = end_time_idx
-                self.schedule.insert_slot(new_start_time, b)
+                try:
+                    self.schedule.insert_slot(new_start_time, b)
+                except ValueError:
+                    print('Failed to insert {} into schedule'.format(
+                        b.target.name
+                    ))
                 is_open_time[start_time_idx: end_time_idx] = False
 
             else:
@@ -840,16 +848,16 @@ class Transitioner(object):
             no transition is necessary
         """
         components = {}
-        if self.slew_rate is not None:
+        if (self.slew_rate is not None and (oldblock is not None) and (newblock is not None)):
             # use the constraints cache for now, but should move that machinery
             # to observer
             from .constraints import _get_altaz
-            from astropy.time import Time
+            from .target import get_skycoord
             if oldblock.target != newblock.target:
-                aaz = _get_altaz(Time([start_time]), observer,
-                                 [oldblock.target, newblock.target])['altaz']
-                # TODO: make this [0] unnecessary by fixing _get_altaz to behave well in scalar-time case
-                sep = aaz[0].separation(aaz[1])[0]
+                from .target import get_skycoord
+                targets = get_skycoord([oldblock.target, newblock.target])
+                aaz = _get_altaz(start_time, observer, targets)['altaz']
+                sep = aaz[0].separation(aaz[1])
                 if sep/self.slew_rate > 1 * u.second:
                     components['slew_time'] = sep / self.slew_rate
 
