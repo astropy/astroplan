@@ -509,10 +509,10 @@ class Observer(object):
         time, coordinate = self._preprocess_inputs(time, target, grid_times_targets)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        LST = time.sidereal_time('mean', longitude=self.location.longitude)
+        LST = time.sidereal_time('mean', longitude=self.location.lon)
         H = (LST - coordinate.ra).radian
         q = np.arctan(np.sin(H) /
-                      (np.tan(self.location.latitude.radian) *
+                      (np.tan(self.location.lat.radian) *
                        np.cos(coordinate.dec.radian) -
                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
 
@@ -688,9 +688,9 @@ class Observer(object):
             Array of altitudes
         """
         LST, target = self._preprocess_inputs(LST, target, grid_times_targets)
-        alt = np.arcsin(np.sin(self.location.latitude.radian) *
+        alt = np.arcsin(np.sin(self.location.lat.radian) *
                         np.sin(target.dec) +
-                        np.cos(self.location.latitude.radian) *
+                        np.cos(self.location.lat.radian) *
                         np.cos(target.dec) *
                         np.cos(LST.radian - target.ra.radian))
         return alt
@@ -1671,7 +1671,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        return time.sidereal_time(kind, longitude=self.location.longitude,
+        return time.sidereal_time(kind, longitude=self.location.lon,
                                   model=model)
 
     def target_hour_angle(self, time, target, grid_times_targets=False):
