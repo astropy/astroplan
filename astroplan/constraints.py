@@ -383,7 +383,7 @@ class AirmassConstraint(AltitudeConstraint):
 
     def compute_constraint(self, times, observer, targets):
         cached_altaz = _get_altaz(times, observer, targets)
-        secz = cached_altaz['altaz'].secz
+        secz = cached_altaz['altaz'].secz.value
         if self.boolean_constraint:
             if self.min is None and self.max is not None:
                 mask = secz <= self.max
