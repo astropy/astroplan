@@ -235,8 +235,13 @@ def get_skycoord(targets):
         frame = ICRS()
     else:
         # all the same frame, get the longitude and latitude names
-        mappings = coords[0].frame_specific_representation_info[SphericalRepresentation]
-        lon_name, lat_name = [mapping.framename for mapping in mappings]
+        try:
+            lon_name, lat_name = [mapping.framename for mapping in
+                                  coords[0].frame_specific_representation_info['spherical']]
+        except:
+            # from astropy v2.0, keys are classes
+            lon_name, lat_name = [mapping.framename for mapping in
+                                  coords[0].frame_specific_representation_info[UnitSphericalRepresentation]]
 
         frame = coords[0].frame
         for coordinate in coords:
