@@ -100,7 +100,7 @@ matrix:
 
         # Try developer version of Astropy
         - os: linux
-          env: PYTHON_VERSION=2.7 ASTROPY_VERSION=dev
+          env: PYTHON_VERSION=3.6 ASTROPY_VERSION=dev PYTEST_VERSION='>=3.2'
 
         # Do a PEP8 test with pycodestyle
         - os: linux
