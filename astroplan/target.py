@@ -7,7 +7,8 @@ from abc import ABCMeta
 
 # Third-party
 import astropy.units as u
-from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation
+from astropy.coordinates import (SkyCoord, ICRS, UnitSphericalRepresentation,
+                                 SphericalRepresentation)
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 
@@ -234,8 +235,9 @@ def get_skycoord(targets):
         frame = ICRS()
     else:
         # all the same frame, get the longitude and latitude names
-        lon_name, lat_name = [mapping.framename for mapping in
-                              coords[0].frame_specific_representation_info['spherical']]
+        mappings = coords[0].frame_specific_representation_info[SphericalRepresentation]
+        lon_name, lat_name = [mapping.framename for mapping in mappings]
+
         frame = coords[0].frame
         for coordinate in coords:
             longitudes.append(getattr(coordinate, lon_name))

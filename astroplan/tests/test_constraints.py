@@ -378,8 +378,8 @@ def test_regression_shapes(constraint):
 
     assert constraint(lapalma, targets[:, np.newaxis], times).shape == (2, 3)
     assert constraint(lapalma, targets[0], times).shape == (3,)
-    assert constraint(lapalma, targets[0], times[0]).shape == ()
-    assert constraint(lapalma, targets, times[0]).shape == (2,)
+    assert np.array(constraint(lapalma, targets[0], times[0])).shape == ()
+    assert np.array(constraint(lapalma, targets, times[0])).shape == (2,)
     with pytest.raises(ValueError):
         constraint(lapalma, targets, times)
 
