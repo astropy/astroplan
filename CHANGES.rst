@@ -1,12 +1,16 @@
-0.3 (unreleased)
+0.3 (2017-09-02)
 ----------------
 
-- ``Observer.altaz`` and ``Constraint.__call__`` no longer returns an (MxN) grid of results when
-  called with M ``target``s and N ``times``. Instead, we attempt to broadcast the time and target
-  shapes, and an error is raised if this is not possible. This change breaks backwards compatibility
-  but an optional argument ``grid_times_targets`` has been added to these methods. If set to true,
-  the old behaviour is recovered. All ``Observer`` methods for which it is relevant have this optional
-  argument.
+- ``Observer.altaz`` and ``Constraint.__call__`` no longer returns an (MxN) grid
+  of results when called with M ``target``s and N ``times``. Instead, we attempt
+  to broadcast the time and target shapes, and an error is raised if this is not
+  possible. This change breaks backwards compatibility but an optional argument
+  ``grid_times_targets`` has been added to these methods. If set to True,
+  the old behaviour is recovered. All ``Observer`` methods for which it is
+  relevant have this optional argument.
+
+- Updates for compatibility with astropy v2.0 coordinates implementation
+  [#311], updates to astropy-helpers [#309], fix pytest version [#312]
 
 0.2.1 (2016-04-27)
 ------------------
