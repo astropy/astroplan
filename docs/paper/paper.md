@@ -61,7 +61,7 @@ affiliations:
    index: 6
  - name: Princeton University
    index: 7
- - name: University of Hawaii at Hilo
+ - name: Macquarie University
    index: 8
  - name: Harvard-Smithsonian Center for Astrophysics
    index: 9
@@ -90,7 +90,7 @@ The astroplan API is designed to provide efficient access to common
 observational quantities without requiring a detailed understanding of 
 astropy's implementation of coordinate systems. Common astroplan calculations 
 include celestial rise, set, and meridian transit times, and altitude-azimuth 
-coordinates for targets at observatories anywhere on Earth. We also provide 
+coordinates for targets from locations anywhere on Earth. We also provide 
 convenience functions for common observational plots, such as airmass and 
 parallactic angle plots, and basic sky maps.
 
