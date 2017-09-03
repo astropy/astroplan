@@ -15,7 +15,7 @@ recursive-include scripts *
 prune build
 prune docs/_build
 prune docs/api
-
+prune docs/paper
 
 # the next few stanzas are for astropy_helpers.  It's derived from the
 # astropy_helpers/MANIFEST.in, but requires additional includes for the actual
