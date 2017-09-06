@@ -76,18 +76,19 @@ bibliography: paper.bib
 
 # Summary
 
-Astropy is the core Python package for fundamental astronomical computations. An 
-ecosystem of astropy affiliated packages provides efficient access to more 
-specific astronomical tasks. We present astroplan – an astropy affiliated 
-Python package for observation planning and scheduling. 
+We present astroplan – an astropy affiliated Python package for observation
+planning and scheduling. Astropy is the core Python package for fundamental 
+astronomical computations. An ecosystem of astropy affiliated packages 
+provides efficient access to more specific astronomical tasks.
 
 The astroplan API is designed to provide efficient access to common 
-observational quantities without requiring a detailed understanding of 
-astropy's implementation of coordinate systems. Common astroplan calculations 
-include celestial rise, set, and meridian transit times, and altitude-azimuth 
-coordinates for targets from locations anywhere on Earth. We also provide 
-convenience functions for common observational plots, such as airmass and 
-parallactic angle plots, and basic sky maps.
+observational quantities computed with the full precision of astropy, without 
+requiring a detailed understanding of astropy's implementation of coordinate 
+systems. Common astroplan calculations include celestial rise, set, and 
+meridian transit times, and altitude-azimuth coordinates for targets from 
+locations anywhere on Earth. It also provides convenience functions for 
+common observational plots, such as airmass and parallactic angle plots, 
+and basic sky maps.
 
 Astroplan also defines a generic framework for observation scheduling. Users 
 can determine whether or not a target is observable given a variety of 
