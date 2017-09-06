@@ -78,8 +78,9 @@ bibliography: paper.bib
 
 We present astroplan – an astropy affiliated Python package for observation
 planning and scheduling. Astropy is the core Python package for fundamental 
-astronomical computations. An ecosystem of astropy affiliated packages 
-provides efficient access to more specific astronomical tasks.
+astronomical computations. It has an ecosystem of "affiliated packages" that
+provides efficient access to more specific astronomical tasks, of which 
+astroplan is one.
 
 The astroplan API is designed to provide efficient access to common 
 observational quantities computed with the full precision of astropy, without 
