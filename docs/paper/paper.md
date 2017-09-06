@@ -34,18 +34,15 @@ authors:
  - name: Aniket Pandey
    orcid: 
    affiliation: 10
- - name: Kelle Cruz
-   orcid: 0000-0002-1821-0650
-   affiliation: 11
  - name: Larry Bradley
    orcid: 0000-0002-7908-9284
    affiliation: 5
  - name: Thomas Robitaille
    orcid: 0000-0002-8642-1329
-   affiliation: 12
+   affiliation: 11
  - name: Eric Jeschke 
    orcid: 
-   affiliation: 13
+   affiliation: 12
 affiliations:
  - name: University of Washington
    index: 1
@@ -67,12 +64,10 @@ affiliations:
    index: 9
  - name: Indian Institute of Technology Kanpur
    index: 10
- - name: Hunter College
-   index: 11
  - name: (freelance)
-   index: 12
+   index: 11
  - name: National Astronomical Observatory of Japan 
-   index: 13
+   index: 12
 
 date: 2 September 2017
 bibliography: paper.bib
