@@ -26,8 +26,6 @@ class PeriodicEvent(object):
             Duration of event
         name : str (optional)
             Name of target/event
-        Returns
-        -------
         """
         self.epoch = epoch
         self.period = period
