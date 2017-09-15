@@ -30,17 +30,6 @@ def test_primary_secondary_eclipse():
     assert es.next_secondary_eclipse(epoch) == Time('2016-01-02 12:00')
 
 
-def test_next_eclipse():
-    epoch = Time('2016-01-01')
-    period = 3*u.day
-    duration = 1*u.hour
-    es = EclipsingSystem(epoch=epoch, period=period, duration=duration,
-                       name='test event')
-
-    assert es.next_primary_eclipse(epoch) == Time('2016-01-04 00:00')
-    assert es.next_secondary_eclipse(epoch) == Time('2016-01-02 12:00')
-
-
 def test_out_of_eclipse():
     epoch = Time('2016-01-01')
     period = 3*u.day
