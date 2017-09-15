@@ -33,7 +33,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "PrimaryEclipseConstraint", "SecondaryEclipseConstraint",
            "Constraint", "TimeConstraint", "observability_table",
            "months_observable", "max_best_rescale", "min_best_rescale",
-           "PhaseConstraint"]
+           "PhaseConstraint", "is_event_observable"]
 
 
 def _make_cache_key(times, targets):
@@ -974,6 +974,41 @@ def is_observable(constraints, observer, targets, times=None,
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
     return np.any(constraint_arr, axis=1)
+
+
+def is_event_observable(constraints, observer, target, times):
+    """
+    Determines if the ``target`` is observable at each time in ``times``, given
+    constraints in ``constraints`` for a particular ``observer``.
+
+    Parameters
+    ----------
+    constraints : list or `~astroplan.constraints.Constraint`
+        Observational constraint(s)
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    target : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target
+
+    times : `~astropy.time.Time`
+        Array of times on which to test the constraints
+
+    Returns
+    -------
+    ever_observable : `~np.ndarray`
+        Array of booleans of same length as ``times`` for whether or not the
+        target is ever observable at each time, given the constraints.
+    """
+    if not hasattr(constraints, '__len__'):
+        constraints = [constraints]
+
+    applied_constraints = [constraint(observer, target, times=times,
+                                      grid_times_targets=True)
+                           for constraint in constraints]
+    constraint_arr = np.logical_and.reduce(applied_constraints)
+    return constraint_arr
 
 
 def months_observable(constraints, observer, targets,

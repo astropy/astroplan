@@ -13,6 +13,7 @@ Contents
 ========
 
 * :ref:`exoplanets-transit_times`
+* :ref:`exoplanets-observable_transits`
 * :ref:`exoplanets-astroquery`
 
 .. _exoplanets-transit_times:
@@ -70,6 +71,30 @@ when planning observations, which you can find with
     <Time object: scale='utc' format='jd' value=[[ 2457391.11404175  2457391.24174175]
                                                  [ 2457394.63879034  2457394.76649034]
                                                  [ 2457398.16353893  2457398.29123893]]>
+
+.. _exoplanets-observable_transits:
+
+When is the next observable transit?
+====================================
+
+Let's continue with the example from above, and now let's calculate all
+mid-transit times of HD 209458 b which are observable from Apache Point
+Observatory, when the target is above 30 degrees altitude.
+
+.. code-block:: python
+    >>> from astroplan import FixedTarget, Observer
+    >>> apo = Observer.at_site('APO')
+    >>> target = FixedTarget.from_name("HD 209458")
+
+.. code-block:: python
+    >>> from astroplan import (PrimaryEclipseConstraint, is_event_observable,
+                               AltitudeConstraint)
+    >>> n_transits = 100  # This is the roughly number of transits per year
+    >>> midtransit_times = hd209458.next_primary_eclipse_time(observing_time, n_eclipses=n_transits)
+    >>> constraints = [PrimaryEclipseConstraint(hd209458),
+                       AltitudeConstraint(min=3*u.deg)]
+    >>> is_event_observable(constraints, apo, target, times=midtransit_times)
+    array([[ True, False,  True, ...,  True, False,  True, False]], dtype=bool)
 
 .. _exoplanets-astroquery:
 
