@@ -976,7 +976,8 @@ def is_observable(constraints, observer, targets, times=None,
     return np.any(constraint_arr, axis=1)
 
 
-def is_event_observable(constraints, observer, target, times):
+def is_event_observable(constraints, observer, target, times=None,
+                        times_ingress_egress=None):
     """
     Determines if the ``target`` is observable at each time in ``times``, given
     constraints in ``constraints`` for a particular ``observer``.
@@ -992,22 +993,40 @@ def is_event_observable(constraints, observer, target, times):
     target : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target
 
-    times : `~astropy.time.Time`
-        Array of times on which to test the constraints
+    times : `~astropy.time.Time` (optional)
+        Array of mid-event times on which to test the constraints
+
+    times_ingress_egress : `~astropy.time.Time` (optional)
+        Array of ingress and egress times for ``N`` events, with shape
+        (``N``, 2).
 
     Returns
     -------
-    ever_observable : `~np.ndarray`
+    event_observable : `~np.ndarray`
         Array of booleans of same length as ``times`` for whether or not the
         target is ever observable at each time, given the constraints.
     """
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
-    applied_constraints = [constraint(observer, target, times=times,
-                                      grid_times_targets=True)
-                           for constraint in constraints]
-    constraint_arr = np.logical_and.reduce(applied_constraints)
+    if times is not None:
+        applied_constraints = [constraint(observer, target, times=times,
+                                          grid_times_targets=True)
+                               for constraint in constraints]
+        constraint_arr = np.logical_and.reduce(applied_constraints)
+
+    else:
+        times_ing = times_ingress_egress[:, 0]
+        times_egr = times_ingress_egress[:, 1]
+        applied_constraints_ing = [constraint(observer, target, times=times_ing,
+                                              grid_times_targets=True)
+                                   for constraint in constraints]
+        applied_constraints_egr = [constraint(observer, target, times=times_egr,
+                                              grid_times_targets=True)
+                                   for constraint in constraints]
+
+        constraint_arr = np.logical_and(np.logical_and.reduce(applied_constraints_ing),
+                                        np.logical_and.reduce(applied_constraints_egr))
     return constraint_arr
 
 
