@@ -82,8 +82,8 @@ def test_primary_ingress():
                          name='test event')
 
     test_time = epoch + 0.1*u.min
-    ap_next_ing_egr_0 = es.primary_ingress_egress_time(test_time)
-    ap_next_ing_egr_1 = es.primary_ingress_egress_time(test_time, n_eclipses=3)
+    ap_next_ing_egr_0 = es.next_primary_ingress_egress_time(test_time)
+    ap_next_ing_egr_1 = es.next_primary_ingress_egress_time(test_time, n_eclipses=3)
 
     soln_next_ing_egr_0 = Time([['2016-01-03 23:30', '2016-01-04 00:30']])
     soln_next_ing_egr_1 = Time([['2016-01-03 23:30', '2016-01-04 00:30'],

@@ -162,7 +162,7 @@ class EclipsingSystem(PeriodicEvent):
                          np.arange(n_eclipses) * self.period)
         return eclipse_times
 
-    def primary_ingress_egress_time(self, time, n_eclipses=1):
+    def next_primary_ingress_egress_time(self, time, n_eclipses=1):
         """
         Calculate the times of ingress and egress for the next ``n_eclipses``
         primary eclipses after ``time``
@@ -189,7 +189,7 @@ class EclipsingSystem(PeriodicEvent):
 
         return Time(ing_egr, format='jd', scale='utc')
 
-    def secondary_ingress_egress_time(self, time, n_eclipses=1):
+    def next_secondary_ingress_egress_time(self, time, n_eclipses=1):
         """
         Calculate the times of ingress and egress for the next ``n_eclipses``
         secondary eclipses after ``time``

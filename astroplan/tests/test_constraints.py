@@ -16,7 +16,9 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable,
-                           max_best_rescale, min_best_rescale)
+                           max_best_rescale, min_best_rescale,
+                           PrimaryEclipseConstraint, SecondaryEclipseConstraint)
+from ..eclipsing import EclipsingSystem
 
 APY_LT104 = not minversion('astropy', '1.0.4')
 
@@ -394,3 +396,21 @@ def test_caches_shapes():
     ac = AltitudeConstraint(min=30*u.deg)
     assert ac(observer, targets, times, grid_times_targets=True).shape == (3, 3)
     assert ac(observer, targets, times, grid_times_targets=False).shape == (3,)
+
+
+def test_eclipses():
+    subaru = Observer.at_site("Subaru")
+
+    epoch = Time('2016-01-01')
+    period = 3 * u.day
+    duration = 1 * u.hour
+    eclipsing_system = EclipsingSystem(epoch=epoch, period=period,
+                                       duration=duration, name='test system')
+    pec = PrimaryEclipseConstraint(eclipsing_system)
+    times = Time(['2016-01-01 00:00', '2016-01-01 03:00', '2016-01-02 12:00'])
+    assert np.all(np.array([True, False, False]) == pec(subaru, None, times))
+
+    sec = SecondaryEclipseConstraint(eclipsing_system)
+    times = Time(['2016-01-01 00:00', '2016-01-01 03:00', '2016-01-02 12:00'])
+    assert np.all(np.array([False, False, True]) == sec(subaru, None, times))
+

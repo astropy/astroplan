@@ -27,5 +27,6 @@ if not _ASTROPY_SETUP_:
     from .moon import *
     from .constraints import *
     from .scheduling import *
+    from .eclipsing import *
 
     get_IERS_A_or_workaround()

@@ -26,13 +26,13 @@ from .moon import moon_illumination
 from .utils import time_grid_from_range
 from .target import get_skycoord
 
-
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "TimeConstraint", "observability_table", "months_observable",
-           "max_best_rescale", "min_best_rescale"]
+           "MoonIlluminationConstraint", "LocalTimeConstraint",
+           "PrimaryEclipseConstraint", "SecondaryEclipseConstraint",
+           "Constraint", "TimeConstraint", "observability_table",
+           "months_observable", "max_best_rescale", "min_best_rescale"]
 
 
 def _make_cache_key(times, targets):
@@ -804,6 +804,42 @@ class TimeConstraint(Constraint):
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
             max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
         mask = np.logical_and(times > min_time, times < max_time)
+        return mask
+
+
+class PrimaryEclipseConstraint(Constraint):
+    """
+    Constrain observations to times during primary eclipse.
+    """
+    def __init__(self, eclipsing_system):
+        """
+        Parameters
+        ----------
+        eclipsing_system : `~astroplan.eclipsing.EclipsingSystem`
+            System which must be in primary eclipse.
+        """
+        self.eclipsing_system = eclipsing_system
+
+    def compute_constraint(self, times, observer=None, targets=None):
+        mask = self.eclipsing_system.in_primary_eclipse(times)
+        return mask
+
+
+class SecondaryEclipseConstraint(Constraint):
+    """
+    Constrain observations to times during secondary eclipse.
+    """
+    def __init__(self, eclipsing_system):
+        """
+        Parameters
+        ----------
+        eclipsing_system : `~astroplan.eclipsing.EclipsingSystem`
+            System which must be in secondary eclipse.
+        """
+        self.eclipsing_system = eclipsing_system
+
+    def compute_constraint(self, times, observer=None, targets=None):
+        mask = self.eclipsing_system.in_secondary_eclipse(times)
         return mask
 
 
