@@ -16,7 +16,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            time_grid_from_range, SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable,
-                           max_best_rescale, min_best_rescale,
+                           max_best_rescale, min_best_rescale, PhaseConstraint,
                            PrimaryEclipseConstraint, SecondaryEclipseConstraint)
 from ..eclipsing import EclipsingSystem
 
@@ -414,3 +414,6 @@ def test_eclipses():
     times = Time(['2016-01-01 00:00', '2016-01-01 03:00', '2016-01-02 12:00'])
     assert np.all(np.array([False, False, True]) == sec(subaru, None, times))
 
+    pc = PhaseConstraint(eclipsing_system, min=0.2, max=0.5)
+    times = Time(['2016-01-01 00:00', '2016-01-02 12:00', '2016-01-02 14:00'])
+    assert np.all(np.array([False, True, False]) == pc(subaru, None, times))

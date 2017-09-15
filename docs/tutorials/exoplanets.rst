@@ -75,7 +75,8 @@ when planning observations, which you can find with
 
 Getting exoplanet properties via astroquery
 ===========================================
-As of `astroquery`_ version 0.X, users can query for transiting exoplanet
-properties from the Exoplanet Orbit Database (exoplanets.org) and the NASA
-Exoplanet Science Institute (NExScI) Exoplanet Archive.
+
+#As of `astroquery`_ version 0.X, users can query for transiting exoplanet
+#properties from the Exoplanet Orbit Database (exoplanets.org) and the NASA
+#Exoplanet Science Institute (NExScI) Exoplanet Archive.
 

@@ -32,7 +32,8 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "MoonIlluminationConstraint", "LocalTimeConstraint",
            "PrimaryEclipseConstraint", "SecondaryEclipseConstraint",
            "Constraint", "TimeConstraint", "observability_table",
-           "months_observable", "max_best_rescale", "min_best_rescale"]
+           "months_observable", "max_best_rescale", "min_best_rescale",
+           "PhaseConstraint"]
 
 
 def _make_cache_key(times, targets):
@@ -840,6 +841,39 @@ class SecondaryEclipseConstraint(Constraint):
 
     def compute_constraint(self, times, observer=None, targets=None):
         mask = self.eclipsing_system.in_secondary_eclipse(times)
+        return mask
+
+
+class PhaseConstraint(Constraint):
+    """
+    Constrain observations to times in some range of phases for a periodic event
+    (e.g.~transiting exoplanets, eclipsing binaries).
+    """
+    def __init__(self, periodic_event, min=None, max=None):
+        """
+        Parameters
+        ----------
+        periodic_event : `~astroplan.eclipsing.PeriodicEvent` or subclass
+            System on which to compute the phase. For example, the system
+            could be an eclipsing or non-eclipsing binary, or exoplanet system.
+        min : float (optional)
+            Minimum phase. Default is zero.
+        max : float (optional)
+            Maximum phase. Default is one.
+        """
+        self.periodic_event = periodic_event
+        self.min = min
+        self.max = max
+
+    def compute_constraint(self, times, observer=None, targets=None):
+        phase = self.periodic_event.phase(times)
+
+        if self.min is None and self.max is not None:
+            mask = self.max >= phase
+        elif self.max is None and self.min is not None:
+            mask = self.min <= phase
+        elif self.min is not None and self.max is not None:
+            mask = (self.min <= phase) & (self.max >= phase)
         return mask
 
 
