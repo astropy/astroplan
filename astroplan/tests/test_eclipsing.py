@@ -1,15 +1,11 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import pytest
 import numpy as np
 from astropy.time import Time
 import astropy.units as u
 
-#from ..eclipsing import PeriodicEvent, EclipsingSystem
-import sys
-sys.path.insert(0, '../')
-from eclipsing import PeriodicEvent, EclipsingSystem
+from ..eclipsing import PeriodicEvent, EclipsingSystem
 
 
 def test_phase():
