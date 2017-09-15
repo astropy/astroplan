@@ -17,7 +17,8 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable,
                            max_best_rescale, min_best_rescale, PhaseConstraint,
-                           PrimaryEclipseConstraint, SecondaryEclipseConstraint)
+                           PrimaryEclipseConstraint, SecondaryEclipseConstraint,
+                           is_event_observable)
 from ..eclipsing import EclipsingSystem
 
 APY_LT104 = not minversion('astropy', '1.0.4')
@@ -417,3 +418,44 @@ def test_eclipses():
     pc = PhaseConstraint(eclipsing_system, min=0.2, max=0.5)
     times = Time(['2016-01-01 00:00', '2016-01-02 12:00', '2016-01-02 14:00'])
     assert np.all(np.array([False, True, False]) == pc(subaru, None, times))
+
+
+def test_event_observable():
+
+    epoch = Time(2452826.628514, format='jd')
+    period = 3.52474859 * u.day
+    duration = 0.1277 * u.day
+
+    hd209458 = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+                               name='HD 209458 b')
+    observing_time = Time('2017-09-15 10:20')
+
+    apo = Observer.at_site('APO')
+
+    target = FixedTarget.from_name("HD 209458")
+    n_transits = 100  # This is the roughly number of transits per year
+    ing_egr = hd209458.next_primary_ingress_egress_time(observing_time,
+                                                        n_eclipses=n_transits)
+    constraints = [AltitudeConstraint(min=0*u.deg), AtNightConstraint()]
+    observable = is_event_observable(constraints, apo, target,
+                                     times_ingress_egress=ing_egr)
+
+    # This answer was validated against the Czech Exoplanet Transit Database
+    # transit prediction service, at:
+    # http://var2.astro.cz/ETD/predict_detail.php?delka=254.1797222222222&submit=submit&sirka=32.780277777777776&STARNAME=HD209458&PLANET=b
+    # There is some disagreement, as the ETD considers some transits which begin
+    # before sunset or after sunrise to be observable.
+    cetd_answer = [[False, False, False,  True, False,  True, False,  True, False,
+                     True, False,  True, False, False, False, False, False, False,
+                    False, False, False, False,  True, False,  True, False, False,
+                    False, False, False, False, False, False, False, False, False,
+                    False, False, False, False, False, False, False, False, False,
+                    False, False, False, False, False, False, False, False, False,
+                    False, False, False,  True, False, False, False, False, False,
+                    False, False, False, False, False, False, False, False, False,
+                     True, False,  True, False, False, False, False, False, False,
+                    False, False, False, False, False, False,  True, False,  True,
+                    False,  True, False,  True, False,  True, False,  True, False,
+                    False]]
+
+    assert np.all(observable == np.array(cetd_answer))
