@@ -14,7 +14,6 @@ Contents
 
 * :ref:`exoplanets-transit_times`
 * :ref:`exoplanets-observable_transits`
-* :ref:`exoplanets-astroquery`
 
 .. _exoplanets-transit_times:
 
@@ -97,7 +96,8 @@ Then we compute a list of mid-transit times over the next year:
     >>> midtransit_times = hd209458.next_primary_eclipse_time(observing_time, n_eclipses=n_transits)
 
 Finally, we can check if the target is observable at each transit time, given
-our constraints on the altitude of the target:
+our constraints on the altitude of the target, with the function
+`~astroplan.is_event_observable`:
 
 .. code-block:: python
 
@@ -120,13 +120,3 @@ for only completely observable transits:
 Note that several of the transits that were observable at their mid-transit time
 are not observable at both the ingress and egress times, and therefore are
 not observable in the computation above.
-
-.. _exoplanets-astroquery:
-
-Getting exoplanet properties via astroquery
-===========================================
-
-#As of `astroquery`_ version 0.X, users can query for transiting exoplanet
-#properties from the Exoplanet Orbit Database (exoplanets.org) and the NASA
-#Exoplanet Science Institute (NExScI) Exoplanet Archive.
-
