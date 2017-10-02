@@ -1002,7 +1002,7 @@ def is_event_observable(constraints, observer, target, times=None,
 
     Returns
     -------
-    event_observable : `~np.ndarray`
+    event_observable : `~numpy.ndarray`
         Array of booleans of same length as ``times`` for whether or not the
         target is ever observable at each time, given the constraints.
     """

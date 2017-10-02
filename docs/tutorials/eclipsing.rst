@@ -64,7 +64,9 @@ You can compute the next ten mid-transit times with the ``n_eclipses`` keyword:
 
 It's often useful to know the ingress and egress times of the next transits
 when planning observations, which you can find with
-`~astroplan.EclipsingSystem.next_primary_ingress_egress_time`
+`~astroplan.EclipsingSystem.next_primary_ingress_egress_time`:
+
+.. code-block:: python
 
     >>> hd209458.next_primary_ingress_egress_time(observing_time, n_eclipses=3)
     <Time object: scale='utc' format='jd' value=[[ 2457391.11404175  2457391.24174175]
@@ -83,6 +85,7 @@ create a `~astroplan.FixedTarget` object for the star, which contains the
 sky coordinate:
 
 .. code-block:: python
+
     >>> from astroplan import FixedTarget, Observer
     >>> apo = Observer.at_site('APO')
     >>> target = FixedTarget.from_name("HD 209458")
@@ -90,8 +93,8 @@ sky coordinate:
 Then we compute a list of mid-transit times over the next year:
 
 .. code-block:: python
-    >>> from astroplan import (PrimaryEclipseConstraint, is_event_observable,
-                               AltitudeConstraint)
+
+    >>> from astroplan import PrimaryEclipseConstraint, is_event_observable, AltitudeConstraint
     >>> n_transits = 100  # This is the roughly number of transits per year
     >>> midtransit_times = hd209458.next_primary_eclipse_time(observing_time, n_eclipses=n_transits)
 
@@ -112,7 +115,6 @@ for only completely observable transits:
 
 .. code-block:: python
 
-    >>> constraints = [AltitudeConstraint(min=3*u.deg)]
     >>> ing_egr = hd209458.next_primary_ingress_egress_time(observing_time, n_eclipses=n_transits)
     >>> is_event_observable(constraints, apo, target, times_ingress_egress=ing_egr)
     array([[False, False, False, ...,  True, False, False, False]], dtype=bool)
