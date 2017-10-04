@@ -14,7 +14,7 @@ Observing Transiting Exoplanets and Eclipsing Binaries
     `~astroplan.EclipsingSystem`. The secondary eclipse time approximation is
     only accurate when the orbital eccentricity is small, and the eclipse
     times are computed without any barycentric corrections. The current
-    implementation should only be used forapproximate mid-eclipse times for
+    implementation should only be used for approximate mid-eclipse times for
     low eccentricity orbits, with event durations longer than the
     barycentric correction error (<=16 minutes).
 
@@ -41,11 +41,12 @@ of 0.1277:
     >>> import astropy.units as u
     >>> from astroplan import EclipsingSystem
 
-    >>> epoch = Time(2452826.628514, format='jd')
-    >>> period = 3.52474859 * u.day
-    >>> duration = 0.1277 * u.day
+    >>> primary_eclipse_time = Time(2452826.628514, format='jd')
+    >>> orbital_period = 3.52474859 * u.day
+    >>> eclipse_duration = 0.1277 * u.day
 
-    >>> hd209458 = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+    >>> hd209458 = EclipsingSystem(primary_eclipse_time=primary_eclipse_time,
+    ...                            orbital_period=orbital_period, duration=eclipse_duration,
     ...                            name='HD 209458 b')
 
 Let's say we're observing on 2016 January 1, 00:00 UTC. We can compute the next
@@ -81,6 +82,10 @@ when planning observations, which you can find with
     <Time object: scale='utc' format='jd' value=[[ 2457391.11404175  2457391.24174175]
                                                  [ 2457394.63879034  2457394.76649034]
                                                  [ 2457398.16353893  2457398.29123893]]>
+
+And remember - in the current implementation, all eclipse times are computed
+without any barycentric corrections, and the secondary eclipse time
+approximation is only accurate when the orbital eccentricity is small.
 
 .. _exoplanets-observable_transits:
 
