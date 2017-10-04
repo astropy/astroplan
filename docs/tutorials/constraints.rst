@@ -252,7 +252,8 @@ observability grid like so:
 This kind of grid can be useful for visualizing what's happening under-the-hood
 when you use `~astroplan.is_observable` or `~astroplan.is_always_observable`.
 Click the link below for the source code to produce the observability grid shown
-below.
+below. Dark squares represent times when the observing constraint is not
+satisfied.
 
 .. plot::
 
