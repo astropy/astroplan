@@ -405,7 +405,7 @@ def test_eclipses():
     epoch = Time('2016-01-01')
     period = 3 * u.day
     duration = 1 * u.hour
-    eclipsing_system = EclipsingSystem(epoch=epoch, period=period,
+    eclipsing_system = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period,
                                        duration=duration, name='test system')
     pec = PrimaryEclipseConstraint(eclipsing_system)
     times = Time(['2016-01-01 00:00', '2016-01-01 03:00', '2016-01-02 12:00'])
@@ -426,7 +426,7 @@ def test_event_observable():
     period = 3.52474859 * u.day
     duration = 0.1277 * u.day
 
-    hd209458 = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+    hd209458 = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period, duration=duration,
                                name='HD 209458 b')
     observing_time = Time('2017-09-15 10:20')
 

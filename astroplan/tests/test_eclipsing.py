@@ -26,7 +26,7 @@ def test_primary_secondary_eclipse():
     epoch = Time('2016-01-01 00:00')
     period = 3*u.day
     duration = 1*u.hour
-    es = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period, duration=duration,
                          name='test event')
 
     ap_primary = es.next_primary_eclipse_time(epoch)
@@ -44,7 +44,7 @@ def test_out_of_eclipse():
     epoch = Time('2016-01-01 00:00')
     period = 3*u.day
     duration = 1*u.hour
-    es = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period, duration=duration,
                          name='test event')
 
     test_times = Time(['2016-01-01 06:00', '2016-01-02 12:00',
@@ -58,7 +58,7 @@ def test_next_eclipse():
     epoch = Time('2016-01-01 00:00')
     period = 3*u.day
     duration = 1*u.hour
-    es = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period, duration=duration,
                          name='test event')
 
     test_time = epoch + period + 0.1*u.min
@@ -78,7 +78,7 @@ def test_primary_ingress():
     epoch = Time('2016-01-01 00:00')
     period = 3*u.day
     duration = 1*u.hour
-    es = EclipsingSystem(epoch=epoch, period=period, duration=duration,
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period, duration=duration,
                          name='test event')
 
     test_time = epoch + 0.1*u.min

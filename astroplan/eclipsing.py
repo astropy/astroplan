@@ -53,9 +53,52 @@ class PeriodicEvent(object):
 
 class EclipsingSystem(PeriodicEvent):
     """
-    Define some parameters for an eclipsing system, either an eclipsing binary
-    or a transiting exoplanet.
+    Define parameters for an eclipsing system; useful for an eclipsing binary or
+    transiting exoplanet.
+
+    .. warning::
+        There are currently two major caveats in the implementation of
+        ``EclipsingSystem``. The secondary eclipse time approximation is
+        only accurate when the orbital eccentricity is small, and the eclipse
+        times are computed without any barycentric corrections. The current
+        implementation should only be used forapproximate mid-eclipse times for
+        low eccentricity orbits, with event durations longer than the
+        barycentric correction error (<=16 minutes).
     """
+    @u.quantity_input(period=u.day, duration=u.day)
+    def __init__(self, primary_eclipse_time, orbital_period, duration=None,
+                 name=None, eccentricity=None, argument_of_periapsis=None):
+        """
+        Parameters
+        ----------
+        primary_eclipse_time : `~astropy.time.Time`
+            Time of primary eclipse
+        orbital_period : `~astropy.units.Quantity`
+            Orbital period of eclipsing system
+        duration : `~astropy.units.Quantity` (optional)
+            Duration of eclipse
+        name : str (optional)
+            Name of target/event
+        eccentricity : float (optional)
+            Orbital eccentricity. Default is `None`, which assumes circular
+            orbit (e=0).
+        argument_of_periapsis : float (optional)
+            Argument of periapsis for the eclipsing system, in radians.
+            Default is `None`, which assumes pi/2.
+        """
+        self.epoch = primary_eclipse_time
+        self.period = orbital_period
+        self.name = name
+        self.duration = duration
+
+        if eccentricity is None:
+            eccentricity = 0
+        self.eccentricity = eccentricity
+
+        if argument_of_periapsis is None:
+            argument_of_periapsis = np.pi/2
+        self.argument_of_periapsis = argument_of_periapsis
+
     def in_primary_eclipse(self, time):
         """
         Returns `True` when ``time`` is during a primary eclipse.
@@ -68,30 +111,45 @@ class EclipsingSystem(PeriodicEvent):
         Returns
         -------
         in_eclipse : `~numpy.ndarray` or bool
-            ``True`` if ``time`` is during primary eclipse
+            `True` if ``time`` is during primary eclipse
         """
         phases = self.phase(time)
         return ((phases < float(self.duration/self.period)/2) |
                 (phases > 1 - float(self.duration/self.period)/2))
 
-    def in_secondary_eclipse(self, time, secondary_eclipse_phase=0.5):
-        """
+    def in_secondary_eclipse(self, time):
+        r"""
         Returns `True` when ``time`` is during a secondary eclipse.
+
+        If the
+        eccentricity of the eclipsing system is non-zero, then we compute
+        the secondary eclipse time approximated to first order in eccentricity,
+        as described in Winn (2010) Equation 33 [1]_:
+
+        The time between the primary eclipse and secondary eclipse :math:`\delta t_c`
+        is given by :math:`\delta t_c \approx 0.5 \left (\frac{4}{\pi} e \cos{\omega \right)`,
+        where :math:`e` is the orbital eccentricity and :math:`\omega` is the
+        angle of periapsis.
 
         Parameters
         ----------
         time : `~astropy.time.Time`
             Time to evaluate
-        secondary_eclipse_phase : float (optional)
-            Defines the phase at secondary eclipse. For circular orbits, the
-            secondary eclipse should happen at phase 0.5 -- in general, for
-            non-circular orbits the secondary eclipse phase will be something
-            else. Default is 0.5 (circular orbit).
+
         Returns
         -------
         in_eclipse : `~numpy.ndarray` or bool
-            ``True`` if ``time`` is during secondary eclipse
+            `True` if ``time`` is during secondary eclipse
+
+        References
+        ----------
+        .. [1] Winn (2010) https://arxiv.org/abs/1001.2010
         """
+        if self.eccentricity < 1e-5:
+            secondary_eclipse_phase = 0.5
+        else:
+            secondary_eclipse_phase = 0.5 * (1 + 4/np.pi * self.eccentricity *
+                                             np.cos(self.argument_of_periapsis))
         phases = self.phase(time)
         return ((phases < secondary_eclipse_phase + float(self.duration/self.period)/2) &
                 (phases > secondary_eclipse_phase - float(self.duration/self.period)/2))
@@ -108,7 +166,7 @@ class EclipsingSystem(PeriodicEvent):
         Returns
         -------
         in_eclipse : `~numpy.ndarray` or bool
-            ``True`` if ``time`` is not during primary or secondary eclipse
+            `True` if ``time`` is not during primary or secondary eclipse
         """
         return np.logical_not(np.logical_or(self.in_primary_eclipse(time),
                                             self.in_secondary_eclipse(time)))
@@ -213,5 +271,3 @@ class EclipsingSystem(PeriodicEvent):
         ing_egr = np.vstack([next_ingresses.utc.jd, next_egresses.utc.jd]).T
 
         return Time(ing_egr, format='jd', scale='utc')
-
-
