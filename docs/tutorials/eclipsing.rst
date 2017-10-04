@@ -46,7 +46,7 @@ of 0.1277:
     >>> duration = 0.1277 * u.day
 
     >>> hd209458 = EclipsingSystem(epoch=epoch, period=period, duration=duration,
-                                   name='HD 209458 b')
+    ...                            name='HD 209458 b')
 
 Let's say we're observing on 2016 January 1, 00:00 UTC. We can compute the next
 transit and secondary eclipse using the
