@@ -8,6 +8,15 @@ Observing Transiting Exoplanets and Eclipsing Binaries
     The exoplanets module is new and under development. The API may change in
     upcoming versions of astroplan, and pull requests are welcome!
 
+.. warning::
+
+    There are currently two major caveats in the implementation of
+    `~astroplan.EclipsingSystem`. The secondary eclipse time approximation is
+    only accurate when the orbital eccentricity is small, and the eclipse
+    times are computed without any barycentric corrections. The current
+    implementation should only be used forapproximate mid-eclipse times for
+    low eccentricity orbits, with event durations longer than the
+    barycentric correction error (<=16 minutes).
 
 Contents
 ========

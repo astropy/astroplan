@@ -103,6 +103,9 @@ class EclipsingSystem(PeriodicEvent):
         """
         Returns `True` when ``time`` is during a primary eclipse.
 
+        .. warning::
+            Barycentric offsets are ignored in the current implementation.
+
         Parameters
         ----------
         time : `~astropy.time.Time`
@@ -119,10 +122,9 @@ class EclipsingSystem(PeriodicEvent):
 
     def in_secondary_eclipse(self, time):
         r"""
-        Returns `True` when ``time`` is during a secondary eclipse.
+        Returns `True` when ``time`` is during a secondary eclipse
 
-        If the
-        eccentricity of the eclipsing system is non-zero, then we compute
+        If the eccentricity of the eclipsing system is non-zero, then we compute
         the secondary eclipse time approximated to first order in eccentricity,
         as described in Winn (2010) Equation 33 [1]_:
 
@@ -130,6 +132,11 @@ class EclipsingSystem(PeriodicEvent):
         is given by :math:`\delta t_c \approx 0.5 \left (\frac{4}{\pi} e \cos{\omega \right)`,
         where :math:`e` is the orbital eccentricity and :math:`\omega` is the
         angle of periapsis.
+
+        .. warning::
+            This approximation for the secondary eclipse time is only accurate
+            when the orbital eccentricity is small; and barycentric offsets
+            are ignored in the current implementation.
 
         Parameters
         ----------
@@ -158,6 +165,9 @@ class EclipsingSystem(PeriodicEvent):
         """
         Returns `True` when ``time`` is not during primary or secondary eclipse.
 
+        .. warning::
+            Barycentric offsets are ignored in the current implementation.
+
         Parameters
         ----------
         time : `~astropy.time.Time`
@@ -174,6 +184,9 @@ class EclipsingSystem(PeriodicEvent):
     def next_primary_eclipse_time(self, time, n_eclipses=1):
         """
         Time of the next primary eclipse after ``time``.
+
+        .. warning::
+            Barycentric offsets are ignored in the current implementation.
 
         Parameters
         ----------
@@ -195,6 +208,9 @@ class EclipsingSystem(PeriodicEvent):
     def next_secondary_eclipse_time(self, time, n_eclipses=1):
         """
         Time of the next secondary eclipse after ``time``.
+
+        .. warning::
+            Barycentric offsets are ignored in the current implementation.
 
         Parameters
         ----------
@@ -223,6 +239,9 @@ class EclipsingSystem(PeriodicEvent):
         Calculate the times of ingress and egress for the next ``n_eclipses``
         primary eclipses after ``time``
 
+        .. warning::
+            Barycentric offsets are ignored in the current implementation.
+
         Parameters
         ----------
         time : `~astropy.time.Time`
@@ -249,6 +268,9 @@ class EclipsingSystem(PeriodicEvent):
         """
         Calculate the times of ingress and egress for the next ``n_eclipses``
         secondary eclipses after ``time``
+
+        .. warning::
+            Barycentric offsets are ignored in the current implementation.
 
         Parameters
         ----------
