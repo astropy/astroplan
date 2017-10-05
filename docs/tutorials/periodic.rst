@@ -32,8 +32,8 @@ Contents
 
 .. _periodic-transit_times:
 
-Transit/secondary eclipse times
-===============================
+Transit/Primary and secondary eclipse times
+===========================================
 
 We can define the properties of an eclipsing system, such as an eclipsing binary
 or transiting exoplanet, using the `~astroplan.EclipsingSystem` object. Let's
@@ -102,8 +102,8 @@ The development version of `astroquery`_ allows users to query for properties of
 known exoplanets with three different services:
 `~astroquery.exoplanet_orbit_database`, `~astroquery.nasa_exoplanet_archive`,
 and `~astroquery.open_exoplanet_catalogue`. In the example below, we will query
-for the properties of the transiting exoplanet HD 209458 b and calculate the
-times of the next three transits.
+for the properties of the transiting exoplanet HD 209458 b with astroquery, and
+calculate the times of the next three transits with `~astroplan.EclipsingSystem`.
 
 .. code-block:: python
 
@@ -138,31 +138,51 @@ When is the next observable transit?
 
 Let's continue with the example from above, and now let's calculate all
 mid-transit times of HD 209458 b which are observable from Apache Point
-Observatory, when the target is above 30 degrees altitude. First we need to
-create a `~astroplan.FixedTarget` object for the star, which contains the
-sky coordinate:
+Observatory, when the target is above 30 degrees altitude, and in the "A" half
+of the night (roughly between sunset and midnight). First we need to create a
+`~astroplan.FixedTarget` object for the star, which contains the sky coordinate,
+and the `~astroplan.EclipsingSystem` object, which defines the transit time,
+period and duration:
 
 .. code-block:: python
 
-    >>> from astroplan import FixedTarget, Observer
-    >>> apo = Observer.at_site('APO')
+    >>> from astroplan import FixedTarget, Observer, EclipsingSystem
+    >>> apo = Observer.at_site('APO', timezone='US/Mountain')
     >>> target = FixedTarget.from_name("HD 209458")
+
+    >>> primary_eclipse_time = Time(2452826.628514, format='jd')
+    >>> orbital_period = 3.52474859 * u.day
+    >>> eclipse_duration = 0.1277 * u.day
+
+    >>> hd209458 = EclipsingSystem(primary_eclipse_time=primary_eclipse_time,
+    ...                            orbital_period=orbital_period, duration=eclipse_duration,
+    ...                            name='HD 209458 b')
 
 Then we compute a list of mid-transit times over the next year:
 
 .. code-block:: python
 
-    >>> from astroplan import PrimaryEclipseConstraint, is_event_observable, AltitudeConstraint
     >>> n_transits = 100  # This is the roughly number of transits per year
-    >>> midtransit_times = hd209458.next_primary_eclipse_time(observing_time, n_eclipses=n_transits)
+    >>> obs_time = Time('2017-01-01 12:00')
+    >>> midtransit_times = hd209458.next_primary_eclipse_time(obs_time, n_eclipses=n_transits)
 
 Finally, we can check if the target is observable at each transit time, given
-our constraints on the altitude of the target, with the function
-`~astroplan.is_event_observable`:
+our constraints on the altitude of the target (`~astroplan.AltitudeConstraint`)
+and the time of observations (`~astroplan.LocalTimeConstraint` and
+`~astroplan.AtNightConstraint`) with the function`~astroplan.is_event_observable`:
 
 .. code-block:: python
 
-    >>> constraints = [AltitudeConstraint(min=3*u.deg)]
+    >>> from astroplan import (PrimaryEclipseConstraint, is_event_observable
+    ...                        AtNightConstraint, AltitudeConstraint, LocalTimeConstraint)
+    >>> import datetime as dt
+    >>> import astropy.units as u
+    >>> min_local_time = dt.time(19, 0)  # 19:00 local time at APO (7pm)
+    >>> max_local_time = dt.time(0, 0)  # 00:00 local time at APO (midnight)
+    >>> constraints = [AtNightConstraint.twilight_civil(),
+    ...                AltitudeConstraint(min=30*u.deg),
+    ...                LocalTimeConstraint(min=min_local_time, max=max_local_time)]
+
     >>> is_event_observable(constraints, apo, target, times=midtransit_times)
     array([[ True, False,  True, ...,  True, False,  True, False]], dtype=bool)
 
@@ -212,7 +232,6 @@ on the night of January 1, 2017. For this task we can use the
 :doc:`constraints`):
 
 .. code-block:: python
-
 
     >>> from astropy.coordinates import SkyCoord
     >>> from astroplan import FixedTarget, Observer, is_observable
