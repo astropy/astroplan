@@ -34,7 +34,7 @@ class PeriodicEvent(object):
 
     def phase(self, time):
         """
-        Phase of periodic event, on range [0, 1). For example, the phase
+        Phase of periodic event, on interval [0, 1). For example, the phase
         could be an orbital phase for an eclipsing binary system.
 
         Parameters

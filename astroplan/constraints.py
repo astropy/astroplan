@@ -857,23 +857,37 @@ class PhaseConstraint(Constraint):
             System on which to compute the phase. For example, the system
             could be an eclipsing or non-eclipsing binary, or exoplanet system.
         min : float (optional)
-            Minimum phase. Default is zero.
+            Minimum phase (inclusive) on interval [0, 1). Default is zero.
         max : float (optional)
-            Maximum phase. Default is one.
+            Maximum phase (inclusive) on interval [0, 1). Default is one.
+
+        Examples
+        --------
+        To constrain observations on orbital phases between 0.4 and 0.6,
+        >>> from astroplan import PeriodicEvent
+        >>> from astropy.time import Time
+        >>> import astropy.units as u
+        >>> binary = PeriodicEvent(epoch=Time('2017-01-01 02:00'), period=1*u.day)
+        >>> constraint = PhaseConstraint(binary, min=0.4, max=0.6)
+
+        The minimum and maximum phase must be described on the interval [0, 1).
+        To constrain observations on orbital phases between 0.6 and 1.2, for
+        example, you should subtract one from the second number:
+        >>> constraint = PhaseConstraint(binary, min=0.6, max=0.2)
         """
         self.periodic_event = periodic_event
-        self.min = min
-        self.max = max
+        if (min < 0) or (min > 1) or (max < 0) or (max > 1):
+            raise ValueError('The minimum of the PhaseConstraint must be within'
+                             ' the interval [0, 1).')
+        self.min = min if min is not None else 0.0
+        self.max = max if max is not None else 1.0
 
     def compute_constraint(self, times, observer=None, targets=None):
         phase = self.periodic_event.phase(times)
 
-        if self.min is None and self.max is not None:
-            mask = self.max >= phase
-        elif self.max is None and self.min is not None:
-            mask = self.min <= phase
-        elif self.min is not None and self.max is not None:
-            mask = (self.min <= phase) & (self.max >= phase)
+        mask = np.where(self.max > self.min,
+                        (phase >= self.min) & (phase <= self.max),
+                        (phase >= self.min) | (phase <= self.max))
         return mask
 
 

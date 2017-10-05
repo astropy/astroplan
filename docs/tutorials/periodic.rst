@@ -29,7 +29,7 @@ Contents
 * :ref:`periodic-observable_transits`
 * :ref:`periodic-phase_constraint`
 
-.. _exoplanets-transit_times:
+.. _periodic-transit_times:
 
 Transit/secondary eclipse times
 ===============================
