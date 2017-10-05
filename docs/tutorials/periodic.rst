@@ -167,8 +167,8 @@ Let's create a `~astroplan.PeriodicEvent` object for an imagined binary star:
 Now let's determine when we can observe the binary given some observing
 constraints. We want to measure the binary's radial velocity at orbital phases
 between 0.4 and 0.6, while observing between astronomical twilights, and while
-the target is above 40 degrees altitude, at Apache Point Observatory on the
-night of January 1, 2017. For this task we can use the
+the target is above 40 degrees altitude, for an observer in Greenwich, England
+on the night of January 1, 2017. For this task we can use the
 `~astroplan.PhaseConstraint` (learn more about the constraints module in
 :doc:`constraints`):
 
