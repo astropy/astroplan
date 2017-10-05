@@ -237,12 +237,14 @@ def get_skycoord(targets):
     else:
         # all the same frame, get the longitude and latitude names
         try:
-            lon_name, lat_name = [mapping.framename for mapping in
-                                  coords[0].frame_specific_representation_info['spherical']]
-        except:
             # from astropy v2.0, keys are classes
             lon_name, lat_name = [mapping.framename for mapping in
                                   coords[0].frame_specific_representation_info[UnitSphericalRepresentation]]
+        except:
+            # whereas prior to that they were strings.
+            lon_name, lat_name = [mapping.framename for mapping in
+                                  coords[0].frame_specific_representation_info['spherical']]
+
 
         frame = coords[0].frame
         for coordinate in coords:
