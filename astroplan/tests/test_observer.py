@@ -1103,8 +1103,8 @@ def print_pyephem_moon_altaz():
     import ephem
     moon = ephem.Moon()
     pe_obs = ephem.Observer()
-    pe_obs.lat = location.latitude.to(u.degree).to_string(sep=':')
-    pe_obs.lon = location.longitude.to(u.degree).to_string(sep=':')
+    pe_obs.lat = location.lat.to(u.degree).to_string(sep=':')
+    pe_obs.lon = location.lon.to(u.degree).to_string(sep=':')
     pe_obs.elevation = location.height.to(u.m).value
     pe_obs.date = time.datetime
     pe_obs.pressure = 0
