@@ -816,7 +816,7 @@ class PrimaryEclipseConstraint(Constraint):
         """
         Parameters
         ----------
-        eclipsing_system : `~astroplan.eclipsing.EclipsingSystem`
+        eclipsing_system : `~astroplan.periodic.EclipsingSystem`
             System which must be in primary eclipse.
         """
         self.eclipsing_system = eclipsing_system
@@ -834,7 +834,7 @@ class SecondaryEclipseConstraint(Constraint):
         """
         Parameters
         ----------
-        eclipsing_system : `~astroplan.eclipsing.EclipsingSystem`
+        eclipsing_system : `~astroplan.periodic.EclipsingSystem`
             System which must be in secondary eclipse.
         """
         self.eclipsing_system = eclipsing_system
@@ -853,7 +853,7 @@ class PhaseConstraint(Constraint):
         """
         Parameters
         ----------
-        periodic_event : `~astroplan.eclipsing.PeriodicEvent` or subclass
+        periodic_event : `~astroplan.periodic.PeriodicEvent` or subclass
             System on which to compute the phase. For example, the system
             could be an eclipsing or non-eclipsing binary, or exoplanet system.
         min : float (optional)

@@ -1,11 +1,11 @@
-.. _exoplanet_tutorial:
+.. _periodic_tutorial:
 
 ******************************************************
 Observing Transiting Exoplanets and Eclipsing Binaries
 ******************************************************
 
 .. note::
-    The exoplanets module is new and under development. The API may change in
+    The `periodic` module is new and under development. The API may change in
     upcoming versions of astroplan, and pull requests are welcome!
 
 .. warning::
@@ -21,13 +21,13 @@ Observing Transiting Exoplanets and Eclipsing Binaries
 Contents
 ========
 
-* :ref:`exoplanets-transit_times`
-* :ref:`exoplanets-observable_transits`
-* :ref:`exoplanets-phase_constraint`
+* :ref:`periodic-transit_times`
+* :ref:`periodic-observable_transits`
+* :ref:`periodic-phase_constraint`
 
 .. _exoplanets-transit_times:
 
-Transit/secondary eclipse Times
+Transit/secondary eclipse times
 ===============================
 
 We can define the properties of an eclipsing system, such as an eclipsing binary
@@ -88,7 +88,7 @@ And remember - in the current implementation, all eclipse times are computed
 without any barycentric corrections, and the secondary eclipse time
 approximation is only accurate when the orbital eccentricity is small.
 
-.. _exoplanets-observable_transits:
+.. _periodic-observable_transits:
 
 When is the next observable transit?
 ====================================
@@ -138,7 +138,7 @@ Note that several of the transits that were observable at their mid-transit time
 are not observable at both the ingress and egress times, and therefore are
 not observable in the computation above.
 
-.. _exoplanets-phase_constraint:
+.. _periodic-phase_constraint:
 
 Orbital Phase Constraint
 ========================

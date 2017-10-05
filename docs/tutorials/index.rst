@@ -21,6 +21,6 @@ We currently have the following tutorials:
 
    summer_triangle
    plots
-   eclipsing
+   periodic
    constraints
    scheduling
