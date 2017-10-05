@@ -294,6 +294,9 @@ def _open_shelve(shelffn, withclosing=False):
 
         with _open_shelve('somefile',True) as s:
             ...
+
+    This workaround can be removed in favour of using shelve.open() directly
+    once support for Python <3.4 is dropped.
     """
     import shelve
     import contextlib
