@@ -23,6 +23,7 @@ Contents
 
 * :ref:`exoplanets-transit_times`
 * :ref:`exoplanets-observable_transits`
+* :ref:`exoplanets-phase_constraint`
 
 .. _exoplanets-transit_times:
 
@@ -136,3 +137,50 @@ for only completely observable transits:
 Note that several of the transits that were observable at their mid-transit time
 are not observable at both the ingress and egress times, and therefore are
 not observable in the computation above.
+
+.. _exoplanets-phase_constraint:
+
+Orbital Phase Constraint
+========================
+
+It is often useful to plan observations as a function of orbital phase. You can
+calculate the orbital phase of an eclipsing or non-eclipsing system with the
+`~astroplan.PeriodicEvent` object, which you specify with an epoch and period.
+Let's create a `~astroplan.PeriodicEvent` object for an imagined binary star:
+
+.. code-block:: python
+
+    >>> from astroplan import PeriodicEvent
+    >>> import astropy.units as u
+    >>> from astropy.time import Time
+
+    >>> epoch = Time(2456001, format='jd')  # reference time of periodic event
+    >>> period = 3.25 * u.day  # period of periodic event
+    >>> duration = 2 * u.hour  # duration of event
+
+    >>> binary_system = PeriodicEvent(epoch=epoch, period=period)
+
+Now let's determine when we can observe the binary given some observing
+constraints. We want to measure the binary's radial velocity at orbital phases
+between 0.4 and 0.6, while observing between astronomical twilights, and while
+the target is above 40 degrees altitude, at Apache Point Observatory on the
+night of January 1, 2017. For this task we can use the
+`~astroplan.PhaseConstraint` (learn more about the constraints module in
+:doc:`constraints`):
+
+.. code-block:: python
+
+
+    >>> from astropy.coordinates import SkyCoord
+    >>> from astroplan import FixedTarget, Observer, is_observable
+    >>> target = FixedTarget(SkyCoord(ra=42*u.deg, dec=42*u.deg), name='Target')
+    >>> greenwich = Observer.at_site("Greenwich")
+    >>> start_time = Time('2017-01-01 01:00')
+    >>> end_time = Time('2017-01-01 06:00')
+
+    >>> from astroplan import PhaseConstraint, AtNightConstraint, AltitudeConstraint
+    >>> constraints = [PhaseConstraint(binary_system, min=0.4, max=0.6),
+    ...                AtNightConstraint.twilight_astronomical(),
+    ...                AltitudeConstraint(min=40 * u.deg)]
+    >>> is_observable(constraints, greenwich, target, time_range=[start_time, end_time])
+    array([ True], dtype=bool)
