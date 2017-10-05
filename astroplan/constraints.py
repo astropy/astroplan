@@ -275,7 +275,7 @@ class Constraint(object):
             a = as_strided(x, shape=shp1, strides=[0] * len(shp1))
             b = as_strided(x, shape=shp2, strides=[0] * len(shp2))
             output_shape = np.broadcast(a, b).shape
-            if output_shape != result.shape:
+            if output_shape != np.array(result).shape:
                 result = broadcast_to(result, output_shape)
 
         return result
