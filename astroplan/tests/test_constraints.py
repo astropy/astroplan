@@ -19,7 +19,7 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            max_best_rescale, min_best_rescale, PhaseConstraint,
                            PrimaryEclipseConstraint, SecondaryEclipseConstraint,
                            is_event_observable)
-from ..eclipsing import EclipsingSystem
+from ..periodic import EclipsingSystem
 
 APY_LT104 = not minversion('astropy', '1.0.4')
 

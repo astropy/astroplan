@@ -6,7 +6,7 @@ from astropy.time import Time
 import astropy.units as u
 from numpy.testing import assert_allclose
 
-from ..eclipsing import PeriodicEvent, EclipsingSystem
+from ..periodic import PeriodicEvent, EclipsingSystem
 
 PRECISION = 0.00001  # days
 

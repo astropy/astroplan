@@ -1,3 +1,7 @@
+.. include:: ../references.txt
+
+.. doctest-skip-all
+
 .. _periodic_tutorial:
 
 ******************************************************
