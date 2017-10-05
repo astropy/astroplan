@@ -187,6 +187,7 @@ class NonFixedTarget(Target):
     Placeholder for future function.
     """
 
+
 def get_skycoord(targets):
     """
     Return an `~astropy.coordinates.SkyCoord` object.
