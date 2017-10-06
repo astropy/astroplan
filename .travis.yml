@@ -52,11 +52,11 @@ matrix:
         # runs for a long time. All dependencies are needed because the
         # plot_directive in sphinx needs them
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
-          env: SETUP_CMD='build_sphinx -w'
+          env: SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
 
