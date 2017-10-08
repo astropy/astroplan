@@ -378,16 +378,13 @@ If you need to take the Moon into account when observing, you may want to know
 when it rises, sets, what phase it's in, etc. Let's first find out if the Moon
 is out during the time we defined earlier:
 
-.. warning::
-
-    ``moon_rise_time()`` and ``moon_set_time()`` have not yet been implemented,
-    but hopefully will be in the next version of astroplan.
-
 .. code-block:: python
 
-    >>> #subaru.moon_rise_time(time)
+    >>> subaru.moon_rise_time(time) # doctest: +SKIP
+    <Time object: scale='utc' format='jd' value=2457190.1696768994>
 
-    >>> #subaru.moon_set_time(time)
+    >>> subaru.moon_set_time(time) # doctest: +SKIP
+    <Time object: scale='utc' format='jd' value=2457189.684134357>
 
 We could also look at the Moon's alt/az coordinates:
 
