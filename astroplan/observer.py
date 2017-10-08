@@ -18,7 +18,7 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
-from .target import get_skycoord
+from .target import get_skycoord, SpecialObjectFlag, SunFlag, MoonFlag
 
 
 __all__ = ["Observer", "MAGIC_TIME"]
@@ -739,11 +739,26 @@ class Observer(object):
             time = Time(time)
 
         if prev_next == 'next':
-            times = _generate_24hr_grid(time, 0, 1, N)
+            start = 0
+            end = (1 + (target.approx_sidereal_drift.to(u.day).value
+                        if hasattr(target, 'approx_sidereal_drift') else 0))
         else:
-            times = _generate_24hr_grid(time, -1, 0, N)
+            start = (-1 - (target.approx_sidereal_drift.to(u.day).value
+                           if hasattr(target, 'approx_sidereal_drift') else 0))
+            end = 0
 
-        altaz = self.altaz(times, target, grid_times_targets=grid_times_targets)
+        times = _generate_24hr_grid(time, start, end, N)
+
+        if target is MoonFlag:
+            altaz = self.altaz(times, get_moon(times, location=self.location),
+                               grid_times_targets=grid_times_targets)
+        elif target is SunFlag:
+            altaz = self.altaz(times, get_sun(times),
+                               grid_times_targets=grid_times_targets)
+        else:
+            altaz = self.altaz(times, target,
+                               grid_times_targets=grid_times_targets)
+
         altitudes = altaz.alt
 
         al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
@@ -1375,41 +1390,61 @@ class Observer(object):
 
     # Moon-related methods.
 
-    def moon_rise_time(self, time, **kwargs):
+    def moon_rise_time(self, time, which='nearest', horizon=0*u.deg):
         """
-        Returns the local moonrise time.
+        Returns the local moon rise time.
 
-        The default moonrise returned is the next one to occur.
+        Compute time of the next/previous/nearest moon rise, where
+        moon rise is defined as the time when the moon transitions from
+        altitudes below ``horizon`` to above ``horizon``.
 
         Parameters
         ----------
         time : `~astropy.time.Time` or other (see below)
-
-        Keywords : str, optional
-            previous
-            next
-        """
-        raise NotImplementedError()
-
-    def moon_set_time(self, time, **kwargs):
-        """
-        Returns the local moonset time.
-
-        The default moonset returned is the next one to occur.
-
-        Parameters
-        ----------
-        time : `~astropy.time.Time` or other (see below)
-            This will be passed in as the first argument to
+            Time of observation. This will be passed in as the first argument to
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        Keywords : str, optional
-            previous
-            next
+        which : {'next', 'previous', 'nearest'}
+            Choose which moon rise relative to the present ``time`` would you
+            like to calculate.
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating rise/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
         """
-        raise NotImplementedError()
+        return self.target_rise_time(time, MoonFlag, which, horizon)
+
+    def moon_set_time(self, time, which='nearest', horizon=0*u.deg):
+        """
+        Returns the local moon set time.
+
+        Compute time of the next/previous/nearest moon set, where
+        moon set is defined as the time when the moon transitions from
+        altitudes below ``horizon`` to above ``horizon``.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            Time of observation. This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
+
+        which : {'next', 'previous', 'nearest'}
+            Choose which moon set relative to the present ``time`` would you
+            like to calculate.
+
+        horizon : `~astropy.units.Quantity` (optional), default = zero degrees
+            Degrees above/below actual horizon to use
+            for calculating set/set times (i.e.,
+            -6 deg horizon = civil twilight, etc.)
+
+        """
+        return self.target_set_time(time, MoonFlag, which, horizon)
 
     def moon_illumination(self, time):
         """
@@ -1523,6 +1558,35 @@ class Observer(object):
 
         moon = get_moon(time, location=self.location, ephemeris=ephemeris)
         return self.altaz(time, moon)
+
+    def sun_altaz(self, time):
+        """
+        Returns the position of the Sun in alt/az.
+
+        Parameters
+        ----------
+        time : `~astropy.time.Time` or other (see below)
+            This will be passed in as the first argument to
+            the `~astropy.time.Time` initializer, so it can be anything that
+            `~astropy.time.Time` will accept (including a `~astropy.time.Time`
+            object).
+
+        ephemeris : str, optional
+            Ephemeris to use.  If not given, use the one set with
+            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            set to 'builtin' by default).
+
+
+        Returns
+        -------
+        altaz : `~astropy.coordinates.SkyCoord`
+            Position of the moon transformed to altitude and azimuth
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        sun = get_sun(time)
+        return self.altaz(time, sun)
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False, grid_times_targets=False):
