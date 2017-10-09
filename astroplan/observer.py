@@ -116,7 +116,8 @@ class Observer(object):
     @u.quantity_input(elevation=u.m)
     def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
                  longitude=None, elevation=0*u.m, pressure=None,
-                 relative_humidity=None, temperature=None, description=None):
+                 relative_humidity=None, temperature=None, description=None,
+                 trig_approx=False):
         """
         Parameters
         ----------
@@ -154,12 +155,17 @@ class Observer(object):
         description : str (optional)
             A short description of the telescope, observatory or observing
             location.
+
+        trig_approx : bool (optional)
+            Use the fast trigonometric approximation for target altitudes (skip
+            atmospheric refraction)
         """
 
         self.name = name
         self.pressure = pressure
         self.temperature = temperature
         self.relative_humidity = relative_humidity
+        self.trig_approx = trig_approx
 
         # If lat/long given instead of EarthLocation, convert them
         # to EarthLocation
@@ -660,17 +666,18 @@ class Observer(object):
         crossing_jd[np.isnan(crossing_jd)] = u.d*MAGIC_TIME.jd
         return np.squeeze(Time(crossing_jd, format='jd'))
 
-    def _altitude_trig(self, LST, target, grid_times_targets=False):
+    def _altitude_trig(self, times, target, grid_times_targets=False,
+                       **lst_kwargs):
         """
-        Calculate the altitude of ``target`` at local sidereal times ``LST``.
+        Calculate the altitude of ``target`` at times ``times``.
 
         This method provides a factor of ~3 speed up over calling `altaz`, and
         inherently does *not* take the atmosphere into account.
 
         Parameters
         ----------
-        LST : `~astropy.time.Time`
-            Local sidereal times (array)
+        times : `~astropy.time.Time`
+            Times (array)
 
         target : {`~astropy.coordinates.SkyCoord`, `FixedTarget`} or similar
             Target celestial object's coordinates.
@@ -686,7 +693,8 @@ class Observer(object):
         alt : `~astropy.unit.Quantity`
             Array of altitudes
         """
-        LST, target = self._preprocess_inputs(LST, target, grid_times_targets)
+        times, target = self._preprocess_inputs(times, target, grid_times_targets)
+        LST = self.local_sidereal_time(times, **lst_kwargs)
         alt = np.arcsin(np.sin(self.location.lat.radian) *
                         np.sin(target.dec) +
                         np.cos(self.location.lat.radian) *
@@ -745,8 +753,12 @@ class Observer(object):
         else:
             times = _generate_24hr_grid(time, -1, 0, N)
 
-        altaz = self.altaz(times, target, grid_times_targets=grid_times_targets)
-        altitudes = altaz.alt
+        if not self.trig_approx:
+            altaz = self.altaz(times, target, grid_times_targets=grid_times_targets)
+            altitudes = altaz.alt
+        else:
+            altitudes = self._altitude_trig(times, target,
+                                            grid_times_targets=grid_times_targets)
 
         al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
                                                horizon)
@@ -808,8 +820,14 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target, grid_times_targets=grid_times_targets)
-        altitudes = altaz.alt
+        if not self.trig_approx:
+            altaz = self.altaz(times, target,
+                               grid_times_targets=grid_times_targets)
+            altitudes = altaz.alt
+        else:
+            altitudes = self._altitude_trig(times, target,
+                                            grid_times_targets=grid_times_targets)
+
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
             d_altitudes = altitudes.diff(axis=1)
@@ -1045,7 +1063,8 @@ class Observer(object):
                                                 rise_set='setting',
                                                 grid_times_targets=grid_times_targets))
 
-    def target_meridian_antitransit_time(self, time, target, which='nearest', grid_times_targets=False):
+    def target_meridian_antitransit_time(self, time, target, which='nearest',
+                                         grid_times_targets=False):
         """
         Calculate time at the antitransit of the meridian.
 
@@ -1580,8 +1599,14 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        altaz = self.altaz(time, target, grid_times_targets=grid_times_targets)
-        observable = altaz.alt > horizon
+        if not self.trig_approx:
+            altaz = self.altaz(time, target,
+                               grid_times_targets=grid_times_targets)
+            observable = altaz.alt > horizon
+        else:
+            alt = self._altitude_trig(time, target,
+                                      grid_times_targets=grid_times_targets)
+            observable = alt > horizon
 
         if altaz.isscalar:
             observable = bool(observable)
@@ -1632,7 +1657,11 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
+        if not self.trig_approx:
+            solar_altitude = self.altaz(time, target=get_sun(time),
+                                        obswl=obswl).alt
+        else:
+            solar_altitude = self._altitude_trig(time, target=get_sun(time))
 
         if solar_altitude.isscalar:
             return bool(solar_altitude < horizon)
