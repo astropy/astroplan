@@ -736,7 +736,7 @@ def test_solar_transit(threshold_minutes, trig_approx):
     elevation = 0.0 * u.m
     pressure = 0 * u.bar
     location = EarthLocation.from_geodetic(lon, lat, elevation)
-    time = Time('2000-01-01 12:00:00')
+    time = Time('2000-01-01 03:00:00')
     from astropy.coordinates import get_sun
     obs = Observer(location=location, pressure=pressure,
                    trig_approx=trig_approx)
@@ -777,6 +777,7 @@ def test_solar_transit(threshold_minutes, trig_approx):
     assert astroplan_next_transit == astroplan_nearest_transit
     assert astroplan_nearest_antitransit == astroplan_prev_antitransit
 
+
 @pytest.mark.parametrize(("threshold_minutes", "trig_approx"),
                          ([8, False],
                           [10, True]))
@@ -790,9 +791,10 @@ def test_solar_transit_convenience_methods(threshold_minutes, trig_approx):
     elevation = 0.0 * u.m
     pressure = 0 * u.bar
     location = EarthLocation.from_geodetic(lon, lat, elevation)
-    time = Time('2000-01-01 12:00:00')
+    time = Time('2000-01-01 03:00:00')
     from astropy.coordinates import get_sun
-    obs = Observer(location=location, pressure=pressure)
+    obs = Observer(location=location, pressure=pressure,
+                   trig_approx=trig_approx)
 
     # Compute next/previous noon/midnight using generic calc_transit methods
     astroplan_next_noon = obs.noon(time, which='next').datetime
@@ -805,6 +807,7 @@ def test_solar_transit_convenience_methods(threshold_minutes, trig_approx):
     pyephem_next_antitransit = datetime.datetime(2000, 1, 2, 0, 3, 31, 423333)
     pyephem_prev_transit = datetime.datetime(1999, 12, 31, 12, 2, 48, 562755)
     pyephem_prev_antitransit = datetime.datetime(2000, 1, 1, 0, 3, 2, 918943)
+
 
     assert (abs(astroplan_next_noon - pyephem_next_transit) <
             datetime.timedelta(minutes=threshold_minutes))
@@ -822,13 +825,13 @@ def print_pyephem_solar_transit_noon():
     on the equator.
 
     To run:
-    python -c 'from astroplan.tests.test_observer import print_pyephem_transit_noon as f; f()'
+    python -c 'from astroplan.tests.test_observer import print_pyephem_solar_transit_noon as f; f()'
     """
     lat = '00:00:00'
     lon = '00:00:00'
     elevation = 0.0 * u.m
     pressure = 0
-    time = Time('2000-01-01 12:00:00')
+    time = Time('2000-01-01 03:00:00')
 
     import ephem
     obs = ephem.Observer()
@@ -843,8 +846,8 @@ def print_pyephem_solar_transit_noon():
     prev_antitransit = obs.previous_antitransit(ephem.Sun())
 
     pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
-    print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
-                                             prev_transit, prev_antitransit]))
+    print(list(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
+                                                  prev_transit, prev_antitransit])))
 
 
 @pytest.mark.parametrize(("threshold_minutes", "trig_approx"),
