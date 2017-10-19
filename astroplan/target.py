@@ -187,6 +187,7 @@ class NonFixedTarget(Target):
     Placeholder for future function.
     """
 
+
 def get_skycoord(targets):
     """
     Return an `~astropy.coordinates.SkyCoord` object.
@@ -235,8 +236,15 @@ def get_skycoord(targets):
         frame = ICRS()
     else:
         # all the same frame, get the longitude and latitude names
-        mappings = coords[0].frame_specific_representation_info[SphericalRepresentation]
-        lon_name, lat_name = [mapping.framename for mapping in mappings]
+        try:
+            # from astropy v2.0, keys are classes
+            lon_name, lat_name = [mapping.framename for mapping in
+                                  coords[0].frame_specific_representation_info[UnitSphericalRepresentation]]
+        except:
+            # whereas prior to that they were strings.
+            lon_name, lat_name = [mapping.framename for mapping in
+                                  coords[0].frame_specific_representation_info['spherical']]
+
 
         frame = coords[0].frame
         for coordinate in coords:
