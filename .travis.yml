@@ -65,12 +65,12 @@ matrix:
 
         # Run one of the docs build during the initial tests
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
           stage: Initial tests
-          env: SETUP_CMD='build_sphinx -w'
+          env: SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
 
@@ -111,6 +111,7 @@ matrix:
         # Try pre-release version of Numpy. This only runs if a pre-release
         # is available on pypi.
         - os: linux
+          stage: Cron and master-only tests
           env: NUMPY_VERSION=prerelease
 
         # Try developer version of Astropy
