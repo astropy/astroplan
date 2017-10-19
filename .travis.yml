@@ -130,6 +130,8 @@ install:
       fi
 
 script:
+    # To avoid the OldEarthOrientationDataWarning during docs build
+    - if [[ $SETUP_CMD == *build_docs* ]]; then python -c "from astroplan import download_IERS_A; download_IERS_A()";fi
     - $MAIN_CMD $SETUP_CMD
 
 after_success:
