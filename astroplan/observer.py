@@ -1086,8 +1086,8 @@ class Observer(object):
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
-        ...                                                                which="next") # doctest: +FLOAT_CMP
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +FLOAT_CMP
+        ...                                                                which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +SKIP
         ISO: 2001-02-03 18:40:29.761, JD: 2451944.27812
 
         """
