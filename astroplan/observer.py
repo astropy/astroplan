@@ -8,10 +8,8 @@ import warnings
 
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_moon, Angle, Latitude, Longitude,
-                                 UnitSphericalRepresentation)
+                                 get_moon, Angle, Longitude)
 from astropy.extern.six import string_types
-from astropy.utils import isiterable
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
@@ -922,8 +920,8 @@ class Observer(object):
         >>> time = Time("2001-02-03 04:05:06")
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
-        >>> rigel_rise_time = keck.target_rise_time(time, target, which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time)) # doctest: +FLOAT_CMP
+        >>> rigel_rise_time = keck.target_rise_time(time, target, which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time)) # doctest: +SKIP
         ISO: 2001-02-04 00:51:23.330, JD: 2451944.53569
         """
         return self._determine_which_event(self._calc_riseset,
@@ -982,8 +980,8 @@ class Observer(object):
         >>> time = Time("2001-02-03 04:05:06")
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
-        >>> rigel_set_time = keck.target_set_time(time, target, which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time)) # doctest: +FLOAT_CMP
+        >>> rigel_set_time = keck.target_set_time(time, target, which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time)) # doctest: +SKIP
         ISO: 2001-02-03 12:29:34.768, JD: 2451944.02054
         """
         return self._determine_which_event(self._calc_riseset,
@@ -1035,8 +1033,8 @@ class Observer(object):
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_transit_time = keck.target_meridian_transit_time(time, target,
-        ...                                                        which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_transit_time)) # doctest: +FLOAT_CMP
+        ...                                                        which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_transit_time)) # doctest: +SKIP
         ISO: 2001-02-03 06:42:26.863, JD: 2451943.77948
         """
         return self._determine_which_event(self._calc_transit,
@@ -1088,8 +1086,8 @@ class Observer(object):
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
-        ...                                                                which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +FLOAT_CMP
+        ...                                                                which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +SKIP
         ISO: 2001-02-03 18:40:29.761, JD: 2451944.27812
 
         """
@@ -1138,7 +1136,7 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time('2001-02-03 04:05:06')
-        >>> sun_rise = apo.sun_rise_time(time, which="previous")
+        >>> sun_rise = apo.sun_rise_time(time, which="previous") # doctest: +SKIP
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +SKIP
         ISO: 2001-02-02 14:02:50.554, JD: 2451943.08531
         """
@@ -1183,7 +1181,7 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time('2001-02-03 04:05:06')
-        >>> sun_set = apo.sun_set_time(time, which="next")
+        >>> sun_set = apo.sun_set_time(time, which="next") # doctest: +SKIP
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +SKIP
         ISO: 2001-02-04 00:35:42.102, JD: 2451944.52479
         """
@@ -1572,9 +1570,9 @@ class Observer(object):
         >>> time = Time("2015-08-29 18:35")
         >>> aldebaran = FixedTarget.from_name("Aldebaran")
         >>> vega = FixedTarget.from_name("Vega")
-        >>> apo.target_is_up(time, aldebaran)
+        >>> apo.target_is_up(time, aldebaran) # doctest: +SKIP
         True
-        >>> apo.target_is_up(time, [aldebaran, vega])
+        >>> apo.target_is_up(time, [aldebaran, vega]) # doctest: +SKIP
         array([ True, False], dtype=bool)
         """
         if not isinstance(time, Time):
