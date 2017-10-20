@@ -71,7 +71,7 @@ approximation when the following methods are called:
     >>> target = FixedTarget.from_name('Sirius')
 
     >>> approx_rise = keck_fast.target_rise_time(reference_time, target)
-    >>> print(approx_rise.iso) # doctest: +FLOAT_CMP
+    >>> print(approx_rise.iso) # doctest: +SKIP
     2015-06-06 18:32:31.960
 
 This rise time result will be different from the full-precision calculation by
