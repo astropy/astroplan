@@ -980,8 +980,8 @@ class Observer(object):
         >>> time = Time("2001-02-03 04:05:06")
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
-        >>> rigel_set_time = keck.target_set_time(time, target, which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time)) # doctest: +FLOAT_CMP
+        >>> rigel_set_time = keck.target_set_time(time, target, which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_set_time)) # doctest: +SKIP
         ISO: 2001-02-03 12:29:34.768, JD: 2451944.02054
         """
         return self._determine_which_event(self._calc_riseset,
