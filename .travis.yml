@@ -6,6 +6,8 @@ language: c
 os:
     - linux
 
+stage: Comprehensive tests
+
 # Setting sudo to false opts in to Travis-CI container-based builds.
 sudo: false
 
@@ -30,10 +32,15 @@ env:
         - CONDA_CHANNELS='astropy conda-forge'
         - ASTROPY_USE_SYSTEM_PYTEST=1
 
-    matrix:
-        - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
-        - PYTHON_VERSION=3.5 SETUP_CMD='egg_info'
-        - PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
+
+stages:
+   # Do the initial tests and don't proceed if they fail
+   - name: Initial tests
+   # Do the rest of the tests
+   - name: Comprehensive tests
+   - name: Cron and master-only tests
+     if: type IN (push, cron)
+
 
 matrix:
 
@@ -42,21 +49,28 @@ matrix:
 
     include:
 
+        - stage: Initial tests
+          env: PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
+        - stage: Initial tests
+          env: PYTHON_VERSION=3.5 SETUP_CMD='egg_info'
+        - stage: Initial tests
+          env: SETUP_CMD='egg_info'
+
         # Try MacOS X
         - os: osx
+          stage: Cron and master-only tests
           env: PYTHON_VERSION=2.7
                CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
 
-        # Check for sphinx doc build warnings - we do this first because it
-        # runs for a long time. All dependencies are needed because the
-        # plot_directive in sphinx needs them
+        # Run one of the docs build during the initial tests
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
-          env: SETUP_CMD='build_sphinx -w'
+          stage: Initial tests
+          env: SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
 
@@ -77,6 +91,7 @@ matrix:
                CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
+          stage: Initial tests
           env: SETUP_CMD='test --remote-data -V'
                CONDA_DEPENDENCIES='pytz matplotlib nose'
                PIP_DEPENDENCIES='pytest-mpl'
@@ -94,6 +109,7 @@ matrix:
         # Try pre-release version of Numpy. This only runs if a pre-release
         # is available on pypi.
         - os: linux
+          stage: Cron and master-only tests
           env: NUMPY_VERSION=prerelease
 
         # Try developer version of Astropy
@@ -128,6 +144,8 @@ install:
       fi
 
 script:
+    # To avoid the OldEarthOrientationDataWarning during docs build
+    - if [[ $SETUP_CMD == *build_docs* ]]; then python -c "from astroplan import download_IERS_A; download_IERS_A()";fi
     - $MAIN_CMD $SETUP_CMD
 
 after_success:
