@@ -1181,7 +1181,7 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time('2001-02-03 04:05:06')
-        >>> sun_set = apo.sun_set_time(time, which="next")
+        >>> sun_set = apo.sun_set_time(time, which="next") # doctest: +SKIP
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +SKIP
         ISO: 2001-02-04 00:35:42.102, JD: 2451944.52479
         """
@@ -1570,9 +1570,9 @@ class Observer(object):
         >>> time = Time("2015-08-29 18:35")
         >>> aldebaran = FixedTarget.from_name("Aldebaran")
         >>> vega = FixedTarget.from_name("Vega")
-        >>> apo.target_is_up(time, aldebaran)
+        >>> apo.target_is_up(time, aldebaran) # doctest: +SKIP
         True
-        >>> apo.target_is_up(time, [aldebaran, vega])
+        >>> apo.target_is_up(time, [aldebaran, vega]) # doctest: +SKIP
         array([ True, False], dtype=bool)
         """
         if not isinstance(time, Time):
