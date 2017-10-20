@@ -1235,14 +1235,14 @@ def test_tonight(threshold_minutes, trig_approx):
     during_night = obs.tonight(time=midnight, horizon=horizon)
 
     assert (abs(sunset - during_day[0].datetime) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
     assert (abs(sunrise - during_day[1].datetime) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
 
     assert (abs(midnight.datetime - during_night[0].datetime) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
     assert (abs(sunrise - during_night[1].datetime) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
 
     astro_sunset = Time('2016-08-08 06:13:00')
     horizon = -18 * u.degree
@@ -1253,4 +1253,4 @@ def test_tonight(threshold_minutes, trig_approx):
 
     # Get correct astro sunset if checking after civil sunset
     assert (abs(astro_sunset.datetime - during_twilight[0].datetime) <
-        datetime.timedelta(minutes=threshold_minutes))
+            datetime.timedelta(minutes=threshold_minutes))
