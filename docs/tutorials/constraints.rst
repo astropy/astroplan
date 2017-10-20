@@ -10,6 +10,7 @@ Contents
 ========
 
 * :ref:`constraints-built_in_constraints`
+* :ref:`constraints-visualize_constraints`
 * :ref:`constraints-user_defined_constraints`
 
 .. _constraints-built_in_constraints:
@@ -191,6 +192,134 @@ these criteria because it rises above 80 degrees altitude. Polaris hardly moves
 and is therefore always observable, and Algol starts out observable but sets
 below the lower altitude limit, and then the airmass limit. Rigel and Regulus
 never rise above those limits within the time range.
+
+.. _constraints-visualize_constraints:
+
+Visualizing Constraints
+=======================
+
+Suppose an observer is planning to observe low-mass stars in Praesepe in the
+optical and infrared from the W.M. Keck Observatory. The observing constraints
+require all observations to occur (i) between astronomical twilights; (ii)
+while the Moon is separated from Praesepe by at least 45 degrees; and (iii)
+while Praesepe is above the lower elevation limit of Keck I, about 33 degrees.
+These observing constraints can be specified with the
+`~astroplan.AtNightConstraint`, `~astroplan.MoonSeparationConstraint`, and
+`~astroplan.AltitudeConstraint` objects, like this:
+
+.. code-block::python
+
+    from astroplan import (FixedTarget, Observer, AltitudeConstraint,
+                           AtNightConstraint, MoonSeparationConstraint)
+    from astropy.time import Time
+    from astroplan.utils import time_grid_from_range
+    import astropy.units as u
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Specify observer at Keck Observatory:
+    keck = Observer.at_site('Keck')
+
+    # Use Sesame name resolver to get coordinates for Praesepe:
+    target = FixedTarget.from_name("Praesepe")
+
+    # Define observing constraints:
+    constraints = [AtNightConstraint.twilight_astronomical(),
+                   MoonSeparationConstraint(min=45 * u.deg),
+                   AltitudeConstraint(min=33 * u.deg)]
+
+We can evaluate the constraints at one hour intervals in a loop, to create an
+observability grid like so:
+
+.. code-block::python
+
+    # Define range of times to observe between
+    start_time = Time('2017-01-01 04:00:01')
+    end_time = Time('2017-01-01 11:00:01')
+    time_resolution = 1 * u.hour
+
+    # Create grid of times from ``start_time`` to ``end_time``
+    # with resolution ``time_resolution``
+    time_grid = time_grid_from_range([start_time, end_time],
+                                     time_resolution=time_resolution)
+
+    observability_grid = np.zeros((len(constraints), len(time_grid)))
+
+    for i, constraint in enumerate(constraints):
+        # Evaluate each constraint
+        observability_grid[i, :] = constraint(keck, target, times=time_grid)
+
+This kind of grid can be useful for visualizing what's happening under-the-hood
+when you use `~astroplan.is_observable` or `~astroplan.is_always_observable`.
+Click the link below for the source code to produce the observability grid shown
+below. Dark squares represent times when the observing constraint is not
+satisfied.
+
+.. plot::
+
+    from __future__ import (absolute_import, division, print_function,
+                            unicode_literals)
+
+    from astroplan import (FixedTarget, Observer, AltitudeConstraint,
+                           AtNightConstraint, MoonSeparationConstraint)
+    from astropy.time import Time
+    from astroplan.utils import time_grid_from_range
+    import astropy.units as u
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # Specify observer at Keck Observatory:
+    keck = Observer.at_site('Keck')
+
+    # Use Sesame name resolver to get coordinates for Praesepe:
+    target = FixedTarget.from_name("Praesepe")
+
+    # Define observing constraints:
+    constraints = [AtNightConstraint.twilight_astronomical(),
+                   MoonSeparationConstraint(min=45 * u.deg),
+                   AltitudeConstraint(min=33 * u.deg)]
+
+    # Define range of times to observe between
+    start_time = Time('2017-01-01 04:00:01')
+    end_time = Time('2017-01-01 11:00:01')
+    time_resolution = 1 * u.hour
+
+    # Create grid of times from ``start_time`` to ``end_time``
+    # with resolution ``time_resolution``
+    time_grid = time_grid_from_range([start_time, end_time],
+                                     time_resolution=time_resolution)
+
+    observability_grid = np.zeros((len(constraints), len(time_grid)))
+
+    for i, constraint in enumerate(constraints):
+        # Evaluate each constraint
+        observability_grid[i, :] = constraint(keck, target, times=time_grid)
+
+    # Create plot showing observability of the target:
+
+    extent = [-0.5, -0.5+len(time_grid), -0.5, 2.5]
+
+    fig, ax = plt.subplots()
+    ax.imshow(observability_grid, extent=extent)
+
+    ax.set_yticks(range(0, 3))
+    ax.set_yticklabels([c.__class__.__name__ for c in constraints])
+
+    ax.set_xticks(range(len(time_grid)))
+    ax.set_xticklabels([t.datetime.strftime("%H:%M") for t in time_grid])
+
+    ax.set_xticks(np.arange(extent[0], extent[1]), minor=True)
+    ax.set_yticks(np.arange(extent[2], extent[3]), minor=True)
+
+    ax.grid(which='minor', color='w', linestyle='-', linewidth=2)
+    ax.tick_params(axis='x', which='minor', bottom='off')
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+
+    ax.tick_params(axis='y', which='minor', left='off')
+    ax.set_xlabel('Time on {0} UTC'.format(time_grid[0].datetime.date()))
+    fig.subplots_adjust(left=0.35, right=0.9, top=0.9, bottom=0.1)
+    plt.show()
+
 
 .. _constraints-user_defined_constraints:
 

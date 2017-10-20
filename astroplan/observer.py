@@ -12,7 +12,6 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  UnitSphericalRepresentation)
 from astropy.extern.six import string_types
 from astropy.utils import isiterable
-from astropy.utils.compat.numpy import broadcast_to
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
@@ -562,7 +561,7 @@ class Observer(object):
             ntargets = alt.shape[1]
             ngrid = alt.shape[0]
             unit = alt.unit
-            alt = broadcast_to(alt, (ntargets, ngrid, ntargets)).T
+            alt = np.broadcast_to(alt, (ntargets, ngrid, ntargets)).T
             alt = alt*unit
             extra_dimension_added = True
             if t.shape[1] == 1:

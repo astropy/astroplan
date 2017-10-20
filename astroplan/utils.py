@@ -11,8 +11,7 @@ from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 from astropy.time import Time
 import astropy.units as u
-from astropy.utils.data import (_get_download_cache_locs, CacheMissingWarning,
-                                _open_shelve)
+from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
 from astropy.coordinates import EarthLocation
 
 # Package
@@ -286,3 +285,25 @@ class EarthLocation_mock(EarthLocation):
                              keck=keck, kpno=kpno, lapalma=lapalma)
 
         return observatories[string.lower()]
+
+
+def _open_shelve(shelffn, withclosing=False):
+    """
+    Opens a shelf file.  If ``withclosing`` is True, it will be opened with
+    closing, allowing use like:
+
+        with _open_shelve('somefile',True) as s:
+            ...
+
+    This workaround can be removed in favour of using shelve.open() directly
+    once support for Python <3.4 is dropped.
+    """
+    import shelve
+    import contextlib
+
+    shelf = shelve.open(shelffn, protocol=2)
+
+    if withclosing:
+        return contextlib.closing(shelf)
+    else:
+        return shelf
