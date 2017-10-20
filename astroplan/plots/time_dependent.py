@@ -109,17 +109,17 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         altitude. Default is `False`.
 
     min_airmass : float
-        Lower limit of y-axis airmass range in the plot. Default is `1.0`.
-
-    min_region : float
-        If set, defines an interval between `lo_limit` and `lo_region`
-        that will be shaded. Default is `None`.
+        Lower limit of y-axis airmass range in the plot. Default is ``1.0``.
 
     max_airmass : float
-        Upper limit of y-axis airmass range in the plot. Default is `3.0`.
+        Upper limit of y-axis airmass range in the plot. Default is ``3.0``.
+
+    min_region : float
+        If set, defines an interval between ``min_airmass`` and ``min_region``
+        that will be shaded. Default is `None`.
 
     max_region : float
-        If set, defines an interval between `hi_limit` and `hi_region`
+        If set, defines an interval between ``max_airmass`` and ``max_region``
         that will be shaded. Default is `None`.
 
     Returns
