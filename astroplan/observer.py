@@ -920,8 +920,8 @@ class Observer(object):
         >>> time = Time("2001-02-03 04:05:06")
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
-        >>> rigel_rise_time = keck.target_rise_time(time, target, which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time)) # doctest: +FLOAT_CMP
+        >>> rigel_rise_time = keck.target_rise_time(time, target, which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_rise_time)) # doctest: +SKIP
         ISO: 2001-02-04 00:51:23.330, JD: 2451944.53569
         """
         return self._determine_which_event(self._calc_riseset,
@@ -1086,7 +1086,7 @@ class Observer(object):
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
-        ...                                                                which="next")
+        ...                                                                which="next") # doctest: +FLOAT_CMP
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +FLOAT_CMP
         ISO: 2001-02-03 18:40:29.761, JD: 2451944.27812
 
