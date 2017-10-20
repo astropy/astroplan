@@ -1033,8 +1033,8 @@ class Observer(object):
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
         >>> rigel_transit_time = keck.target_meridian_transit_time(time, target,
-        ...                                                        which="next")
-        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_transit_time)) # doctest: +FLOAT_CMP
+        ...                                                        which="next") # doctest: +SKIP
+        >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_transit_time)) # doctest: +SKIP
         ISO: 2001-02-03 06:42:26.863, JD: 2451943.77948
         """
         return self._determine_which_event(self._calc_transit,
