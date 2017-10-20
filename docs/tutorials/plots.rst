@@ -133,7 +133,15 @@ time and issue the plotting command.
 
     observe_time = Time('2000-06-15 23:30:00')
 
-    plot_airmass(target, observer, observe_time)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(target, observer, observe_time)
+
     plt.tight_layout()
     plt.show()
 
@@ -213,7 +221,15 @@ To center your window at some instance in time:
     observe_time = Time('2000-06-15 23:30:00')
     observe_time = observe_time + np.linspace(-5, 5, 55)*u.hour
 
-    plot_airmass(target, observer, observe_time)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(target, observer, observe_time)
+
     plt.tight_layout()
     plt.show()
 
@@ -270,7 +286,15 @@ If you know the start and end times of your observation run, you can use a
     delta_t = end_time - start_time
     observe_time = start_time + delta_t*np.linspace(0, 1, 75)
 
-    plot_airmass(target, observer, observe_time)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(target, observer, observe_time)
+
     plt.tight_layout()
     plt.show()
 
@@ -332,9 +356,16 @@ many targets on the plot as you wish::
 
     observe_time = Time('2000-06-30 23:30:00') + np.linspace(-7.0, 5.5, 50)*u.hour
 
-    plot_airmass(target, observer, observe_time)
-    plot_airmass(other_target, observer, observe_time)
-    plot_airmass(third_target, observer, observe_time)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(target, observer, observe_time)
+        plot_airmass(other_target, observer, observe_time)
+        plot_airmass(third_target, observer, observe_time)
 
     plt.legend(shadow=True, loc=2)
     plt.tight_layout()
@@ -405,8 +436,14 @@ The default line for time-dependent plots is solid and the default label
     sirius_styles = {'linestyle': '--', 'color': 'r'}
     pollux_styles = {'color': 'g'}
 
-    plot_airmass(target, observer, observe_time, style_kwargs=sirius_styles)
-    plot_airmass(other_target, observer, observe_time, style_kwargs=pollux_styles)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(target, observer, observe_time, style_kwargs=sirius_styles)
+        plot_airmass(other_target, observer, observe_time, style_kwargs=pollux_styles)
 
     plt.legend(shadow=True, loc=2)
     plt.tight_layout()
@@ -447,8 +484,15 @@ any plotting function:
     vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg))
     apo = Observer.at_site('APO')
 
-    plot_airmass(vega, apo, Time('2005-01-02 19:00') + np.linspace(-5, 5, 20)*u.hour,
-                 style_sheet=dark_style_sheet)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(vega, apo, Time('2005-01-02 19:00') + np.linspace(-5, 5, 20)*u.hour,
+                     style_sheet=dark_style_sheet)
+
     plt.tight_layout()
     plt.show()
 
@@ -485,7 +529,15 @@ right side of the axis with the altitudes in degrees using the
     time = Time.now()
     target = FixedTarget.from_name('HD 189733')
     apo = Observer.at_site('APO')
-    plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
+
     plt.tight_layout()
     plt.show()
 
@@ -615,10 +667,17 @@ Altair, Vega and Deneb. To plot a map of the sky:
     # Note that this is not a scalar.
     observe_time = Time(['2000-03-15 15:30:00'])
 
-    plot_sky(polaris, observer, observe_time, style_kwargs=polaris_style)
-    plot_sky(altair, observer, observe_time)
-    plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
-    plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(polaris, observer, observe_time, style_kwargs=polaris_style)
+        plot_sky(altair, observer, observe_time)
+        plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
+        plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -687,7 +746,14 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
     observe_time = Time('2000-03-15 17:00:00')
     observe_time = observe_time + np.linspace(-4, 5, 10)*u.hour
 
-    plot_sky(altair, observer, observe_time)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(altair, observer, observe_time)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -796,9 +862,16 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
 
     guide_style = {'marker': '*'}
 
-    plot_sky(polaris, observer, observe_time, north_to_east_ccw=False,
-             style_kwargs=guide_style)
-    plot_sky(altair, observer, observe_time, north_to_east_ccw=False)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(polaris, observer, observe_time, north_to_east_ccw=False,
+                 style_kwargs=guide_style)
+        plot_sky(altair, observer, observe_time, north_to_east_ccw=False)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -869,9 +942,15 @@ A positive offset is in the same direction as azimuth increase (see the
 
     guide_style = {'marker': '*'}
 
-    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
-             az_label_offset=180.0*u.deg)
-    plot_sky(altair, observer, observe_time, az_label_offset=180.0*u.deg)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
+                 az_label_offset=180.0*u.deg)
+        plot_sky(altair, observer, observe_time, az_label_offset=180.0*u.deg)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -948,9 +1027,16 @@ You can turn off the grid lines by setting the *grid* option to *False*:
 
     guide_style = {'marker': '*'}
 
-    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
-             grid=False)
-    plot_sky(altair, observer, observe_time, grid=False)
+
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
+                 grid=False)
+        plot_sky(altair, observer, observe_time, grid=False)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -971,7 +1057,7 @@ Other tweaks
 ++++++++++++
 
 You can easily change other plot attributes by acting on the returned
-`matplotlib.axes.Axes` object or via `matplotlib.pyplot` calls (e.g.,
+`matplotlib.axes.Axes` object or via ``matplotlib.pyplot`` calls (e.g.,
 ``plt.figure``, ``plt.rc``, etc.).
 
 For instance, you can increase the size of your plot and its font:
@@ -1082,8 +1168,14 @@ make multiple plots:
 
     observe_time = Time(['2000-03-15 15:30:00'])
 
-    my_ax = plot_sky(polaris, observer, observe_time)
-    plot_sky(altair, observer, observe_time, my_ax, style_kwargs=altair_style)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        my_ax = plot_sky(polaris, observer, observe_time)
+        plot_sky(altair, observer, observe_time, my_ax, style_kwargs=altair_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -1098,8 +1190,12 @@ make multiple plots:
     plt.tight_layout()
     plt.show()
 
-    other_ax = plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
-    plot_sky(deneb, observer, observe_time, other_ax, style_kwargs=deneb_style)
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        other_ax = plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
+        plot_sky(deneb, observer, observe_time, other_ax, style_kwargs=deneb_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -1110,6 +1206,7 @@ make multiple plots:
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.tight_layout()
     plt.show()
+
 
 :ref:`Return to Top <plots>`
 

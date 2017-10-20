@@ -1,3 +1,5 @@
+.. doctest-skip-all
+
 .. _summer_triangle_tutorial:
 
 .. todo::
@@ -79,6 +81,14 @@ summer::
 
     >>> time = Time('2015-06-16 12:00:00')
 
+If very high altitude precision (arcseconds) is important to you, you can update
+the IERS tables with the following command:
+
+    >>> from astroplan import download_IERS_A
+    >>> download_IERS_A()  # doctest: +REMOTE_DATA
+
+More information is available on the :ref:`IERS tables here <iers>`.
+
 :ref:`Return to Top <summer_triangle_tutorial>`
 
 .. _summer_triangle-observable:
@@ -87,7 +97,7 @@ Observable?
 ===========
 
 Next, it would be handy to know if our targets are visible from Subaru at the
-time we settled on.  In other words--are they above the horizon while the Sun
+time we settled on. In other words--are they above the horizon while the Sun
 is down?
 
 .. code-block:: python
@@ -145,8 +155,7 @@ indeed those for tonight):
 .. code-block:: python
 
     >>> sunset_tonight = subaru.sun_set_time(time, which='nearest')
-
-    >>> sunset_tonight.iso # doctest: +SKIP
+    >>> sunset_tonight.iso
     '2015-06-16 04:59:11.267'
 
 This is '2015-06-15 18:59:11.267' in the Hawaii time zone (that's where Subaru
@@ -155,8 +164,7 @@ is).
 .. code-block:: python
 
     >>> sunrise_tonight = subaru.sun_rise_time(time, which='nearest')
-
-    >>> sunrise_tonight.iso # doctest: +SKIP
+    >>> sunrise_tonight.iso
     '2015-06-16 15:47:35.822'
 
 This is '2015-06-16 05:47:35.822' Hawaii time.
@@ -167,11 +175,11 @@ window:
 .. code-block:: python
 
     >>> start = np.max([sunset_tonight, all_up_start])
-    >>> start.iso # doctest: +SKIP
+    >>> start.iso
     '2015-06-16 06:28:40.126'
 
     >>> end = np.min([sunrise_tonight, all_up_end])
-    >>> end.iso # doctest: +SKIP
+    >>> end.iso
     '2015-06-16 15:47:35.822'
 
 So, our targets will be visible (as we've defined it above) from
@@ -199,15 +207,15 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
 
 .. code-block:: python
 
-    >>> from astroplan.plots import plot_airmass # doctest: +SKIP
-    >>> import matplotlib.pyplot as plt # doctest: +SKIP
+    >>> from astroplan.plots import plot_airmass
+    >>> import matplotlib.pyplot as plt
 
-    >>> plot_airmass(altair, subaru, time) # doctest: +SKIP
-    >>> plot_airmass(vega, subaru, time) # doctest: +SKIP
-    >>> plot_airmass(deneb, subaru, time)  # doctest: +SKIP
+    >>> plot_airmass(altair, subaru, time)
+    >>> plot_airmass(vega, subaru, time)
+    >>> plot_airmass(deneb, subaru, time)
 
-    >>> plt.legend(loc=1, bbox_to_anchor=(1, 1)) # doctest: +SKIP
-    >>> plt.show() # doctest: +SKIP
+    >>> plt.legend(loc=1, bbox_to_anchor=(1, 1))
+    >>> plt.show()
 
 .. plot::
 
@@ -245,9 +253,15 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
     from astroplan.plots import plot_airmass
     import matplotlib.pyplot as plt
 
-    plot_airmass(altair, subaru, time)
-    plot_airmass(vega, subaru, time)
-    plot_airmass(deneb, subaru, time)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_airmass(altair, subaru, time)
+        plot_airmass(vega, subaru, time)
+        plot_airmass(deneb, subaru, time)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -269,13 +283,13 @@ use the ``AltAz`` frame:
 
 .. code-block:: python
 
-    >>> subaru.altaz(time, altair).secz # doctest: +SKIP
+    >>> subaru.altaz(time, altair).secz
     <Quantity 1.0302347952130682>
 
-    >>> subaru.altaz(time, vega).secz # doctest: +SKIP
+    >>> subaru.altaz(time, vega).secz
     <Quantity 1.0690421636016616>
 
-    >>> subaru.altaz(time, deneb).secz # doctest: +SKIP
+    >>> subaru.altaz(time, deneb).secz
     <Quantity 1.167753811648361>
 
 Behind the scenes here, ``subaru.altaz(time, altair)`` is actually creating
@@ -292,15 +306,15 @@ customizing plots and the like):
 
 .. code-block:: python
 
-    >>> import matplotlib.pyplot as plt # doctest: +SKIP
-    >>> from astroplan.plots import plot_parallactic # doctest: +SKIP
+    >>> import matplotlib.pyplot as plt
+    >>> from astroplan.plots import plot_parallactic
 
-    >>> plot_parallactic(altair, subaru, time) # doctest: +SKIP
-    >>> plot_parallactic(vega, subaru, time) # doctest: +SKIP
-    >>> plot_parallactic(deneb, subaru, time) # doctest: +SKIP
+    >>> plot_parallactic(altair, subaru, time)
+    >>> plot_parallactic(vega, subaru, time)
+    >>> plot_parallactic(deneb, subaru, time)
 
-    >>> plt.legend(loc=2) # doctest: +SKIP
-    >>> plt.show() # doctest: +SKIP
+    >>> plt.legend(loc=2)
+    >>> plt.show()
 
 .. plot::
 
@@ -338,9 +352,15 @@ customizing plots and the like):
     from astroplan.plots import plot_parallactic
     import matplotlib.pyplot as plt
 
-    plot_parallactic(altair, subaru, time)
-    plot_parallactic(vega, subaru, time)
-    plot_parallactic(deneb, subaru, time)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_parallactic(altair, subaru, time)
+        plot_parallactic(vega, subaru, time)
+        plot_parallactic(deneb, subaru, time)
 
     plt.legend(loc=2)
     plt.tight_layout()
@@ -350,13 +370,13 @@ We can also calculate the parallactic angle directly:
 
 .. code-block:: python
 
-    >>> subaru.parallactic_angle(time, altair) # doctest: +SKIP
+    >>> subaru.parallactic_angle(time, altair)
     <Angle -0.6404957821112053 rad>
 
-    >>> subaru.parallactic_angle(time, vega) # doctest: +SKIP
+    >>> subaru.parallactic_angle(time, vega)
     <Angle -0.46542183982024 rad>
 
-    >>> subaru.parallactic_angle(time, deneb) # doctest: +SKIP
+    >>> subaru.parallactic_angle(time, deneb)
     <Angle 0.7297067855978494 rad>
 
 The `~astropy.coordinates.Angle` objects resulting from the calls to
@@ -389,14 +409,14 @@ is out during the time we defined earlier:
 
     >>> #subaru.moon_set_time(time)
 
-We could also look at the Moon's alt/az coordinates:
+We could also look at the Moon's alt/az coordinates
 
 .. code-block:: python
 
-    >>> subaru.moon_altaz(time).alt # doctest: +SKIP
+    >>> subaru.moon_altaz(time).alt
     <Latitude -45.08860929634166 deg>
 
-    >>> subaru.moon_altaz(time).az # doctest: +SKIP
+    >>> subaru.moon_altaz(time).az
     <Longitude 34.605498354422686 deg>
 
 It looks like the Moon is well below the horizon at the time we picked before,
@@ -405,9 +425,9 @@ targets will be visible (again--as defined at the beginning of this tutorial):
 
 .. code-block:: python
 
-    >>> visible_time = start + (end - start)*np.linspace(0, 1, 20)
+    >>> visible_time = start + (end - start) * np.linspace(0, 1, 20)
 
-    >>> subaru.moon_altaz(visible_time).alt # doctest: +SKIP
+    >>> subaru.moon_altaz(visible_time).alt
     <Latitude [-25.21127325,-30.68088873,-35.82145644,-40.53415037,
                -44.68898859,-48.12296182,-50.64971858,-52.08946099,
                -52.31849772,-51.31548444,-49.17038499,-46.04862654,
@@ -438,24 +458,24 @@ targets lay in the sky:
 .. code-block:: python
 
     >>> from astroplan.plots import plot_sky
-    >>> import matplotlib.pyplot as plt  # doctest: +SKIP
+    >>> import matplotlib.pyplot as plt
 
     >>> altair_style = {'color': 'r'}
     >>> deneb_style = {'color': 'g'}
 
-    >>> plot_sky(altair, subaru, start, style_kwargs=altair_style)  # doctest: +SKIP
-    >>> plot_sky(vega, subaru, start)  # doctest: +SKIP
-    >>> plot_sky(deneb, subaru, start, style_kwargs=deneb_style)  # doctest: +SKIP
+    >>> plot_sky(altair, subaru, start, style_kwargs=altair_style)  
+    >>> plot_sky(vega, subaru, start)  
+    >>> plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
 
-    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))  # doctest: +SKIP
-    >>> plt.show()  # doctest: +SKIP
+    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))  
+    >>> plt.show()  
 
-    >>> plot_sky(altair, subaru, end, style_kwargs=altair_style)  # doctest: +SKIP
-    >>> plot_sky(vega, subaru, end)  # doctest: +SKIP
-    >>> plot_sky(deneb, subaru, end, style_kwargs=deneb_style)  # doctest: +SKIP
+    >>> plot_sky(altair, subaru, end, style_kwargs=altair_style)  
+    >>> plot_sky(vega, subaru, end)  
+    >>> plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
 
-    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))  # doctest: +SKIP
-    >>> plt.show()  # doctest: +SKIP
+    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))  
+    >>> plt.show()
 
 .. plot::
 
@@ -497,9 +517,15 @@ targets lay in the sky:
     altair_style = {'color': 'r'}
     deneb_style = {'color': 'g'}
 
-    plot_sky(altair, subaru, start, style_kwargs=altair_style)
-    plot_sky(vega, subaru, start)
-    plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(altair, subaru, start, style_kwargs=altair_style)
+        plot_sky(vega, subaru, start)
+        plot_sky(deneb, subaru, start, style_kwargs=deneb_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -511,9 +537,15 @@ targets lay in the sky:
     plt.tight_layout()
     plt.show()
 
-    plot_sky(altair, subaru, end, style_kwargs=altair_style)
-    plot_sky(vega, subaru, end)
-    plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(altair, subaru, end, style_kwargs=altair_style)
+        plot_sky(vega, subaru, end)
+        plot_sky(deneb, subaru, end, style_kwargs=deneb_style)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -525,16 +557,18 @@ targets lay in the sky:
     plt.tight_layout()
     plt.show()
 
-We can also show how our targets move over time during the night in question::
+We can also show how our targets move over time during the night in question:
+
+.. code-block:: python
 
     >>> time_window = start + (end - start) * np.linspace(0, 1, 10)
 
-    >>> plot_sky(altair, subaru, time_window, style_kwargs=altair_style)  # doctest: +SKIP
-    >>> plot_sky(vega, subaru, time_window)  # doctest: +SKIP
-    >>> plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)  # doctest: +SKIP
+    >>> plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
+    >>> plot_sky(vega, subaru, time_window)
+    >>> plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
 
-    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))  # doctest: +SKIP
-    >>> plt.show()  # doctest: +SKIP
+    >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
+    >>> plt.show()
 
 .. plot::
 
@@ -577,9 +611,15 @@ We can also show how our targets move over time during the night in question::
     altair_style = {'color': 'r'}
     deneb_style = {'color': 'g'}
 
-    plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
-    plot_sky(vega, subaru, time_window)
-    plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
+    # Use context manager to avoid earth orientation warning
+    import warnings
+    with warnings.catch_warnings():
+        from astroplan import OldEarthOrientationDataWarning
+        warnings.simplefilter("ignore", category=OldEarthOrientationDataWarning)
+
+        plot_sky(altair, subaru, time_window, style_kwargs=altair_style)
+        plot_sky(vega, subaru, time_window)
+        plot_sky(deneb, subaru, time_window, style_kwargs=deneb_style)
 
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
 
