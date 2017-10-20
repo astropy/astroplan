@@ -8,10 +8,8 @@ import warnings
 
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_moon, Angle, Latitude, Longitude,
-                                 UnitSphericalRepresentation)
+                                 get_moon, Angle, Longitude)
 from astropy.extern.six import string_types
-from astropy.utils import isiterable
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
@@ -1138,7 +1136,7 @@ class Observer(object):
         >>> from astropy.time import Time
         >>> apo = Observer.at_site("APO")
         >>> time = Time('2001-02-03 04:05:06')
-        >>> sun_rise = apo.sun_rise_time(time, which="previous")
+        >>> sun_rise = apo.sun_rise_time(time, which="previous") # doctest: +SKIP
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +SKIP
         ISO: 2001-02-02 14:02:50.554, JD: 2451943.08531
         """
