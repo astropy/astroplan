@@ -49,7 +49,8 @@ def _has_twin(ax):
 
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
-                 altitude_yaxis=False):
+                 altitude_yaxis=False, min_airmass=1.0, min_region=None,
+                 max_airmass=3.0, max_region=None):
     r"""
     Plots airmass as a function of time for a given target.
 
@@ -106,6 +107,20 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     altitude_yaxis : bool
         Add alternative y-axis on the right side of the figure with target
         altitude. Default is `False`.
+
+    min_airmass : float
+        Lower limit of y-axis airmass range in the plot. Default is ``1.0``.
+
+    max_airmass : float
+        Upper limit of y-axis airmass range in the plot. Default is ``3.0``.
+
+    min_region : float
+        If set, defines an interval between ``min_airmass`` and ``min_region``
+        that will be shaded. Default is `None`.
+
+    max_region : float
+        If set, defines an interval between ``max_airmass`` and ``max_region``
+        that will be shaded. Default is `None`.
 
     Returns
     -------
@@ -194,10 +209,19 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             ax.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
-    if ax.get_ylim()[1] > ax.get_ylim()[0]:
+    y_lim = ax.get_ylim()
+    if y_lim[1] > y_lim[0]:
         ax.invert_yaxis()
-    ax.set_ylim([3, 1])
+    ax.set_ylim([max_airmass, min_airmass])
     ax.set_xlim([time[0].plot_date, time[-1].plot_date])
+
+    # Draw lo/hi limit regions, if present
+    ymax, ymin = ax.get_ylim()       # should be (hi_limit, lo_limit)
+
+    if max_region is not None:
+        ax.axhspan(ymax, max_region, facecolor='#F9EB4E', alpha=0.10)
+    if min_region is not None:
+        ax.axhspan(min_region, ymin, facecolor='#F9EB4E', alpha=0.10)
 
     # Set labels.
     ax.set_ylabel("Airmass")

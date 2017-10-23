@@ -163,6 +163,7 @@ class FixedTarget(Target):
         Mock method to replace `FixedTarget.from_name` in tests without
         internet connection.
         """
+        # The lowercase method will be run on names, so enter keys in lowercase:
         stars = {
             "rigel": {"ra": 78.63446707*u.deg, "dec": -8.20163837*u.deg},
             "sirius": {"ra": 101.28715533*u.deg, "dec": -16.71611586*u.deg},
@@ -171,7 +172,8 @@ class FixedTarget(Target):
             "polaris": {"ra": 37.95456067*u.deg, "dec": 89.26410897*u.deg},
             "deneb": {"ra": 310.35797975*u.deg, "dec": 45.28033881*u.deg},
             "m13": {"ra": 250.423475*u.deg, "dec": 36.4613194*u.deg},
-            "altair": {"ra": 297.6958273*u.deg, "dec": 8.8683212*u.deg}
+            "altair": {"ra": 297.6958273*u.deg, "dec": 8.8683212*u.deg},
+            "hd 209458": {"ra": 330.79*u.deg, "dec": 18.88*u.deg}
         }
 
         if query_name.lower() in stars:

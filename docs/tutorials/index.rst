@@ -22,5 +22,6 @@ We currently have the following tutorials:
    summer_triangle
    plots
    trig
+   periodic
    constraints
    scheduling
