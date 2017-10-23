@@ -1,3 +1,5 @@
+.. include:: ../references.txt
+
 .. doctest-skip-all
 
 .. _constraints:

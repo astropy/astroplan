@@ -26,13 +26,14 @@ from .moon import moon_illumination
 from .utils import time_grid_from_range
 from .target import get_skycoord
 
-
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
            "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint", "Constraint",
-           "TimeConstraint", "observability_table", "months_observable",
-           "max_best_rescale", "min_best_rescale"]
+           "MoonIlluminationConstraint", "LocalTimeConstraint",
+           "PrimaryEclipseConstraint", "SecondaryEclipseConstraint",
+           "Constraint", "TimeConstraint", "observability_table",
+           "months_observable", "max_best_rescale", "min_best_rescale",
+           "PhaseConstraint", "is_event_observable"]
 
 
 def _make_cache_key(times, targets):
@@ -807,6 +808,89 @@ class TimeConstraint(Constraint):
         return mask
 
 
+class PrimaryEclipseConstraint(Constraint):
+    """
+    Constrain observations to times during primary eclipse.
+    """
+    def __init__(self, eclipsing_system):
+        """
+        Parameters
+        ----------
+        eclipsing_system : `~astroplan.periodic.EclipsingSystem`
+            System which must be in primary eclipse.
+        """
+        self.eclipsing_system = eclipsing_system
+
+    def compute_constraint(self, times, observer=None, targets=None):
+        mask = self.eclipsing_system.in_primary_eclipse(times)
+        return mask
+
+
+class SecondaryEclipseConstraint(Constraint):
+    """
+    Constrain observations to times during secondary eclipse.
+    """
+    def __init__(self, eclipsing_system):
+        """
+        Parameters
+        ----------
+        eclipsing_system : `~astroplan.periodic.EclipsingSystem`
+            System which must be in secondary eclipse.
+        """
+        self.eclipsing_system = eclipsing_system
+
+    def compute_constraint(self, times, observer=None, targets=None):
+        mask = self.eclipsing_system.in_secondary_eclipse(times)
+        return mask
+
+
+class PhaseConstraint(Constraint):
+    """
+    Constrain observations to times in some range of phases for a periodic event
+    (e.g.~transiting exoplanets, eclipsing binaries).
+    """
+    def __init__(self, periodic_event, min=None, max=None):
+        """
+        Parameters
+        ----------
+        periodic_event : `~astroplan.periodic.PeriodicEvent` or subclass
+            System on which to compute the phase. For example, the system
+            could be an eclipsing or non-eclipsing binary, or exoplanet system.
+        min : float (optional)
+            Minimum phase (inclusive) on interval [0, 1). Default is zero.
+        max : float (optional)
+            Maximum phase (inclusive) on interval [0, 1). Default is one.
+
+        Examples
+        --------
+        To constrain observations on orbital phases between 0.4 and 0.6,
+        >>> from astroplan import PeriodicEvent
+        >>> from astropy.time import Time
+        >>> import astropy.units as u
+        >>> binary = PeriodicEvent(epoch=Time('2017-01-01 02:00'), period=1*u.day)
+        >>> constraint = PhaseConstraint(binary, min=0.4, max=0.6)
+
+        The minimum and maximum phase must be described on the interval [0, 1).
+        To constrain observations on orbital phases between 0.6 and 1.2, for
+        example, you should subtract one from the second number:
+        >>> constraint = PhaseConstraint(binary, min=0.6, max=0.2)
+        """
+        self.periodic_event = periodic_event
+        if (min < 0) or (min > 1) or (max < 0) or (max > 1):
+            raise ValueError('The minimum of the PhaseConstraint must be within'
+                             ' the interval [0, 1).')
+        self.min = min if min is not None else 0.0
+        self.max = max if max is not None else 1.0
+
+    def compute_constraint(self, times, observer=None, targets=None):
+        phase = self.periodic_event.phase(times)
+
+        mask = np.where(self.max > self.min,
+                        (phase >= self.min) & (phase <= self.max),
+                        (phase >= self.min) | (phase <= self.max))
+        return mask
+
+
 def is_always_observable(constraints, observer, targets, times=None,
                          time_range=None, time_grid_resolution=0.5*u.hour):
     """
@@ -904,6 +988,60 @@ def is_observable(constraints, observer, targets, times=None,
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
     return np.any(constraint_arr, axis=1)
+
+
+def is_event_observable(constraints, observer, target, times=None,
+                        times_ingress_egress=None):
+    """
+    Determines if the ``target`` is observable at each time in ``times``, given
+    constraints in ``constraints`` for a particular ``observer``.
+
+    Parameters
+    ----------
+    constraints : list or `~astroplan.constraints.Constraint`
+        Observational constraint(s)
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    target : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target
+
+    times : `~astropy.time.Time` (optional)
+        Array of mid-event times on which to test the constraints
+
+    times_ingress_egress : `~astropy.time.Time` (optional)
+        Array of ingress and egress times for ``N`` events, with shape
+        (``N``, 2).
+
+    Returns
+    -------
+    event_observable : `~numpy.ndarray`
+        Array of booleans of same length as ``times`` for whether or not the
+        target is ever observable at each time, given the constraints.
+    """
+    if not hasattr(constraints, '__len__'):
+        constraints = [constraints]
+
+    if times is not None:
+        applied_constraints = [constraint(observer, target, times=times,
+                                          grid_times_targets=True)
+                               for constraint in constraints]
+        constraint_arr = np.logical_and.reduce(applied_constraints)
+
+    else:
+        times_ing = times_ingress_egress[:, 0]
+        times_egr = times_ingress_egress[:, 1]
+        applied_constraints_ing = [constraint(observer, target, times=times_ing,
+                                              grid_times_targets=True)
+                                   for constraint in constraints]
+        applied_constraints_egr = [constraint(observer, target, times=times_egr,
+                                              grid_times_targets=True)
+                                   for constraint in constraints]
+
+        constraint_arr = np.logical_and(np.logical_and.reduce(applied_constraints_ing),
+                                        np.logical_and.reduce(applied_constraints_egr))
+    return constraint_arr
 
 
 def months_observable(constraints, observer, targets,

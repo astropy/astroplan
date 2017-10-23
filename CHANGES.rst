@@ -1,7 +1,8 @@
 0.4 (unreleased)
 ----------------
 
-- No changes yet
+- Added new ``eclipsing`` module for eclipsing binaries and transiting
+  exoplanets
 
 0.3 (2017-09-02)
 ----------------
