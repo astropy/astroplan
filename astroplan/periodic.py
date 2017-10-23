@@ -275,16 +275,16 @@ class EclipsingSystem(PeriodicEvent):
         Parameters
         ----------
         time : `~astropy.time.Time`
-            Find the next primary ingress and egress after ``time``
+            Find the next secondary ingress and egress after ``time``
         n_eclipses : int (optional)
             Return the times of eclipse for the next ``n_eclipses`` after
             ``time``. Default is 1.
 
         Returns
         -------
-        primary_eclipses : `~astropy.time.Time` of shape (``n_eclipses``, 2)
-            Times of ingress and egress for the next ``n_eclipses`` primary
-            eclipses after ``time``
+        secondary_eclipses : `~astropy.time.Time` of shape (``n_eclipses``, 2)
+            Times of ingress and egress for the next ``n_eclipses`` secondary
+            eclipses after ``time``.
         """
         next_mid_eclipses = self.next_secondary_eclipse_time(time, n_eclipses=n_eclipses)
         next_ingresses = next_mid_eclipses - self.duration/2
