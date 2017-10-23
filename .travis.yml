@@ -118,12 +118,10 @@ matrix:
 
         # Do a PEP8 test with pycodestyle
         - os: linux
-          env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
+          env: MAIN_CMD='pycodestyle astroplan --count --max-line-length=100' SETUP_CMD=''
 
     allow_failures:
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
-      # TODO: these fail for now ... make them work!
-      - env: PYTHON_VERSION=2.7 MAIN_CMD='pycodestyle astroplan --count' SETUP_CMD=''
       # Allow them to fail now until the IERSs issues are fixed
       - env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
              CONDA_DEPENDENCIES='pytz matplotlib nose'
