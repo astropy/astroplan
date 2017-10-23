@@ -362,8 +362,8 @@ def print_pyephem_sunrise_sunset():
     prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
     prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
 
-    print(map(repr, [next_sunrise.datetime(), next_sunset.datetime(),
-                     prev_sunrise.datetime(), prev_sunset.datetime()]))
+    print(list(map(repr, [next_sunrise.datetime(), next_sunset.datetime(),
+                          prev_sunrise.datetime(), prev_sunset.datetime()])))
 
 
 def test_vega_rise_set_equator():
@@ -444,7 +444,8 @@ def print_pyephem_vega_rise_set():
     prev_rising = obs.previous_rising(target).datetime()
     prev_setting = obs.previous_setting(target).datetime()
 
-    print(map(repr, [next_rising, next_setting, prev_rising, prev_setting]))
+    print(list(map(repr, [next_rising, next_setting,
+                          prev_rising, prev_setting])))
 
 
 def test_vega_sirius_rise_set_seattle():
@@ -542,8 +543,8 @@ def print_pyephem_vega_sirius_rise_set():
     sirius_next_rising = obs.next_rising(sirius).datetime()
     sirius_next_setting = obs.next_setting(sirius).datetime()
 
-    print(map(repr, [vega_next_rising, sirius_next_rising,
-                     vega_next_setting, sirius_next_setting]))
+    print(list(map(repr, [vega_next_rising, sirius_next_rising,
+                          vega_next_setting, sirius_next_setting])))
 
 
 def test_sunrise_sunset_equator_civil_twilight():
@@ -616,9 +617,9 @@ def print_pyephem_sunrise_sunset_equator_civil_twilight():
     prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
     prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
 
-    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
-    print(map(pyephem_time_to_datetime_str, [next_sunrise, next_sunset,
-                                             prev_sunrise, prev_sunset]))
+    def pyephem_time_to_datetime_str(t): return repr(t.datetime())
+    print(list(map(pyephem_time_to_datetime_str,
+                   [next_sunrise, next_sunset, prev_sunrise, prev_sunset])))
 
 
 def test_twilight_convenience_funcs():
@@ -715,11 +716,10 @@ def print_pyephem_twilight_convenience_funcs():
     obs.horizon = '-18:00:00'
     evening_astronomical = obs.next_setting(ephem.Sun(), use_center=True)
 
-    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
-    print(map(pyephem_time_to_datetime_str, [morning_civil, morning_nautical,
-                                             morning_astronomical,
-                                             evening_civil, evening_nautical,
-                                             evening_astronomical]))
+    def pyephem_time_to_datetime_str(t): return repr(t.datetime())
+    print(list(map(pyephem_time_to_datetime_str,
+                   [morning_civil, morning_nautical, morning_astronomical,
+                    evening_civil, evening_nautical, evening_astronomical])))
 
 
 def test_solar_transit():
@@ -835,9 +835,10 @@ def print_pyephem_solar_transit_noon():
     prev_transit = obs.previous_transit(ephem.Sun())
     prev_antitransit = obs.previous_antitransit(ephem.Sun())
 
-    pyephem_time_to_datetime_str = lambda t: repr(t.datetime())
-    print(map(pyephem_time_to_datetime_str, [next_transit, next_antitransit,
-                                             prev_transit, prev_antitransit]))
+    def pyephem_time_to_datetime_str(t): return repr(t.datetime())
+    print(list(map(pyephem_time_to_datetime_str,
+                   [next_transit, next_antitransit,
+                    prev_transit, prev_antitransit])))
 
 
 def test_vega_sirius_transit_seattle():
@@ -916,7 +917,7 @@ def print_pyephem_vega_sirius_transit():
     vega_next_transit = obs.next_transit(vega).datetime()
     sirius_next_transit = obs.next_transit(sirius).datetime()
 
-    print(map(repr, [vega_next_transit, sirius_next_transit]))
+    print(list(map(repr, [vega_next_transit, sirius_next_transit])))
 
 
 def test_target_is_up():
@@ -1117,7 +1118,7 @@ def print_pyephem_moon_altaz():
     pe_obs.date = time.datetime
     pe_obs.pressure = 0
     moon.compute(pe_obs)
-    print(map(float, [moon.alt, moon.az]))
+    print(list(map(float, [moon.alt, moon.az])))
 
 
 def test_exceptions():
