@@ -98,6 +98,7 @@ class Scorer(object):
     Returns scores and score arrays from the evaluation of constraints on
     observing blocks
     """
+
     def __init__(self, blocks, observer, schedule, global_constraints=[]):
         """
         Parameters
@@ -165,6 +166,7 @@ class TransitionBlock(object):
     Parameterizes the "dead time", e.g. between observations, while the
     telescope is slewing, instrument is reconfiguring, etc.
     """
+
     def __init__(self, components, start_time=None):
         """
         Parameters
@@ -219,7 +221,8 @@ class TransitionBlock(object):
 
 class Schedule(object):
     """
-    An object that represents a schedule, consisting of a list of `~astroplan.scheduling.Slot` objects.
+    An object that represents a schedule, consisting of a list of
+    `~astroplan.scheduling.Slot` objects.
     """
     # as currently written, there should be no consecutive unoccupied slots
     # this should change to allow for more flexibility (e.g. dark slots, grey slots)
@@ -414,6 +417,7 @@ class Schedule(object):
             del self.slots[slot_index]
             return slot_index - 1
 
+
 class Slot(object):
     """
     A time slot consisting of a start and end time
@@ -589,16 +593,17 @@ class SequentialScheduler(Scheduler):
     simply looks at all the blocks, picks the best one, schedules it, and then
     moves on.
     """
+
     def __init__(self, *args, **kwargs):
         super(SequentialScheduler, self).__init__(*args, **kwargs)
 
     def _make_schedule(self, blocks):
         pre_filled = np.array([[block.start_time, block.end_time] for
-                      block in self.schedule.scheduled_blocks])
+                               block in self.schedule.scheduled_blocks])
         if len(pre_filled) == 0:
             a = self.schedule.start_time
             filled_times = Time([a - 1*u.hour, a - 1*u.hour,
-                               a - 1*u.minute, a - 1*u.minute])
+                                 a - 1*u.minute, a - 1*u.minute])
             pre_filled = filled_times.reshape((2, 2))
         else:
             filled_times = Time(pre_filled.flatten())
@@ -632,8 +637,8 @@ class SequentialScheduler(Scheduler):
             for b in blocks:
                 # first figure out the transition
                 if len(self.schedule.observing_blocks) > 0:
-                    trans = self.transitioner(self.schedule.observing_blocks[-1], b, current_time,
-                                              self.observer)
+                    trans = self.transitioner(
+                        self.schedule.observing_blocks[-1], b, current_time, self.observer)
                 else:
                     trans = None
                 block_transitions.append(trans)
@@ -649,8 +654,8 @@ class SequentialScheduler(Scheduler):
                 else:
                     constraint_res = []
                     for constraint in b._all_constraints:
-                        constraint_res.append(constraint(self.observer, b.target,
-                                                         times))
+                        constraint_res.append(constraint(
+                            self.observer, b.target, times))
                     # take the product over all the constraints *and* times
                     block_constraint_results.append(np.prod(constraint_res))
 
@@ -695,8 +700,8 @@ class PriorityScheduler(Scheduler):
         is_open_time = np.ones(len(times), bool)
         # close times that are already filled
         pre_filled = np.array([[block.start_time, block.end_time] for
-                              block in self.schedule.scheduled_blocks if
-                              isinstance(block, ObservingBlock)])
+                               block in self.schedule.scheduled_blocks if
+                               isinstance(block, ObservingBlock)])
         for start_end in pre_filled:
             filled = np.where((start_end[0] < times) & (times < start_end[1]))
             if len(filled[0]) > 0:
@@ -731,7 +736,8 @@ class PriorityScheduler(Scheduler):
                                      time_resolution=time_resolution)
 
         # generate the score arrays for all of the blocks
-        scorer = Scorer(blocks, self.observer, self.schedule, global_constraints=self.constraints)
+        scorer = Scorer(blocks, self.observer, self.schedule,
+                        global_constraints=self.constraints)
         score_array = scorer.create_score_array(time_resolution)
 
         # Sort the list of blocks by priority
@@ -840,21 +846,26 @@ class PriorityScheduler(Scheduler):
         tb_before_already_exists = False
         tb_after = None
         if slots_before:
-            if isinstance(self.schedule.slots[slot_index - 1].block, ObservingBlock):
+            if isinstance(
+                    self.schedule.slots[slot_index - 1].block, ObservingBlock):
                 # make a transitionblock
-                tb_before = self.transitioner(self.schedule.slots[slot_index - 1].block, b,
-                                              self.schedule.slots[slot_index - 1].end, self.observer)
+                tb_before = self.transitioner(
+                    self.schedule.slots[slot_index - 1].block, b,
+                    self.schedule.slots[slot_index - 1].end, self.observer)
             elif isinstance(self.schedule.slots[slot_index - 1].block, TransitionBlock):
-                tb_before = self.transitioner(self.schedule.slots[slot_index - 2].block, b,
-                                              self.schedule.slots[slot_index - 2].end, self.observer)
+                tb_before = self.transitioner(
+                    self.schedule.slots[slot_index - 2].block, b,
+                    self.schedule.slots[slot_index - 2].end, self.observer)
                 tb_before_already_exists = True
 
         if slots_after:
             slot_offset = 2 if delete_this_block_first else 1
-            if isinstance(self.schedule.slots[slot_index + slot_offset].block, ObservingBlock):
+            if isinstance(
+                    self.schedule.slots[slot_index + slot_offset].block, ObservingBlock):
                 # make a transition object after the new ObservingBlock
-                tb_after = self.transitioner(b, self.schedule.slots[slot_index + slot_offset].block,
-                                             new_start_time + b.duration, self.observer)
+                tb_after = self.transitioner(
+                    b, self.schedule.slots[slot_index + slot_offset].block,
+                    new_start_time + b.duration, self.observer)
 
         # tweak durations to exact multiple of time resolution
         for block in (tb_before, tb_after):

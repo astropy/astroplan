@@ -100,10 +100,8 @@ def test_compare_altitude_constraint_and_observer():
                                 for target in targets]
         # Check if each target meets altitude constraints using
         # is_always_observable and AltitudeConstraint
-        always_from_constraint = is_always_observable(AltitudeConstraint(min_alt,
-                                                                         max_alt),
-                                                      subaru, targets,
-                                                      time_range=time_range)
+        always_from_constraint = is_always_observable(AltitudeConstraint(
+            min_alt, max_alt), subaru, targets, time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
 
@@ -123,9 +121,8 @@ def test_compare_airmass_constraint_and_observer():
                                 for target in targets]
         # Check if each target meets altitude constraints using
         # is_always_observable and AirmassConstraint
-        always_from_constraint = is_always_observable(AirmassConstraint(max_airmass),
-                                                      subaru, targets,
-                                                      time_range=time_range)
+        always_from_constraint = is_always_observable(
+            AirmassConstraint(max_airmass), subaru, targets, time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
 
@@ -226,15 +223,15 @@ def test_local_time_constraint_utc():
     subaru = Observer.at_site("Subaru")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is True
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == False
+    assert is_constraint_met is False
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is True
 
 
 def test_local_time_constraint_hawaii_tz():
@@ -243,15 +240,15 @@ def test_local_time_constraint_hawaii_tz():
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is True
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == False
+    assert is_constraint_met is False
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is True
 
 
 def test_docs_example():
@@ -285,6 +282,7 @@ def test_docs_example():
         """
         Constraint the separation from Vega
         """
+
         def __init__(self, min=None, max=None):
             """
             min : `~astropy.units.Quantity` or `None` (optional)
@@ -360,6 +358,7 @@ def test_rescale_minmax():
     rescaled[3] = (min_best_rescale(a, 0, 1))[0]
     rescaled[4] = (max_best_rescale(a, 0, 1, greater_than_max=0))[0]
     assert all(np.array([0.8, 0.2, 1, 0, 0]) == rescaled)
+
 
 constraint_tests = [
     AltitudeConstraint(),
@@ -445,17 +444,17 @@ def test_event_observable():
     # http://var2.astro.cz/ETD/predict_detail.php?delka=254.1797222222222&submit=submit&sirka=32.780277777777776&STARNAME=HD209458&PLANET=b
     # There is some disagreement, as the ETD considers some transits which begin
     # before sunset or after sunrise to be observable.
-    cetd_answer = [[False, False, False,  True, False,  True, False,  True, False,
-                     True, False,  True, False, False, False, False, False, False,
-                    False, False, False, False,  True, False,  True, False, False,
+    cetd_answer = [[False, False, False, True, False, True, False, True, False,
+                    True, False, True, False, False, False, False, False, False,
+                    False, False, False, False, True, False, True, False, False,
                     False, False, False, False, False, False, False, False, False,
                     False, False, False, False, False, False, False, False, False,
                     False, False, False, False, False, False, False, False, False,
-                    False, False, False,  True, False, False, False, False, False,
+                    False, False, False, True, False, False, False, False, False,
                     False, False, False, False, False, False, False, False, False,
-                     True, False,  True, False, False, False, False, False, False,
-                    False, False, False, False, False, False,  True, False,  True,
-                    False,  True, False,  True, False,  True, False,  True, False,
+                    True, False, True, False, False, False, False, False, False,
+                    False, False, False, False, False, False, True, False, True,
+                    False, True, False, True, False, True, False, True, False,
                     False]]
 
     assert np.all(observable == np.array(cetd_answer))

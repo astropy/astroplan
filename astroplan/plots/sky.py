@@ -196,7 +196,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         '30' + degree_sign,
         '',
         '0' + degree_sign + ' Alt.',
-        ]
+    ]
 
     theta_labels = []
     for chunk in range(0, 7):
@@ -227,6 +227,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     ax.figure.canvas.draw()
 
     return ax
+
 
 @u.quantity_input(delta=u.hour)
 def plot_sky_24hr(target, observer, time, delta=1*u.hour, ax=None,
