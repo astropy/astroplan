@@ -223,15 +223,15 @@ def test_local_time_constraint_utc():
     subaru = Observer.at_site("Subaru")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met is True
+    assert is_constraint_met is np.bool_(True)
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met is False
+    assert is_constraint_met is np.bool_(False)
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met is True
+    assert is_constraint_met is np.bool_(True)
 
 
 def test_local_time_constraint_hawaii_tz():
@@ -240,15 +240,15 @@ def test_local_time_constraint_hawaii_tz():
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met is True
+    assert is_constraint_met is np.bool_(True)
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met is False
+    assert is_constraint_met is np.bool_(False)
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met is True
+    assert is_constraint_met is np.bool_(True)
 
 
 def test_docs_example():
