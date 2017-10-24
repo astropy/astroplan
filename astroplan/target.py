@@ -273,3 +273,25 @@ def get_skycoord(targets):
         """
         distances = [distance if distance != 1 else 100*u.kpc for distance in distances]
         return SkyCoord(longitudes, latitudes, distances, frame=frame)
+
+
+class SpecialObjectFlag(object):
+    """
+    Flag this object as a special non-fixed target, which has a ``get_*`` method
+    within astropy (like the Sun or Moon)
+    """
+    pass
+
+
+class SunFlag(SpecialObjectFlag):
+    """
+    Flag for a computation with the Sun
+    """
+    approx_sidereal_drift = 5 * u.min
+
+
+class MoonFlag(SpecialObjectFlag):
+    """
+    Flag for a computation with the Moon
+    """
+    approx_sidereal_drift = 60 * u.min
