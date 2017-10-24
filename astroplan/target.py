@@ -88,6 +88,7 @@ class FixedTarget(Target):
     >>> from astroplan import FixedTarget
     >>> sirius = FixedTarget.from_name("Sirius")
     """
+
     def __init__(self, coord, name=None, **kwargs):
         """
         Parameters
@@ -217,9 +218,11 @@ def get_skycoord(targets):
     coords = [getattr(target, 'coord', target) for target in targets]
 
     # are all SkyCoordinate's in equivalent frames? If not, convert to ICRS
-    convert_to_icrs = not all([coord.frame.is_equivalent_frame(coords[0].frame) for coord in coords[1:]])
+    convert_to_icrs = not all(
+        [coord.frame.is_equivalent_frame(coords[0].frame) for coord in coords[1:]])
 
-    # we also need to be careful about handling mixtures of UnitSphericalRepresentations and others
+    # we also need to be careful about handling mixtures of
+    # UnitSphericalRepresentations and others
     targets_is_unitsphericalrep = [x.data.__class__ is
                                    UnitSphericalRepresentation for x in coords]
 
@@ -240,13 +243,12 @@ def get_skycoord(targets):
         # all the same frame, get the longitude and latitude names
         try:
             # from astropy v2.0, keys are classes
-            lon_name, lat_name = [mapping.framename for mapping in
-                                  coords[0].frame_specific_representation_info[UnitSphericalRepresentation]]
-        except:
-            # whereas prior to that they were strings.
+            lon_name, lat_name = [
+                mapping.framename for mapping in
+                coords[0].frame_specific_representation_info[UnitSphericalRepresentation]]
+        except BaseException:            # whereas prior to that they were strings.
             lon_name, lat_name = [mapping.framename for mapping in
                                   coords[0].frame_specific_representation_info['spherical']]
-
 
         frame = coords[0].frame
         for coordinate in coords:

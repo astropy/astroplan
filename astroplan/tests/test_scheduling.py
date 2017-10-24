@@ -129,6 +129,7 @@ def test_transitioner():
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
 
+
 default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
 
 

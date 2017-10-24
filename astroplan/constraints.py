@@ -60,8 +60,7 @@ def _make_cache_key(times, targets):
     # make a tuple from times
     try:
         timekey = tuple(times.jd) + times.shape
-    except:
-        # must be scalar
+    except BaseException:        # must be scalar
         timekey = (times.jd,)
     # make hashable thing from targets coords
     try:
@@ -73,7 +72,7 @@ def _make_cache_key(times, targets):
         else:
             # assume targets is a string.
             targkey = (targets,)
-    except:
+    except BaseException:
         targkey = (targets.frame.data.lon,)
     return timekey + targkey
 
@@ -326,6 +325,7 @@ class AltitudeConstraint(Constraint):
         limits and False for outside).  If False, the constraint returns a
         float on [0, 1], where 0 is the min altitude and 1 is the max.
     """
+
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
             self.min = -90*u.deg
@@ -377,6 +377,7 @@ class AirmassConstraint(AltitudeConstraint):
 
         AirmassConstraint(2)
     """
+
     def __init__(self, max=None, min=1, boolean_constraint=True):
         self.min = min
         self.max = max
@@ -398,8 +399,7 @@ class AirmassConstraint(AltitudeConstraint):
             return mask
         else:
             if self.max is None:
-                raise ValueError("Cannot have a float AirmassConstraint if max "
-                                 "is None")
+                raise ValueError("Cannot have a float AirmassConstraint if max is None.")
             else:
                 mx = self.max
 
@@ -486,6 +486,7 @@ class SunSeparationConstraint(Constraint):
     """
     Constrain the distance between the Sun and some targets.
     """
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -526,6 +527,7 @@ class MoonSeparationConstraint(Constraint):
     """
     Constrain the distance between the Earth's moon and some targets.
     """
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -576,6 +578,7 @@ class MoonIlluminationConstraint(Constraint):
 
     Constraint is also satisfied if the Moon has set.
     """
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -672,6 +675,7 @@ class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.
     """
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -737,8 +741,7 @@ class LocalTimeConstraint(Constraint):
         if self.min < self.max:
             try:
                 mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
-            except:
-                # use np.bool so shape queries don't cause problems
+            except BaseException:                # use np.bool so shape queries don't cause problems
                 mask = np.bool_(min_time <= times.datetime.time() <= max_time)
 
         # If time boundaries straddle midnight:
@@ -746,7 +749,7 @@ class LocalTimeConstraint(Constraint):
             try:
                 mask = np.array([(t.time() >= min_time) or
                                 (t.time() <= max_time) for t in times.datetime])
-            except:
+            except BaseException:
                 mask = np.bool_((times.datetime.time() >= min_time) or
                                 (times.datetime.time() <= max_time))
         return mask
@@ -760,6 +763,7 @@ class TimeConstraint(Constraint):
     all observing blocks are valid over the time limits used in calls
     to `is_observable` or `is_always_observable`.
     """
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -812,6 +816,7 @@ class PrimaryEclipseConstraint(Constraint):
     """
     Constrain observations to times during primary eclipse.
     """
+
     def __init__(self, eclipsing_system):
         """
         Parameters
@@ -830,6 +835,7 @@ class SecondaryEclipseConstraint(Constraint):
     """
     Constrain observations to times during secondary eclipse.
     """
+
     def __init__(self, eclipsing_system):
         """
         Parameters
@@ -849,6 +855,7 @@ class PhaseConstraint(Constraint):
     Constrain observations to times in some range of phases for a periodic event
     (e.g.~transiting exoplanets, eclipsing binaries).
     """
+
     def __init__(self, periodic_event, min=None, max=None):
         """
         Parameters
