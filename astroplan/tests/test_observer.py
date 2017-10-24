@@ -613,7 +613,6 @@ def print_pyephem_sunrise_sunset_equator_civil_twilight():
     prev_sunrise = obs.previous_rising(ephem.Sun(), use_center=True)
     prev_sunset = obs.previous_setting(ephem.Sun(), use_center=True)
 
-
     def pyephem_time_to_datetime_str(t): return repr(t.datetime())
     print(list(map(pyephem_time_to_datetime_str,
                    [next_sunrise, next_sunset, prev_sunrise, prev_sunset])))
