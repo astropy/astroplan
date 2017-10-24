@@ -1012,7 +1012,7 @@ class Transitioner(object):
                         s = '{0}:{1} to {2}'.format(conf_name, old_conf,
                                                     new_conf)
                         components[s] = ctime
-                    elif def_time and not old_conf == new_conf:
+                    elif def_time is not None and not old_conf == new_conf:
                         s = '{0}:{1} to {2}'.format(conf_name, old_conf,
                                                     new_conf)
                         components[s] = def_time

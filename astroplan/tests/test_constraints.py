@@ -294,8 +294,8 @@ def test_docs_example():
                 Minimum acceptable separation between Vega and target. `None`
                 indicates no limit.
             """
-            self.min = min if min else 0*u.deg
-            self.max = max if max else 180*u.deg
+            self.min = min if min is not None else 0*u.deg
+            self.max = max if max is not None else 180*u.deg
 
         def compute_constraint(self, times, observer, targets):
             vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
