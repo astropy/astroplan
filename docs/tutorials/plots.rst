@@ -30,12 +30,6 @@ Contents
 
     * :ref:`finder_image`
 
-.. warning::
-
-    All examples here assume you know how to and have already constructed
-    `astroplan.Observer` and `astroplan.FixedTarget` objects.  If this is not
-    the case, you may want to start with the :doc:`summer_triangle` tutorial.
-
 
 .. _plots_time_dependent:
 
@@ -513,15 +507,7 @@ following way:
 
     >>> plot_sky(target, observer, time)
 
-.. warning::
-
-    Note that the time input for `~astroplan.plots.plot_sky` has to either
-    be an array of `~astropy.time.Time` objects or has to be an
-    `~astropy.time.Time` object containing an array of times--in other
-    words, it **cannot** be scalar.  See the `Astropy`_ documentation for more
-    details.
-
-.. warning::
+.. note::
 
     `~astroplan.plots.plot_sky` currently produces polar plots in
     altitude/azimuth coordinates only.  Plots are centered on the observer's
@@ -564,7 +550,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
     >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     >>> plt.show()
 
-.. warning::
+.. note::
 
     Since `~astroplan.plots.plot_sky` uses `~matplotlib.pyplot.scatter`
     (which gives the same color to different plots made on the same set of
@@ -702,7 +688,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
 For more examples on how to populate time objects, see `~astropy.time.Time`
 documentation, or :ref:`plots_time_window`.
 
-.. warning::
+.. note::
 
     Note that in the case of an object being under the horizon (or having
     negative altitude) at any of the times in your *time* input,
@@ -883,7 +869,7 @@ A positive offset is in the same direction as azimuth increase (see the
     plt.tight_layout()
     plt.show()
 
-.. warning::
+.. note::
 
     The *az_label_offset* option does not rotate the actual positions on the
     plot, but simply the theta grid labels (which are drawn regardless of
@@ -962,7 +948,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
     plt.tight_layout()
     plt.show()
 
-.. warning::
+.. note::
 
     Since grids are redrawn with every call to `~astroplan.plots.plot_sky`,
     you must set ``grid=False`` for every target in the same plot.
@@ -1147,4 +1133,3 @@ make a finder image centered on The Crab Nebula (M1):
 
 
 :ref:`Return to Top <plots>`
-

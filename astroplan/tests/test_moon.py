@@ -8,6 +8,7 @@ from astropy.coordinates import EarthLocation
 import astropy.units as u
 from numpy.testing import assert_allclose
 
+
 def test_illumination():
     time = Time(['1990-01-01 00:00:00', '1990-03-01 06:00:00',
                  '1990-06-01 12:00:00', '1990-11-01 18:00:00'])

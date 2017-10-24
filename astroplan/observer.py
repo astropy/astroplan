@@ -212,8 +212,8 @@ class Observer(object):
                     formatted_loc = ["{} {}".format(i.value, i.unit)
                                      for i in value.to_geodetic()]
                     attributes_strings.append(
-                        "{} (lon, lat, el)=({})".format(name,
-                                                        ", ".join(formatted_loc)))
+                        "{} (lon, lat, el)=({})".format(
+                            name, ", ".join(formatted_loc)))
                 else:
                     if name != 'name':
                         value = repr(value)
@@ -394,10 +394,9 @@ class Observer(object):
                     target = target[:, np.newaxis]
 
         elif not self._is_broadcastable(target.shape, time.shape):
-            raise ValueError(
-                'Time and Target arguments cannot be broadcast against each other with shapes {} and {}'.format(
-                    time.shape, target.shape
-                ))
+            raise ValueError('Time and Target arguments cannot be broadcast '
+                             'against each other with shapes {} and {}'
+                             .format(time.shape, target.shape))
         return time, target
 
     def altaz(self, time, target=None, obswl=None, grid_times_targets=False):
@@ -416,18 +415,19 @@ class Observer(object):
             initializer, so it can be anything that `~astropy.time.Time` will
             accept (including a `~astropy.time.Time` object)
 
-        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list; defaults to `None` (optional)
-            Celestial object(s) of interest. If ``target`` is `None`, return the
-            `~astropy.coordinates.AltAz` frame without coordinates.
+        target : `~astroplan.FixedTarget`, `~astropy.coordinates.SkyCoord`, or list (optional)
+            Celestial object(s) of interest. If ``target`` is `None`, returns
+            the `~astropy.coordinates.AltAz` frame without coordinates.
 
         obswl : `~astropy.units.Quantity` (optional)
             Wavelength of the observation used in the calculation.
 
-        grid_times_targets: bool
-            If True, the target object will have extra dimensions packed onto the end,
-            so that calculations with M targets and N times will return an (M, N)
-            shaped result. Otherwise, we rely on broadcasting the shapes together
-            using standard numpy rules. Useful for grid searches for rise/set times etc.
+        grid_times_targets: bool (optional)
+            If True, the target object will have extra dimensions packed
+            onto the end, so that calculations with M targets and N times
+            will return an (M, N) shaped result. Otherwise, we rely on
+            broadcasting the shapes together using standard numpy
+            rules. Useful for grid searches for rise/set times etc.
 
         Returns
         -------
@@ -855,10 +855,12 @@ class Observer(object):
         # Assemble arguments for function, depending on the function.
         if function == self._calc_riseset:
             def event_function(w):
-                return function(time, target, w, rise_set, horizon, grid_times_targets=grid_times_targets)
+                return function(time, target, w, rise_set, horizon,
+                                grid_times_targets=grid_times_targets)
         elif function == self._calc_transit:
             def event_function(w):
-                return function(time, target, w, antitransit=antitransit, grid_times_targets=grid_times_targets)
+                return function(time, target, w, antitransit=antitransit,
+                                grid_times_targets=grid_times_targets)
         else:
             raise ValueError('Function {} not supported in '
                              '_determine_which_event.'.format(function))
@@ -879,7 +881,7 @@ class Observer(object):
         if which == 'nearest':
             mask = abs(time - previous_event) < abs(time - next_event)
             return Time(np.where(mask, previous_event.utc.jd,
-                        next_event.utc.jd), format='jd')
+                                 next_event.utc.jd), format='jd')
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')
@@ -903,7 +905,7 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+        target : `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`, or list
             Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
@@ -916,10 +918,10 @@ class Observer(object):
             -6 deg horizon = civil twilight, etc.)
 
         grid_times_targets: bool
-            If True, the target object will have extra dimensions packed onto the end,
-            so that calculations with M targets and N times will return an (M, N)
-            shaped result. Otherwise, we rely on broadcasting the shapes together
-            using standard numpy rules.
+            If True, the target object will have extra dimensions packed
+            onto the end, so that calculations with M targets and N times
+            will return an (M, N) shaped result. Otherwise, we rely on
+            broadcasting the shapes together using standard numpy rules.
 
         Returns
         -------
@@ -963,7 +965,7 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+        target : `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`, or list
             Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
@@ -976,10 +978,10 @@ class Observer(object):
             -6 deg horizon = civil twilight, etc.)
 
         grid_times_targets: bool
-            If True, the target object will have extra dimensions packed onto the end,
-            so that calculations with M targets and N times will return an (M, N)
-            shaped result. Otherwise, we rely on broadcasting the shapes together
-            using standard numpy rules.
+            If True, the target object will have extra dimensions packed
+            onto the end, so that calculations with M targets and N times
+            will return an (M, N) shaped result. Otherwise, we rely on
+            broadcasting the shapes together using standard numpy rules.
 
         Returns
         -------
@@ -1020,7 +1022,7 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+        target : `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`, or list
             Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
@@ -1028,10 +1030,10 @@ class Observer(object):
             like to calculate
 
         grid_times_targets: bool
-            If True, the target object will have extra dimensions packed onto the end,
-            so that calculations with M targets and N times will return an (M, N)
-            shaped result. Otherwise, we rely on broadcasting the shapes together
-            using standard numpy rules.
+            If True, the target object will have extra dimensions packed
+            onto the end, so that calculations with M targets and N times
+            will return an (M, N) shaped result. Otherwise, we rely on
+            broadcasting the shapes together using standard numpy rules.
 
         Returns
         -------
@@ -1058,7 +1060,8 @@ class Observer(object):
                                                 rise_set='setting',
                                                 grid_times_targets=grid_times_targets))
 
-    def target_meridian_antitransit_time(self, time, target, which='nearest', grid_times_targets=False):
+    def target_meridian_antitransit_time(self, time, target, which='nearest',
+                                         grid_times_targets=False):
         """
         Calculate time at the antitransit of the meridian.
 
@@ -1073,14 +1076,14 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object).
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+        target : `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`, or list
             Target celestial object(s)
 
         which : {'next', 'previous', 'nearest'}
             Choose which sunrise relative to the present ``time`` would you
             like to calculate
 
-        grid_times_targets: bool
+        grid_times_targets : bool
             If True, the target object will have extra dimensions packed onto the end,
             so that calculations with M targets and N times will return an (M, N)
             shaped result. Otherwise, we rely on broadcasting the shapes together
@@ -1100,8 +1103,8 @@ class Observer(object):
         >>> time = Time("2001-02-03 04:05:06")
         >>> target = FixedTarget.from_name("Rigel")
         >>> keck = Observer.at_site("Keck")
-        >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(time, target,
-        ...                                                                which="next") # doctest: +SKIP
+        >>> rigel_antitransit_time = keck.target_meridian_antitransit_time(
+        ...     time, target, which="next") # doctest: +SKIP
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(rigel_antitransit_time)) # doctest: +SKIP
         ISO: 2001-02-03 18:40:29.761, JD: 2451944.27812
 
@@ -1589,7 +1592,8 @@ class Observer(object):
         return self.altaz(time, sun)
 
     @u.quantity_input(horizon=u.deg)
-    def target_is_up(self, time, target, horizon=0*u.degree, return_altaz=False, grid_times_targets=False):
+    def target_is_up(self, time, target, horizon=0*u.degree,
+                     return_altaz=False, grid_times_targets=False):
         """
         Is ``target`` above ``horizon`` at this ``time``?
 
@@ -1601,7 +1605,7 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+        target : `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`, or list
             Target celestial object(s)
 
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
@@ -1613,10 +1617,10 @@ class Observer(object):
             Also return the '~astropy.coordinates.AltAz' coordinate.
 
         grid_times_targets: bool
-            If True, the target object will have extra dimensions packed onto the end,
-            so that calculations with M targets and N times will return an (M, N)
-            shaped result. Otherwise, we rely on broadcasting the shapes together
-            using standard numpy rules.
+            If True, the target object will have extra dimensions packed
+            onto the end, so that calculations with M targets and N times
+            will return an (M, N) shaped result. Otherwise, we rely on
+            broadcasting the shapes together using standard numpy rules.
 
         Returns
         -------
@@ -1747,14 +1751,14 @@ class Observer(object):
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
             object)
 
-        target : coordinate object (i.e. `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`) or list
+        target : `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`, or list
             Target celestial object(s)
 
         grid_times_targets: bool
-            If True, the target object will have extra dimensions packed onto the end,
-            so that calculations with M targets and N times will return an (M, N)
-            shaped result. Otherwise, we rely on broadcasting the shapes together
-            using standard numpy rules.
+            If True, the target object will have extra dimensions packed
+            onto the end, so that calculations with M targets and N times
+            will return an (M, N) shaped result. Otherwise, we rely on
+            broadcasting the shapes together using standard numpy rules.
 
         Returns
         -------

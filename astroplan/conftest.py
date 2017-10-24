@@ -11,7 +11,8 @@ functionality for any functions we have *not* overriden, so that's why the
 """
 from astropy.tests.pytest_plugins import *
 
-# also save a copy of the astropy hooks so we can use them below when overriding
+# also save a copy of the astropy hooks so we can use them below when
+# overriding
 from astropy.tests import pytest_plugins as astropy_pytest_plugins
 
 import warnings
@@ -31,7 +32,8 @@ packagename = os.path.basename(os.path.dirname(__file__))
 TESTED_VERSIONS[packagename] = version
 
 
-# Comment out this line to avoid deprecation warnings being raised as exceptions
+# Comment out this line to avoid deprecation warnings being raised as
+# exceptions
 enable_deprecations_as_exceptions()
 
 # Define list of packages for which to display version numbers in the test log
@@ -46,13 +48,15 @@ try:
 except KeyError:
     pass
 
+
 def pytest_configure(config):
     if hasattr(astropy_pytest_plugins, 'pytest_configure'):
         # sure ought to be true right now, but always possible it will change in
         # future versions of astropy
         astropy_pytest_plugins.pytest_configure(config)
 
-    # make sure astroplan warnings always appear so we can test when they show up
+    # make sure astroplan warnings always appear so we can test when they show
+    # up
     warnings.simplefilter('always', category=AstroplanWarning)
 
     # activate image comparison tests only if the dependencies needed are installed:
@@ -72,6 +76,6 @@ def pytest_configure(config):
         # config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
 
     # Activate remote data mocking if the `--remote-data` option isn't used:
-    if (not config.getoption('remote_data')
-            or config.getvalue('remote_data') == 'none'):
+    if (not config.getoption('remote_data') or
+            config.getvalue('remote_data') == 'none'):
         _mock_remote_data()

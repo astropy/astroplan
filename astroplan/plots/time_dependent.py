@@ -67,8 +67,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1
     23:30:00'])`` will result in a plot with only two airmass measurements.
 
-    For examples with plots, visit the astroplan Read the Docs
-    documentation [1]_.
+    For examples with plots, visit the documentation of
+    :ref:`plots_time_dependent`.
 
     Parameters
     ----------
@@ -132,10 +132,6 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     y-axis is inverted and shows airmasses between 1.0 and 3.0 by default.
     If user wishes to change these, use ``ax.<set attribute>`` before drawing
     or saving plot:
-
-    References
-    ----------
-    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
 
     """
     # Import matplotlib, set style sheet
@@ -206,7 +202,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         twilights.sort(key=operator.itemgetter(0))
         for i, twi in enumerate(twilights[1:], 1):
-            ax.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
+            ax.axvspan(twilights[i - 1][0], twilights[i][0],
+                       ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
@@ -266,7 +263,8 @@ def plot_schedule_airmass(schedule, show_night=False):
     blocks = copy.copy(schedule.scheduled_blocks)
     sorted_blocks = sorted(schedule.observing_blocks, key=lambda x: x.priority)
     targets = [block.target for block in sorted_blocks]
-    ts = schedule.start_time + np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day
+    ts = (schedule.start_time +
+          np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day)
     targ_to_color = {}
     color_idx = np.linspace(0, 1, len(targets))
     # lighter, bluer colors indicate higher priority
@@ -277,11 +275,15 @@ def plot_schedule_airmass(schedule, show_night=False):
         # I'm pretty sure this overlaps a lot, creating darker bands
         for test_time in ts:
             midnight = schedule.observer.midnight(test_time)
-            previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
-            next_sunrise = schedule.observer.sun_rise_time(midnight, which='next')
+            previous_sunset = schedule.observer.sun_set_time(
+                midnight, which='previous')
+            next_sunrise = schedule.observer.sun_rise_time(
+                midnight, which='next')
 
-            previous_twilight = schedule.observer.twilight_evening_astronomical(midnight, which='previous')
-            next_twilight = schedule.observer.twilight_morning_astronomical(midnight, which='next')
+            previous_twilight = schedule.observer.twilight_evening_astronomical(
+                midnight, which='previous')
+            next_twilight = schedule.observer.twilight_morning_astronomical(
+                midnight, which='next')
 
             plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
                         facecolor='lightgrey', alpha=0.05)
@@ -317,8 +319,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])``
     will result in a plot with only two parallactic angle measurements.
 
-    For examples with plots, visit the astroplan Read the Docs
-    documentation [1]_.
+    For examples with plots, visit the documentation of
+    :ref:`plots_time_dependent`.
 
     Parameters
     ----------
@@ -353,9 +355,6 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     ax :  `~matplotlib.axes.Axes`
         An ``Axes`` object with added parallactic angle vs. time plot.
 
-    References
-    ----------
-    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
