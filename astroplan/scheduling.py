@@ -149,6 +149,83 @@ class Scorer(object):
                                       grid_times_targets=True)
         return score_array
 
+    def weighted_score_array(self, time_resolution=1*u.minute):
+        """
+        For each block, this returns a score for each time using the
+        formula (score*weight+score*weight+...)/(weight+weight+..)
+        """
+        # note: with this method, a non-boolean constraint with weight
+        # zero has the exact same effect if it was boolean
+        start = self.schedule.start_time
+        end = self.schedule.end_time
+        times = time_grid_from_range((start, end), time_resolution)
+        # create an array to hold all of the scores
+        score_array = np.zeros((len(self.blocks), len(times)))
+        # create an array to record where any of the constraints are zero
+        constraint_zeros = np.ones((len(self.blocks), len(times)), dtype=int)
+        local_constraints = []
+        weights = []
+        for i, block in enumerate(self.blocks):
+            weights.append(0)
+            local_constraints.append([])
+            # schedulers put global constraints into ._all_constraints
+            # so we can use .constraints for the local constraints
+            if block.constraints:
+                for constraint in block.constraints:
+                    local_constraints[i].append(constraint.__class__.__name__)
+                    applied_score = constraint(self.observer, [block.target],
+                                               times=times)[0]
+                    if constraint.boolean_constraint:
+                        # add to the mask designating where the score is zero
+                        # if either is 0, constraint_zeros becomes 0
+                        constraint_zeros[i] &= applied_score
+                    # TODO: make a default weight=1 and merge these
+                    elif constraint.weight:
+                        constraint_zeros[i][(applied_score == 0)] = 0
+                        weight = constraint.weight
+                        weights[i] += weight
+                        score_array[i] += applied_score * weight
+                    else:
+                        constraint_zeros[i][(applied_score == 0)] = 0
+                        weights[i] += 1
+                        score_array[i] += applied_score
+        targets = [block.target for block in self.blocks]
+        for constraint in self.global_constraints:
+            skip_global = []
+            for i, block in enumerate(local_constraints):
+                if constraint.__class__.__name__ in block:
+                    skip_global.append(i)
+            global_score = constraint(self.observer, targets, times)
+            if constraint.boolean_constraint:
+                # This should apply to every block (if the global fails, then
+                # the local should have failed anyway)
+                constraint_zeros &= global_score
+            elif constraint.weight:
+                weight = constraint.weight
+                for i, score in enumerate(global_score):
+                    if i not in skip_global:
+                        weights[i] += weight
+                        score_array[i] += score*weight
+                        constraint_zeros[i][(score == 0)] = 0
+            else:
+                for i, score in enumerate(global_score):
+                    if i not in skip_global:
+                        weights[i] += 1
+                        score_array[i] += score
+                        constraint_zeros[i][(score == 0)] = 0
+
+        for i, scores in enumerate(score_array):
+            if weights[i]:
+                scores *= 1/float(weights[i])
+            else:
+                # if no weight, then nothing was added to the score_array
+                # just use the zeros (squaring 0 and 1 gives 0 and 1)
+                scores += constraint_zeros[i]
+        # considering the else above, score_array would be constraint_zeros^2
+        # which is fine since all of its values should be 0 or 1
+        score_array *= constraint_zeros
+        return score_array
+
     @classmethod
     def from_start_end(cls, blocks, observer, start_time, end_time,
                        global_constraints=[]):

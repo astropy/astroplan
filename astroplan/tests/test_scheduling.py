@@ -265,3 +265,30 @@ def test_scorer():
     scores = scorer.create_score_array(time_resolution=20 * u.minute)
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
+
+
+def test_weighted_scorer():
+    times = time_grid_from_range(Time(['2016-02-06 00:00', '2016-02-06 08:00']),
+                                 time_resolution=20 * u.minute)
+    constraint = AirmassConstraint(max=2, boolean_constraint=False)
+    constraint.weight = .8
+    c = constraint(apo, [vega, rigel], times)
+    block = ObservingBlock(vega, 1 * u.hour, 0, constraints=[constraint])
+    block2 = ObservingBlock(rigel, 1 * u.hour, 0, constraints=[constraint])
+    scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
+                                   Time('2016-02-06 08:00'))
+    scores = scorer.weighted_score_array(time_resolution=20 * u.minute)
+    # due to float multiplication and division c and scores are not exactly equal
+    assert np.array_equal(np.round(c, 10), np.round(scores, 10))
+
+    constraint2 = MoonIlluminationConstraint(max=.6, boolean_constraint=False)
+    constraint2.weight = .7
+    c2 = constraint2(apo, [vega, rigel], times)
+    block = ObservingBlock(vega, 1 * u.hour, 0, constraints=[constraint, constraint2])
+    block2 = ObservingBlock(rigel, 1 * u.hour, 0, constraints=[constraint])
+    scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
+                                   Time('2016-02-06 08:00'))
+    scores = scorer.weighted_score_array(time_resolution=20 * u.minute)
+    assert all(scores[0] - (c[0] * .8 + c2[0] * .7)/1.5)
+    np.array_equal(np.round(scores[0], 10), np.round((c[0] * .8 + c2[0] * .7)/1.5, 10))
+    assert np.array_equal(np.round(scores[1], 10), np.round(c[1], 10))
