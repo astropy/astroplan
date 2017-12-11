@@ -30,7 +30,6 @@ env:
         - PIP_DEPENDENCIES=''
         - SETUP_CMD='test -V'
         - CONDA_CHANNELS='astropy conda-forge'
-        - ASTROPY_USE_SYSTEM_PYTEST=1
 
 
 stages:
@@ -114,7 +113,7 @@ matrix:
 
         # Try developer version of Astropy
         - os: linux
-          env: PYTHON_VERSION=3.6 ASTROPY_VERSION=dev PYTEST_VERSION='>=3.2'
+          env: PYTHON_VERSION=3.6 ASTROPY_VERSION=dev
 
         # Do a PEP8 test with pycodestyle
         - os: linux
