@@ -13,6 +13,10 @@ Observation planning package for astronomers
 .. image:: http://img.shields.io/pypi/v/astroplan.svg?text=version
     :target: https://pypi.python.org/pypi/astroplan/
     :alt: Latest release
+    
+.. image:: http://img.shields.io/badge/arXiv-1709.03913-red.svg?style=flat
+    :target: https://arxiv.org/abs/1712.09631
+    :alt: arXiv paper
 
 Status shields
 ++++++++++++++
