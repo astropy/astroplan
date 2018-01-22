@@ -120,7 +120,7 @@ time and issue the plotting command.
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -197,7 +197,7 @@ To center your window at some instance in time:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -254,7 +254,7 @@ If you know the start and end times of your observation run, you can use a
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -313,7 +313,7 @@ many targets on the plot as you wish::
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -386,7 +386,7 @@ The default line for time-dependent plots is solid and the default label
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -581,7 +581,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -663,7 +663,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
@@ -768,7 +768,7 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -841,7 +841,7 @@ A positive offset is in the same direction as azimuth increase (see the
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -920,7 +920,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -1049,7 +1049,7 @@ make multiple plots:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
