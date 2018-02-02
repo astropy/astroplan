@@ -40,7 +40,7 @@ enable_deprecations_as_exceptions()
 try:
     PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
     PYTEST_HEADER_MODULES['pytz'] = 'pytz'
-    PYTEST_HEADER_MODULES['pyephem'] = 'pyephem'
+    PYTEST_HEADER_MODULES['pyephem'] = 'ephem'
     PYTEST_HEADER_MODULES['matplotlib'] = 'matplotlib'
     PYTEST_HEADER_MODULES['nose'] = 'nose'
     PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest_mpl'
