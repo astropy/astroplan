@@ -137,14 +137,13 @@ class Scorer(object):
         start = self.schedule.start_time
         end = self.schedule.end_time
         times = time_grid_from_range((start, end), time_resolution)
-        score_array = np.ones((len(self.blocks), len(times)))
+        score_array = u.Quantity(np.ones((len(self.blocks), len(times))))
         for i, block in enumerate(self.blocks):
             # TODO: change the default constraints from None to []
             if block.constraints:
                 for constraint in block.constraints:
-                    applied_score = constraint(self.observer, block.target,
+                    score_array[i] *= constraint(self.observer, block.target,
                                                times=times)
-                    score_array[i] *= applied_score
         for constraint in self.global_constraints:
             score_array *= constraint(self.observer, self.targets, times,
                                       grid_times_targets=True)
