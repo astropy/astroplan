@@ -1133,7 +1133,8 @@ def observability_table(constraints, observer, targets, times=None,
     time_range : `~astropy.time.Time` (optional)
         Lower and upper bounds on time sequence, with spacing
         ``time_resolution``. This will be passed as the first argument into
-        `~astroplan.time_grid_from_range`.
+        `~astroplan.time_grid_from_range`. If a single (scalar) time, the table
+        will be for a 24 hour period centered on that time.
 
     time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
@@ -1147,13 +1148,20 @@ def observability_table(constraints, observer, targets, times=None,
         A Table containing the observability information for each of the
         ``targets``. The table contains four columns with information about the
         target and it's observability: ``'target name'``, ``'ever observable'``,
-        ``'always observable'``, and ``'fraction of time observable'``.  It also
-        contains metadata entries ``'times'`` (with an array of all the times),
-        ``'observer'`` (the `~astroplan.Observer` object), and ``'constraints'``
-        (containing the supplied ``constraints``).
+        ``'always observable'``, and ``'fraction of time observable'``. The
+        column ``'time observable'`` will also be present if the ``time_range``
+        is given as a scalar. It also contains metadata entries ``'times'``
+        (with an array of all the times), ``'observer'`` (the
+        `~astroplan.Observer` object), and ``'constraints'`` (containing the
+        supplied ``constraints``).
     """
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
+
+    is_24hr_table = False
+    if hasattr(time_range, 'isscalar') and time_range.isscalar:
+        time_range = (time_range-12*u.hour, time_range+12*u.hour)
+        is_24hr_table = True
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
@@ -1176,6 +1184,9 @@ def observability_table(constraints, observer, targets, times=None,
     if times is None and time_range is not None:
         times = time_grid_from_range(time_range,
                                      time_resolution=time_grid_resolution)
+
+    if is_24hr_table:
+        tab['time observable'] = tab['fraction of time observable'] * 24*u.hour
 
     tab.meta['times'] = times.datetime
     tab.meta['observer'] = observer
