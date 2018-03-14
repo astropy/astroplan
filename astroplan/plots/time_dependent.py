@@ -179,10 +179,10 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
     # Format the time axis
-    if not np.all(masked_airmass.mask):
-        date_formatter = dates.DateFormatter('%H:%M')
-        ax.xaxis.set_major_formatter(date_formatter)
-        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
+    date_formatter = dates.DateFormatter('%H:%M')
+    ax.xaxis.set_major_formatter(date_formatter)
+    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Shade background during night time
     if brightness_shading:
@@ -210,7 +210,6 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if y_lim[1] > y_lim[0]:
         ax.invert_yaxis()
     ax.set_ylim([max_airmass, min_airmass])
-    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
 
     # Draw lo/hi limit regions, if present
     ymax, ymin = ax.get_ylim()       # should be (hi_limit, lo_limit)
