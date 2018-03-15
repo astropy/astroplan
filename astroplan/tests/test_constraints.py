@@ -92,7 +92,6 @@ def test_observability_table():
 
     assert all(ttab['fraction of time observable'] == stab['fraction of time observable'])
     assert 'time observable' in stab.colnames
-    1/0
 
 
 def test_compare_altitude_constraint_and_observer():
