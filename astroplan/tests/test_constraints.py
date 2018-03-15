@@ -83,6 +83,16 @@ def test_observability_table():
                                    time_range=time_range)
     np.testing.assert_allclose(obstab['always observable'], all_obs)
 
+    # try the scalar time_range case
+    ttab = observability_table(constraints, subaru, targets,
+                               time_range=(time_range[0] - 12*u.hour,
+                                           time_range[0] + 12*u.hour))
+    stab = observability_table(constraints, subaru, targets,
+                               time_range=time_range[0])
+
+    assert all(ttab['fraction of time observable'] == stab['fraction of time observable'])
+    assert 'time observable' in stab.colnames
+
 
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')

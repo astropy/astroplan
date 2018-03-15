@@ -1,6 +1,8 @@
 0.5 (unreleased)
 ----------------
 
+- ``observability_table`` now accepts scalars as ``time_range`` arguments, and
+  gives ``'time observable'`` in this case in the resulting table. [#350]
 
 0.4 (2017-10-23)
 ----------------
