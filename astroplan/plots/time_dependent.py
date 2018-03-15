@@ -6,7 +6,6 @@ import numpy as np
 import operator
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import get_sun
 from collections import Sequence
 import warnings
 
