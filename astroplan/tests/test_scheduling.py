@@ -83,9 +83,9 @@ def test_schedule_insert_slot():
     end_time = start + duration
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(end_time - duration, block)
-    assert end_time - duration == start
+    assert (end_time - duration).jd == start.jd
     assert len(schedule.slots) == 2
-    assert schedule.slots[0].start == start
+    assert schedule.slots[0].start.jd == start.jd
 
 
 def test_schedule_change_slot_block():
