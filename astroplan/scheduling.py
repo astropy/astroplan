@@ -67,8 +67,8 @@ class ObservingBlock(object):
                                      '({0}, unscheduled) at'
                                      .format(self.target.name))
         else:
-            s = '({0}, {1} to {2}) at'.format(self.target.name, self.start_time,
-                                              self.end_time)
+            s = '({0}, {1} to {2}) at'.format(self.target.name, self.start_time.iso,
+                                              self.end_time.iso)
             return orig_repr.replace('object at', s)
 
     @property
@@ -190,7 +190,7 @@ class TransitionBlock(object):
         if self.start_time is None or self.end_time is None:
             return orig_repr.replace('object at', ' ({0}, unscheduled) at'.format(comp_info))
         else:
-            s = '({0}, {1} to {2}) at'.format(comp_info, self.start_time, self.end_time)
+            s = '({0}, {1} to {2}) at'.format(comp_info, self.start_time.iso, self.end_time.iso)
             return orig_repr.replace('object at', s)
 
     @property
