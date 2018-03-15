@@ -1216,7 +1216,7 @@ def min_best_rescale(vals, min_val, max_val, less_than_min=1):
     >>> from astroplan.constraints import min_best_rescale
     >>> import numpy as np
     >>> airmasses = np.array([1, 1.5, 2, 3, 0])
-    >>> min_best_rescale(airmasses, 1, 2.25, less_than_min = 0)
+    >>> min_best_rescale(airmasses, 1, 2.25, less_than_min = 0)  # doctest: +FLOAT_CMP
     array([ 1. ,  0.6,  0.2,  0. , 0. ])
     """
     rescaled = (vals - max_val) / (min_val - max_val)
@@ -1261,7 +1261,7 @@ def max_best_rescale(vals, min_val, max_val, greater_than_max=1):
     >>> from astroplan.constraints import max_best_rescale
     >>> import numpy as np
     >>> altitudes = np.array([20, 30, 40, 45, 55, 70])
-    >>> max_best_rescale(altitudes, 35, 60)
+    >>> max_best_rescale(altitudes, 35, 60)  # doctest: +FLOAT_CMP
     array([ 0. , 0. , 0.2, 0.4, 0.8, 1. ])
     """
     rescaled = (vals - min_val) / (max_val - min_val)
