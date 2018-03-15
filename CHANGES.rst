@@ -1,8 +1,6 @@
 0.5 (unreleased)
 ----------------
 
-- Fix test failures on newer versions of Astropy [#351]
-
 
 0.4 (2017-10-23)
 ----------------
