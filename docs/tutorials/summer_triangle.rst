@@ -224,7 +224,7 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
     subaru = Observer(name='Subaru Telescope',
                    location=location,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     from astropy.coordinates import SkyCoord
     from astroplan import FixedTarget
@@ -317,7 +317,7 @@ customizing plots and the like):
     subaru = Observer(name='Subaru Telescope',
                    location=location,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     from astropy.coordinates import SkyCoord
     from astroplan import FixedTarget
@@ -469,7 +469,7 @@ targets lay in the sky:
     subaru = Observer(name='Subaru Telescope',
                    location=location,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     from astropy.coordinates import SkyCoord
     from astroplan import FixedTarget
@@ -548,7 +548,7 @@ We can also show how our targets move over time during the night in question::
     subaru = Observer(name='Subaru Telescope',
                    location=location,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     from astropy.coordinates import SkyCoord
     from astroplan import FixedTarget
