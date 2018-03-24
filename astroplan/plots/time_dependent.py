@@ -49,7 +49,7 @@ def _has_twin(ax):
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
                  altitude_yaxis=False, min_airmass=1.0, min_region=None,
-                 max_airmass=3.0, max_region=None):
+                 max_airmass=3.0, max_region=None, moon_airmass=False):
     r"""
     Plots airmass as a function of time for a given target.
 
@@ -120,7 +120,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     max_region : float
         If set, defines an interval between ``max_airmass`` and ``max_region``
         that will be shaded. Default is `None`.
-
+    moon_airmass : bool
+        If set to True, display the Moon's airmass alongside the object's airmass. 
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
@@ -176,7 +177,10 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         # Plot data
         ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
-
+    if moon_airmass:
+        airmass_moon = observer.moon_altaz(time).secz
+        masked_airmass_moon = np.ma.array(airmass_moon, mask=airmass_moon<1)
+        ax.plot_date(time.plot_date, masked_airmass_moon, 'r--', label='Moon') #not good to have style fixed but can be worked out later.
     # Format the time axis
     ax.set_xlim([time[0].plot_date, time[-1].plot_date])
     date_formatter = dates.DateFormatter('%H:%M')
@@ -185,24 +189,46 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        start = time[0].datetime
+        starttime = time[0]#.datetime
+        
+        ndays = time.max()-time.min()    
+        if ndays.jd > 1:
+            for i in range(int(ndays.jd)):
+                start=(starttime+i*u.day).datetime #to keep start the 
+                          
+                twilights = [
+                    (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
+                    (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
+                    (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
+                    (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
+                    (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
+                    (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
+                    (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
+                    (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+                    ]
 
+                twilights.sort(key=operator.itemgetter(0))
+                for i, twi in enumerate(twilights[1:], 1):
+                    ax.axvspan(twilights[i - 1][0], twilights[i][0],
+                              ymin=0, ymax=1, color='grey', alpha=twi[1])
         # Calculate and order twilights and set plotting alpha for each
-        twilights = [
-            (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
-            (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
-            (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
-            (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
-            (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
-            (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
-            (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
-            (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
-        ]
+        else:
+            start=starttime.datetime
+            twilights = [
+                (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
+                (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
+                (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
+                (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
+                (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
+                (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
+                (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
+                (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+                ]
 
-        twilights.sort(key=operator.itemgetter(0))
-        for i, twi in enumerate(twilights[1:], 1):
-            ax.axvspan(twilights[i - 1][0], twilights[i][0],
-                       ymin=0, ymax=1, color='grey', alpha=twi[1])
+            twilights.sort(key=operator.itemgetter(0))
+            for i, twi in enumerate(twilights[1:], 1):
+                ax.axvspan(twilights[i - 1][0], twilights[i][0],
+                          ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
