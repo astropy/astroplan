@@ -66,8 +66,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1
     23:30:00'])`` will result in a plot with only two airmass measurements.
 
-    For examples with plots, visit the documentation of
-    :ref:`plots_time_dependent`.
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
 
     Parameters
     ----------
@@ -132,6 +132,10 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     If user wishes to change these, use ``ax.<set attribute>`` before drawing
     or saving plot:
 
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
+
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
@@ -178,31 +182,53 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
     # Format the time axis
-    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
-    date_formatter = dates.DateFormatter('%H:%M')
-    ax.xaxis.set_major_formatter(date_formatter)
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    if not np.all(masked_airmass.mask):
+        date_formatter = dates.DateFormatter('%H:%M')
+        ax.xaxis.set_major_formatter(date_formatter)
+        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Shade background during night time
     if brightness_shading:
-        start = time[0].datetime
+        starttime = time[0]
+        #Figure out how many days are in observation to do multiple shadings
+        ndays = time.max()-time.min()    
+        if ndays.jd > 1:
+            for i in range(int(ndays.jd)):
+                start=(starttime+i*u.day).datetime #to keep start the 
+                          
+                twilights = [
+                    (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
+                    (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
+                    (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
+                    (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
+                    (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
+                    (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
+                    (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
+                    (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+                    ]
 
+                twilights.sort(key=operator.itemgetter(0))
+                for i, twi in enumerate(twilights[1:], 1):
+                    ax.axvspan(twilights[i - 1][0], twilights[i][0],
+                              ymin=0, ymax=1, color='grey', alpha=twi[1])
         # Calculate and order twilights and set plotting alpha for each
-        twilights = [
-            (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
-            (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
-            (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
-            (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
-            (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
-            (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
-            (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
-            (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
-        ]
+        else:
+            start=starttime.datetime
+            twilights = [
+                (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
+                (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
+                (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
+                (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
+                (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
+                (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
+                (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
+                (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+                ]
 
-        twilights.sort(key=operator.itemgetter(0))
-        for i, twi in enumerate(twilights[1:], 1):
-            ax.axvspan(twilights[i - 1][0], twilights[i][0],
-                       ymin=0, ymax=1, color='grey', alpha=twi[1])
+            twilights.sort(key=operator.itemgetter(0))
+            for i, twi in enumerate(twilights[1:], 1):
+                ax.axvspan(twilights[i - 1][0], twilights[i][0],
+                          ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
@@ -239,7 +265,6 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     # Output.
     return ax
 
-
 def plot_schedule_airmass(schedule, show_night=False):
     """
     Plots when observations of targets are scheduled to occur superimposed
@@ -261,8 +286,7 @@ def plot_schedule_airmass(schedule, show_night=False):
     blocks = copy.copy(schedule.scheduled_blocks)
     sorted_blocks = sorted(schedule.observing_blocks, key=lambda x: x.priority)
     targets = [block.target for block in sorted_blocks]
-    ts = (schedule.start_time +
-          np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day)
+    ts = schedule.start_time + np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day
     targ_to_color = {}
     color_idx = np.linspace(0, 1, len(targets))
     # lighter, bluer colors indicate higher priority
@@ -273,15 +297,11 @@ def plot_schedule_airmass(schedule, show_night=False):
         # I'm pretty sure this overlaps a lot, creating darker bands
         for test_time in ts:
             midnight = schedule.observer.midnight(test_time)
-            previous_sunset = schedule.observer.sun_set_time(
-                midnight, which='previous')
-            next_sunrise = schedule.observer.sun_rise_time(
-                midnight, which='next')
+            previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
+            next_sunrise = schedule.observer.sun_rise_time(midnight, which='next')
 
-            previous_twilight = schedule.observer.twilight_evening_astronomical(
-                midnight, which='previous')
-            next_twilight = schedule.observer.twilight_morning_astronomical(
-                midnight, which='next')
+            previous_twilight = schedule.observer.twilight_evening_astronomical(midnight, which='previous')
+            next_twilight = schedule.observer.twilight_morning_astronomical(midnight, which='next')
 
             plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
                         facecolor='lightgrey', alpha=0.05)
@@ -317,8 +337,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])``
     will result in a plot with only two parallactic angle measurements.
 
-    For examples with plots, visit the documentation of
-    :ref:`plots_time_dependent`.
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
 
     Parameters
     ----------
@@ -353,6 +373,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     ax :  `~matplotlib.axes.Axes`
         An ``Axes`` object with added parallactic angle vs. time plot.
 
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
