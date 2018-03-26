@@ -19,7 +19,7 @@ def _secz_to_altitude(secant_z):
     """
     Convert airmass (approximated as the secant of the zenith angle) to
     an altitude (aka elevation) in degrees.
-
+  
     Parameters
     ----------
     secant_z : float
@@ -44,11 +44,10 @@ def _has_twin(ax):
         if other_ax.bbox.bounds == ax.bbox.bounds:
             return True
     return False
-
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
                  altitude_yaxis=False, min_airmass=1.0, min_region=None,
-                 max_airmass=3.0, max_region=None, moon_airmass=False):
+                 max_airmass=3.0, max_region=None):
     r"""
     Plots airmass as a function of time for a given target.
 
@@ -65,8 +64,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1
     23:30:00'])`` will result in a plot with only two airmass measurements.
 
-    For examples with plots, visit the documentation of
-    :ref:`plots_time_dependent`.
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
 
     Parameters
     ----------
@@ -132,6 +131,10 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     If user wishes to change these, use ``ax.<set attribute>`` before drawing
     or saving plot:
 
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
+
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
@@ -181,10 +184,11 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         masked_airmass_moon = np.ma.array(airmass_moon, mask=airmass_moon<1)
         ax.plot_date(time.plot_date, masked_airmass_moon, 'r--', label='Moon') #not good to have style fixed but can be worked out later.
     # Format the time axis
-    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
-    date_formatter = dates.DateFormatter('%H:%M')
-    ax.xaxis.set_major_formatter(date_formatter)
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    if not np.all(masked_airmass.mask):
+        date_formatter = dates.DateFormatter('%H:%M')
+        ax.xaxis.set_major_formatter(date_formatter)
+        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+
 
     # Shade background during night time
     if brightness_shading:
