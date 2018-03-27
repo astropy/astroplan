@@ -191,12 +191,12 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     # Shade background during night time
     if brightness_shading:
         starttime = time[0]
+        
         #Figure out how many days are in observation to do multiple shadings
-        ndays = time.max()-time.min()    
+        ndays = time.max()-time.min()
         if ndays.jd > 1:
             for i in range(int(ndays.jd)):
-                start=(starttime+i*u.day).datetime #to keep start the 
-                          
+                start=(starttime+i*u.day).datetime
                 twilights = [
                     (observer.sun_set_time(Time(start), 
                                            which='next').datetime, 0.0),
