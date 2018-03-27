@@ -179,7 +179,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data
-        ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
+        ax.plot_date(time.plot_date, masked_airmass, 
+                     label=target_name, **style_kwargs)
 
     # Format the time axis
     if not np.all(masked_airmass.mask):
@@ -197,14 +198,22 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                 start=(starttime+i*u.day).datetime #to keep start the 
                           
                 twilights = [
-                    (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
-                    (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
-                    (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
-                    (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
-                    (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
-                    (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
-                    (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
-                    (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+                    (observer.sun_set_time(Time(start), 
+                                           which='next').datetime, 0.0),
+                    (observer.twilight_evening_civil(Time(start), 
+                                           which='next').datetime, 0.1),
+                    (observer.twilight_evening_nautical(Time(start), 
+                                           which='next').datetime, 0.2),
+                    (observer.twilight_evening_astronomical(Time(start), 
+                                           which='next').datetime, 0.3),
+                    (observer.twilight_morning_astronomical(Time(start), 
+                                           which='next').datetime, 0.4),
+                    (observer.twilight_morning_nautical(Time(start),
+                                           which='next').datetime, 0.3),
+                    (observer.twilight_morning_civil(Time(start),
+                                           which='next').datetime, 0.2),
+                    (observer.sun_rise_time(Time(start),
+                                           which='next').datetime, 0.1),
                     ]
 
                 twilights.sort(key=operator.itemgetter(0))
@@ -215,14 +224,22 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         else:
             start=starttime.datetime
             twilights = [
-                (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
-                (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
-                (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
-                (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
-                (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
-                (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
-                (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
-                (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
+                (observer.sun_set_time(Time(start),
+                                       which='next').datetime, 0.0),
+                (observer.twilight_evening_civil(Time(start),
+                                       which='next').datetime, 0.1),
+                (observer.twilight_evening_nautical(Time(start),
+                                       which='next').datetime, 0.2),
+                (observer.twilight_evening_astronomical(Time(start),
+                                       which='next').datetime, 0.3),
+                (observer.twilight_morning_astronomical(Time(start),
+                                       which='next').datetime, 0.4),
+                (observer.twilight_morning_nautical(Time(start),
+                                       which='next').datetime, 0.3),
+                (observer.twilight_morning_civil(Time(start),
+                                       which='next').datetime, 0.2),
+                (observer.sun_rise_time(Time(start),
+                                       which='next').datetime, 0.1),
                 ]
 
             twilights.sort(key=operator.itemgetter(0))
