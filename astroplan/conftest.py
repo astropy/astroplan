@@ -42,7 +42,6 @@ try:
     PYTEST_HEADER_MODULES['pytz'] = 'pytz'
     PYTEST_HEADER_MODULES['pyephem'] = 'ephem'
     PYTEST_HEADER_MODULES['matplotlib'] = 'matplotlib'
-    PYTEST_HEADER_MODULES['nose'] = 'nose'
     PYTEST_HEADER_MODULES['pytest-mpl'] = 'pytest_mpl'
     del PYTEST_HEADER_MODULES['h5py']
 except KeyError:
@@ -58,22 +57,6 @@ def pytest_configure(config):
     # make sure astroplan warnings always appear so we can test when they show
     # up
     warnings.simplefilter('always', category=AstroplanWarning)
-
-    # activate image comparison tests only if the dependencies needed are installed:
-    # matplotlib, nose, pytest-mpl
-    try:
-        import matplotlib
-        import nose  # needed for the matplotlib testing tools
-        HAS_MATPLOTLIB_AND_NOSE = True
-    except ImportError:
-        HAS_MATPLOTLIB_AND_NOSE = False
-
-    if HAS_MATPLOTLIB_AND_NOSE and config.pluginmanager.hasplugin('mpl'):
-        pass
-        # TODO: turn image comparison tests back on once this issue is figured out:
-        # https://github.com/astropy/astroplan/pull/104#issuecomment-137734007
-        # config.option.mpl = True
-        # config.option.mpl_baseline_path = 'astroplan/plots/tests/baseline_images'
 
     # Activate remote data mocking if the `--remote-data` option isn't used:
     if (not config.getoption('remote_data') or
