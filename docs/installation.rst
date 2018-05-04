@@ -62,8 +62,7 @@ If there are no errors, you are good to go!
 	If you want to run the tests that access the internet, you'll need to
 	replace the last line above with ``astroplan.test(remote_data=True)`` and
 	have an active connection to the internet.  Also, if you want the tests
-	that check plotting to work, you need `Matplotlib`_, `pytest-mpl`_, and
-	`Nose`_.
+	that check plotting to work, you need `Matplotlib`_ and `pytest-mpl`_.
 
 More
 ====

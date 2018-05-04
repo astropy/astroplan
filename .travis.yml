@@ -29,7 +29,7 @@ env:
         - CONDA_DEPENDENCIES='pytz'
         - PIP_DEPENDENCIES=''
         - SETUP_CMD='test -V'
-        - CONDA_CHANNELS='astropy conda-forge'
+        - CONDA_CHANNELS='astropy'
 
 
 stages:
@@ -59,18 +59,14 @@ matrix:
         - os: osx
           stage: Cron and master-only tests
           env: PYTHON_VERSION=2.7
-               CONDA_DEPENDENCIES='pytz matplotlib nose'
+               CONDA_DEPENDENCIES='pytz matplotlib'
                PIP_DEPENDENCIES='pytest-mpl'
 
         # Run one of the docs build during the initial tests
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='build_docs -w'
-               CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
-               PIP_DEPENDENCIES='pytest-mpl'
-        - os: linux
           stage: Initial tests
           env: SETUP_CMD='build_docs -w'
-               CONDA_DEPENDENCIES='pytz matplotlib nose astroquery'
+               CONDA_DEPENDENCIES='pytz matplotlib astroquery'
                PIP_DEPENDENCIES='pytest-mpl'
 
         # Try all python versions with the latest numpy
@@ -87,12 +83,12 @@ matrix:
         # 2.7.
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
-               CONDA_DEPENDENCIES='pytz matplotlib nose'
+               CONDA_DEPENDENCIES='pytz matplotlib'
                PIP_DEPENDENCIES='pytest-mpl'
         - os: linux
           stage: Initial tests
           env: SETUP_CMD='test --remote-data -V'
-               CONDA_DEPENDENCIES='pytz matplotlib nose'
+               CONDA_DEPENDENCIES='pytz matplotlib'
                PIP_DEPENDENCIES='pytest-mpl'
 
         # Try older numpy versions
@@ -123,10 +119,10 @@ matrix:
       - env: PYTHON_VERSION=2.7 NUMPY_VERSION=dev
       # Allow them to fail now until the IERSs issues are fixed
       - env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
-             CONDA_DEPENDENCIES='pytz matplotlib nose'
+             CONDA_DEPENDENCIES='pytz matplotlib'
              PIP_DEPENDENCIES='pytest-mpl'
       - env: SETUP_CMD='test --remote-data -V'
-             CONDA_DEPENDENCIES='pytz matplotlib nose'
+             CONDA_DEPENDENCIES='pytz matplotlib'
              PIP_DEPENDENCIES='pytest-mpl'
 
 install:

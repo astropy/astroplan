@@ -10,9 +10,9 @@ environment:
       PYTHON_ARCH: "64" # needs to be set for CMD_IN_ENV to succeed. If a mix
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
-      CONDA_DEPENDENCIES: "pytz matplotlib nose"
+      CONDA_DEPENDENCIES: "pytz matplotlib"
       PIP_DEPENDENCIES: "pyephem pytest-mpl"
-      CONDA_CHANNELS: "astropy conda-forge"
+      CONDA_CHANNELS: "astropy"
       ASTROPY_USE_SYSTEM_PYTEST: 1
 
   matrix:
