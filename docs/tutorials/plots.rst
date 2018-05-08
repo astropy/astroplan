@@ -39,13 +39,11 @@ Time Dependent Plots
 Although all `astroplan` plots are time-dependent in some way, we label those
 that have a time-based axis as "time-dependent".
 
-`astroplan` currently has two different types of "time-dependent" plots:
-
-* Airmass vs. Time
-* Parallactic Angle vs. Time
-
-These take, at minimum, `~astroplan.Observer`, `~astroplan.FixedTarget` and
-`~astropy.time.Time` objects as input.
+`astroplan` currently has a few different types of "time-dependent" plots,
+for example `~astroplan.plots.plot_airmass`, `~astroplan.plots.plot_altitude`
+and `~astroplan.plots.plot_parallactic`. These take, at minimum,
+`~astroplan.Observer`, `~astroplan.FixedTarget` and `~astropy.time.Time` objects
+as input.
 
 .. _plots_airmass:
 
@@ -140,6 +138,80 @@ For example, these are acceptable *time* inputs::
     Time(['2000-06-15 23:30:00'])
 
     [Time('2000-06-15 23:30:00')]
+
+You can also add a second y-axis (on the right side) which shows the corresponding
+altitude of the targets:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_airmass
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Maunakea, Hawaii")
+
+    coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
+    target = FixedTarget(name='Sirius', coord=coordinates)
+
+    observe_time = Time('2000-06-15 23:30:00')
+
+    plot_airmass(target, observer, observe_time, altitude_yaxis=True)
+    plt.tight_layout()
+    plt.show()
+
+You can make altitude the primary y-axis rather than airmass by using
+`~astroplan.plots.plot_altitude`:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_altitude
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Maunakea, Hawaii")
+
+    coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
+    target = FixedTarget(name='Sirius', coord=coordinates)
+
+    observe_time = Time('2000-06-15 23:30:00')
+
+    plot_altitude(target, observer, observe_time, airmass_yaxis=True)
+    plt.tight_layout()
+    plt.show()
 
 .. _plots_time_window:
 
@@ -463,7 +535,7 @@ right side of the axis with the altitudes in degrees using the
     >>> from astroplan import FixedTarget, Observer
     >>> from astroplan.plots import plot_airmass
 
-    >>> time = Time.now()
+    >>> time = Time('2018-01-02 19:00')
     >>> target = FixedTarget.from_name('HD 189733')
     >>> apo = Observer.at_site('APO')
     >>> plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
@@ -476,7 +548,7 @@ right side of the axis with the altitudes in degrees using the
     from astropy.time import Time
     from astroplan import FixedTarget, Observer
 
-    time = Time.now()
+    time = Time('2018-01-02 19:00')
     target = FixedTarget.from_name('HD 189733')
     apo = Observer.at_site('APO')
     plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
