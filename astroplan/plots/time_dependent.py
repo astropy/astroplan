@@ -242,9 +242,9 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
 
 def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
-                 style_sheet=None, brightness_shading=False,
-                 airmass_yaxis=False, min_altitude=0, min_region=None,
-                 max_altitude=90, max_region=None):
+                  style_sheet=None, brightness_shading=False,
+                  airmass_yaxis=False, min_altitude=0, min_region=None,
+                  max_altitude=90, max_region=None):
     r"""
     Plots altitude as a function of time for a given target.
 
