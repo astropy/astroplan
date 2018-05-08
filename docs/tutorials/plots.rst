@@ -535,7 +535,7 @@ right side of the axis with the altitudes in degrees using the
     >>> from astroplan import FixedTarget, Observer
     >>> from astroplan.plots import plot_airmass
 
-    >>> time = Time.now()
+    >>> time = Time('2018-01-02 19:00')
     >>> target = FixedTarget.from_name('HD 189733')
     >>> apo = Observer.at_site('APO')
     >>> plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
@@ -548,7 +548,7 @@ right side of the axis with the altitudes in degrees using the
     from astropy.time import Time
     from astroplan import FixedTarget, Observer
 
-    time = Time.now()
+    time = Time('2018-01-02 19:00')
     target = FixedTarget.from_name('HD 189733')
     apo = Observer.at_site('APO')
     plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
