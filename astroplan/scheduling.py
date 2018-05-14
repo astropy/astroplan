@@ -299,7 +299,8 @@ class Schedule(object):
                 ra.append('')
                 dec.append('')
                 config.append('')
-        return Table([target_names, start_times, end_times, durations, ra, dec, config],
+        return Table([target_names, start_times, end_times, durations,
+                      u.Quantity(ra), u.Quantity(dec), config],
                      names=('target', 'start time (UTC)', 'end time (UTC)',
                             'duration (minutes)', 'ra', 'dec', 'configuration'))
 
