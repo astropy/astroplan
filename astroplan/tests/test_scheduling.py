@@ -272,7 +272,6 @@ def test_schedule_eclipsers():
     assert sblock.end_time > egress
 
 
-
 def test_scorer():
     constraint = AirmassConstraint(max=4)
     times = time_grid_from_range(Time(['2016-02-06 00:00', '2016-02-06 08:00']),
