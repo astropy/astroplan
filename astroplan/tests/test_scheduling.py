@@ -5,13 +5,14 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, EarthLocation
 
 from ..utils import time_grid_from_range
 from ..observer import Observer
 from ..target import FixedTarget, get_skycoord
 from ..constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
-                           MoonIlluminationConstraint)
+                           MoonIlluminationConstraint, PhaseConstraint)
+from ..periodic import EclipsingSystem
 from ..scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                           Transitioner, TransitionBlock, Schedule, Slot, Scorer)
 
@@ -234,6 +235,41 @@ def test_scheduling_moon_up():
     schedule = Schedule(start_time, end_time)
     schedule2 = scheduler2(block, schedule)
     assert len(schedule2.observing_blocks) == 0
+
+
+def test_schedule_eclipsers():
+    loc = EarthLocation(*u.Quantity((5327448.9957829,
+                                     -1718665.73869569,
+                                     3051566.90295403), unit=u.m))
+    lapalma = Observer(location=loc)
+    nnser = FixedTarget(coord=SkyCoord("15 52 56.131 +12 54 44.68", unit=(u.hour, u.deg)),
+                        name='NN Ser')
+    period = 0.1300801417*u.d
+    nnser_eclipses = EclipsingSystem(Time(57459.8372148, format='mjd'),
+                                     period, duration=0.15*period)
+
+    # schedule an eclipse. Do this by having a constraint which is only
+    # valid in the narrow phase range you want observed, and an OB whose
+    # duration is only slightly shorter than the phase constraint.
+    # This block can then only be scheduled covering the eclipse.
+    pc = PhaseConstraint(nnser_eclipses, min=0.9, max=0.1)
+    # make OB one minute shorter than duration to allow scheduling
+    block = [ObservingBlock(nnser, 0.2*period - 1*u.min, 0)]
+
+    constraints = [pc]
+    start_time = Time('2017-05-24 22:00:00')
+    end_time = Time('2017-05-24 23:20:00')
+    scheduler = PriorityScheduler(constraints, lapalma, default_transitioner,
+                                  time_resolution=10*u.s)
+    schedule = Schedule(start_time, end_time)
+    scheduled = scheduler(block, schedule)
+    # check scheduled at all
+    assert len(scheduled.observing_blocks) == 1
+    sblock = scheduled.observing_blocks[0]
+    ingress, egress = nnser_eclipses.next_primary_ingress_egress_time(Time('2017-05-24T22:00:00')).T
+    # check whole eclipse was scheduled
+    assert sblock.start_time < ingress
+    assert sblock.end_time > egress
 
 
 def test_scorer():
