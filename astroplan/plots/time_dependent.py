@@ -134,7 +134,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     References
     ----------
-    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
+    .. [1] astroplan plotting tutorial: 
+    https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
 
     """
     # Import matplotlib, set style sheet
@@ -179,7 +180,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data
-        ax.plot_date(time.plot_date, masked_airmass, 
+        ax.plot_date(time.plot_date, masked_airmass,
                      label=target_name, **style_kwargs)
 
     # Format the time axis
@@ -191,12 +192,12 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     # Shade background during night time
     if brightness_shading:
         starttime = time[0]
-        
+
         #Figure out how many days are in observation to do multiple shadings
         ndays = time.max()-time.min()
         if ndays.jd > 1:
             for i in range(int(ndays.jd)):
-                start=(starttime+i*u.day).datetime
+                start=(starttime + i*u.day).datetime
                 twilights = [
                     (observer.sun_set_time(Time(start), 
                                            which='next').datetime, 0.0),
