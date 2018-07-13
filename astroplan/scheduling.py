@@ -508,8 +508,10 @@ class Scheduler(object):
         self.constraints = constraints
         self.observer = observer
         self.transitioner = transitioner
-        if not isinstance(self.transitioner, Transitioner):
-            raise ValueError("A Transitioner is required")
+
+        if not hasattr(self.transitioner, '__call__'):
+            raise ValueError("A callable Transitioner is required")
+
         self.gap_time = gap_time
         self.time_resolution = time_resolution
 
