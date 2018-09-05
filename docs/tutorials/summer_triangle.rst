@@ -535,6 +535,7 @@ We can also show how our targets move over time during the night in question::
 
 .. plot::
 
+    import numpy as np
     import astropy.units as u
     from astropy.coordinates import EarthLocation
     from pytz import timezone
