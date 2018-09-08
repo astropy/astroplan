@@ -212,9 +212,12 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
 .. plot::
 
     import astropy.units as u
-    from astropy.coordinates import EarthLocation
+    from astropy.coordinates import EarthLocation, SkyCoord
+    import matplotlib.pyplot as plt
     from pytz import timezone
-    from astroplan import Observer
+
+    from astroplan import Observer, FixedTarget
+    from astroplan.plots import plot_airmass
 
     longitude = '-155d28m48.900s'
     latitude = '+19d49m42.600s'
@@ -222,12 +225,9 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
     location = EarthLocation.from_geodetic(longitude, latitude, elevation)
 
     subaru = Observer(name='Subaru Telescope',
-                   location=location,
-                   timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Maunakea, Hawaii")
-
-    from astropy.coordinates import SkyCoord
-    from astroplan import FixedTarget
+                      location=location,
+                      timezone=timezone('US/Hawaii'),
+                      description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
@@ -241,9 +241,6 @@ can plot it over the course of the night (for more on plotting see :doc:`plots`)
     from astropy.time import Time
 
     time = Time('2015-06-16 12:00:00')
-
-    from astroplan.plots import plot_airmass
-    import matplotlib.pyplot as plt
 
     plot_airmass(altair, subaru, time)
     plot_airmass(vega, subaru, time)
@@ -456,10 +453,15 @@ targets lay in the sky:
 
 .. plot::
 
+
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from astropy.time import Time
     import astropy.units as u
-    from astropy.coordinates import EarthLocation
+    import matplotlib.pyplot as plt
     from pytz import timezone
-    from astroplan import Observer
+
+    from astroplan import Observer, FixedTarget
+    from astroplan.plots import plot_sky
 
     longitude = '-155d28m48.900s'
     latitude = '+19d49m42.600s'
@@ -467,12 +469,9 @@ targets lay in the sky:
     location = EarthLocation.from_geodetic(longitude, latitude, elevation)
 
     subaru = Observer(name='Subaru Telescope',
-                   location=location,
-                   timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Maunakea, Hawaii")
-
-    from astropy.coordinates import SkyCoord
-    from astroplan import FixedTarget
+                      location=location,
+                      timezone=timezone('US/Hawaii'),
+                      description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
@@ -483,13 +482,8 @@ targets lay in the sky:
     coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
     deneb = FixedTarget(name='Deneb', coord=coordinates)
 
-    from astropy.time import Time
-
     start = Time('2015-06-16 06:28:40.126')
     end = Time('2015-06-16 15:47:35.822')
-
-    from astroplan.plots import plot_sky
-    import matplotlib.pyplot as plt
 
     altair_style = {'color': 'r'}
     deneb_style = {'color': 'g'}
@@ -535,10 +529,15 @@ We can also show how our targets move over time during the night in question::
 
 .. plot::
 
+    import numpy as np
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from astropy.time import Time
     import astropy.units as u
-    from astropy.coordinates import EarthLocation
+    import matplotlib.pyplot as plt
     from pytz import timezone
-    from astroplan import Observer
+
+    from astroplan import Observer, FixedTarget
+    from astroplan.plots import plot_sky
 
     longitude = '-155d28m48.900s'
     latitude = '+19d49m42.600s'
@@ -546,12 +545,9 @@ We can also show how our targets move over time during the night in question::
     location = EarthLocation.from_geodetic(longitude, latitude, elevation)
 
     subaru = Observer(name='Subaru Telescope',
-                   location=location,
-                   timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Maunakea, Hawaii")
-
-    from astropy.coordinates import SkyCoord
-    from astroplan import FixedTarget
+                      location=location,
+                      timezone=timezone('US/Hawaii'),
+                      description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
@@ -561,10 +557,6 @@ We can also show how our targets move over time during the night in question::
 
     coordinates = SkyCoord('20h41m25.9s', '+45d16m49.3s', frame='icrs')
     deneb = FixedTarget(name='Deneb', coord=coordinates)
-
-    from astropy.time import Time
-    from astroplan.plots import plot_sky
-    import matplotlib.pyplot as plt
 
     start = Time('2015-06-16 06:28:40.126')
     end = Time('2015-06-16 15:47:35.822')
