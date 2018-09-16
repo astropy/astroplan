@@ -1583,7 +1583,7 @@ class Observer(object):
         Returns
         -------
         altaz : `~astropy.coordinates.SkyCoord`
-            Position of the moon transformed to altitude and azimuth
+            Position of the sun transformed to altitude and azimuth
         """
         if not isinstance(time, Time):
             time = Time(time)
