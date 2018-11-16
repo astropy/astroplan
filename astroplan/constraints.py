@@ -738,7 +738,7 @@ class LocalTimeConstraint(Constraint):
             max_time = datetime.time(23, 59, 59)
 
         # If time limits occur on same day:
-        if self.min < self.max:
+        if min_time < max_time:
             try:
                 mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
             except BaseException:                # use np.bool so shape queries don't cause problems
