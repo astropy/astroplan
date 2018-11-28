@@ -22,6 +22,10 @@ Optional packages:
 * `Matplotlib`_
 * `astroquery`_
 
+For testing:
+
+* `pytest-astropy`_
+
 First-time Python users may want to consider an all-in-one Python installation
 package, such as the `Anaconda Python Distribution
 <http://continuum.io/downloads>`_ which provides all of the above dependencies.

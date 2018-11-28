@@ -6,3 +6,4 @@
 .. _pytz: https://pypi.python.org/pypi/pytz/
 .. _pytest-mpl: https://pypi.python.org/pypi/pytest-mpl
 .. _astroquery: https://astroquery.readthedocs.io
+.. _pytest-astropy: https://github.com/astropy/pytest-astropy
