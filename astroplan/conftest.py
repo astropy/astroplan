@@ -13,6 +13,13 @@ from astropy.tests.pytest_plugins import (TESTED_VERSIONS,
                                           PYTEST_HEADER_MODULES,
                                           enable_deprecations_as_exceptions)
 
+# We do this to pick up the test header report even when using LTS astropy
+try:
+    from astropy.tests.pytest_plugins import pytest_report_header
+except ImportError:
+    pass
+
+
 # also save a copy of the astropy hooks so we can use them below when
 # overriding
 from astropy.tests import pytest_plugins as astropy_pytest_plugins
