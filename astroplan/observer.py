@@ -509,9 +509,9 @@ class Observer(object):
         LST = time.sidereal_time('mean', longitude=self.location.lon)
         H = (LST - coordinate.ra).radian
         q = np.arctan2(np.sin(H),
-                      (np.tan(self.location.lat.radian) *
-                       np.cos(coordinate.dec.radian) -
-                       np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
+                       (np.tan(self.location.lat.radian) *
+                        np.cos(coordinate.dec.radian) -
+                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
 
         return Angle(q)
 
