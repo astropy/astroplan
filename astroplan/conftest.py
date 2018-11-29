@@ -9,14 +9,23 @@ and then after that do things specific to astroplan.  But we also want astropy
 functionality for any functions we have *not* overriden, so that's why the
 ``import *`` happens at the top.
 """
-from astropy.tests.pytest_plugins import *
+from astropy.tests.pytest_plugins import (TESTED_VERSIONS,
+                                          PYTEST_HEADER_MODULES,
+                                          enable_deprecations_as_exceptions)
+
+# We do this to pick up the test header report even when using LTS astropy
+try:
+    from astropy.tests.pytest_plugins import pytest_report_header
+except ImportError:
+    pass
+
 
 # also save a copy of the astropy hooks so we can use them below when
 # overriding
 from astropy.tests import pytest_plugins as astropy_pytest_plugins
 
 import warnings
-from .utils import _mock_remote_data, _unmock_remote_data
+from .utils import _mock_remote_data
 from .exceptions import AstroplanWarning
 
 import os

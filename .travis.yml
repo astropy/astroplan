@@ -27,7 +27,7 @@ env:
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='pytz'
-        - PIP_DEPENDENCIES=''
+        - PIP_DEPENDENCIES='pytest-astropy'
         - SETUP_CMD='test -V'
         - CONDA_CHANNELS='astropy'
 
@@ -60,14 +60,14 @@ matrix:
           stage: Cron and master-only tests
           env: PYTHON_VERSION=2.7
                CONDA_DEPENDENCIES='pytz matplotlib'
-               PIP_DEPENDENCIES='pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
 
         # Run one of the docs build during the initial tests
         - os: linux
           stage: Initial tests
           env: SETUP_CMD='build_docs -w'
                CONDA_DEPENDENCIES='pytz matplotlib astroquery'
-               PIP_DEPENDENCIES='pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
 
         # Try all python versions with the latest numpy
         # TODO: add the `--open-files` option back once this issue has been resolved:
@@ -84,12 +84,12 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
                CONDA_DEPENDENCIES='pytz matplotlib'
-               PIP_DEPENDENCIES='pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
         - os: linux
           stage: Initial tests
           env: SETUP_CMD='test --remote-data -V'
                CONDA_DEPENDENCIES='pytz matplotlib'
-               PIP_DEPENDENCIES='pytest-mpl'
+               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
 
         # Try older numpy versions
         - os: linux
@@ -120,10 +120,10 @@ matrix:
       # Allow them to fail now until the IERSs issues are fixed
       - env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
              CONDA_DEPENDENCIES='pytz matplotlib'
-             PIP_DEPENDENCIES='pytest-mpl'
+             PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
       - env: SETUP_CMD='test --remote-data -V'
              CONDA_DEPENDENCIES='pytz matplotlib'
-             PIP_DEPENDENCIES='pytest-mpl'
+             PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
 
 install:
     - git clone git://github.com/astropy/ci-helpers.git
