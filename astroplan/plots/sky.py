@@ -213,7 +213,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     # Set ticks and labels.
     ax.set_rgrids(range(1, 106, 15), r_labels, angle=-45)
-    ax.set_thetagrids(range(0, 360, 45), theta_labels, frac=1.2)
+    ax.set_thetagrids(range(0, 360, 45), theta_labels)
 
     # Below commands don't seem to work for setting ticks/labels.
     # ax.rgrids(range(1, 91, 15), r_labels, angle=-45)
