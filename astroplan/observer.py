@@ -508,10 +508,10 @@ class Observer(object):
         # Eqn (14.1) of Meeus' Astronomical Algorithms
         LST = time.sidereal_time('mean', longitude=self.location.lon)
         H = (LST - coordinate.ra).radian
-        q = np.arctan(np.sin(H) /
-                      (np.tan(self.location.lat.radian) *
-                       np.cos(coordinate.dec.radian) -
-                       np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
+        q = np.arctan2(np.sin(H),
+                       (np.tan(self.location.lat.radian) *
+                        np.cos(coordinate.dec.radian) -
+                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
 
         return Angle(q)
 
