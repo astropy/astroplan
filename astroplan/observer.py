@@ -1487,7 +1487,7 @@ class Observer(object):
         """
         Calculate lunar orbital phase.
 
-        For example, phase=2*pi is "new", phase=0 is "full".
+        For example, phase=pi is "new", phase=0 is "full".
 
         Parameters
         ----------
@@ -1500,7 +1500,7 @@ class Observer(object):
         Returns
         -------
         moon_phase_angle : float
-            Orbital phase angle of the moon where 2*pi corresponds to new moon,
+            Orbital phase angle of the moon where pi corresponds to new moon,
             zero corresponds to full moon.
 
         Examples
