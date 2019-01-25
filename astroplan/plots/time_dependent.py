@@ -407,7 +407,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         ax.axhspan(min_region, ymin, facecolor='#F9EB4E', alpha=0.10)
 
     # Set labels.
-    ax.set_ylabel("Airmass")
+    ax.set_ylabel("Altitude")
     ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
 
     if airmass_yaxis and not _has_twin(ax):
