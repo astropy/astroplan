@@ -506,7 +506,7 @@ class Observer(object):
         time, coordinate = self._preprocess_inputs(time, target, grid_times_targets)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        LST = time.sidereal_time('mean', longitude=self.location.lon)
+        LST = time.sidereal_time('mean', longitude=self.location.longitude)
         H = (LST - coordinate.ra).radian
         q = np.arctan2(np.sin(H),
                        (np.tan(self.location.lat.radian) *
@@ -1736,7 +1736,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        return time.sidereal_time(kind, longitude=self.location.lon,
+        return time.sidereal_time(kind, longitude=self.location.longitude,
                                   model=model)
 
     def target_hour_angle(self, time, target, grid_times_targets=False):
