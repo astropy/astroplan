@@ -422,7 +422,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         ax2.set_yticks(altitude_ticks)
         ax2.set_yticklabels(airmass_ticks)
         ax2.set_ylim(ax.get_ylim())
-        ax2.set_ylabel('Altitude [degrees]')
+        ax2.set_ylabel('Airmass')
 
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
