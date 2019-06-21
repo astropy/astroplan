@@ -495,7 +495,7 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         max : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between Sun and target (inclusive).
+            Maximum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
         self.min = min
