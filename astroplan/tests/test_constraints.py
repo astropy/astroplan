@@ -5,7 +5,7 @@ import datetime as dt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, get_sun, get_moon
+from astropy.coordinates import Galactic, SkyCoord, get_sun, get_moon
 from astropy.utils import minversion
 import pytest
 
@@ -13,7 +13,9 @@ from ..observer import Observer
 from ..target import FixedTarget, get_skycoord
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable, observability_table,
-                           time_grid_from_range, SunSeparationConstraint,
+                           time_grid_from_range,
+                           GalacticLatitudeConstraint,
+                           SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable,
                            max_best_rescale, min_best_rescale, PhaseConstraint,
@@ -135,6 +137,28 @@ def test_compare_airmass_constraint_and_observer():
             AirmassConstraint(max_airmass), subaru, targets, time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
+
+def test_galactic_plane_separation():
+    time = Time('2003-04-05 06:07:08')
+    apo = Observer.at_site("APO")
+    one_deg_away = SkyCoord(0*u.deg, 1*u.deg, frame=Galactic)
+    five_deg_away = SkyCoord(0*u.deg, 5*u.deg, frame=Galactic)
+    twenty_deg_away = SkyCoord(0*u.deg, 20*u.deg, frame=Galactic)
+
+    constraint = GalacticLatitudeConstraint(min=2*u.deg, max=10*u.deg)
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
+    assert np.all(is_constraint_met == [False, True, False])
+
+    constraint = GalacticLatitudeConstraint(max=10*u.deg)
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
+    assert np.all(is_constraint_met == [True, True, False])
+
+    constraint = GalacticLatitudeConstraint(min=2*u.deg)
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
+    assert np.all(is_constraint_met == [False, True, True])
 
 # in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
