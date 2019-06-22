@@ -9,24 +9,16 @@ and then after that do things specific to astroplan.  But we also want astropy
 functionality for any functions we have *not* overriden, so that's why the
 ``import *`` happens at the top.
 """
-from astropy.tests.pytest_plugins import (TESTED_VERSIONS,
-                                          PYTEST_HEADER_MODULES,
-                                          enable_deprecations_as_exceptions)
+from astropy.tests.plugins.display import (TESTED_VERSIONS,
+                                           PYTEST_HEADER_MODULES)
+
+from astropy.tests.helper import enable_deprecations_as_exceptions
 
 # We do this to pick up the test header report even when using LTS astropy
 try:
     from astropy.tests.pytest_plugins import pytest_report_header
 except ImportError:
     pass
-
-
-# also save a copy of the astropy hooks so we can use them below when
-# overriding
-from astropy.tests import pytest_plugins as astropy_pytest_plugins
-
-import warnings
-from .utils import _mock_remote_data
-from .exceptions import AstroplanWarning
 
 import os
 
@@ -55,19 +47,3 @@ try:
     del PYTEST_HEADER_MODULES['h5py']
 except KeyError:
     pass
-
-
-def pytest_configure(config):
-    if hasattr(astropy_pytest_plugins, 'pytest_configure'):
-        # sure ought to be true right now, but always possible it will change in
-        # future versions of astropy
-        astropy_pytest_plugins.pytest_configure(config)
-
-    # make sure astroplan warnings always appear so we can test when they show
-    # up
-    warnings.simplefilter('always', category=AstroplanWarning)
-
-    # Activate remote data mocking if the `--remote-data` option isn't used:
-    if (not config.getoption('remote_data') or
-            config.getvalue('remote_data') == 'none'):
-        _mock_remote_data()
