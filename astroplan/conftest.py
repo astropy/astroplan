@@ -20,15 +20,6 @@ try:
 except ImportError:
     pass
 
-
-# also save a copy of the astropy hooks so we can use them below when
-# overriding
-from astropy.tests import pytest_plugins as astropy_pytest_plugins
-
-import warnings
-from .utils import _mock_remote_data
-from .exceptions import AstroplanWarning
-
 import os
 
 # This is to figure out the affiliated package version, rather than
@@ -56,19 +47,3 @@ try:
     del PYTEST_HEADER_MODULES['h5py']
 except KeyError:
     pass
-
-
-def pytest_configure(config):
-    if hasattr(astropy_pytest_plugins, 'pytest_configure'):
-        # sure ought to be true right now, but always possible it will change in
-        # future versions of astropy
-        astropy_pytest_plugins.pytest_configure(config)
-
-    # make sure astroplan warnings always appear so we can test when they show
-    # up
-    warnings.simplefilter('always', category=AstroplanWarning)
-
-    # Activate remote data mocking if the `--remote-data` option isn't used:
-    if (not config.getoption('remote_data') or
-            config.getvalue('remote_data') == 'none'):
-        _mock_remote_data()

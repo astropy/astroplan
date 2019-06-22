@@ -81,10 +81,10 @@ matrix:
         # Now try with all optional dependencies on 2.7 and an appropriate 3.x
         # build (with latest numpy). We also note the code coverage on Python
         # 2.7.
-        - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
-               CONDA_DEPENDENCIES='pytz matplotlib'
-               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
+#        - os: linux
+#          env: PYTHON_VERSION=2.7 SETUP_CMD='test --remote-data -V --coverage'
+#               CONDA_DEPENDENCIES='pytz matplotlib'
+#               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
         - os: linux
           stage: Initial tests
           env: SETUP_CMD='test --remote-data -V'
