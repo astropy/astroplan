@@ -1,6 +1,9 @@
 0.6 (unreleased)
 ----------------
 
+- Add ``GalacticLatitudeConstraint`` to constrain the galactic latitudes of
+  targets. This can be useful for planning surveys for which crowding due to
+  Galactic point sources is an issue. [#413]
 
 0.5 (2019-07-08)
 ----------------
