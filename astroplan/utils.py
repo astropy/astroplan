@@ -3,6 +3,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 # Standard library
+import urllib.error
 import warnings
 
 # Third-party
@@ -63,20 +64,21 @@ def IERS_A_in_cache():
     """
     Check if the IERS Bulletin A table is locally cached.
     """
-    url_key = iers.IERS_A_URL
-    # The below code which accesses ``urlmapfn`` is stolen from
-    # astropy.utils.data.download_file()
-    try:
-        dldir, urlmapfn = _get_download_cache_locs()
-    except (IOError, OSError) as e:
-        msg = 'Remote data cache could not be accessed due to '
-        estr = '' if len(e.args) < 1 else (': ' + str(e))
-        warnings.warn(CacheMissingWarning(msg + e.__class__.__name__ + estr))
-        return False
-    with _open_shelve(urlmapfn, True) as url2hash:
-        # TODO: try to figure out how to test this in the unicode case
-        if str(url_key) in url2hash:
-            return True
+    urls = (iers.conf.iers_auto_url, iers.conf.iers_auto_url_mirror)
+    for url_key in urls:
+        # The below code which accesses ``urlmapfn`` is stolen from
+        # astropy.utils.data.download_file()
+        try:
+            dldir, urlmapfn = _get_download_cache_locs()
+        except (IOError, OSError) as e:
+            msg = 'Remote data cache could not be accessed due to '
+            estr = '' if len(e.args) < 1 else (': ' + str(e))
+            warnings.warn(CacheMissingWarning(msg + e.__class__.__name__ + estr))
+        else:
+            with _open_shelve(urlmapfn, True) as url2hash:
+                # TODO: try to figure out how to test this in the unicode case
+                if str(url_key) in url2hash:
+                    return True
     return False
 
 
@@ -119,11 +121,20 @@ def download_IERS_A(show_progress=True):
     show_progress : bool
         `True` shows a progress bar during the download.
     """
-    if IERS_A_in_cache():
-        clear_download_cache(iers.IERS_A_URL)
+    urls = (iers.conf.iers_auto_url, iers.conf.iers_auto_url_mirror)
 
-    local_iers_a_path = download_file(iers.IERS_A_URL, cache=True,
-                                      show_progress=show_progress)
+    if IERS_A_in_cache():
+        for url in urls:
+            clear_download_cache(url)
+
+    for i, url in enumerate(urls):
+        try:
+            local_iers_a_path = download_file(url, cache=True,
+                                              show_progress=show_progress)
+        except urllib.error.URLError:
+            if i == len(urls) - 1:
+                raise
+
     # Undo monkey patch set up by get_IERS_A_or_workaround
     iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
     Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
