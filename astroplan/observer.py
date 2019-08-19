@@ -9,7 +9,7 @@ import warnings
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_moon, Angle, Longitude)
-from astropy.extern.six import string_types
+from six import string_types
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
