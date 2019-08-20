@@ -75,6 +75,7 @@ matrix:
 
         # Do a PEP8 test with pycodestyle
         - os: linux
+          stage: Initial tests
           env: MAIN_CMD='flake8 astroplan --count --max-line-length=100' SETUP_CMD=''
 
     allow_failures:
