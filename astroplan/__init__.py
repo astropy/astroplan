@@ -28,5 +28,8 @@ if not _ASTROPY_SETUP_:
     from .constraints import *
     from .scheduling import *
     from .periodic import *
+    from .telescope import *
+    from .exptime import *
+    from .skycalc import *
 
     get_IERS_A_or_workaround()

@@ -24,8 +24,9 @@ Features:
   observatories anywhere on Earth
 * Built-in plotting convenience functions for standard observation planning
   plots (airmass, parallactic angle, sky maps).
-* Determining observability of sets of targets given an arbitrary set of
+* Determine observability of sets of targets given an arbitrary set of
   constraints (i.e., altitude, airmass, moon separation/illumination, etc.).
+* Calculate the exposure time needed to obtain a given signal to noise ratio
 * `Astropy`_ powered!
 
 Links
@@ -71,3 +72,4 @@ Contributors
 * Erik Tollerud
 * Brigitta Sipocz
 * Karl Vyhmeister
+* Tiffany Jansen
