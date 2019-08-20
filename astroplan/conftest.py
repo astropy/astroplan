@@ -16,7 +16,7 @@ from astropy.tests.helper import enable_deprecations_as_exceptions
 
 # We do this to pick up the test header report even when using LTS astropy
 try:
-    from astropy.tests.pytest_plugins import pytest_report_header
+    from astropy.tests.pytest_plugins import pytest_report_header  # noqa
 except ImportError:
     pass
 

@@ -270,7 +270,7 @@ def test_parallactic_angle():
 
 
 def print_pyephem_parallactic_angle():
-    lat = 19.826218*u.deg
+    # lat = 19.826218*u.deg
     lon = -155.471999*u.deg
     time = Time('2015-01-01 00:00:00')
     LST = time.sidereal_time('mean', longitude=lon)
@@ -779,7 +779,6 @@ def test_solar_transit_convenience_methods():
     pressure = 0 * u.bar
     location = EarthLocation.from_geodetic(lon, lat, elevation)
     time = Time('2000-01-01 12:00:00')
-    from astropy.coordinates import get_sun
     obs = Observer(location=location, pressure=pressure)
 
     # Compute next/previous noon/midnight using generic calc_transit methods
@@ -1234,7 +1233,7 @@ def test_tonight():
 
     post_civil_sunset = Time('2016-08-08 05:00:00')
     during_twilight = obs.tonight(time=post_civil_sunset, horizon=horizon)
-    during_twilight_wo_horizon = obs.tonight(time=post_civil_sunset)
+    during_twilight_wo_horizon = obs.tonight(time=post_civil_sunset)  # noqa
 
     # Get correct astro sunset if checking after civil sunset
     assert (abs(astro_sunset.datetime - during_twilight[0].datetime) <
@@ -1279,7 +1278,7 @@ def test_moon_rise_set():
     lat = '42:00:00'
     lon = '-70:00:00'
     elevation = 0.0 * u.m
-    pressure = 0 * u.bar
+    # pressure = 0 * u.bar
     location = EarthLocation.from_geodetic(lon, lat, elevation)
 
     obs = Observer(location=location)
