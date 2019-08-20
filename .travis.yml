@@ -46,8 +46,6 @@ matrix:
     include:
 
         - stage: Initial tests
-          env: PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
-        - stage: Initial tests
           env: SETUP_CMD='egg_info'
 
         # Run one of the docs build during the initial tests
