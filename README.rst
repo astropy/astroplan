@@ -27,10 +27,6 @@ Status shields
     :target: https://travis-ci.org/astropy/astroplan
     :alt: Travis Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/pff1o3vx446pav83/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/Astropy/astroplan/branch/master
-    :alt: Appveyor Status
-
 .. image:: https://img.shields.io/coveralls/astropy/astroplan.svg
     :target: https://coveralls.io/r/astropy/astroplan
     :alt: Code Coverage

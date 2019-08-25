@@ -55,8 +55,8 @@ def test_at_night_basic():
 
 def test_observability_table():
     subaru = Observer.at_site("Subaru")
-    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
-                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])]  # 1 hr
+    # time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
+    #                Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])]  # 1 hr
     targets = [vega, rigel, polaris]
 
     time_range = Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06'])
