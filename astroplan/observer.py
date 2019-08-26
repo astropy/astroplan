@@ -1,7 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from six import string_types
 
 # Standard library
 import datetime
@@ -10,6 +9,7 @@ import warnings
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_moon, Angle, Longitude)
+from six import string_types
 import astropy.units as u
 from astropy.time import Time
 import numpy as np
@@ -18,7 +18,7 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
-from .target import get_skycoord, SunFlag, MoonFlag
+from .target import get_skycoord, SpecialObjectFlag, SunFlag, MoonFlag
 
 
 __all__ = ["Observer", "MAGIC_TIME"]
