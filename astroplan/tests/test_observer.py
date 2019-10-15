@@ -796,7 +796,6 @@ def test_solar_transit_convenience_methods(threshold_minutes, trig_approx):
     pressure = 0 * u.bar
     location = EarthLocation.from_geodetic(lon, lat, elevation)
     time = Time('2000-01-01 03:00:00')
-    from astropy.coordinates import get_sun
     obs = Observer(location=location, pressure=pressure,
                    trig_approx=trig_approx)
 
@@ -852,6 +851,7 @@ def print_pyephem_solar_transit_noon():
     print(list(map(pyephem_time_to_datetime_str,
                    [next_transit, next_antitransit,
                     prev_transit, prev_antitransit])))
+
 
 @pytest.mark.parametrize(("threshold_minutes", "trig_approx"),
                          ([8, False],
@@ -956,6 +956,7 @@ def test_target_is_up():
 
     assert all(north_pole.target_is_up(time, polaris_binary))
     assert not any(south_pole.target_is_up(time, polaris_binary))
+
 
 @pytest.mark.parametrize(("threshold_minutes", "trig_approx"),
                          ([8, False],

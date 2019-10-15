@@ -18,7 +18,7 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
-from .target import get_skycoord, SpecialObjectFlag, SunFlag, MoonFlag
+from .target import get_skycoord, SunFlag, MoonFlag
 
 
 __all__ = ["Observer", "MAGIC_TIME"]
@@ -841,7 +841,6 @@ class Observer(object):
             altaz = self.altaz(times, target,
                                grid_times_targets=grid_times_targets)
             altitudes = altaz.alt
-
 
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
