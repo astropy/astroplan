@@ -47,7 +47,7 @@ LONG_DESCRIPTION = package.__doc__
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = '0.4.dev'
+VERSION = '0.6dev'
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION
@@ -102,11 +102,13 @@ setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
-      install_requires=['numpy>=1.10', 'astropy>=1.3', 'pytz'],
+      install_requires=['numpy>=1.10', 'astropy>=1.3', 'pytz', 'six'],
       extras_require=dict(
           plotting=['matplotlib>=1.4'],
-          docs=['sphinx_rtd_theme']
+          docs=['sphinx_rtd_theme'],
+          test=['pytest-astropy'],
       ),
+      tests_require=['pytest-astropy'],
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,

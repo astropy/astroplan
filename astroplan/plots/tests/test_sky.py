@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 import pytest
 
 try:
-    import matplotlib
+    import matplotlib  # noqa
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False

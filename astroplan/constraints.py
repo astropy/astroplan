@@ -15,7 +15,7 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_body, get_sun, get_moon, SkyCoord
+from astropy.coordinates import get_body, get_sun, get_moon, Galactic, SkyCoord
 from astropy import table
 
 import numpy as np
@@ -28,12 +28,12 @@ from .target import get_skycoord
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
-           "SunSeparationConstraint", "MoonSeparationConstraint",
-           "MoonIlluminationConstraint", "LocalTimeConstraint",
-           "PrimaryEclipseConstraint", "SecondaryEclipseConstraint",
-           "Constraint", "TimeConstraint", "observability_table",
-           "months_observable", "max_best_rescale", "min_best_rescale",
-           "PhaseConstraint", "is_event_observable"]
+           "GalacticLatitudeConstraint", "SunSeparationConstraint",
+           "MoonSeparationConstraint", "MoonIlluminationConstraint",
+           "LocalTimeConstraint", "PrimaryEclipseConstraint",
+           "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
+           "observability_table", "months_observable", "max_best_rescale",
+           "min_best_rescale", "PhaseConstraint", "is_event_observable"]
 
 
 def _make_cache_key(times, targets):
@@ -60,8 +60,7 @@ def _make_cache_key(times, targets):
     # make a tuple from times
     try:
         timekey = tuple(times.jd) + times.shape
-    except:
-        # must be scalar
+    except BaseException:        # must be scalar
         timekey = (times.jd,)
     # make hashable thing from targets coords
     try:
@@ -73,7 +72,7 @@ def _make_cache_key(times, targets):
         else:
             # assume targets is a string.
             targkey = (targets,)
-    except:
+    except BaseException:
         targkey = (targets.frame.data.lon,)
     return timekey + targkey
 
@@ -326,6 +325,7 @@ class AltitudeConstraint(Constraint):
         limits and False for outside).  If False, the constraint returns a
         float on [0, 1], where 0 is the min altitude and 1 is the max.
     """
+
     def __init__(self, min=None, max=None, boolean_constraint=True):
         if min is None:
             self.min = -90*u.deg
@@ -377,6 +377,7 @@ class AirmassConstraint(AltitudeConstraint):
 
         AirmassConstraint(2)
     """
+
     def __init__(self, max=None, min=1, boolean_constraint=True):
         self.min = min
         self.max = max
@@ -398,8 +399,7 @@ class AirmassConstraint(AltitudeConstraint):
             return mask
         else:
             if self.max is None:
-                raise ValueError("Cannot have a float AirmassConstraint if max "
-                                 "is None")
+                raise ValueError("Cannot have a float AirmassConstraint if max is None.")
             else:
                 mx = self.max
 
@@ -482,10 +482,45 @@ class AtNightConstraint(Constraint):
         return mask
 
 
+class GalacticLatitudeConstraint(Constraint):
+    """
+    Constrain the distance between the Galactic plane and some targets.
+    """
+
+    def __init__(self, min=None, max=None):
+        """
+        Parameters
+        ----------
+        min : `~astropy.units.Quantity` or `None` (optional)
+            Minimum acceptable Galactic latitude of target (inclusive).
+            `None` indicates no limit.
+        max : `~astropy.units.Quantity` or `None` (optional)
+            Minimum acceptable Galactic latitude of target (inclusive).
+            `None` indicates no limit.
+        """
+        self.min = min
+        self.max = max
+
+    def compute_constraint(self, times, observer, targets):
+        separation = abs(targets.transform_to(Galactic).b)
+
+        if self.min is None and self.max is not None:
+            mask = self.max >= separation
+        elif self.max is None and self.min is not None:
+            mask = self.min <= separation
+        elif self.min is not None and self.max is not None:
+            mask = ((self.min <= separation) & (separation <= self.max))
+        else:
+            raise ValueError("No max and/or min specified in "
+                             "GalacticLatitudeConstraint.")
+        return mask
+
+
 class SunSeparationConstraint(Constraint):
     """
     Constrain the distance between the Sun and some targets.
     """
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -494,7 +529,7 @@ class SunSeparationConstraint(Constraint):
             Minimum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         max : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between Sun and target (inclusive).
+            Maximum acceptable separation between Sun and target (inclusive).
             `None` indicates no limit.
         """
         self.min = min
@@ -526,6 +561,7 @@ class MoonSeparationConstraint(Constraint):
     """
     Constrain the distance between the Earth's moon and some targets.
     """
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -576,6 +612,7 @@ class MoonIlluminationConstraint(Constraint):
 
     Constraint is also satisfied if the Moon has set.
     """
+
     def __init__(self, min=None, max=None, ephemeris=None):
         """
         Parameters
@@ -672,6 +709,7 @@ class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.
     """
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -734,11 +772,10 @@ class LocalTimeConstraint(Constraint):
             max_time = datetime.time(23, 59, 59)
 
         # If time limits occur on same day:
-        if self.min < self.max:
+        if min_time < max_time:
             try:
                 mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
-            except:
-                # use np.bool so shape queries don't cause problems
+            except BaseException:                # use np.bool so shape queries don't cause problems
                 mask = np.bool_(min_time <= times.datetime.time() <= max_time)
 
         # If time boundaries straddle midnight:
@@ -746,7 +783,7 @@ class LocalTimeConstraint(Constraint):
             try:
                 mask = np.array([(t.time() >= min_time) or
                                 (t.time() <= max_time) for t in times.datetime])
-            except:
+            except BaseException:
                 mask = np.bool_((times.datetime.time() >= min_time) or
                                 (times.datetime.time() <= max_time))
         return mask
@@ -760,6 +797,7 @@ class TimeConstraint(Constraint):
     all observing blocks are valid over the time limits used in calls
     to `is_observable` or `is_always_observable`.
     """
+
     def __init__(self, min=None, max=None):
         """
         Parameters
@@ -812,6 +850,7 @@ class PrimaryEclipseConstraint(Constraint):
     """
     Constrain observations to times during primary eclipse.
     """
+
     def __init__(self, eclipsing_system):
         """
         Parameters
@@ -830,6 +869,7 @@ class SecondaryEclipseConstraint(Constraint):
     """
     Constrain observations to times during secondary eclipse.
     """
+
     def __init__(self, eclipsing_system):
         """
         Parameters
@@ -849,6 +889,7 @@ class PhaseConstraint(Constraint):
     Constrain observations to times in some range of phases for a periodic event
     (e.g.~transiting exoplanets, eclipsing binaries).
     """
+
     def __init__(self, periodic_event, min=None, max=None):
         """
         Parameters
@@ -1126,7 +1167,8 @@ def observability_table(constraints, observer, targets, times=None,
     time_range : `~astropy.time.Time` (optional)
         Lower and upper bounds on time sequence, with spacing
         ``time_resolution``. This will be passed as the first argument into
-        `~astroplan.time_grid_from_range`.
+        `~astroplan.time_grid_from_range`. If a single (scalar) time, the table
+        will be for a 24 hour period centered on that time.
 
     time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
@@ -1140,13 +1182,20 @@ def observability_table(constraints, observer, targets, times=None,
         A Table containing the observability information for each of the
         ``targets``. The table contains four columns with information about the
         target and it's observability: ``'target name'``, ``'ever observable'``,
-        ``'always observable'``, and ``'fraction of time observable'``.  It also
-        contains metadata entries ``'times'`` (with an array of all the times),
-        ``'observer'`` (the `~astroplan.Observer` object), and ``'constraints'``
-        (containing the supplied ``constraints``).
+        ``'always observable'``, and ``'fraction of time observable'``. The
+        column ``'time observable'`` will also be present if the ``time_range``
+        is given as a scalar. It also contains metadata entries ``'times'``
+        (with an array of all the times), ``'observer'`` (the
+        `~astroplan.Observer` object), and ``'constraints'`` (containing the
+        supplied ``constraints``).
     """
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
+
+    is_24hr_table = False
+    if hasattr(time_range, 'isscalar') and time_range.isscalar:
+        time_range = (time_range-12*u.hour, time_range+12*u.hour)
+        is_24hr_table = True
 
     applied_constraints = [constraint(observer, targets, times=times,
                                       time_range=time_range,
@@ -1169,6 +1218,9 @@ def observability_table(constraints, observer, targets, times=None,
     if times is None and time_range is not None:
         times = time_grid_from_range(time_range,
                                      time_resolution=time_grid_resolution)
+
+    if is_24hr_table:
+        tab['time observable'] = tab['fraction of time observable'] * 24*u.hour
 
     tab.meta['times'] = times.datetime
     tab.meta['observer'] = observer
@@ -1209,7 +1261,7 @@ def min_best_rescale(vals, min_val, max_val, less_than_min=1):
     >>> from astroplan.constraints import min_best_rescale
     >>> import numpy as np
     >>> airmasses = np.array([1, 1.5, 2, 3, 0])
-    >>> min_best_rescale(airmasses, 1, 2.25, less_than_min = 0)
+    >>> min_best_rescale(airmasses, 1, 2.25, less_than_min = 0)  # doctest: +FLOAT_CMP
     array([ 1. ,  0.6,  0.2,  0. , 0. ])
     """
     rescaled = (vals - max_val) / (min_val - max_val)
@@ -1254,7 +1306,7 @@ def max_best_rescale(vals, min_val, max_val, greater_than_max=1):
     >>> from astroplan.constraints import max_best_rescale
     >>> import numpy as np
     >>> altitudes = np.array([20, 30, 40, 45, 55, 70])
-    >>> max_best_rescale(altitudes, 35, 60)
+    >>> max_best_rescale(altitudes, 35, 60)  # doctest: +FLOAT_CMP
     array([ 0. , 0. , 0.2, 0.4, 0.8, 1. ])
     """
     rescaled = (vals - min_val) / (max_val - min_val)

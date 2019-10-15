@@ -19,9 +19,14 @@ that section, and options therein, determine the next step taken:  If it
 contains an option called ``auto_use`` with a value of ``True``, it will
 automatically call the main function of this module called
 `use_astropy_helpers` (see that function's docstring for full details).
-Otherwise no further action is taken (however,
-``ah_bootstrap.use_astropy_helpers`` may be called manually from within the
-setup.py script).
+Otherwise no further action is taken and by default the system-installed version
+of astropy-helpers will be used (however, ``ah_bootstrap.use_astropy_helpers``
+may be called manually from within the setup.py script).
+
+This behavior can also be controlled using the ``--auto-use`` and
+``--no-auto-use`` command-line flags. For clarity, an alias for
+``--no-auto-use`` is ``--use-system-astropy-helpers``, and we recommend using
+the latter if needed.
 
 Additional options in the ``[ah_boostrap]`` section of setup.cfg have the same
 names as the arguments to `use_astropy_helpers`, and can be used to configure
@@ -33,7 +38,6 @@ latest version of this module.
 
 import contextlib
 import errno
-import imp
 import io
 import locale
 import os
@@ -41,11 +45,22 @@ import re
 import subprocess as sp
 import sys
 
+from distutils import log
+from distutils.debug import DEBUG
+
+
 try:
     from ConfigParser import ConfigParser, RawConfigParser
 except ImportError:
     from configparser import ConfigParser, RawConfigParser
 
+import pkg_resources
+
+from setuptools import Distribution
+from setuptools.package_index import PackageIndex
+
+# This is the minimum Python version required for astropy-helpers
+__minimum_python_version__ = (2, 7)
 
 if sys.version_info[0] < 3:
     _str_types = (str, unicode)
@@ -56,40 +71,103 @@ else:
     _text_type = str
     PY3 = True
 
+# TODO: Maybe enable checking for a specific version of astropy_helpers?
+DIST_NAME = 'astropy-helpers'
+PACKAGE_NAME = 'astropy_helpers'
+
+if PY3:
+    UPPER_VERSION_EXCLUSIVE = None
+else:
+    UPPER_VERSION_EXCLUSIVE = '3'
+
+# Defaults for other options
+DOWNLOAD_IF_NEEDED = True
+INDEX_URL = 'https://pypi.python.org/simple'
+USE_GIT = True
+OFFLINE = False
+AUTO_UPGRADE = True
+
+# A list of all the configuration options and their required types
+CFG_OPTIONS = [
+    ('auto_use', bool), ('path', str), ('download_if_needed', bool),
+    ('index_url', str), ('use_git', bool), ('offline', bool),
+    ('auto_upgrade', bool)
+]
+
+# Start off by parsing the setup.cfg file
+
+SETUP_CFG = ConfigParser()
+
+if os.path.exists('setup.cfg'):
+
+    try:
+        SETUP_CFG.read('setup.cfg')
+    except Exception as e:
+        if DEBUG:
+            raise
+
+        log.error(
+            "Error reading setup.cfg: {0!r}\n{1} will not be "
+            "automatically bootstrapped and package installation may fail."
+            "\n{2}".format(e, PACKAGE_NAME, _err_help_msg))
+
+# We used package_name in the package template for a while instead of name
+if SETUP_CFG.has_option('metadata', 'name'):
+    parent_package = SETUP_CFG.get('metadata', 'name')
+elif SETUP_CFG.has_option('metadata', 'package_name'):
+    parent_package = SETUP_CFG.get('metadata', 'package_name')
+else:
+    parent_package = None
+
+if SETUP_CFG.has_option('options', 'python_requires'):
+
+    python_requires = SETUP_CFG.get('options', 'python_requires')
+
+    # The python_requires key has a syntax that can be parsed by SpecifierSet
+    # in the packaging package. However, we don't want to have to depend on that
+    # package, so instead we can use setuptools (which bundles packaging). We
+    # have to add 'python' to parse it with Requirement.
+
+    from pkg_resources import Requirement
+    req = Requirement.parse('python' + python_requires)
+
+    # We want the Python version as a string, which we can get from the platform module
+    import platform
+    # strip off trailing '+' incase this is a dev install of python
+    python_version = platform.python_version().strip('+')
+    # allow pre-releases to count as 'new enough'
+    if not req.specifier.contains(python_version, True):
+        if parent_package is None:
+            print("ERROR: Python {} is required by this package".format(req.specifier))
+        else:
+            print("ERROR: Python {} is required by {}".format(req.specifier, parent_package))
+        sys.exit(1)
+
+if sys.version_info < __minimum_python_version__:
+
+    if parent_package is None:
+        print("ERROR: Python {} or later is required by astropy-helpers".format(
+            __minimum_python_version__))
+    else:
+        print("ERROR: Python {} or later is required by astropy-helpers for {}".format(
+            __minimum_python_version__, parent_package))
+
+    sys.exit(1)
+
 
 # What follows are several import statements meant to deal with install-time
 # issues with either missing or misbehaving pacakges (including making sure
 # setuptools itself is installed):
 
+# Check that setuptools 1.0 or later is present
+from distutils.version import LooseVersion
 
-# Some pre-setuptools checks to ensure that either distribute or setuptools >=
-# 0.7 is used (over pre-distribute setuptools) if it is available on the path;
-# otherwise the latest setuptools will be downloaded and bootstrapped with
-# ``ez_setup.py``.  This used to be included in a separate file called
-# setuptools_bootstrap.py; but it was combined into ah_bootstrap.py
 try:
-    import pkg_resources
-    _setuptools_req = pkg_resources.Requirement.parse('setuptools>=0.7')
-    # This may raise a DistributionNotFound in which case no version of
-    # setuptools or distribute is properly installed
-    _setuptools = pkg_resources.get_distribution('setuptools')
-    if _setuptools not in _setuptools_req:
-        # Older version of setuptools; check if we have distribute; again if
-        # this results in DistributionNotFound we want to give up
-        _distribute = pkg_resources.get_distribution('distribute')
-        if _setuptools != _distribute:
-            # It's possible on some pathological systems to have an old version
-            # of setuptools and distribute on sys.path simultaneously; make
-            # sure distribute is the one that's used
-            sys.path.insert(1, _distribute.location)
-            _distribute.activate()
-            imp.reload(pkg_resources)
-except:
-    # There are several types of exceptions that can occur here; if all else
-    # fails bootstrap and use the bootstrapped version
-    from ez_setup import use_setuptools
-    use_setuptools()
-
+    import setuptools
+    assert LooseVersion(setuptools.__version__) >= LooseVersion('1.0')
+except (ImportError, AssertionError):
+    print("ERROR: setuptools 1.0 or later is required by astropy-helpers")
+    sys.exit(1)
 
 # typing as a dependency for 1.6.1+ Sphinx causes issues when imported after
 # initializing submodule with ah_boostrap.py
@@ -130,36 +208,6 @@ except:
 
 
 # End compatibility imports...
-
-
-# In case it didn't successfully import before the ez_setup checks
-import pkg_resources
-
-from setuptools import Distribution
-from setuptools.package_index import PackageIndex
-from setuptools.sandbox import run_setup
-
-from distutils import log
-from distutils.debug import DEBUG
-
-
-# TODO: Maybe enable checking for a specific version of astropy_helpers?
-DIST_NAME = 'astropy-helpers'
-PACKAGE_NAME = 'astropy_helpers'
-
-# Defaults for other options
-DOWNLOAD_IF_NEEDED = True
-INDEX_URL = 'https://pypi.python.org/simple'
-USE_GIT = True
-OFFLINE = False
-AUTO_UPGRADE = True
-
-# A list of all the configuration options and their required types
-CFG_OPTIONS = [
-    ('auto_use', bool), ('path', str), ('download_if_needed', bool),
-    ('index_url', str), ('use_git', bool), ('offline', bool),
-    ('auto_upgrade', bool)
-]
 
 
 class _Bootstrapper(object):
@@ -231,36 +279,20 @@ class _Bootstrapper(object):
 
     @classmethod
     def parse_config(cls):
-        if not os.path.exists('setup.cfg'):
-            return {}
 
-        cfg = ConfigParser()
-
-        try:
-            cfg.read('setup.cfg')
-        except Exception as e:
-            if DEBUG:
-                raise
-
-            log.error(
-                "Error reading setup.cfg: {0!r}\n{1} will not be "
-                "automatically bootstrapped and package installation may fail."
-                "\n{2}".format(e, PACKAGE_NAME, _err_help_msg))
-            return {}
-
-        if not cfg.has_section('ah_bootstrap'):
+        if not SETUP_CFG.has_section('ah_bootstrap'):
             return {}
 
         config = {}
 
         for option, type_ in CFG_OPTIONS:
-            if not cfg.has_option('ah_bootstrap', option):
+            if not SETUP_CFG.has_option('ah_bootstrap', option):
                 continue
 
             if type_ is bool:
-                value = cfg.getboolean('ah_bootstrap', option)
+                value = SETUP_CFG.getboolean('ah_bootstrap', option)
             else:
-                value = cfg.get('ah_bootstrap', option)
+                value = SETUP_CFG.get('ah_bootstrap', option)
 
             config[option] = value
 
@@ -286,6 +318,18 @@ class _Bootstrapper(object):
         if '--offline' in argv:
             config['offline'] = True
             argv.remove('--offline')
+
+        if '--auto-use' in argv:
+            config['auto_use'] = True
+            argv.remove('--auto-use')
+
+        if '--no-auto-use' in argv:
+            config['auto_use'] = False
+            argv.remove('--no-auto-use')
+
+        if '--use-system-astropy-helpers' in argv:
+            config['auto_use'] = False
+            argv.remove('--use-system-astropy-helpers')
 
         return config
 
@@ -464,9 +508,10 @@ class _Bootstrapper(object):
             # setup.py exists we can generate it
             setup_py = os.path.join(path, 'setup.py')
             if os.path.isfile(setup_py):
-                with _silence():
-                    run_setup(os.path.join(path, 'setup.py'),
-                              ['egg_info'])
+                # We use subprocess instead of run_setup from setuptools to
+                # avoid segmentation faults - see the following for more details:
+                # https://github.com/cython/cython/issues/2104
+                sp.check_output([sys.executable, 'setup.py', 'egg_info'], cwd=path)
 
                 for dist in pkg_resources.find_distributions(path, True):
                     # There should be only one...
@@ -501,16 +546,32 @@ class _Bootstrapper(object):
         if version:
             req = '{0}=={1}'.format(DIST_NAME, version)
         else:
-            req = DIST_NAME
+            if UPPER_VERSION_EXCLUSIVE is None:
+                req = DIST_NAME
+            else:
+                req = '{0}<{1}'.format(DIST_NAME, UPPER_VERSION_EXCLUSIVE)
 
         attrs = {'setup_requires': [req]}
 
+        # NOTE: we need to parse the config file (e.g. setup.cfg) to make sure
+        # it honours the options set in the [easy_install] section, and we need
+        # to explicitly fetch the requirement eggs as setup_requires does not
+        # get honored in recent versions of setuptools:
+        # https://github.com/pypa/setuptools/issues/1273
+
         try:
-            if DEBUG:
-                _Distribution(attrs=attrs)
-            else:
-                with _silence():
-                    _Distribution(attrs=attrs)
+
+            context = _verbose if DEBUG else _silence
+            with context():
+                dist = _Distribution(attrs=attrs)
+                try:
+                    dist.parse_config_files(ignore_option_errors=True)
+                    dist.fetch_build_eggs(req)
+                except TypeError:
+                    # On older versions of setuptools, ignore_option_errors
+                    # doesn't exist, and the above two lines are not needed
+                    # so we can just continue
+                    pass
 
             # If the setup_requires succeeded it will have added the new dist to
             # the main working_set
@@ -620,8 +681,8 @@ class _Bootstrapper(object):
         # only if the submodule is initialized.  We ignore this information for
         # now
         _git_submodule_status_re = re.compile(
-            '^(?P<status>[+-U ])(?P<commit>[0-9a-f]{40}) '
-            '(?P<submodule>\S+)( .*)?$')
+            r'^(?P<status>[+-U ])(?P<commit>[0-9a-f]{40}) '
+            r'(?P<submodule>\S+)( .*)?$')
 
         # The stdout should only contain one line--the status of the
         # requested submodule
@@ -845,6 +906,10 @@ class _DummyFile(object):
     def flush(self):
         pass
 
+
+@contextlib.contextmanager
+def _verbose():
+    yield
 
 @contextlib.contextmanager
 def _silence():

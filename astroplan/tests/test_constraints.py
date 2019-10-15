@@ -5,7 +5,7 @@ import datetime as dt
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, get_sun, get_moon
+from astropy.coordinates import Galactic, SkyCoord, get_sun, get_moon
 from astropy.utils import minversion
 import pytest
 
@@ -13,7 +13,9 @@ from ..observer import Observer
 from ..target import FixedTarget, get_skycoord
 from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstraint,
                            is_observable, is_always_observable, observability_table,
-                           time_grid_from_range, SunSeparationConstraint,
+                           time_grid_from_range,
+                           GalacticLatitudeConstraint,
+                           SunSeparationConstraint,
                            MoonSeparationConstraint, MoonIlluminationConstraint,
                            TimeConstraint, LocalTimeConstraint, months_observable,
                            max_best_rescale, min_best_rescale, PhaseConstraint,
@@ -53,8 +55,8 @@ def test_at_night_basic():
 
 def test_observability_table():
     subaru = Observer.at_site("Subaru")
-    time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
-                   Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])]  # 1 hr
+    # time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
+    #                Time(['2007-08-09 10:11:12', '2007-08-09 11:11:12'])]  # 1 hr
     targets = [vega, rigel, polaris]
 
     time_range = Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06'])
@@ -83,6 +85,16 @@ def test_observability_table():
                                    time_range=time_range)
     np.testing.assert_allclose(obstab['always observable'], all_obs)
 
+    # try the scalar time_range case
+    ttab = observability_table(constraints, subaru, targets,
+                               time_range=(time_range[0] - 12*u.hour,
+                                           time_range[0] + 12*u.hour))
+    stab = observability_table(constraints, subaru, targets,
+                               time_range=time_range[0])
+
+    assert all(ttab['fraction of time observable'] == stab['fraction of time observable'])
+    assert 'time observable' in stab.colnames
+
 
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
@@ -100,10 +112,8 @@ def test_compare_altitude_constraint_and_observer():
                                 for target in targets]
         # Check if each target meets altitude constraints using
         # is_always_observable and AltitudeConstraint
-        always_from_constraint = is_always_observable(AltitudeConstraint(min_alt,
-                                                                         max_alt),
-                                                      subaru, targets,
-                                                      time_range=time_range)
+        always_from_constraint = is_always_observable(AltitudeConstraint(
+            min_alt, max_alt), subaru, targets, time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
 
@@ -123,11 +133,32 @@ def test_compare_airmass_constraint_and_observer():
                                 for target in targets]
         # Check if each target meets altitude constraints using
         # is_always_observable and AirmassConstraint
-        always_from_constraint = is_always_observable(AirmassConstraint(max_airmass),
-                                                      subaru, targets,
-                                                      time_range=time_range)
+        always_from_constraint = is_always_observable(
+            AirmassConstraint(max_airmass), subaru, targets, time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
 
+
+def test_galactic_plane_separation():
+    time = Time('2003-04-05 06:07:08')
+    apo = Observer.at_site("APO")
+    one_deg_away = SkyCoord(0*u.deg, 1*u.deg, frame=Galactic)
+    five_deg_away = SkyCoord(0*u.deg, 5*u.deg, frame=Galactic)
+    twenty_deg_away = SkyCoord(0*u.deg, 20*u.deg, frame=Galactic)
+
+    constraint = GalacticLatitudeConstraint(min=2*u.deg, max=10*u.deg)
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
+    assert np.all(is_constraint_met == [False, True, False])
+
+    constraint = GalacticLatitudeConstraint(max=10*u.deg)
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
+    assert np.all(is_constraint_met == [True, True, False])
+
+    constraint = GalacticLatitudeConstraint(min=2*u.deg)
+    is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
+                                         twenty_deg_away], times=time)
+    assert np.all(is_constraint_met == [False, True, True])
 
 # in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
@@ -226,15 +257,15 @@ def test_local_time_constraint_utc():
     subaru = Observer.at_site("Subaru")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is np.bool_(True)
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == False
+    assert is_constraint_met is np.bool_(False)
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is np.bool_(True)
 
 
 def test_local_time_constraint_hawaii_tz():
@@ -243,15 +274,15 @@ def test_local_time_constraint_hawaii_tz():
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is np.bool_(True)
 
     constraint = LocalTimeConstraint(min=dt.time(0, 2), max=dt.time(4, 3))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == False
+    assert is_constraint_met is np.bool_(False)
 
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
-    assert is_constraint_met == True
+    assert is_constraint_met is np.bool_(True)
 
 
 def test_docs_example():
@@ -285,6 +316,7 @@ def test_docs_example():
         """
         Constraint the separation from Vega
         """
+
         def __init__(self, min=None, max=None):
             """
             min : `~astropy.units.Quantity` or `None` (optional)
@@ -294,8 +326,8 @@ def test_docs_example():
                 Minimum acceptable separation between Vega and target. `None`
                 indicates no limit.
             """
-            self.min = min if min else 0*u.deg
-            self.max = max if max else 180*u.deg
+            self.min = min if min is not None else 0*u.deg
+            self.max = max if max is not None else 180*u.deg
 
         def compute_constraint(self, times, observer, targets):
             vega = SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg)
@@ -360,6 +392,7 @@ def test_rescale_minmax():
     rescaled[3] = (min_best_rescale(a, 0, 1))[0]
     rescaled[4] = (max_best_rescale(a, 0, 1, greater_than_max=0))[0]
     assert all(np.array([0.8, 0.2, 1, 0, 0]) == rescaled)
+
 
 constraint_tests = [
     AltitudeConstraint(),
@@ -445,17 +478,17 @@ def test_event_observable():
     # http://var2.astro.cz/ETD/predict_detail.php?delka=254.1797222222222&submit=submit&sirka=32.780277777777776&STARNAME=HD209458&PLANET=b
     # There is some disagreement, as the ETD considers some transits which begin
     # before sunset or after sunrise to be observable.
-    cetd_answer = [[False, False, False,  True, False,  True, False,  True, False,
-                     True, False,  True, False, False, False, False, False, False,
-                    False, False, False, False,  True, False,  True, False, False,
+    cetd_answer = [[False, False, False, True, False, True, False, True, False,
+                    True, False, True, False, False, False, False, False, False,
+                    False, False, False, False, True, False, True, False, False,
                     False, False, False, False, False, False, False, False, False,
                     False, False, False, False, False, False, False, False, False,
                     False, False, False, False, False, False, False, False, False,
-                    False, False, False,  True, False, False, False, False, False,
+                    False, False, False, True, False, False, False, False, False,
                     False, False, False, False, False, False, False, False, False,
-                     True, False,  True, False, False, False, False, False, False,
-                    False, False, False, False, False, False,  True, False,  True,
-                    False,  True, False,  True, False,  True, False,  True, False,
+                    True, False, True, False, False, False, False, False, False,
+                    False, False, False, False, False, False, True, False, True,
+                    False, True, False, True, False, True, False, True, False,
                     False]]
 
     assert np.all(observable == np.array(cetd_answer))

@@ -30,12 +30,6 @@ Contents
 
     * :ref:`finder_image`
 
-.. warning::
-
-    All examples here assume you know how to and have already constructed
-    `astroplan.Observer` and `astroplan.FixedTarget` objects.  If this is not
-    the case, you may want to start with the :doc:`summer_triangle` tutorial.
-
 
 .. _plots_time_dependent:
 
@@ -45,13 +39,11 @@ Time Dependent Plots
 Although all `astroplan` plots are time-dependent in some way, we label those
 that have a time-based axis as "time-dependent".
 
-`astroplan` currently has two different types of "time-dependent" plots:
-
-* Airmass vs. Time
-* Parallactic Angle vs. Time
-
-These take, at minimum, `~astroplan.Observer`, `~astroplan.FixedTarget` and
-`~astropy.time.Time` objects as input.
+`astroplan` currently has a few different types of "time-dependent" plots,
+for example `~astroplan.plots.plot_airmass`, `~astroplan.plots.plot_altitude`
+and `~astroplan.plots.plot_parallactic`. These take, at minimum,
+`~astroplan.Observer`, `~astroplan.FixedTarget` and `~astropy.time.Time` objects
+as input.
 
 .. _plots_airmass:
 
@@ -126,7 +118,7 @@ time and issue the plotting command.
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -146,6 +138,80 @@ For example, these are acceptable *time* inputs::
     Time(['2000-06-15 23:30:00'])
 
     [Time('2000-06-15 23:30:00')]
+
+You can also add a second y-axis (on the right side) which shows the corresponding
+altitude of the targets:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_airmass
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Maunakea, Hawaii")
+
+    coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
+    target = FixedTarget(name='Sirius', coord=coordinates)
+
+    observe_time = Time('2000-06-15 23:30:00')
+
+    plot_airmass(target, observer, observe_time, altitude_yaxis=True)
+    plt.tight_layout()
+    plt.show()
+
+You can make altitude the primary y-axis rather than airmass by using
+`~astroplan.plots.plot_altitude`:
+
+.. plot::
+
+    import matplotlib.pyplot as plt
+    import astropy.units as u
+    from astropy.coordinates import EarthLocation, SkyCoord
+    from pytz import timezone
+    from astropy.time import Time
+
+    from astroplan import Observer
+    from astroplan import FixedTarget
+    from astroplan.plots import plot_altitude
+
+    longitude = '-155d28m48.900s'
+    latitude = '+19d49m42.600s'
+    elevation = 4163 * u.m
+    location = EarthLocation.from_geodetic(longitude, latitude, elevation)
+
+    observer = Observer(name='Subaru Telescope',
+                   location=location,
+                   pressure=0.615 * u.bar,
+                   relative_humidity=0.11,
+                   temperature=0 * u.deg_C,
+                   timezone=timezone('US/Hawaii'),
+                   description="Subaru Telescope on Maunakea, Hawaii")
+
+    coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
+    target = FixedTarget(name='Sirius', coord=coordinates)
+
+    observe_time = Time('2000-06-15 23:30:00')
+
+    plot_altitude(target, observer, observe_time, airmass_yaxis=True)
+    plt.tight_layout()
+    plt.show()
 
 .. _plots_time_window:
 
@@ -203,7 +269,7 @@ To center your window at some instance in time:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -260,7 +326,7 @@ If you know the start and end times of your observation run, you can use a
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -319,7 +385,7 @@ many targets on the plot as you wish::
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -392,7 +458,7 @@ The default line for time-dependent plots is solid and the default label
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
     target = FixedTarget(name='Sirius', coord=coordinates)
@@ -469,7 +535,7 @@ right side of the axis with the altitudes in degrees using the
     >>> from astroplan import FixedTarget, Observer
     >>> from astroplan.plots import plot_airmass
 
-    >>> time = Time.now()
+    >>> time = Time('2018-01-02 19:00')
     >>> target = FixedTarget.from_name('HD 189733')
     >>> apo = Observer.at_site('APO')
     >>> plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
@@ -482,7 +548,7 @@ right side of the axis with the altitudes in degrees using the
     from astropy.time import Time
     from astroplan import FixedTarget, Observer
 
-    time = Time.now()
+    time = Time('2018-01-02 19:00')
     target = FixedTarget.from_name('HD 189733')
     apo = Observer.at_site('APO')
     plot_airmass(target, apo, time, brightness_shading=True, altitude_yaxis=True)
@@ -513,15 +579,7 @@ following way:
 
     >>> plot_sky(target, observer, time)
 
-.. warning::
-
-    Note that the time input for `~astroplan.plots.plot_sky` has to either
-    be an array of `~astropy.time.Time` objects or has to be an
-    `~astropy.time.Time` object containing an array of times--in other
-    words, it **cannot** be scalar.  See the `Astropy`_ documentation for more
-    details.
-
-.. warning::
+.. note::
 
     `~astroplan.plots.plot_sky` currently produces polar plots in
     altitude/azimuth coordinates only.  Plots are centered on the observer's
@@ -564,7 +622,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
     >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     >>> plt.show()
 
-.. warning::
+.. note::
 
     Since `~astroplan.plots.plot_sky` uses `~matplotlib.pyplot.scatter`
     (which gives the same color to different plots made on the same set of
@@ -595,7 +653,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -677,7 +735,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
     altair = FixedTarget(name='Altair', coord=coordinates)
@@ -702,7 +760,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
 For more examples on how to populate time objects, see `~astropy.time.Time`
 documentation, or :ref:`plots_time_window`.
 
-.. warning::
+.. note::
 
     Note that in the case of an object being under the horizon (or having
     negative altitude) at any of the times in your *time* input,
@@ -782,7 +840,7 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -855,7 +913,7 @@ A positive offset is in the same direction as azimuth increase (see the
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -883,7 +941,7 @@ A positive offset is in the same direction as azimuth increase (see the
     plt.tight_layout()
     plt.show()
 
-.. warning::
+.. note::
 
     The *az_label_offset* option does not rotate the actual positions on the
     plot, but simply the theta grid labels (which are drawn regardless of
@@ -934,7 +992,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -962,7 +1020,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
     plt.tight_layout()
     plt.show()
 
-.. warning::
+.. note::
 
     Since grids are redrawn with every call to `~astroplan.plots.plot_sky`,
     you must set ``grid=False`` for every target in the same plot.
@@ -1063,7 +1121,7 @@ make multiple plots:
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
     polaris = FixedTarget(name='Polaris', coord=coordinates)
@@ -1147,4 +1205,3 @@ make a finder image centered on The Crab Nebula (M1):
 
 
 :ref:`Return to Top <plots>`
-

@@ -55,7 +55,7 @@ Or you can specify your own location parameters::
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
                    timezone=timezone('US/Hawaii'),
-                   description="Subaru Telescope on Mauna Kea, Hawaii")
+                   description="Subaru Telescope on Maunakea, Hawaii")
 
 `astroplan` makes heavy use of certain `Astropy`_ machinery, including the
 `~astropy.coordinates` objects and transformations and

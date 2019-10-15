@@ -31,15 +31,14 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     (e.g. ``Time(['2000-1-1 20:00:00', '2000-1-1 20:30:00'])``), target's
     position will be shown at each of these times.
 
-    For examples with plots, visit the astroplan Read the Docs
-    documentation [1]_.
+    For examples with plots, visit the documentation of :ref:`plots_sky_charts`.
 
     Parameters
     ----------
     target : `~astroplan.FixedTarget`
         The celestial body of interest.
 
-    observer: `~astroplan.Observer`
+    observer : `~astroplan.Observer`
         The person, telescope, observatory, etc. doing the observing.
 
     time : `~astropy.time.Time`
@@ -109,9 +108,6 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         makes it seem as if N/E/S/W are being decoupled from the definition
         of azimuth (North from az = 0 deg., East from az = 90 deg., etc.).
 
-    References
-    ----------
-    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#sky-charts
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
@@ -196,7 +192,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         '30' + degree_sign,
         '',
         '0' + degree_sign + ' Alt.',
-        ]
+    ]
 
     theta_labels = []
     for chunk in range(0, 7):
@@ -217,7 +213,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     # Set ticks and labels.
     ax.set_rgrids(range(1, 106, 15), r_labels, angle=-45)
-    ax.set_thetagrids(range(0, 360, 45), theta_labels, frac=1.2)
+    ax.set_thetagrids(range(0, 360, 45), theta_labels)
 
     # Below commands don't seem to work for setting ticks/labels.
     # ax.rgrids(range(1, 91, 15), r_labels, angle=-45)
@@ -227,6 +223,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     ax.figure.canvas.draw()
 
     return ax
+
 
 @u.quantity_input(delta=u.hour)
 def plot_sky_24hr(target, observer, time, delta=1*u.hour, ax=None,

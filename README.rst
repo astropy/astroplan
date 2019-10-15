@@ -13,6 +13,10 @@ Observation planning package for astronomers
 .. image:: http://img.shields.io/pypi/v/astroplan.svg?text=version
     :target: https://pypi.python.org/pypi/astroplan/
     :alt: Latest release
+    
+.. image:: http://img.shields.io/badge/arXiv-1709.03913-red.svg?style=flat
+    :target: https://arxiv.org/abs/1712.09631
+    :alt: arXiv paper
 
 Status shields
 ++++++++++++++
@@ -22,10 +26,6 @@ Status shields
 .. image:: http://img.shields.io/travis/astropy/astroplan.svg?branch=master
     :target: https://travis-ci.org/astropy/astroplan
     :alt: Travis Status
-
-.. image:: https://ci.appveyor.com/api/projects/status/pff1o3vx446pav83/branch/master?svg=true
-    :target: https://ci.appveyor.com/project/Astropy/astroplan/branch/master
-    :alt: Appveyor Status
 
 .. image:: https://img.shields.io/coveralls/astropy/astroplan.svg
     :target: https://coveralls.io/r/astropy/astroplan
@@ -38,4 +38,33 @@ Status shields
 .. image:: https://readthedocs.org/projects/astroplan/badge/?version=latest
     :target: http://astroplan.readthedocs.io/en/latest/
     :alt: Latest Documentation Status
+
+Attribution
++++++++++++
+
+If you use astroplan in your work, please cite `Morris et al. 2018 <http://adsabs.harvard.edu/abs/2018AJ....155..128M>`_: 
+
+.. code :: 
+
+    @ARTICLE{astroplan2018,
+       author = {{Morris}, B.~M. and {Tollerud}, E. and {Sip{\H o}cz}, B. and 
+        {Deil}, C. and {Douglas}, S.~T. and {Berlanga Medina}, J. and 
+        {Vyhmeister}, K. and {Smith}, T.~R. and {Littlefair}, S. and 
+        {Price-Whelan}, A.~M. and {Gee}, W.~T. and {Jeschke}, E.},
+        title = "{astroplan: An Open Source Observation Planning Package in Python}",
+      journal = {\aj},
+    archivePrefix = "arXiv",
+       eprint = {1712.09631},
+     primaryClass = "astro-ph.IM",
+     keywords = {methods: numerical, methods: observational },
+         year = 2018,
+        month = mar,
+       volume = 155,
+          eid = {128},
+        pages = {128},
+          doi = {10.3847/1538-3881/aaa47e},
+       adsurl = {http://adsabs.harvard.edu/abs/2018AJ....155..128M},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+    }
+
 

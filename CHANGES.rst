@@ -1,8 +1,29 @@
-0.4 (unreleased)
+0.6 (unreleased)
+----------------
+
+- Add ``GalacticLatitudeConstraint`` to constrain the galactic latitudes of
+  targets. This can be useful for planning surveys for which crowding due to
+  Galactic point sources is an issue. [#413]
+
+0.5 (2019-07-08)
+----------------
+
+- ``observability_table`` now accepts scalars as ``time_range`` arguments, and
+  gives ``'time observable'`` in this case in the resulting table. [#350]
+
+- Bug fixes [#414, #412, #407, #401]
+
+0.4 (2017-10-23)
 ----------------
 
 - Added new ``eclipsing`` module for eclipsing binaries and transiting
-  exoplanets
+  exoplanets [#315]
+
+- Fixes for compatibility with astropy Quantity object updates [#336]
+
+- Better PEP8 compatibility [#335]
+
+- Using travis build stages [#330]
 
 0.3 (2017-09-02)
 ----------------
