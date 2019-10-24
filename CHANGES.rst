@@ -15,6 +15,9 @@
   Galactic point sources is an issue. [#413]
 
 
+- Add `N` keyword argument to rise/set/transit functions which allows users to
+  trade off precision for speed. [#424]
+
 0.5 (2019-07-08)
 ----------------
 
