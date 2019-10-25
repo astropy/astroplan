@@ -30,6 +30,7 @@ env:
         - PIP_DEPENDENCIES='pytest-astropy'
         - SETUP_CMD='test -V'
         - CONDA_CHANNELS='astropy'
+        - SETUP_XVFB=True
 
 
 stages:
