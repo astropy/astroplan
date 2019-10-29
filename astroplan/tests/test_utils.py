@@ -5,11 +5,8 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import pytest
 
-from astropy import units as u
 from astropy.time import Time
-from astropy.tests.helper import remote_data
-from astropy.utils.data import clear_download_cache
-from astropy.utils import iers
+
 
 from ..utils import stride_array, time_grid_from_range
 
