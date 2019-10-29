@@ -5,6 +5,8 @@
   targets. This can be useful for planning surveys for which crowding due to
   Galactic point sources is an issue. [#413]
 
+- Fix for the broken IERS patch [#425]
+
 0.5 (2019-07-08)
 ----------------
 

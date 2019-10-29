@@ -29,6 +29,7 @@ env:
         - CONDA_DEPENDENCIES='pytz qt pyqt six'
         - PIP_DEPENDENCIES='pytest-astropy'
         - SETUP_CMD='test -V'
+        - CONDA_CHANNELS='astropy'
 
 stages:
    # Do the initial tests and don't proceed if they fail
@@ -88,16 +89,16 @@ install:
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda.sh
 
-    # This is needed to make matplotlib plot testing work
-    - if [[ $SETUP_CMD == test* && $TRAVIS_OS_NAME == 'linux' ]]; then
-          export DISPLAY=:99.0;
-          sh -e /etc/init.d/xvfb start;
-          export QT_API=pyqt;
-      fi
+#     This is needed to make matplotlib plot testing work
+#    - if [[ $TRAVIS_OS_NAME == 'linux' ]]; then
+#          export DISPLAY=:99.0;
+#          sh -e /etc/init.d/xvfb start;
+#          export QT_API=pyqt;
+#      fi
 
 script:
-    # To avoid the OldEarthOrientationDataWarning during docs build
-    - if [[ $SETUP_CMD == *build_docs* ]]; then python -c "from astroplan import download_IERS_A; download_IERS_A()";fi
+#     To avoid the OldEarthOrientationDataWarning during docs build
+#    - if [[ $SETUP_CMD == *build_docs* ]]; then python -c "from astroplan import download_IERS_A; download_IERS_A()";fi
     - $MAIN_CMD $SETUP_CMD
 
 after_success:
