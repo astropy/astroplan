@@ -32,11 +32,6 @@ def test_iers_download(monkeypatch, recwarn):
     # now make sure the state is what it should be given the above changes
     get_IERS_A_or_workaround()
 
-    # first make sure a future time gives a warning with IERS A missing
-    nowplusoneyear = Time.now() + 10*u.year
-    nowplusoneyear.ut1
-    recwarn.pop(OldEarthOrientationDataWarning)
-
     download_IERS_A()
 
     # now test that it actually works post-IERS A download:
