@@ -22,11 +22,11 @@ addons:
 env:
     global:
         # Set defaults to avoid repeating in most cases
-        - PYTHON_VERSION=3.6
+        - PYTHON_VERSION=3.7
         - NUMPY_VERSION=stable
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
-        - CONDA_DEPENDENCIES='pytz'
+        - CONDA_DEPENDENCIES='pytz qt pyqt six'
         - PIP_DEPENDENCIES='pytest-astropy'
         - SETUP_CMD='test -V'
         - CONDA_CHANNELS='astropy'
@@ -39,7 +39,6 @@ stages:
    - name: Cron and master-only tests
      if: type IN (push, cron)
 
-
 matrix:
 
     # Don't wait for allowed failures
@@ -48,44 +47,42 @@ matrix:
     include:
 
         - stage: Initial tests
-          env: PYTHON_VERSION=3.5 SETUP_CMD='egg_info'
-        - stage: Initial tests
           env: SETUP_CMD='egg_info'
 
         # Run one of the docs build during the initial tests
         - os: linux
           stage: Initial tests
           env: SETUP_CMD='build_docs -w'
-               CONDA_DEPENDENCIES='pytz matplotlib astroquery'
-               PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
+               CONDA_DEPENDENCIES='pytz matplotlib six'
+               PIP_DEPENDENCIES='pytest-mpl pytest-astropy astroquery'
 
         - os: linux
           env: PYTHON_VERSION=3.6
 
+        # This replaces Appveyor
+        - os: windows
+          env: CONDA_DEPENDENCIES='pytz matplotlib six'
+               PIP_DEPENDENCIES='pyephem pytest-mpl pytest-astropy'
+
         - os: linux
           stage: Initial tests
           env: SETUP_CMD='test --remote-data -V'
-               CONDA_DEPENDENCIES='pytz matplotlib'
+               CONDA_DEPENDENCIES='pytz matplotlib six'
                PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
-
-        # Try pre-release version of Numpy. This only runs if a pre-release
-        # is available on pypi.
-        - os: linux
-          stage: Cron and master-only tests
-          env: NUMPY_VERSION=prerelease
 
         # Try developer version of Astropy
         - os: linux
-          env: PYTHON_VERSION=3.6 ASTROPY_VERSION=dev
+          env: ASTROPY_VERSION=dev
 
         # Do a PEP8 test with pycodestyle
         - os: linux
-          env: MAIN_CMD='pycodestyle astroplan --count --max-line-length=100' SETUP_CMD=''
+          stage: Initial tests
+          env: MAIN_CMD='flake8 astroplan --count --max-line-length=100' SETUP_CMD=''
 
     allow_failures:
       # Allow them to fail now until the IERSs issues are fixed
       - env: SETUP_CMD='test --remote-data -V'
-             CONDA_DEPENDENCIES='pytz matplotlib'
+             CONDA_DEPENDENCIES='pytz matplotlib six'
              PIP_DEPENDENCIES='pytest-mpl pytest-astropy'
 
 install:

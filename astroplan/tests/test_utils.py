@@ -53,7 +53,7 @@ def test_stride_array():
 
 def test_stride_floats():
     arr_float = np.asarray(arr10, float)
-    stride10by3 = stride_array(arr_float, 3)
+    stride_array(arr_float, 3)  # stride 10 by 3
 
 
 def test_time_grid_from_range():
