@@ -102,8 +102,9 @@ The development version of `astroquery`_ allows users to query for properties of
 known exoplanets with three different services:
 `~astroquery.exoplanet_orbit_database`, `~astroquery.nasa_exoplanet_archive`,
 and `~astroquery.open_exoplanet_catalogue`. In the example below, we will query
-for the properties of the transiting exoplanet HD 209458 b with astroquery, and
-calculate the times of the next three transits with `~astroplan.EclipsingSystem`.
+for the properties of the transiting exoplanet TRAPPIST-1 b with astroquery, and
+calculate the times of the next three transits with
+`~astroplan.EclipsingSystem`.
 
 .. code-block:: python
 
