@@ -107,29 +107,27 @@ calculate the times of the next three transits with `~astroplan.EclipsingSystem`
 
 .. code-block:: python
 
-    >>> # Query Exoplanet Orbit Database (exoplanets.org) for planet properties
-    >>> from astroquery.exoplanet_orbit_database import ExoplanetOrbitDatabase
-    >>> planet_properties = ExoplanetOrbitDatabase.query_planet('HD 209458 b')
+    >>> # NASA Exoplanet Archive for planet properties
+    >>> import astropy.units as u
+    >>> from astropy.time import Time
+    >>> from astroquery.nasa_exoplanet_archive import NasaExoplanetArchive
+    >>> planet_properties = NasaExoplanetArchive.query_planet('TRAPPIST-1 b', all_columns=True)
 
     >>> # get relevant planet properties
-    >>> from astropy.time import Time
-    >>> epoch = Time(planet_properties['TT'], format='jd')
-    >>> period = planet_properties['PER']
-    >>> transit_duration = planet_properties['T14']
-    >>> print('Mid-transit time reference: {0}; period reference: {1}'
-    ...       .format(planet_properties['TTREF'], planet_properties['PERREF']))
-    Mid-transit time reference: Knutson 2007; period reference: Knutson 2007
+    >>> epoch = Time(planet_properties['pl_tranmid'], format='jd')
+    >>> period = planet_properties['pl_orbper']
+    >>> transit_duration = planet_properties['pl_trandur'] * u.day
 
     >>> # Create an EclipsingSystem object for HD 209458
     >>> from astroplan import EclipsingSystem
-    >>> hd209458 = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period,
-    ...                            duration=transit_duration)
+    >>> trappist1b = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period,
+    ...                              duration=transit_duration)
 
     >>> # Calculate next three mid-transit times which occur after ``obs_time``
     >>> obs_time = Time('2017-01-01 12:00')
-    >>> hd209458.next_primary_eclipse_time(obs_time, n_eclipses=3)
-    <Time object: scale='utc' format='iso' value=['2017-01-04 06:02:29.778' '2017-01-07 18:38:08.056'
-     '2017-01-11 07:13:46.334']>
+    >>> trappist1b.next_primary_eclipse_time(obs_time, n_eclipses=3)
+    <Time object: scale='utc' format='iso' value=['2017-01-02 15:17:40.205' '2017-01-04 03:33:19.443'
+     '2017-01-05 15:48:58.681']>
 
 .. _periodic-observable_transits:
 
