@@ -1298,6 +1298,7 @@ def test_moon_rise_set():
     assert (abs(pyephem_prev_set - astroplan_prev_set.datetime) <
             datetime.timedelta(minutes=threshold_minutes))
 
+
 usno_sunsets = [
     Time('2019-01-01 00:31'),
     Time('2019-02-01 00:58'),
@@ -1306,6 +1307,7 @@ usno_sunsets = [
     Time('2019-05-01 02:03'),
     Time('2019-06-01 02:24'),
 ]
+
 
 @pytest.mark.parametrize('usno_sunset', usno_sunsets)
 def test_sun_set_vs_usno_almanac(usno_sunset):
