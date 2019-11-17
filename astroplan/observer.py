@@ -27,10 +27,12 @@ __all__ = ["Observer"]
 
 MAGIC_TIME = Time(-999, format='jd')
 
+
 # Handle deprecated MAGIC_TIME variable
 def deprecation_wrap_module(mod, deprecated):
     """Return a wrapped object that warns about deprecated accesses"""
     deprecated = set(deprecated)
+
     class DeprecateWrapper(object):
         def __getattr__(self, attr):
             if attr in deprecated:
@@ -40,6 +42,7 @@ def deprecation_wrap_module(mod, deprecated):
             return getattr(mod, attr)
 
     return DeprecateWrapper()
+
 
 sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
                                                 deprecated=['MAGIC_TIME'])
