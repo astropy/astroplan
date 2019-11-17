@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 from six import string_types
 
 # Standard library
+import sys
 import datetime
 import warnings
 
@@ -12,6 +13,7 @@ from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_moon, Angle, Longitude)
 import astropy.units as u
 from astropy.time import Time
+from astropy.utils.exceptions import AstropyDeprecationWarning
 import numpy as np
 import pytz
 
@@ -21,9 +23,26 @@ from .moon import moon_illumination, moon_phase_angle
 from .target import get_skycoord, SunFlag, MoonFlag
 
 
-__all__ = ["Observer", "MAGIC_TIME"]
+__all__ = ["Observer"]
 
 MAGIC_TIME = Time(-999, format='jd')
+
+# Handle deprecated MAGIC_TIME variable
+def deprecation_wrap_module(mod, deprecated):
+    """Return a wrapped object that warns about deprecated accesses"""
+    deprecated = set(deprecated)
+    class DeprecateWrapper(object):
+        def __getattr__(self, attr):
+            if attr in deprecated:
+                warnmsg = ("`MAGIC_TIME` will be deprecated in future versions "
+                           "of astroplan. Use masked Time objects instead.")
+                warnings.warn(warnmsg, AstropyDeprecationWarning)
+            return getattr(mod, attr)
+
+    return DeprecateWrapper()
+
+sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
+                                                deprecated=['MAGIC_TIME'])
 
 
 def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
@@ -653,10 +672,23 @@ class Observer(object):
             Time when target crosses the horizon
 
         """
-        slope = (alt_after-alt_before)/((jd_after - jd_before)*u.d)
-        crossing_jd = (jd_after*u.d - ((alt_after - horizon)/slope))
-        crossing_jd[np.isnan(crossing_jd)] = u.d*MAGIC_TIME.jd
-        return np.squeeze(Time(crossing_jd, format='jd'))
+        # Approximate the horizon-crossing time:
+        slope = (alt_after-alt_before) / ((jd_after - jd_before) * u.d)
+        crossing_jd = (jd_after * u.d - ((alt_after - horizon) / slope))
+
+        # TODO: edit after https://github.com/astropy/astropy/issues/9612 has
+        # been addressed.
+
+        # Determine whether or not there are NaNs in the crossing_jd array which
+        # represent computations where no horizon crossing was found:
+        nans = np.isnan(crossing_jd)
+        # If there are, set them equal to zero, rather than np.nan
+        crossing_jd[nans] = 0
+        times = Time(crossing_jd, format='jd')
+        # Create a Time object with masked out times where there were NaNs
+        times[nans] = np.ma.masked
+
+        return np.squeeze(times)
 
     def _altitude_trig(self, LST, target, grid_times_targets=False):
         """

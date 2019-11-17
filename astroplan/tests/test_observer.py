@@ -17,7 +17,7 @@ from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
 from astropy.tests.helper import assert_quantity_allclose
 
 # Package
-from ..observer import Observer, MAGIC_TIME
+from ..observer import Observer
 from ..target import FixedTarget
 from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
@@ -1001,7 +1001,7 @@ def test_TargetAlwaysUpWarning(recwarn):
 
     w = recwarn.pop(TargetAlwaysUpWarning)
     assert issubclass(w.category, TargetAlwaysUpWarning)
-    assert no_time == MAGIC_TIME
+    assert no_time.mask
 
 
 def test_TargetNeverUpWarning(recwarn):
@@ -1017,7 +1017,7 @@ def test_TargetNeverUpWarning(recwarn):
 
     w = recwarn.pop(TargetNeverUpWarning)
     assert issubclass(w.category, TargetNeverUpWarning)
-    assert no_time == MAGIC_TIME
+    assert no_time.mask
 
 
 def test_mixed_rise_and_dont_rise():
@@ -1033,9 +1033,9 @@ def test_mixed_rise_and_dont_rise():
     with pytest.warns(TargetAlwaysUpWarning) as recwarn:
         rise_times = obs.target_rise_time(time, targets, which='next')
 
-    assert rise_times[1] == MAGIC_TIME
+    assert rise_times.mask[1]
 
-    targets_that_rise = np.array(targets)[rise_times != MAGIC_TIME]
+    targets_that_rise = np.array(targets)[~rise_times.mask]
     assert np.all([vega, sirius] == targets_that_rise)
 
     w = recwarn.pop(TargetAlwaysUpWarning)
