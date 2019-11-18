@@ -1297,3 +1297,32 @@ def test_moon_rise_set():
             datetime.timedelta(minutes=threshold_minutes))
     assert (abs(pyephem_prev_set - astroplan_prev_set.datetime) <
             datetime.timedelta(minutes=threshold_minutes))
+
+
+mmto_sunsets = [
+    Time('2019-01-01 00:31'),
+    Time('2019-02-01 00:58'),
+    Time('2019-03-01 01:21'),
+    Time('2019-04-01 01:43'),
+    Time('2019-05-01 02:03'),
+    Time('2019-06-01 02:24'),
+]
+
+
+@pytest.mark.parametrize('mmto_sunset', mmto_sunsets)
+def test_sun_set_vs_mmto_almanac(mmto_sunset):
+    """
+    Validates issue: https://github.com/astropy/astroplan/issues/409
+
+    MMTO times to the nearest minute from the MMTO Almanac:
+    http://www.mmto.org/sites/default/files/almanac_2019.pdf
+    """
+    loc = EarthLocation.from_geodetic(-110.8850*u.deg, 31.6883 * u.deg,
+                                      2608 * u.m)
+    mmt = Observer(location=loc, pressure=0*u.bar)
+
+    # Compute equivalent time with astroplan
+    astroplan_sunset = mmt.sun_set_time(mmto_sunset - 10*u.min,
+                                        horizon=-0.8333*u.deg, which='next')
+
+    assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min

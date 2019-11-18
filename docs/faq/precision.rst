@@ -46,3 +46,33 @@ approximation:
 
 This method has a precision of a few arcseconds, so your targets may be slightly
 above or below the horizon at their rise or set times.
+
+***********************************
+How are sunrise and sunset defined?
+***********************************
+
+By default, `~astroplan.Observer.sun_set_time` will compute an approximation
+to the moment when the center of the solar disk is on the horizon. This differs
+slightly from the conventional definition used by USNO, for example, which
+returns the time when the solar disk center is at -0.8333 degrees altitude to
+account for the solar radius and atmospheric refraction. If you want to
+accurately reproduce the sun rise and set times computed by USNO,
+you can call `~astroplan.Observer.sun_set_time` with the keyword argument
+``horizon=-0.8333*u.deg``, like so::
+
+    >>> from astroplan import Observer
+    >>> from astropy.time import Time
+    >>> import astropy.units as u
+
+    >>> mmt = Observer.at_site('mmt', pressure=0*u.bar)
+
+    >>> # USNO time from the MMTO Almanac:
+    >>> # http://www.mmto.org/sites/default/files/almanac_2019.pdf
+    >>> usno_sunset = Time('2019-01-01 00:31')
+
+    >>> # Compute equivalent time with astroplan
+    >>> astroplan_sunset = mmt.sun_set_time(usno_sunset - 10*u.min,
+    ...                                     horizon=-0.8333*u.deg, which='next')
+
+    >>> abs(usno_sunset - astroplan_sunset) < 1 * u.min
+    True
