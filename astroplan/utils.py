@@ -96,7 +96,7 @@ def _get_IERS_A_table(warn_update=14*u.day):
             index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
             time_of_last_observation = Time(table['MJD'][index_of_last_observation],
                                             format='mjd')
-            
+
         # If time of last observation is not available, set it equal to the
         # final prediction in the table:
         else:
