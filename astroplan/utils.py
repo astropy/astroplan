@@ -92,9 +92,16 @@ def _get_IERS_A_table(warn_update=14*u.day):
     if IERS_A_in_cache():
         table = iers.IERS_Auto.open()
         # Use polar motion flag to identify last observation before predictions
-        index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
-        time_of_last_observation = Time(table['MJD'][index_of_last_observation],
-                                        format='mjd')
+        if 'PolPMFlag_A' in table.colnames:
+            index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
+            time_of_last_observation = Time(table['MJD'][index_of_last_observation],
+                                            format='mjd')
+            
+        # If time of last observation is not available, set it equal to the
+        # final prediction in the table:
+        else:
+            time_of_last_observation = Time(table['MJD'].max(),
+                                            format='mjd')
         time_since_last_update = Time.now() - time_of_last_observation
 
         # If the IERS bulletin is more than `warn_update` days old, warn user
