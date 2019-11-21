@@ -1,11 +1,19 @@
 0.6 (unreleased)
 ----------------
 
+- Added documentation for reproducing MMTO sun rise/set times [#434]
+
+- Deprecation of ``MAGIC_TIME`` variable, which used to be returned for targets
+  that don't rise or set [#435]
+
+- Replace deprecated astroquery service [#431]
+
+- Fix for the broken IERS patch [#418, #425]
+
 - Add ``GalacticLatitudeConstraint`` to constrain the galactic latitudes of
   targets. This can be useful for planning surveys for which crowding due to
   Galactic point sources is an issue. [#413]
 
-- Fix for the broken IERS patch [#425]
 
 0.5 (2019-07-08)
 ----------------
