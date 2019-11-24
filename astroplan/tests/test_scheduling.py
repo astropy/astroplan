@@ -23,7 +23,7 @@ rigel = FixedTarget(coord=SkyCoord(ra=78.63446707 * u.deg, dec=8.20163837 * u.de
 polaris = FixedTarget(coord=SkyCoord(ra=37.95456067 * u.deg,
                                      dec=89.26410897 * u.deg), name="Polaris")
 
-apo = Observer.at_site('apo')
+apo = Observer(EarthLocation.of_site('apo'), name='APO')
 targets = [vega, polaris, rigel]
 default_time = Time('2016-02-06 03:00:00')
 only_at_night = [AtNightConstraint()]

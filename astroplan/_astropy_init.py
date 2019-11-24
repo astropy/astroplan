@@ -104,6 +104,12 @@ def test(package=None, test_path=None, args=None, plugins=None,
 
     """
     test_runner = _get_test_runner()
+
+    # This block is specific to astroplan:
+    if remote_data:
+        from .utils import _mock_remote_data
+        _mock_remote_data()
+
     return test_runner.run_tests(
         package=package, test_path=test_path, args=args,
         plugins=plugins, verbose=verbose, pastebin=pastebin,
