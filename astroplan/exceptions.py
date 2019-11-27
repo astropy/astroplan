@@ -6,7 +6,8 @@ from astropy.utils.exceptions import AstropyWarning
 
 __all__ = ["TargetAlwaysUpWarning", "TargetNeverUpWarning",
            "OldEarthOrientationDataWarning", "PlotWarning",
-           "PlotBelowHorizonWarning", "AstroplanWarning"]
+           "PlotBelowHorizonWarning", "AstroplanWarning",
+           "SkyCalcError", "UserInputError"]
 
 
 class AstroplanWarning(AstropyWarning):
@@ -34,5 +35,23 @@ class PlotWarning(AstroplanWarning):
 
 
 class PlotBelowHorizonWarning(PlotWarning):
-    """Warning for when something is hidden on a plot because it's below the horizon"""
+    """
+    Warning for when something is hidden on a plot because
+    it's below the horizon
+    """
+    pass
+
+
+class SkyCalcError(AstroplanWarning):
+    """
+    Raises an error when one of the parameters isn't accepted by
+    the SkyCalc Sky Model Calculator.
+    """
+    pass
+
+
+class UserInputError(AstroplanWarning):
+    """
+    Raises an error when the user gives an array of the wrong shape
+    """
     pass

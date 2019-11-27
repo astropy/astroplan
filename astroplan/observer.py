@@ -136,7 +136,8 @@ class Observer(object):
     @u.quantity_input(elevation=u.m)
     def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
                  longitude=None, elevation=0*u.m, pressure=None,
-                 relative_humidity=None, temperature=None, description=None):
+                 relative_humidity=None, temperature=None, description=None,
+                 skymodel=False):
         """
         Parameters
         ----------
@@ -174,12 +175,20 @@ class Observer(object):
         description : str (optional)
             A short description of the telescope, observatory or observing
             location.
+
+        skymodel : 2D-array (optional). default = False
+            A model for atmospheric transmission. Used when calling
+            `~astroplan.exptime.exptime_from_ccd_snr'.
+            Note: the zeroth index of the given array must be the
+            waveset of the response function, while the other
+            must contain the values of the function.
         """
 
         self.name = name
         self.pressure = pressure
         self.temperature = temperature
         self.relative_humidity = relative_humidity
+        self.skymodel = skymodel
 
         # If lat/long given instead of EarthLocation, convert them
         # to EarthLocation

@@ -27,7 +27,7 @@ env:
         - ASTROPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - CONDA_DEPENDENCIES='pytz qt pyqt six'
-        - PIP_DEPENDENCIES='pytest-astropy'
+        - PIP_DEPENDENCIES='pytest-astropy synphot'
         - SETUP_CMD='test -V'
         - CONDA_CHANNELS='astropy'
 
