@@ -20,7 +20,7 @@ def _secz_to_altitude(secant_z):
     """
     Convert airmass (approximated as the secant of the zenith angle) to
     an altitude (aka elevation) in degrees.
-
+  
     Parameters
     ----------
     secant_z : float
@@ -45,8 +45,6 @@ def _has_twin(ax):
         if other_ax.bbox.bounds == ax.bbox.bounds:
             return True
     return False
-
-
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
                  altitude_yaxis=False, min_airmass=1.0, min_region=None,
@@ -67,8 +65,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1
     23:30:00'])`` will result in a plot with only two airmass measurements.
 
-    For examples with plots, visit the documentation of
-    :ref:`plots_time_dependent`.
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
 
     Parameters
     ----------
@@ -121,7 +119,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     max_region : float
         If set, defines an interval between ``max_airmass`` and ``max_region``
         that will be shaded. Default is `None`.
-
+    moon_airmass : bool
+        If set to True, display the Moon's airmass alongside the object's airmass. 
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
@@ -132,6 +131,10 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     y-axis is inverted and shows airmasses between 1.0 and 3.0 by default.
     If user wishes to change these, use ``ax.<set attribute>`` before drawing
     or saving plot:
+
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
 
     """
     # Import matplotlib, set style sheet
@@ -177,12 +180,16 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         # Plot data
         ax.plot_date(time.plot_date, masked_airmass, label=target_name, **style_kwargs)
-
+    if moon_airmass:
+        airmass_moon = observer.moon_altaz(time).secz
+        masked_airmass_moon = np.ma.array(airmass_moon, mask=airmass_moon<1)
+        ax.plot_date(time.plot_date, masked_airmass_moon, 'r--', label='Moon') #not good to have style fixed but can be worked out later.
     # Format the time axis
-    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
-    date_formatter = dates.DateFormatter('%H:%M')
-    ax.xaxis.set_major_formatter(date_formatter)
-    plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+    if not np.all(masked_airmass.mask):
+        date_formatter = dates.DateFormatter('%H:%M')
+        ax.xaxis.set_major_formatter(date_formatter)
+        plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+
 
     # Shade background during night time
     if brightness_shading:
@@ -202,14 +209,14 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         twilights.sort(key=operator.itemgetter(0))
         for i, twi in enumerate(twilights[1:], 1):
-            ax.axvspan(twilights[i - 1][0], twilights[i][0],
-                       ymin=0, ymax=1, color='grey', alpha=twi[1])
+            ax.axvspan(twilights[i - 1][0], twilights[i][0], ymin=0, ymax=1, color='grey', alpha=twi[1])
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
     if y_lim[1] > y_lim[0]:
         ax.invert_yaxis()
     ax.set_ylim([max_airmass, min_airmass])
+    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
 
     # Draw lo/hi limit regions, if present
     ymax, ymin = ax.get_ylim()       # should be (hi_limit, lo_limit)
@@ -452,8 +459,7 @@ def plot_schedule_airmass(schedule, show_night=False):
     blocks = copy.copy(schedule.scheduled_blocks)
     sorted_blocks = sorted(schedule.observing_blocks, key=lambda x: x.priority)
     targets = [block.target for block in sorted_blocks]
-    ts = (schedule.start_time +
-          np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day)
+    ts = schedule.start_time + np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day
     targ_to_color = {}
     color_idx = np.linspace(0, 1, len(targets))
     # lighter, bluer colors indicate higher priority
@@ -464,15 +470,11 @@ def plot_schedule_airmass(schedule, show_night=False):
         # I'm pretty sure this overlaps a lot, creating darker bands
         for test_time in ts:
             midnight = schedule.observer.midnight(test_time)
-            previous_sunset = schedule.observer.sun_set_time(
-                midnight, which='previous')
-            next_sunrise = schedule.observer.sun_rise_time(
-                midnight, which='next')
+            previous_sunset = schedule.observer.sun_set_time(midnight, which='previous')
+            next_sunrise = schedule.observer.sun_rise_time(midnight, which='next')
 
-            previous_twilight = schedule.observer.twilight_evening_astronomical(
-                midnight, which='previous')
-            next_twilight = schedule.observer.twilight_morning_astronomical(
-                midnight, which='next')
+            previous_twilight = schedule.observer.twilight_evening_astronomical(midnight, which='previous')
+            next_twilight = schedule.observer.twilight_morning_astronomical(midnight, which='next')
 
             plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
                         facecolor='lightgrey', alpha=0.05)
@@ -508,8 +510,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     object. For instance, ``Time(['2000-1-1 23:00:00', '2000-1-1 23:30:00'])``
     will result in a plot with only two parallactic angle measurements.
 
-    For examples with plots, visit the documentation of
-    :ref:`plots_time_dependent`.
+    For examples with plots, visit the astroplan Read the Docs
+    documentation [1]_.
 
     Parameters
     ----------
@@ -544,6 +546,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     ax :  `~matplotlib.axes.Axes`
         An ``Axes`` object with added parallactic angle vs. time plot.
 
+    References
+    ----------
+    .. [1] astroplan plotting tutorial: https://astroplan.readthedocs.io/en/latest/tutorials/plots.html#time-dependent-plots
     """
     # Import matplotlib, set style sheet
     if style_sheet is not None:
