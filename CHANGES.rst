@@ -1,4 +1,4 @@
-0.6 (unreleased)
+0.6 (2019-10-08)
 ----------------
 
 - Added documentation for reproducing MMTO sun rise/set times [#434]
