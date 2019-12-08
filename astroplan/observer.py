@@ -732,7 +732,7 @@ class Observer(object):
         return alt
 
     def _calc_riseset(self, time, target, prev_next, rise_set, horizon,
-                      N=150, grid_times_targets=False):
+                      n_grid_points=150, grid_times_targets=False):
         """
         Time at next rise/set of ``target``.
 
@@ -786,7 +786,7 @@ class Observer(object):
                            if hasattr(target, 'approx_sidereal_drift') else 0))
             end = 0
 
-        times = _generate_24hr_grid(time, start, end, N)
+        times = _generate_24hr_grid(time, start, end, n_grid_points)
 
         if target is MoonFlag:
             altaz = self.altaz(times, get_moon(times, location=self.location),
@@ -806,7 +806,7 @@ class Observer(object):
                                       horizon=horizon)
 
     def _calc_transit(self, time, target, prev_next, antitransit=False,
-                      N=150, grid_times_targets=False):
+                      n_grid_points=150, grid_times_targets=False):
         """
         Time at next transit of the meridian of `target`.
 
@@ -849,9 +849,11 @@ class Observer(object):
             time = Time(time)
 
         if prev_next == 'next':
-            times = _generate_24hr_grid(time, 0, 1, N, for_deriv=True)
+            times = _generate_24hr_grid(time, 0, 1, n_grid_points,
+                                        for_deriv=True)
         else:
-            times = _generate_24hr_grid(time, -1, 0, N, for_deriv=True)
+            times = _generate_24hr_grid(time, -1, 0, n_grid_points,
+                                        for_deriv=True)
 
         # The derivative of the altitude with respect to time is increasing
         # from negative to positive values at the anti-transit of the meridian
@@ -890,17 +892,19 @@ class Observer(object):
         rise_set = args_dict.pop('rise_set', None)
         antitransit = args_dict.pop('antitransit', None)
         grid_times_targets = args_dict.pop('grid_times_targets', False)
-        N = args_dict.pop('N', 150)
+        n_grid_points = args_dict.pop('n_grid_points', 150)
 
         # Assemble arguments for function, depending on the function.
         if function == self._calc_riseset:
             def event_function(w):
                 return function(time, target, w, rise_set, horizon,
-                                grid_times_targets=grid_times_targets, N=N)
+                                grid_times_targets=grid_times_targets,
+                                n_grid_points=n_grid_points)
         elif function == self._calc_transit:
             def event_function(w):
                 return function(time, target, w, antitransit=antitransit,
-                                grid_times_targets=grid_times_targets, N=N)
+                                grid_times_targets=grid_times_targets,
+                                n_grid_points=n_grid_points)
         else:
             raise ValueError('Function {} not supported in '
                              '_determine_which_event.'.format(function))
@@ -928,7 +932,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def target_rise_time(self, time, target, which='nearest',
-                         horizon=0*u.degree, grid_times_targets=False, N=150):
+                         horizon=0*u.degree, grid_times_targets=False, n_grid_points=150):
         """
         Calculate rise time.
 
@@ -989,12 +993,13 @@ class Observer(object):
         return self._determine_which_event(self._calc_riseset,
                                            dict(time=time, target=target,
                                                 which=which, rise_set='rising',
-                                                horizon=horizon, N=N,
+                                                horizon=horizon,
+                                                n_grid_points=n_grid_points,
                                                 grid_times_targets=grid_times_targets))
 
     @u.quantity_input(horizon=u.deg)
     def target_set_time(self, time, target, which='nearest', horizon=0*u.degree,
-                        grid_times_targets=False, N=150):
+                        grid_times_targets=False, n_grid_points=150):
         """
         Calculate set time.
 
@@ -1055,11 +1060,12 @@ class Observer(object):
                                            dict(time=time, target=target,
                                                 which=which,
                                                 rise_set='setting',
-                                                horizon=horizon, N=N,
+                                                horizon=horizon,
+                                                n_grid_points=n_grid_points,
                                                 grid_times_targets=grid_times_targets))
 
     def target_meridian_transit_time(self, time, target, which='nearest',
-                                     grid_times_targets=False, N=150):
+                                     grid_times_targets=False, n_grid_points=150):
         """
         Calculate time at the transit of the meridian.
 
@@ -1113,12 +1119,13 @@ class Observer(object):
         """
         return self._determine_which_event(self._calc_transit,
                                            dict(time=time, target=target,
-                                                which=which, N=N,
+                                                which=which,
+                                                n_grid_points=n_grid_points,
                                                 rise_set='setting',
                                                 grid_times_targets=grid_times_targets))
 
     def target_meridian_antitransit_time(self, time, target, which='nearest',
-                                         grid_times_targets=False, N=150):
+                                         grid_times_targets=False, n_grid_points=150):
         """
         Calculate time at the antitransit of the meridian.
 
@@ -1174,11 +1181,12 @@ class Observer(object):
         return self._determine_which_event(self._calc_transit,
                                            dict(time=time, target=target,
                                                 which=which, antitransit=True,
-                                                rise_set='setting', N=N,
+                                                rise_set='setting',
+                                                n_grid_points=n_grid_points,
                                                 grid_times_targets=grid_times_targets))
 
     @u.quantity_input(horizon=u.deg)
-    def sun_rise_time(self, time, which='nearest', horizon=0*u.degree, N=150):
+    def sun_rise_time(self, time, which='nearest', horizon=0*u.degree, n_grid_points=150):
         """
         Time of sunrise.
 
@@ -1225,10 +1233,11 @@ class Observer(object):
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +SKIP
         ISO: 2001-02-02 14:02:50.554, JD: 2451943.08531
         """
-        return self.target_rise_time(time, get_sun(time), which, horizon, N=N)
+        return self.target_rise_time(time, get_sun(time), which, horizon,
+                                     n_grid_points=n_grid_points)
 
     @u.quantity_input(horizon=u.deg)
-    def sun_set_time(self, time, which='nearest', horizon=0*u.degree, N=150):
+    def sun_set_time(self, time, which='nearest', horizon=0*u.degree, n_grid_points=150):
         """
         Time of sunset.
 
@@ -1275,9 +1284,10 @@ class Observer(object):
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +SKIP
         ISO: 2001-02-04 00:35:42.102, JD: 2451944.52479
         """
-        return self.target_set_time(time, get_sun(time), which, horizon, N=N)
+        return self.target_set_time(time, get_sun(time), which, horizon,
+                                    n_grid_points=n_grid_points)
 
-    def noon(self, time, which='nearest', N=150):
+    def noon(self, time, which='nearest', n_grid_points=150):
         """
         Time at solar noon.
 
@@ -1304,9 +1314,9 @@ class Observer(object):
             Time at solar noon
         """
         return self.target_meridian_transit_time(time, get_sun(time), which,
-                                                 N=N)
+                                                 n_grid_points=n_grid_points)
 
-    def midnight(self, time, which='nearest', N=150):
+    def midnight(self, time, which='nearest', n_grid_points=150):
         """
         Time at solar midnight.
 
@@ -1332,12 +1342,12 @@ class Observer(object):
         `~astropy.time.Time`
             Time at solar midnight
         """
-        return self.target_meridian_antitransit_time(time, get_sun(time),
-                                                     which, N=N)
+        return self.target_meridian_antitransit_time(time, get_sun(time), which,
+                                                     n_grid_points=n_grid_points)
 
     # Twilight convenience functions
 
-    def twilight_evening_astronomical(self, time, which='nearest', N=150):
+    def twilight_evening_astronomical(self, time, which='nearest', n_grid_points=150):
         """
         Time at evening astronomical (-18 degree) twilight.
 
@@ -1363,9 +1373,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_set_time(time, which, horizon=-18*u.degree, N=N)
+        return self.sun_set_time(time, which, horizon=-18*u.degree,
+                                 n_grid_points=n_grid_points)
 
-    def twilight_evening_nautical(self, time, which='nearest', N=150):
+    def twilight_evening_nautical(self, time, which='nearest', n_grid_points=150):
         """
         Time at evening nautical (-12 degree) twilight.
 
@@ -1391,9 +1402,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_set_time(time, which, horizon=-12*u.degree, N=N)
+        return self.sun_set_time(time, which, horizon=-12*u.degree,
+                                 n_grid_points=n_grid_points)
 
-    def twilight_evening_civil(self, time, which='nearest', N=150):
+    def twilight_evening_civil(self, time, which='nearest', n_grid_points=150):
         """
         Time at evening civil (-6 degree) twilight.
 
@@ -1419,9 +1431,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_set_time(time, which, horizon=-6*u.degree, N=N)
+        return self.sun_set_time(time, which, horizon=-6*u.degree,
+                                 n_grid_points=n_grid_points)
 
-    def twilight_morning_astronomical(self, time, which='nearest', N=150):
+    def twilight_morning_astronomical(self, time, which='nearest', n_grid_points=150):
         """
         Time at morning astronomical (-18 degree) twilight.
 
@@ -1447,9 +1460,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_rise_time(time, which, horizon=-18*u.degree, N=N)
+        return self.sun_rise_time(time, which, horizon=-18*u.degree,
+                                  n_grid_points=n_grid_points)
 
-    def twilight_morning_nautical(self, time, which='nearest', N=150):
+    def twilight_morning_nautical(self, time, which='nearest', n_grid_points=150):
         """
         Time at morning nautical (-12 degree) twilight.
 
@@ -1475,9 +1489,10 @@ class Observer(object):
         `~astropy.time.Time`
             Time of twilight
         """
-        return self.sun_rise_time(time, which, horizon=-12*u.degree, N=N)
+        return self.sun_rise_time(time, which, horizon=-12*u.degree,
+                                  n_grid_points=n_grid_points)
 
-    def twilight_morning_civil(self, time, which='nearest', N=150):
+    def twilight_morning_civil(self, time, which='nearest', n_grid_points=150):
         """
         Time at morning civil (-6 degree) twilight.
 
@@ -1503,11 +1518,12 @@ class Observer(object):
         `~astropy.time.Time`
             Time of sunset
         """
-        return self.sun_rise_time(time, which, horizon=-6*u.degree, N=N)
+        return self.sun_rise_time(time, which, horizon=-6*u.degree,
+                                  n_grid_points=n_grid_points)
 
     # Moon-related methods.
 
-    def moon_rise_time(self, time, which='nearest', horizon=0*u.deg, N=150):
+    def moon_rise_time(self, time, which='nearest', horizon=0*u.deg, n_grid_points=150):
         """
         Returns the local moon rise time.
 
@@ -1537,9 +1553,10 @@ class Observer(object):
             crossings of the target over a 24 hour period, default is 150 which
             yields rise time precisions better than one minute.
         """
-        return self.target_rise_time(time, MoonFlag, which, horizon, N=N)
+        return self.target_rise_time(time, MoonFlag, which, horizon,
+                                     n_grid_points=n_grid_points)
 
-    def moon_set_time(self, time, which='nearest', horizon=0*u.deg, N=150):
+    def moon_set_time(self, time, which='nearest', horizon=0*u.deg, n_grid_points=150):
         """
         Returns the local moon set time.
 
@@ -1569,7 +1586,8 @@ class Observer(object):
             crossings of the target over a 24 hour period, default is 150 which
             yields set time precisions better than one minute.
         """
-        return self.target_set_time(time, MoonFlag, which, horizon, N=N)
+        return self.target_set_time(time, MoonFlag, which, horizon,
+                                    n_grid_points=n_grid_points)
 
     def moon_illumination(self, time):
         """
