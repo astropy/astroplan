@@ -24,3 +24,4 @@ We currently have the following tutorials:
    periodic
    constraints
    scheduling
+   speed

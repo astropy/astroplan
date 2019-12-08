@@ -15,6 +15,9 @@
   Galactic point sources is an issue. [#413]
 
 
+- Add ``n_grid_points`` keyword argument to rise/set/transit functions which
+  allows usersto trade off precision for speed. [#424]
+
 0.5 (2019-07-08)
 ----------------
 
