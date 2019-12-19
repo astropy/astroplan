@@ -48,7 +48,7 @@ sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
                                                 deprecated=['MAGIC_TIME'])
 
 
-def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
+def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     """
     Generate a nearly linearly spaced grid of time durations.
 
@@ -67,7 +67,7 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     end : float
         Number of days before/after ``t0`` to end the grid.
 
-    N : int
+    n_grid_points : int (optional)
         Number of grid points to generate
 
     for_deriv : bool
@@ -80,11 +80,12 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
 
     if for_deriv:
-        time_grid = np.concatenate([[start - 1/(N-1)],
-                                    np.linspace(start, end, N)[1:-1],
-                                    [end + 1/(N-1)]])*u.day
+        time_grid = np.concatenate([[start - 1 / (n_grid_points - 1)],
+                                    np.linspace(start, end,
+                                                n_grid_points)[1:-1],
+                                    [end + 1 / (n_grid_points - 1)]]) * u.day
     else:
-        time_grid = np.linspace(start, end, N)*u.day
+        time_grid = np.linspace(start, end, n_grid_points) * u.day
 
     # broadcast so grid is first index, and remaining shape of t0
     # falls in later indices. e.g. if t0 is shape (10), time_grid
@@ -759,7 +760,7 @@ class Observer(object):
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
 
-        N : int
+        n_grid_points : int (optional)
             Number of altitudes to compute when searching for
             rise or set.
 
@@ -829,7 +830,7 @@ class Observer(object):
             Toggle compute antitransit (below horizon, equivalent to midnight
             for the Sun)
 
-        N : int
+        n_grid_points : int (optional)
             Number of altitudes to compute when searching for
             rise or set.
 
@@ -967,7 +968,7 @@ class Observer(object):
             will return an (M, N) shaped result. Otherwise, we rely on
             broadcasting the shapes together using standard numpy rules.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields rise time precisions better than one minute.
@@ -1033,7 +1034,7 @@ class Observer(object):
             will return an (M, N) shaped result. Otherwise, we rely on
             broadcasting the shapes together using standard numpy rules.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields set time precisions better than one minute.
@@ -1093,7 +1094,7 @@ class Observer(object):
             will return an (M, N) shaped result. Otherwise, we rely on
             broadcasting the shapes together using standard numpy rules.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields rise time precisions better than one minute.
@@ -1153,7 +1154,7 @@ class Observer(object):
             shaped result. Otherwise, we rely on broadcasting the shapes together
             using standard numpy rules.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields rise time precisions better than one minute.
@@ -1211,7 +1212,7 @@ class Observer(object):
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields rise time precisions better than one minute.
@@ -1262,7 +1263,7 @@ class Observer(object):
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields set time precisions better than one minute.
@@ -1303,7 +1304,7 @@ class Observer(object):
             Choose which noon relative to the present ``time`` would you
             like to calculate
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields noon time precisions better than one minute.
@@ -1332,7 +1333,7 @@ class Observer(object):
             Choose which noon relative to the present ``time`` would you
             like to calculate
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields midnight time precisions better than one minute.
@@ -1363,7 +1364,7 @@ class Observer(object):
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields twilight time precisions better than one minute.
@@ -1392,7 +1393,7 @@ class Observer(object):
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields twilight time precisions better than one minute.
@@ -1421,7 +1422,7 @@ class Observer(object):
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields twilight time precisions better than one minute.
@@ -1450,7 +1451,7 @@ class Observer(object):
             Choose which twilight relative to the present ``time`` would you
             like to calculate
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields twilight time precisions better than one minute.
@@ -1479,7 +1480,7 @@ class Observer(object):
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields twilight time precisions better than one minute.
@@ -1508,7 +1509,7 @@ class Observer(object):
             Choose which twilight relative to the present ``time`` would you
             like to calculate. Default is nearest.
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields twilight time precisions better than one minute.
@@ -1548,7 +1549,7 @@ class Observer(object):
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields rise time precisions better than one minute.
@@ -1581,7 +1582,7 @@ class Observer(object):
             for calculating set/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
 
-        N : int
+        n_grid_points : int (optional)
             The number of grid points on which to search for the horizon
             crossings of the target over a 24 hour period, default is 150 which
             yields set time precisions better than one minute.
