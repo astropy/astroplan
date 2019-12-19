@@ -48,7 +48,7 @@ sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
                                                 deprecated=['MAGIC_TIME'])
 
 
-def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
+def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     """
     Generate a nearly linearly spaced grid of time durations.
 
@@ -80,11 +80,12 @@ def _generate_24hr_grid(t0, start, end, N, for_deriv=False):
     """
 
     if for_deriv:
-        time_grid = np.concatenate([[start - 1/(N-1)],
-                                    np.linspace(start, end, N)[1:-1],
-                                    [end + 1/(N-1)]])*u.day
+        time_grid = np.concatenate([[start - 1 / (n_grid_points - 1)],
+                                    np.linspace(start, end,
+                                                n_grid_points)[1:-1],
+                                    [end + 1 / (n_grid_points - 1)]]) * u.day
     else:
-        time_grid = np.linspace(start, end, N)*u.day
+        time_grid = np.linspace(start, end, n_grid_points) * u.day
 
     # broadcast so grid is first index, and remaining shape of t0
     # falls in later indices. e.g. if t0 is shape (10), time_grid
