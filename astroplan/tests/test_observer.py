@@ -1003,6 +1003,13 @@ def test_TargetAlwaysUpWarning(recwarn):
     assert issubclass(w.category, TargetAlwaysUpWarning)
     assert no_time.mask
 
+    # Regression test: make sure 'nearest' also works
+    no_time = obs.target_rise_time(time, polaris, which='nearest')
+
+    w = recwarn.pop(TargetAlwaysUpWarning)
+    assert issubclass(w.category, TargetAlwaysUpWarning)
+    assert no_time.mask
+
 
 def test_TargetNeverUpWarning(recwarn):
     lat = '-90:00:00'
