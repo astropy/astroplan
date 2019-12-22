@@ -924,7 +924,7 @@ class Observer(object):
                 return previous_event
 
         if which == 'nearest':
-            if np.isnan(previous_event.value) or np.isnan(next_event.value):
+            if previous_event.value.mask or next_event.value.mask:
                 # always up?  Or some other case?
                 return next_event
             mask = abs(time - previous_event) < abs(time - next_event)
