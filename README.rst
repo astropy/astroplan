@@ -44,7 +44,7 @@ Attribution
 
 If you use astroplan in your work, please cite `Morris et al. 2018 <http://adsabs.harvard.edu/abs/2018AJ....155..128M>`_: 
 
-.. code :: 
+.. code :: bibtex
 
     @ARTICLE{astroplan2018,
        author = {{Morris}, B.~M. and {Tollerud}, E. and {Sip{\H o}cz}, B. and 
