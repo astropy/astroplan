@@ -201,14 +201,22 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         # Calculate and order twilights and set plotting alpha for each
         twilights = [
-            (observer.sun_set_time(Time(start) + tzoffset, which='next').datetime, 0.0),
-            (observer.twilight_evening_civil(Time(start) + tzoffset, which='next').datetime, 0.1),
-            (observer.twilight_evening_nautical(Time(start) + tzoffset, which='next').datetime, 0.2),
-            (observer.twilight_evening_astronomical(Time(start) + tzoffset, which='next').datetime, 0.3),
-            (observer.twilight_morning_astronomical(Time(start) + tzoffset, which='next').datetime, 0.4),
-            (observer.twilight_morning_nautical(Time(start) + tzoffset, which='next').datetime, 0.3),
-            (observer.twilight_morning_civil(Time(start) + tzoffset, which='next').datetime, 0.2),
-            (observer.sun_rise_time(Time(start) + tzoffset, which='next').datetime, 0.1),
+            (observer.sun_set_time(Time(start) + tzoffset,
+                                   which='next').datetime, 0.0),
+            (observer.twilight_evening_civil(Time(start) + tzoffset,
+                                             which='next').datetime, 0.1),
+            (observer.twilight_evening_nautical(Time(start) + tzoffset,
+                                                which='next').datetime, 0.2),
+            (observer.twilight_evening_astronomical(Time(start) + tzoffset,
+                                                    which='next').datetime, 0.3),
+            (observer.twilight_morning_astronomical(Time(start) + tzoffset,
+                                                    which='next').datetime, 0.4),
+            (observer.twilight_morning_nautical(Time(start) + tzoffset,
+                                                which='next').datetime, 0.3),
+            (observer.twilight_morning_civil(Time(start) + tzoffset,
+                                             which='next').datetime, 0.2),
+            (observer.sun_rise_time(Time(start) + tzoffset,
+                                    which='next').datetime, 0.1),
         ]
 
         twilights.sort(key=operator.itemgetter(0))
