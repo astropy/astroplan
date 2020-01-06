@@ -78,7 +78,7 @@ astropy's IERS machinery:
     import numpy as np
     import astropy.units as u
     from astropy.time import Time
-    from astropy.extern.six.moves.urllib.error import HTTPError
+    from six.moves.urllib.error import HTTPError
 
     # Download and cache the IERS Bulletins A and B  using astropy's machinery
     # (reminder: astroplan has its own function for this: `download_IERS_A`)
