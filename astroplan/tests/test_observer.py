@@ -1013,7 +1013,11 @@ def test_TargetAlwaysUpWarning(recwarn):
     # Regression test: make sure 'nearest' also works
     no_time = obs.target_rise_time(time, polaris, which='nearest')
 
-    w = recwarn.pop(TargetAlwaysUpWarning)
+    # Cycle back through warnings until a TargetAlwaysUpWarning is hit
+    # (other warnings can also be raised here)
+    while not issubclass(w.category, TargetAlwaysUpWarning):
+        w = recwarn.pop(TargetAlwaysUpWarning)
+
     assert issubclass(w.category, TargetAlwaysUpWarning)
     assert no_time.mask
 
