@@ -924,13 +924,20 @@ class Observer(object):
                 return previous_event
 
         if which == 'nearest':
-            if not (np.isfinite(previous_event.value) and
-                    np.isfinite(next_event.value)):
-                # always up?  Or some other case?
+            # Use some hacks to handle the non-rising/non-setting cases
+            try:
+                mask = abs(time - previous_event) < abs(time - next_event)
+            except TypeError:
+                # encountered if time is scalar & nan
                 return next_event
-            mask = abs(time - previous_event) < abs(time - next_event)
-            return Time(np.where(mask, previous_event.utc.jd,
-                                 next_event.utc.jd), format='jd')
+            ma = np.where(mask, previous_event.utc.jd, next_event.utc.jd)
+            # HACK: Time objects cannot be initiated w/NaN, so we first
+            # make them zero, then change them to NaN
+            not_finite = ~np.isfinite(ma)
+            ma[not_finite] = 0
+            tm = Time(ma, format='jd')
+            tm[not_finite] = np.nan
+            return tm
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')

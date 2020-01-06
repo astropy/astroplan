@@ -152,7 +152,8 @@ def test_rise_set_transit_nearest_vector():
     vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
     mira = SkyCoord(34.83663376*u.deg, -2.97763767*u.deg)
     sirius = SkyCoord(101.28715533*u.deg, -16.71611586*u.deg)
-    sc_list = [vega, mira, sirius]
+    polaris = SkyCoord(37.95456067*u.degree, 89.26410897*u.degree)
+    sc_list = [vega, mira, sirius, polaris]
 
     location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
     time = Time('1995-06-21 00:00:00')
@@ -162,28 +163,34 @@ def test_rise_set_transit_nearest_vector():
     vega_rise = obs.target_rise_time(time, vega)
     mira_rise = obs.target_rise_time(time, mira)
     sirius_rise = obs.target_rise_time(time, sirius)
+    polaris_rise = obs.target_rise_time(time, polaris)
 
     assert rise_vector[0] == vega_rise
     assert rise_vector[1] == mira_rise
     assert rise_vector[2] == sirius_rise
+    assert rise_vector[3].value.mask and polaris_rise.value.mask
 
     set_vector = obs.target_set_time(time, sc_list)
     vega_set = obs.target_set_time(time, vega)
     mira_set = obs.target_set_time(time, mira)
     sirius_set = obs.target_set_time(time, sirius)
+    polaris_set = obs.target_set_time(time, polaris)
 
     assert set_vector[0] == vega_set
     assert set_vector[1] == mira_set
     assert set_vector[2] == sirius_set
+    assert set_vector[3].value.mask and polaris_set.value.mask
 
     transit_vector = obs.target_meridian_transit_time(time, sc_list)
     vega_trans = obs.target_meridian_transit_time(time, vega)
     mira_trans = obs.target_meridian_transit_time(time, mira)
     sirius_trans = obs.target_meridian_transit_time(time, sirius)
+    polaris_trans = obs.target_meridian_transit_time(time, polaris)
 
     assert transit_vector[0] == vega_trans
     assert transit_vector[1] == mira_trans
     assert transit_vector[2] == sirius_trans
+    assert transit_vector[3] == polaris_trans
 
 
 def print_pyephem_altaz(latitude, longitude, elevation, time, pressure,
