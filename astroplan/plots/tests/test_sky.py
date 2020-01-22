@@ -22,3 +22,21 @@ def test_image_example():
     ax = fig.add_subplot(1, 1, 1)
     ax.plot([1, 2, 3])
     return fig
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+@pytest.mark.mpl_image_compare
+def test_timezone():
+    import matplotlib.pyplot as plt
+    from astropy import coordinates
+    from astropy import units as u
+    from ..time_dependent import plot_airmass
+    from ... import Observer
+    import datetime
+    import pytz
+
+    bg = coordinates.SkyCoord.from_name('Betelgeuse')
+    vla = Observer(coordinates.EarthLocation.of_site('VLA'))
+    now_ET = pytz.timezone('US/Eastern').localize(datetime.datetime.now())
+
+    plot_airmass(bg, vla, now_ET, use_local_tz=True)
