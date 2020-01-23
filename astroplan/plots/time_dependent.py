@@ -165,25 +165,22 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         tzoffset = 0
         tzname = 'UTC'
         tzinfo = None
-    log.debug(f"Using time zone offset {tzoffset} for "
-              f"time zone {tzname}")
     # Populate time window if needed.
     # (plot against local time if that's requested)
     timetoplot = Time(time) + tzoffset
     if timetoplot.isscalar:
         timetoplot = timetoplot + np.linspace(-12, 12, 100)*u.hour
-        time_ut = timetoplot - tzoffset
     elif len(timetoplot) == 1:
         warnings.warn('You used a Time array of length 1.  You probably meant '
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
+    time_ut = timetoplot - tzoffset
 
     if not isinstance(targets, Sequence):
         targets = [targets]
 
     for target in targets:
         # Calculate airmass
-        # (time will be correct UTC time)
         airmass = observer.altaz(time_ut, target).secz
         # Mask out nonsense airmasses
         masked_airmass = np.ma.array(airmass, mask=airmass < 1)
@@ -210,6 +207,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         # Calculate and order twilights and set plotting alpha for each
         twilights = [
+            # TODO in next commit: Clean this up.
             (observer.sun_set_time(Time(start),
                                    which='next').datetime.replace(tzinfo=pytz.utc), 0.0),
             (observer.twilight_evening_civil(Time(start),
@@ -227,7 +225,6 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             (observer.sun_rise_time(Time(start),
                                     which='next').datetime.replace(tzinfo=pytz.utc), 0.1),
         ]
-        log.debug(f"Twilights: {twilights}")
 
         twilights.sort(key=operator.itemgetter(0))
         # add in left & right edges, so that if the airmass plot is requested
