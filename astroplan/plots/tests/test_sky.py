@@ -27,7 +27,6 @@ def test_image_example():
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
 @pytest.mark.mpl_image_compare
 def test_timezone():
-    import matplotlib.pyplot as plt
     from astropy import coordinates
     from astropy import units as u
     from ..time_dependent import plot_airmass
@@ -35,8 +34,9 @@ def test_timezone():
     import datetime
     import pytz
 
-    bg = coordinates.SkyCoord.from_name('Betelgeuse')
-    vla = Observer(coordinates.EarthLocation.of_site('VLA'))
+    betelgeuse = coordinates.SkyCoord(88.79293899*u.deg, 7.407064*u.deg, frame='icrs')
+    observer = Observer(coordinates.EarthLocation.of_site('subaru'))
+    # Eastern time... because you're remote-operating Subaru from home...?
     now_ET = pytz.timezone('US/Eastern').localize(datetime.datetime.now())
 
-    plot_airmass(bg, vla, now_ET, use_local_tz=True)
+    plot_airmass(betelgeuse, observer, now_ET, use_local_tz=True)
