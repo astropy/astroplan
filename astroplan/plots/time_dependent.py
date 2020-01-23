@@ -207,30 +207,28 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         # Calculate and order twilights and set plotting alpha for each
         twilights = [
-            # TODO in next commit: Clean this up.
-            (observer.sun_set_time(Time(start),
-                                   which='next').datetime.replace(tzinfo=pytz.utc), 0.0),
-            (observer.twilight_evening_civil(Time(start),
-                                             which='next').datetime.replace(tzinfo=pytz.utc), 0.1),
-            (observer.twilight_evening_nautical(Time(start),
-                                                which='next').datetime.replace(tzinfo=pytz.utc), 0.2),
-            (observer.twilight_evening_astronomical(Time(start),
-                                                    which='next').datetime.replace(tzinfo=pytz.utc), 0.3),
-            (observer.twilight_morning_astronomical(Time(start),
-                                                    which='next').datetime.replace(tzinfo=pytz.utc), 0.4),
-            (observer.twilight_morning_nautical(Time(start),
-                                                which='next').datetime.replace(tzinfo=pytz.utc), 0.3),
-            (observer.twilight_morning_civil(Time(start),
-                                             which='next').datetime.replace(tzinfo=pytz.utc), 0.2),
-            (observer.sun_rise_time(Time(start),
-                                    which='next').datetime.replace(tzinfo=pytz.utc), 0.1),
+            (observer.sun_set_time(Time(start), which='next'), 0.0),
+            (observer.twilight_evening_civil(Time(start), which='next'), 0.1),
+            (observer.twilight_evening_nautical(Time(start), which='next'), 0.2),
+            (observer.twilight_evening_astronomical(Time(start), which='next'), 0.3),
+            (observer.twilight_morning_astronomical(Time(start), which='next'), 0.4),
+            (observer.twilight_morning_nautical(Time(start), which='next'), 0.3),
+            (observer.twilight_morning_civil(Time(start), which='next'), 0.2),
+            (observer.sun_rise_time(Time(start), which='next'), 0.1),
         ]
 
+        # add 'UTC' to each datetime object created above
+        twilights = [(t[0].datetime.replace(tzinfo=pytz.utc), t[1])
+                     for t in twilights]
+
         twilights.sort(key=operator.itemgetter(0))
+
         # add in left & right edges, so that if the airmass plot is requested
         # during the day, night is properly shaded
-        for tw_left, tw_right in zip([(xlo.datetime.replace(tzinfo=tzinfo), twilights[0][1])] + twilights,
-                                     twilights + [(xhi.datetime.replace(tzinfo=tzinfo), twilights[0][1])]):
+        left_edges = [(xlo.datetime.replace(tzinfo=tzinfo), twilights[0][1])] + twilights
+        right_edges = twilights + [(xhi.datetime.replace(tzinfo=tzinfo), twilights[0][1])]
+
+        for tw_left, tw_right in zip(left_edges, right_edges):
             left = tw_left[0]
             right = tw_right[0]
             if tzinfo is not None:
