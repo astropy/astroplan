@@ -203,18 +203,18 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        start = (time_ut[0]).datetime
+        start = time_ut[0]
 
         # Calculate and order twilights and set plotting alpha for each
         twilights = [
-            (observer.sun_set_time(Time(start), which='next'), 0.0),
-            (observer.twilight_evening_civil(Time(start), which='next'), 0.1),
-            (observer.twilight_evening_nautical(Time(start), which='next'), 0.2),
-            (observer.twilight_evening_astronomical(Time(start), which='next'), 0.3),
-            (observer.twilight_morning_astronomical(Time(start), which='next'), 0.4),
-            (observer.twilight_morning_nautical(Time(start), which='next'), 0.3),
-            (observer.twilight_morning_civil(Time(start), which='next'), 0.2),
-            (observer.sun_rise_time(Time(start), which='next'), 0.1),
+            (observer.sun_set_time(start, which='next'), 0.0),
+            (observer.twilight_evening_civil(start, which='next'), 0.1),
+            (observer.twilight_evening_nautical(start, which='next'), 0.2),
+            (observer.twilight_evening_astronomical(start, which='next'), 0.3),
+            (observer.twilight_morning_astronomical(start, which='next'), 0.4),
+            (observer.twilight_morning_nautical(start, which='next'), 0.3),
+            (observer.twilight_morning_civil(start, which='next'), 0.2),
+            (observer.sun_rise_time(start, which='next'), 0.1),
         ]
 
         # add 'UTC' to each datetime object created above
