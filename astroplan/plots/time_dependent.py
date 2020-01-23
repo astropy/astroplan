@@ -167,14 +167,14 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         tzinfo = None
     # Populate time window if needed.
     # (plot against local time if that's requested)
-    timetoplot = Time(time) + tzoffset
-    if timetoplot.isscalar:
-        timetoplot = timetoplot + np.linspace(-12, 12, 100)*u.hour
-    elif len(timetoplot) == 1:
+    time_ut = Time(time)
+    if time_ut.isscalar:
+        time_ut = time_ut + np.linspace(-12, 12, 100)*u.hour
+    elif len(time_ut) == 1:
         warnings.warn('You used a Time array of length 1.  You probably meant '
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
-    time_ut = timetoplot - tzoffset
+    timetoplot = time_ut + tzoffset
 
     if not isinstance(targets, Sequence):
         targets = [targets]
