@@ -47,7 +47,7 @@ def _has_twin(ax):
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
                  style_sheet=None, brightness_shading=False,
                  altitude_yaxis=False, min_airmass=1.0, min_region=None,
-                 max_airmass=3.0, max_region=None):
+                 max_airmass=3.0, max_region=None, moon_airmass=False):
     r"""
     Plots airmass as a function of time for a given target.
 
@@ -182,7 +182,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if moon_airmass:
         airmass_moon = observer.moon_altaz(time).secz
         masked_airmass_moon = np.ma.array(airmass_moon, mask=airmass_moon<1)
-        ax.plot_date(time.plot_date, masked_airmass_moon, 'r--', label='Moon') #not good to have style fixed but can be worked out later.
+        ax.plot_date(time.plot_date, masked_airmass_moon, label='Moon') 
     # Format the time axis
     if not np.all(masked_airmass.mask):
         date_formatter = dates.DateFormatter('%H:%M')
