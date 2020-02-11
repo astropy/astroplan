@@ -8,6 +8,7 @@ import astropy.units as u
 from astropy.time import Time
 from collections import Sequence
 import warnings
+import pytz
 
 from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
@@ -158,24 +159,28 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if hasattr(time, 'utcoffset') and use_local_tz:
         tzoffset = time.utcoffset()
         tzname = time.tzname()
+        tzinfo = time.tzinfo
     else:
         tzoffset = 0
         tzname = 'UTC'
+        tzinfo = None
     # Populate time window if needed.
-    time = Time(time)
-    if time.isscalar:
-        time = time + np.linspace(-12, 12, 100)*u.hour
-    elif len(time) == 1:
+    # (plot against local time if that's requested)
+    time_ut = Time(time)
+    if time_ut.isscalar:
+        time_ut = time_ut + np.linspace(-12, 12, 100)*u.hour
+    elif len(time_ut) == 1:
         warnings.warn('You used a Time array of length 1.  You probably meant '
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
+    timetoplot = time_ut + tzoffset
 
     if not isinstance(targets, Sequence):
         targets = [targets]
 
     for target in targets:
         # Calculate airmass
-        airmass = observer.altaz(time + tzoffset, target).secz
+        airmass = observer.altaz(time_ut, target).secz
         # Mask out nonsense airmasses
         masked_airmass = np.ma.array(airmass, mask=airmass < 1)
 
@@ -185,11 +190,11 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         except AttributeError:
             target_name = ''
 
-        # Plot data
-        ax.plot_date((time + tzoffset).plot_date, masked_airmass, label=target_name, **style_kwargs)
+        # Plot data (against timezone-offset time)
+        ax.plot_date(timetoplot.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
     # Format the time axis
-    xlo, xhi = (time[0] + tzoffset), (time[-1] + tzoffset)
+    xlo, xhi = (timetoplot[0]), (timetoplot[-1])
     ax.set_xlim([xlo.plot_date, xhi.plot_date])
     date_formatter = dates.DateFormatter('%H:%M')
     ax.xaxis.set_major_formatter(date_formatter)
@@ -197,34 +202,40 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        start = (time[0] + tzoffset).datetime
+        start = time_ut[0]
 
         # Calculate and order twilights and set plotting alpha for each
         twilights = [
-            (observer.sun_set_time(Time(start) + tzoffset,
-                                   which='next').datetime, 0.0),
-            (observer.twilight_evening_civil(Time(start) + tzoffset,
-                                             which='next').datetime, 0.1),
-            (observer.twilight_evening_nautical(Time(start) + tzoffset,
-                                                which='next').datetime, 0.2),
-            (observer.twilight_evening_astronomical(Time(start) + tzoffset,
-                                                    which='next').datetime, 0.3),
-            (observer.twilight_morning_astronomical(Time(start) + tzoffset,
-                                                    which='next').datetime, 0.4),
-            (observer.twilight_morning_nautical(Time(start) + tzoffset,
-                                                which='next').datetime, 0.3),
-            (observer.twilight_morning_civil(Time(start) + tzoffset,
-                                             which='next').datetime, 0.2),
-            (observer.sun_rise_time(Time(start) + tzoffset,
-                                    which='next').datetime, 0.1),
+            (observer.sun_set_time(start, which='next'), 0.0),
+            (observer.twilight_evening_civil(start, which='next'), 0.1),
+            (observer.twilight_evening_nautical(start, which='next'), 0.2),
+            (observer.twilight_evening_astronomical(start, which='next'), 0.3),
+            (observer.twilight_morning_astronomical(start, which='next'), 0.4),
+            (observer.twilight_morning_nautical(start, which='next'), 0.3),
+            (observer.twilight_morning_civil(start, which='next'), 0.2),
+            (observer.sun_rise_time(start, which='next'), 0.1),
         ]
 
+        # add 'UTC' to each datetime object created above
+        twilights = [(t[0].datetime.replace(tzinfo=pytz.utc), t[1])
+                     for t in twilights]
+
         twilights.sort(key=operator.itemgetter(0))
+
         # add in left & right edges, so that if the airmass plot is requested
         # during the day, night is properly shaded
-        for tw_left, tw_right in zip([(xlo.datetime, twilights[0][1])] + twilights,
-                                     twilights + [(xhi.datetime, twilights[0][1])]):
-            ax.axvspan(tw_left[0], tw_right[0],
+        left_edges = [(xlo.datetime.replace(tzinfo=tzinfo), twilights[0][1])] + twilights
+        right_edges = twilights + [(xhi.datetime.replace(tzinfo=tzinfo), twilights[0][1])]
+
+        for tw_left, tw_right in zip(left_edges, right_edges):
+            left = tw_left[0]
+            right = tw_right[0]
+            if tzinfo is not None:
+                # convert to local time zone (which is plotted), then hack away the tzinfo
+                # so that matplotlib doesn't try to double down on the conversion
+                left = left.astimezone(tzinfo).replace(tzinfo=None)
+                right = right.astimezone(tzinfo).replace(tzinfo=None)
+            ax.axvspan(left, right,
                        ymin=0, ymax=1, color='grey', alpha=tw_right[1])
 
     # Invert y-axis and set limits.
@@ -243,10 +254,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Set labels.
     ax.set_ylabel("Airmass")
-    if use_local_tz:
-        ax.set_xlabel("Time from {0} [{1}]".format(min(time + tzoffset).datetime.date(), tzname))
-    else:
-        ax.set_xlabel("Time from {0} [{1}]".format(min(time).datetime.date(), tzname))
+    ax.set_xlabel("Time from {0} [{1}]".format(min(timetoplot).datetime.date(), tzname))
 
     if altitude_yaxis and not _has_twin(ax):
         altitude_ticks = np.array([90, 60, 50, 40, 30, 20])
