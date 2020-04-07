@@ -1,7 +1,9 @@
 0.9 (unreleased)
 ----------------
 
-No changes yet.
+- Fix time range in ``months_observable`` to not be only in 2014. Function now
+  accepts argument ``time_range`` and defaults to the current year. [#458]
+
 
 0.8 (2021-01-26)
 ----------------
