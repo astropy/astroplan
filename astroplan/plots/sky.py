@@ -210,7 +210,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
             theta_labels.append('W' + '\n' + str(label_angle) + degree_sign)
         else:
             theta_labels.append(str(label_angle) + degree_sign)
-
+    theta_labels.append('')
     # Set ticks and labels.
     ax.set_rgrids(range(1, 106, 15), r_labels, angle=-45)
     ax.set_thetagrids(range(0, 360, 45), theta_labels)
