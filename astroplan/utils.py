@@ -3,6 +3,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 # Standard library
+import os
+import sys
 import urllib.error
 import warnings
 
@@ -12,7 +14,8 @@ from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 from astropy.time import Time
 import astropy.units as u
-from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
+from astropy.utils import data
+from astropy.utils.data import CacheMissingWarning
 from astropy.coordinates import EarthLocation
 
 # Package
@@ -29,6 +32,48 @@ IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   ">>> download_IERS_A()\n")
 
 BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
+
+
+def _get_download_cache_locs(pkgname='astropy'):
+    """Finds the path to the cache directory and makes them if they don't exist.
+    Parameters
+    ----------
+    pkgname : `str`, optional
+        The package name to use to locate the download cache. i.e. for
+        ``pkgname='astropy'`` the default cache location is
+        ``~/.astropy/cache``.
+    Returns
+    -------
+    datadir : str
+        The path to the data cache directory.
+    shelveloc : str
+        The path to the shelve object that stores the cache info.
+    """
+    from astropy.config.paths import get_cache_dir
+
+    # datadir includes both the download files and the shelveloc.  This structure
+    # is required since we cannot know a priori the actual file name corresponding
+    # to the shelve map named shelveloc.  (The backend can vary and is allowed to
+    # do whatever it wants with the filename.  Filename munging can and does happen
+    # in practice).
+    py_version = 'py' + str(sys.version_info.major)
+    datadir = os.path.join(get_cache_dir(pkgname), 'download', py_version)
+    shelveloc = os.path.join(datadir, 'urlmap')
+
+    if not os.path.exists(datadir):
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            if not os.path.exists(datadir):
+                raise
+    elif not os.path.isdir(datadir):
+        raise OSError(f'Data cache directory {datadir} is not a directory')
+
+    if os.path.isdir(shelveloc):
+        raise OSError(
+            f'Data cache shelve object location {shelveloc} is a directory')
+
+    return datadir, shelveloc
 
 
 def _low_precision_utc_to_ut1(self, jd1, jd2):
