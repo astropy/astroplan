@@ -12,10 +12,11 @@ from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 from astropy.time import Time
 import astropy.units as u
+from astropy.utils.data import CacheMissingWarning
 try:
-    from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
+    from astropy.utils.data import _get_download_cache_locs as get_download_cache_loc
 except ImportError:
-    from astropy.utils.data import _get_download_cache_loc, CacheMissingWarning
+    from astropy.utils.data import _get_download_cache_loc as get_download_cache_loc
 from astropy.coordinates import EarthLocation
 
 # Package
@@ -72,7 +73,7 @@ def IERS_A_in_cache():
         # The below code which accesses ``urlmapfn`` is stolen from
         # astropy.utils.data.download_file()
         try:
-            dldir, urlmapfn = _get_download_cache_locs()
+            dldir, urlmapfn = get_download_cache_loc()
         except (IOError, OSError) as e:
             msg = 'Remote data cache could not be accessed due to '
             estr = '' if len(e.args) < 1 else (': ' + str(e))
