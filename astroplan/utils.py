@@ -12,7 +12,10 @@ from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils import iers
 from astropy.time import Time
 import astropy.units as u
-from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
+try:
+    from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
+except ImportError:
+    from astropy.utils.data import _get_download_cache_loc, CacheMissingWarning
 from astropy.coordinates import EarthLocation
 
 # Package
