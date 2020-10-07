@@ -134,13 +134,8 @@ def download_IERS_A(show_progress=True):
         for url in urls:
             clear_download_cache(url)
 
-    for i, url in enumerate(urls):
-        try:
-            local_iers_a_path = download_file(url, cache=True,
-                                              show_progress=show_progress)
-        except urllib.error.URLError:
-            if i == len(urls) - 1:
-                raise
+    local_iers_a_path = download_file(urls[0], sources=urls, cache=True,
+                                      show_progress=show_progress)
 
     # Undo monkey patch set up by get_IERS_A_or_workaround
     iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
