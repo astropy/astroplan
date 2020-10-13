@@ -25,6 +25,8 @@ IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   ">>> from astroplan import download_IERS_A\n"
                   ">>> download_IERS_A()\n")
 
+# IF IERS table is unavailable we override the time deltas but need a way to
+# restore them next time table is available.
 BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
 
 
@@ -65,8 +67,8 @@ def download_IERS_A(show_progress=True):
     try:
         iers_table = IERS_Auto()
         # Undo monkey patch set up by exception below.
-        IERS.iers_table = IERS_A.open(iers_table)
-        Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+        if Time._get_delta_ut1_utc != BACKUP_Time_get_delta_ut1_utc:
+            Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
         return
     except Exception as err:
         Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
