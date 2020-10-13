@@ -29,4 +29,4 @@ if not _ASTROPY_SETUP_:
     from .scheduling import *
     from .periodic import *
 
-    get_IERS_A_or_workaround()
+    download_IERS_A()

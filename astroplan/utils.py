@@ -9,16 +9,15 @@ import warnings
 # Third-party
 import numpy as np
 from astropy.utils.data import download_file, clear_download_cache
-from astropy.utils import iers
+from astropy.utils.iers import IERS, IERS_Auto, IERS_A
 from astropy.time import Time
 import astropy.units as u
-from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
 from astropy.coordinates import EarthLocation
 
 # Package
 from .exceptions import OldEarthOrientationDataWarning
 
-__all__ = ["get_IERS_A_or_workaround", "download_IERS_A",
+__all__ = ["download_IERS_A",
            "time_grid_from_range", "_set_mpl_style_sheet",
            "stride_array"]
 
@@ -38,81 +37,13 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
     try:
-        if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
+        if self.mjd * u.day not in IERS_Auto.open()['MJD']:
             warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return self.delta_ut1_utc
 
     except (AttributeError, ValueError):
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return np.zeros(self.shape)
-
-
-def get_IERS_A_or_workaround():
-    """
-    Get the cached IERS Bulletin A table if one exists. If one does not exist,
-    monkey patch `~astropy.time.Time._get_delta_ut1_utc` so that
-    `~astropy.time.Time` objects don't raise errors by computing UT1-UTC off
-    the end of the IERS table.
-    """
-    if IERS_A_in_cache():
-        iers.IERS.iers_table = _get_IERS_A_table()
-    else:
-        Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
-
-
-def IERS_A_in_cache():
-    """
-    Check if the IERS Bulletin A table is locally cached.
-    """
-    urls = (iers.conf.iers_auto_url, iers.conf.iers_auto_url_mirror)
-    for url_key in urls:
-        # The below code which accesses ``urlmapfn`` is stolen from
-        # astropy.utils.data.download_file()
-        try:
-            dldir, urlmapfn = _get_download_cache_locs()
-        except (IOError, OSError) as e:
-            msg = 'Remote data cache could not be accessed due to '
-            estr = '' if len(e.args) < 1 else (': ' + str(e))
-            warnings.warn(CacheMissingWarning(msg + e.__class__.__name__ + estr))
-        else:
-            with _open_shelve(urlmapfn, True) as url2hash:
-                # TODO: try to figure out how to test this in the unicode case
-                if str(url_key) in url2hash:
-                    return True
-    return False
-
-
-def _get_IERS_A_table(warn_update=14*u.day):
-    """
-    Grab the locally cached copy of the IERS Bulletin A table. Check to see
-    if it's up to date, and warn the user if it is not.
-
-    This will fail and raise OSError if the file is not in the cache.
-    """
-    if IERS_A_in_cache():
-        table = iers.IERS_Auto.open()
-        # Use polar motion flag to identify last observation before predictions
-        if 'PolPMFlag_A' in table.colnames:
-            index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
-            time_of_last_observation = Time(table['MJD'][index_of_last_observation],
-                                            format='mjd')
-
-        # If time of last observation is not available, set it equal to the
-        # final prediction in the table:
-        else:
-            time_of_last_observation = Time(table['MJD'].max(),
-                                            format='mjd')
-        time_since_last_update = Time.now() - time_of_last_observation
-
-        # If the IERS bulletin is more than `warn_update` days old, warn user
-        if warn_update < time_since_last_update:
-            warnmsg = ("Your version of the IERS Bulletin A is {:.1f} days "
-                       "old. ".format(time_since_last_update.to(u.day).value) +
-                       IERS_A_WARNING)
-            warnings.warn(warnmsg, OldEarthOrientationDataWarning)
-        return table
-    else:
-        raise OSError("No IERS A table has been downloaded.")
 
 
 def download_IERS_A(show_progress=True):
@@ -123,32 +54,28 @@ def download_IERS_A(show_progress=True):
     table in the astropy cache, and undo the monkey patching done by
     `~astroplan.get_IERS_A_or_workaround`.
 
+    If one does not exist, monkey patch `~astropy.time.Time._get_delta_ut1_utc`
+    so that `~astropy.time.Time` objects don't raise errors by computing UT1-UTC
+    off the end of the IERS table.
+
     Parameters
     ----------
     show_progress : bool
         `True` shows a progress bar during the download.
     """
-    urls = (iers.conf.iers_auto_url, iers.conf.iers_auto_url_mirror)
-
-    if IERS_A_in_cache():
-        for url in urls:
-            clear_download_cache(url)
-
-    for i, url in enumerate(urls):
-        try:
-            local_iers_a_path = download_file(url, cache=True,
-                                              show_progress=show_progress)
-        except urllib.error.URLError:
-            if i == len(urls) - 1:
-                raise
-
-    # Undo monkey patch set up by get_IERS_A_or_workaround
-    iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
-    Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+    # Let astropy handle all the details.
+    try:
+        iers_table = IERS_Auto()
+        # Undo monkey patch set up by exception below.
+        IERS.iers_table = IERS_A.open(iers_table)
+        Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+        return
+    except Exception as err:
+        Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
 
 
 @u.quantity_input(time_resolution=u.hour)
-def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
+def time_grid_from_range(time_range, time_resolution=0.5 * u.hour):
     """
     Get linearly-spaced sequence of times.
 
@@ -264,40 +191,40 @@ class EarthLocation_mock(EarthLocation):
     Mock the EarthLocation class if no remote data for locations commonly
     used in the tests.
     """
+
     @classmethod
     def of_site_mock(cls, string):
+        subaru = EarthLocation.from_geodetic(-155.4761111111111 * u.deg,
+                                             19.825555555555564 * u.deg,
+                                             4139 * u.m)
 
-        subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
-                                             19.825555555555564*u.deg,
-                                             4139*u.m)
+        lco = EarthLocation.from_geodetic(-70.70166666666665 * u.deg,
+                                          -29.003333333333327 * u.deg,
+                                          2282 * u.m)
 
-        lco = EarthLocation.from_geodetic(-70.70166666666665*u.deg,
-                                          -29.003333333333327*u.deg,
-                                          2282*u.m)
+        aao = EarthLocation.from_geodetic(149.06608611111113 * u.deg,
+                                          -31.277038888888896 * u.deg,
+                                          1164 * u.m)
 
-        aao = EarthLocation.from_geodetic(149.06608611111113*u.deg,
-                                          -31.277038888888896*u.deg,
-                                          1164*u.m)
+        vbo = EarthLocation.from_geodetic(78.8266 * u.deg,
+                                          12.576659999999999 * u.deg,
+                                          725 * u.m)
 
-        vbo = EarthLocation.from_geodetic(78.8266*u.deg,
-                                          12.576659999999999*u.deg,
-                                          725*u.m)
+        apo = EarthLocation.from_geodetic(-105.82 * u.deg,
+                                          32.78 * u.deg,
+                                          2798 * u.m)
 
-        apo = EarthLocation.from_geodetic(-105.82*u.deg,
-                                          32.78*u.deg,
-                                          2798*u.m)
+        keck = EarthLocation.from_geodetic(-155.47833333333332 * u.deg,
+                                           19.828333333333326 * u.deg,
+                                           4160 * u.m)
 
-        keck = EarthLocation.from_geodetic(-155.47833333333332*u.deg,
-                                           19.828333333333326*u.deg,
-                                           4160*u.m)
+        kpno = EarthLocation.from_geodetic(-111.6 * u.deg,
+                                           31.963333333333342 * u.deg,
+                                           2120 * u.m)
 
-        kpno = EarthLocation.from_geodetic(-111.6*u.deg,
-                                           31.963333333333342*u.deg,
-                                           2120*u.m)
-
-        lapalma = EarthLocation.from_geodetic(-17.879999*u.deg,
-                                              28.758333*u.deg,
-                                              2327*u.m)
+        lapalma = EarthLocation.from_geodetic(-17.879999 * u.deg,
+                                              28.758333 * u.deg,
+                                              2327 * u.m)
 
         observatories = dict(lco=lco, subaru=subaru, aao=aao, vbo=vbo, apo=apo,
                              keck=keck, kpno=kpno, lapalma=lapalma)
