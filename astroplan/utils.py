@@ -3,12 +3,10 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 # Standard library
-import urllib.error
 import warnings
 
 # Third-party
 import numpy as np
-from astropy.utils.data import download_file, clear_download_cache
 from astropy.utils.iers import IERS, IERS_Auto, IERS_A
 from astropy.time import Time
 import astropy.units as u
