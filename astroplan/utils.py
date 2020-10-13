@@ -51,8 +51,8 @@ def download_IERS_A(show_progress=True):
     Download and cache the IERS Bulletin A table.
 
     If one is already cached, download a new one and overwrite the old. Store
-    table in the astropy cache, and undo the monkey patching done by
-    `~astroplan.get_IERS_A_or_workaround`.
+    table in the astropy cache, and undo the monkey patching caused by earlier
+    failure (if applicable).
 
     If one does not exist, monkey patch `~astropy.time.Time._get_delta_ut1_utc`
     so that `~astropy.time.Time` objects don't raise errors by computing UT1-UTC
