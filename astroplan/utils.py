@@ -7,7 +7,7 @@ import warnings
 
 # Third-party
 import numpy as np
-from astropy.utils.iers import IERS, IERS_Auto, IERS_A
+from astropy.utils.iers import IERS_Auto
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import EarthLocation
@@ -65,12 +65,13 @@ def download_IERS_A(show_progress=True):
     """
     # Let astropy handle all the details.
     try:
-        iers_table = IERS_Auto()
+        IERS_Auto()
         # Undo monkey patch set up by exception below.
         if Time._get_delta_ut1_utc != BACKUP_Time_get_delta_ut1_utc:
             Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
         return
     except Exception as err:
+        warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
 
 
