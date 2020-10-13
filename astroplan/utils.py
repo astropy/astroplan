@@ -37,7 +37,7 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
     try:
-        if self.mjd * u.day not in IERS_Auto.open()['MJD']:
+        if self.mjd*u.day not in IERS_Auto.open()['MJD']:
             warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return self.delta_ut1_utc
 
@@ -76,7 +76,7 @@ def download_IERS_A(show_progress=True):
 
 
 @u.quantity_input(time_resolution=u.hour)
-def time_grid_from_range(time_range, time_resolution=0.5 * u.hour):
+def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     """
     Get linearly-spaced sequence of times.
 
@@ -195,37 +195,37 @@ class EarthLocation_mock(EarthLocation):
 
     @classmethod
     def of_site_mock(cls, string):
-        subaru = EarthLocation.from_geodetic(-155.4761111111111 * u.deg,
-                                             19.825555555555564 * u.deg,
-                                             4139 * u.m)
+        subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
+                                             19.825555555555564*u.deg,
+                                             4139*u.m)
 
-        lco = EarthLocation.from_geodetic(-70.70166666666665 * u.deg,
-                                          -29.003333333333327 * u.deg,
-                                          2282 * u.m)
+        lco = EarthLocation.from_geodetic(-70.70166666666665*u.deg,
+                                          -29.003333333333327*u.deg,
+                                          2282*u.m)
 
-        aao = EarthLocation.from_geodetic(149.06608611111113 * u.deg,
-                                          -31.277038888888896 * u.deg,
-                                          1164 * u.m)
+        aao = EarthLocation.from_geodetic(149.06608611111113*u.deg,
+                                          -31.277038888888896*u.deg,
+                                          1164*u.m)
 
-        vbo = EarthLocation.from_geodetic(78.8266 * u.deg,
-                                          12.576659999999999 * u.deg,
-                                          725 * u.m)
+        vbo = EarthLocation.from_geodetic(78.8266*u.deg,
+                                          12.576659999999999*u.deg,
+                                          725*u.m)
 
-        apo = EarthLocation.from_geodetic(-105.82 * u.deg,
-                                          32.78 * u.deg,
-                                          2798 * u.m)
+        apo = EarthLocation.from_geodetic(-105.82*u.deg,
+                                          32.78*u.deg,
+                                          2798*u.m)
 
-        keck = EarthLocation.from_geodetic(-155.47833333333332 * u.deg,
-                                           19.828333333333326 * u.deg,
-                                           4160 * u.m)
+        keck = EarthLocation.from_geodetic(-155.47833333333332*u.deg,
+                                           19.828333333333326*u.deg,
+                                           4160*u.m)
 
-        kpno = EarthLocation.from_geodetic(-111.6 * u.deg,
-                                           31.963333333333342 * u.deg,
-                                           2120 * u.m)
+        kpno = EarthLocation.from_geodetic(-111.6*u.deg,
+                                           31.963333333333342*u.deg,
+                                           2120*u.m)
 
-        lapalma = EarthLocation.from_geodetic(-17.879999 * u.deg,
-                                              28.758333 * u.deg,
-                                              2327 * u.m)
+        lapalma = EarthLocation.from_geodetic(-17.879999*u.deg,
+                                              28.758333*u.deg,
+                                              2327*u.m)
 
         observatories = dict(lco=lco, subaru=subaru, aao=aao, vbo=vbo, apo=apo,
                              keck=keck, kpno=kpno, lapalma=lapalma)
