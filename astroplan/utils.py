@@ -70,7 +70,7 @@ def download_IERS_A(show_progress=True):
         if Time._get_delta_ut1_utc != BACKUP_Time_get_delta_ut1_utc:
             Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
         return
-    except Exception as err:
+    except Exception:
         warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
 
