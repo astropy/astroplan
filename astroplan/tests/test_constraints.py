@@ -160,6 +160,7 @@ def test_galactic_plane_separation():
                                          twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [False, True, True])
 
+
 # in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
 def test_sun_separation():

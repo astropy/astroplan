@@ -104,7 +104,7 @@ setup(name=PACKAGENAME,
       scripts=scripts,
       install_requires=['numpy>=1.10', 'astropy>=1.3', 'pytz', 'six'],
       extras_require=dict(
-          plotting=['matplotlib>=1.4'],
+          plotting=['matplotlib>=1.4,<3.3'],
           docs=['sphinx_rtd_theme'],
           test=['pytest-astropy'],
       ),

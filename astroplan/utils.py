@@ -3,22 +3,19 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
 # Standard library
-import urllib.error
 import warnings
 
 # Third-party
 import numpy as np
-from astropy.utils.data import download_file, clear_download_cache
-from astropy.utils import iers
+from astropy.utils.iers import IERS_Auto
 from astropy.time import Time
 import astropy.units as u
-from astropy.utils.data import _get_download_cache_locs, CacheMissingWarning
 from astropy.coordinates import EarthLocation
 
 # Package
 from .exceptions import OldEarthOrientationDataWarning
 
-__all__ = ["get_IERS_A_or_workaround", "download_IERS_A",
+__all__ = ["download_IERS_A",
            "time_grid_from_range", "_set_mpl_style_sheet",
            "stride_array"]
 
@@ -28,6 +25,8 @@ IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   ">>> from astroplan import download_IERS_A\n"
                   ">>> download_IERS_A()\n")
 
+# IF IERS table is unavailable we override the time deltas but need a way to
+# restore them next time table is available.
 BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
 
 
@@ -38,7 +37,7 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
     This method mimics `~astropy.coordinates.builtin_frames.utils.get_dut1utc`
     """
     try:
-        if self.mjd*u.day not in iers.IERS_Auto.open()['MJD']:
+        if self.mjd*u.day not in IERS_Auto.open()['MJD']:
             warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
         return self.delta_ut1_utc
 
@@ -47,104 +46,33 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
         return np.zeros(self.shape)
 
 
-def get_IERS_A_or_workaround():
-    """
-    Get the cached IERS Bulletin A table if one exists. If one does not exist,
-    monkey patch `~astropy.time.Time._get_delta_ut1_utc` so that
-    `~astropy.time.Time` objects don't raise errors by computing UT1-UTC off
-    the end of the IERS table.
-    """
-    if IERS_A_in_cache():
-        iers.IERS.iers_table = _get_IERS_A_table()
-    else:
-        Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
-
-
-def IERS_A_in_cache():
-    """
-    Check if the IERS Bulletin A table is locally cached.
-    """
-    urls = (iers.conf.iers_auto_url, iers.conf.iers_auto_url_mirror)
-    for url_key in urls:
-        # The below code which accesses ``urlmapfn`` is stolen from
-        # astropy.utils.data.download_file()
-        try:
-            dldir, urlmapfn = _get_download_cache_locs()
-        except (IOError, OSError) as e:
-            msg = 'Remote data cache could not be accessed due to '
-            estr = '' if len(e.args) < 1 else (': ' + str(e))
-            warnings.warn(CacheMissingWarning(msg + e.__class__.__name__ + estr))
-        else:
-            with _open_shelve(urlmapfn, True) as url2hash:
-                # TODO: try to figure out how to test this in the unicode case
-                if str(url_key) in url2hash:
-                    return True
-    return False
-
-
-def _get_IERS_A_table(warn_update=14*u.day):
-    """
-    Grab the locally cached copy of the IERS Bulletin A table. Check to see
-    if it's up to date, and warn the user if it is not.
-
-    This will fail and raise OSError if the file is not in the cache.
-    """
-    if IERS_A_in_cache():
-        table = iers.IERS_Auto.open()
-        # Use polar motion flag to identify last observation before predictions
-        if 'PolPMFlag_A' in table.colnames:
-            index_of_last_observation = ''.join(table['PolPMFlag_A']).index('IP')
-            time_of_last_observation = Time(table['MJD'][index_of_last_observation],
-                                            format='mjd')
-
-        # If time of last observation is not available, set it equal to the
-        # final prediction in the table:
-        else:
-            time_of_last_observation = Time(table['MJD'].max(),
-                                            format='mjd')
-        time_since_last_update = Time.now() - time_of_last_observation
-
-        # If the IERS bulletin is more than `warn_update` days old, warn user
-        if warn_update < time_since_last_update:
-            warnmsg = ("Your version of the IERS Bulletin A is {:.1f} days "
-                       "old. ".format(time_since_last_update.to(u.day).value) +
-                       IERS_A_WARNING)
-            warnings.warn(warnmsg, OldEarthOrientationDataWarning)
-        return table
-    else:
-        raise OSError("No IERS A table has been downloaded.")
-
-
 def download_IERS_A(show_progress=True):
     """
     Download and cache the IERS Bulletin A table.
 
     If one is already cached, download a new one and overwrite the old. Store
-    table in the astropy cache, and undo the monkey patching done by
-    `~astroplan.get_IERS_A_or_workaround`.
+    table in the astropy cache, and undo the monkey patching caused by earlier
+    failure (if applicable).
+
+    If one does not exist, monkey patch `~astropy.time.Time._get_delta_ut1_utc`
+    so that `~astropy.time.Time` objects don't raise errors by computing UT1-UTC
+    off the end of the IERS table.
 
     Parameters
     ----------
     show_progress : bool
         `True` shows a progress bar during the download.
     """
-    urls = (iers.conf.iers_auto_url, iers.conf.iers_auto_url_mirror)
-
-    if IERS_A_in_cache():
-        for url in urls:
-            clear_download_cache(url)
-
-    for i, url in enumerate(urls):
-        try:
-            local_iers_a_path = download_file(url, cache=True,
-                                              show_progress=show_progress)
-        except urllib.error.URLError:
-            if i == len(urls) - 1:
-                raise
-
-    # Undo monkey patch set up by get_IERS_A_or_workaround
-    iers.IERS.iers_table = iers.IERS_A.open(local_iers_a_path)
-    Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+    # Let astropy handle all the details.
+    try:
+        IERS_Auto()
+        # Undo monkey patch set up by exception below.
+        if Time._get_delta_ut1_utc != BACKUP_Time_get_delta_ut1_utc:
+            Time._get_delta_ut1_utc = BACKUP_Time_get_delta_ut1_utc
+        return
+    except Exception:
+        warnings.warn(IERS_A_WARNING, OldEarthOrientationDataWarning)
+        Time._get_delta_ut1_utc = _low_precision_utc_to_ut1
 
 
 @u.quantity_input(time_resolution=u.hour)
@@ -264,9 +192,9 @@ class EarthLocation_mock(EarthLocation):
     Mock the EarthLocation class if no remote data for locations commonly
     used in the tests.
     """
+
     @classmethod
     def of_site_mock(cls, string):
-
         subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
                                              19.825555555555564*u.deg,
                                              4139*u.m)

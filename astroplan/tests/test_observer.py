@@ -69,7 +69,7 @@ def test_Observer_altaz():
     # Calculate altitude/azimuth with astroplan
     location = EarthLocation.from_geodetic(longitude, latitude, elevation)
     astroplan_obs = Observer(name='Observatory', location=location,
-                             pressure=pressure*u.bar)
+                             pressure=pressure)
     astroplan_vega = FixedTarget(vega_coords)
     altaz = astroplan_obs.altaz(time, astroplan_vega)
     astroplan_altitude = altaz.alt
