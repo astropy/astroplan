@@ -1,7 +1,7 @@
-0.7 (unreleased)
+0.7 (2020-10-27)
 ----------------
 
-- No changes yet
+- Fix compatibility with Astropy 4.X
 
 
 0.6 (2019-10-08)
