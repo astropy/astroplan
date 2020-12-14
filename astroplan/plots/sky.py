@@ -195,7 +195,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     ]
 
     theta_labels = []
-    for chunk in range(0, 7):
+    for chunk in range(0, 8):
         label_angle = (az_label_offset*(1/u.deg)) + (chunk*45.0)
         while label_angle >= 360.0:
             label_angle -= 360.0
