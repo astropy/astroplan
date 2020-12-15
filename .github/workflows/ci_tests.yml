@@ -1,0 +1,86 @@
+# GitHub Actions workflow for testing and continuous integration.
+#
+# This file performs testing using tox and tox.ini to define and configure the test environments.
+
+name: CI Tests
+
+on:
+  push:
+    branches:
+    - master  # GitHub now defaults to 'main' as the name of the primary branch. Change this as needed.
+  #  tags: # run CI if specific tags are pushed
+  pull_request:
+    # branches: # only build on PRs against 'main' if you need to further limit when CI is run.
+    #    - main
+
+jobs:
+  # Github Actions supports ubuntu, windows, and macos virtual environments:
+  # https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
+  ci_tests:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - name: Code style checks
+            os: ubuntu-latest
+            python: 3.x
+            toxenv: codestyle
+
+          - name: Python 3.7 with minimal dependencies
+            os: ubuntu-latest
+            python: 3.7
+            toxenv: py37-test
+
+          # - name: Python 3.8 with all optional dependencies and coverage checking
+          #   os: ubuntu-latest
+          #   python: 3.8
+          #   toxenv: py38-test-alldeps-cov
+
+          # - name: OS X - Python 3.8 with all optional dependencies
+          #   os: macos-latest
+          #   python: 3.8
+          #   toxenv: py38-test-alldeps
+
+          # - name: Windows - Python 3.8 with all optional dependencies
+          #   os: windows-latest
+          #   python: 3.8
+          #   toxenv: py38-test-alldeps
+
+          # - name: Python 3.7 with oldest supported version of all dependencies
+          #   os: ubuntu-16.04
+          #   python: 3.7
+          #   toxenv: py37-test-oldestdeps
+
+          # - name: Python 3.8 with latest dev versions of key dependencies
+          #   os: ubuntu-latest
+          #   python: 3.8
+          #   toxenv: py38-test-devdeps
+
+          - name: Test building of Sphinx docs
+            os: ubuntu-latest
+            python: 3.x
+            toxenv: build_docs
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up python ${{ matrix.python }} on ${{ matrix.os }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python }}
+    - name: Install base dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install tox codecov
+    - name: Test with tox
+      run: |
+        tox -e ${{ matrix.toxenv }}
+    # This is an example of how to upload coverage to codecov
+    # - name: Upload coverage to codecov
+    #   if: "contains(matrix.toxenv, '-cov')"
+    #   uses: codecov/codecov-action@v1
+    #   with:
+    #     file: ./coverage.xml
