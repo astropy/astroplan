@@ -14,7 +14,7 @@ It requires Python 2.7 or 3.5+ (2.6 and 3.2 or earlier are not
 supported, 3.3 and 3.4 may work) as well as the following packages:
 
 * `Numpy`_ (1.10 or later)
-* `Astropy`_ (v1.3 or later)
+* `Astropy <https://astropy.org>`__ (v1.3 or later)
 * `pytz`_
 
 Optional packages:
@@ -71,7 +71,7 @@ If there are no errors, you are good to go!
 More
 ====
 
-astroplan follows `Astropy`_'s guidelines for affiliated packages--installation
+astroplan follows `Astropy <https://astropy.org>`__'s guidelines for affiliated packages--installation
 and testing for the two are quite similar! Please see Astropy's
 `installation page <http://astropy.readthedocs.io/en/latest/install.html>`_
 for more information.

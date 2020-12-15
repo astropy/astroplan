@@ -52,10 +52,10 @@ near future (accounting for scheduled leap seconds). The data products released
 by the IERS used by astroplan are the IERS Bulletins A and B.
 
 * IERS Bulletin B is a table with Earth orientation observations from the last
-  few decades up through nearly the present time. `Astropy`_ relies on IERS B to
+  few decades up through nearly the present time. `Astropy <https://astropy.org>`__ relies on IERS B to
   compute UT1-UTC, and by default will raise an error if you try to compute
   UT1-UTC for a time that is outside the bounds of the IERS Bulletin B table
-  (see the `astropy`_ docs on the `UT1/UTC transformation offsets
+  (see the `Astropy <https://astropy.org>`__ docs on the `UT1/UTC transformation offsets
   <http://astropy.readthedocs.io/en/latest/time/index.html?highlight=iers#transformation-offsets>`_
   for more details), like this::
 

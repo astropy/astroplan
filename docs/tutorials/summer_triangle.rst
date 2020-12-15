@@ -363,7 +363,7 @@ basically they work like numbers with attached units, and keep track of
 units so you don't have to.
 
 For more on the many things you can do with these, take a look at the
-`Astropy`_ documentation or tutorials.  For now the most useful thing is to
+`Astropy <https://astropy.org>`__ documentation or tutorials.  For now the most useful thing is to
 know is that ``angle.degree``, ``angle.hourangle``, and ``angle.radian``
 give you back Python floats (or `numpy` arrays) for the angle in degrees,
 hours, or radians.

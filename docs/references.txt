@@ -1,4 +1,3 @@
-.. _Astropy: http://astropy.org
 .. _Skyfield: http://rhodesmill.org/skyfield/
 .. _PyEphem: http://rhodesmill.org/pyephem/
 .. _Numpy: http://www.numpy.org
