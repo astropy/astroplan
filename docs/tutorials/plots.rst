@@ -484,7 +484,7 @@ plots.
 Dark Theme Plots
 ++++++++++++++++
 
-By default, `astroplan` uses the `astropy`_ style sheet for `Matplotlib`_ to
+By default, `astroplan` uses the `Astropy`_ style sheet for `Matplotlib`_ to
 generate plots with more pleasing settings than provided for by the matplotlib
 defaults. When using `astroplan` at night, you may prefer to make plots with
 dark backgrounds, rather than the default white background, to preserve your
