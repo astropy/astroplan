@@ -32,30 +32,31 @@ jobs:
             python: 3.7
             toxenv: py37-test
 
-          # - name: Python 3.8 with all optional dependencies and coverage checking
-          #   os: ubuntu-latest
-          #   python: 3.8
-          #   toxenv: py38-test-alldeps-cov
+          - name: Python 3.8 with all optional dependencies, coverage checking and remote data
+            os: ubuntu-latest
+            python: 3.8
+            toxenv: py38-test-alldeps-cov
+            toxposargs: --remote-data
 
-          # - name: OS X - Python 3.8 with all optional dependencies
-          #   os: macos-latest
-          #   python: 3.8
-          #   toxenv: py38-test-alldeps
+          - name: OS X - Python 3.8 with all optional dependencies
+            os: macos-latest
+            python: 3.8
+            toxenv: py38-test-alldeps
 
-          # - name: Windows - Python 3.8 with all optional dependencies
-          #   os: windows-latest
-          #   python: 3.8
-          #   toxenv: py38-test-alldeps
+          - name: Windows - Python 3.8 with all optional dependencies
+            os: windows-latest
+            python: 3.8
+            toxenv: py38-test-alldeps
 
           # - name: Python 3.7 with oldest supported version of all dependencies
           #   os: ubuntu-16.04
           #   python: 3.7
           #   toxenv: py37-test-oldestdeps
 
-          # - name: Python 3.8 with latest dev versions of key dependencies
-          #   os: ubuntu-latest
-          #   python: 3.8
-          #   toxenv: py38-test-devdeps
+          - name: Python 3.8 with latest dev versions of key dependencies
+            os: ubuntu-latest
+            python: 3.8
+            toxenv: py38-test-devdeps
 
           - name: Test building of Sphinx docs
             os: ubuntu-latest
