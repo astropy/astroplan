@@ -75,6 +75,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install tox codecov
+    - name: Install graphviz dependency
+      if: ${{ contains(matrix.toxenv, 'build_docs') }}
+      run: sudo apt-get -y install graphviz
     - name: Test with tox
       run: |
         tox -e ${{ matrix.toxenv }}
