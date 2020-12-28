@@ -7,7 +7,7 @@ name: CI Tests
 on:
   push:
     branches:
-  #  - master  # GitHub now defaults to 'main' as the name of the primary branch. Change this as needed.
+      - master  # GitHub now defaults to 'main' as the name of the primary branch. Change this as needed.
   #  tags: # run CI if specific tags are pushed
   pull_request:
     # branches: # only build on PRs against 'main' if you need to further limit when CI is run.
