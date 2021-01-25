@@ -14,6 +14,7 @@
 from configparser import ConfigParser
 import os
 import sys
+import datetime
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
