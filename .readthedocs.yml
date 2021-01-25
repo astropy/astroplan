@@ -15,6 +15,10 @@ formats:
 
 # Optionally set the version of Python and requirements required to build your docs
 python:
-   version: 3.7
-   install:
-   - requirements: docs/rtd-pip-requirements
+  version: 3.7
+  install:
+    - requirements: docs/rtd-pip-requirements
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
