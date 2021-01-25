@@ -75,7 +75,7 @@ def test_schedule_insert_slot():
     end_time = start + duration
     block = TransitionBlock.from_duration(duration)
     schedule.insert_slot(end_time - duration, block)
-    assert not end_time - duration == start
+    assert end_time - duration == start
     assert len(schedule.slots) == 2
     assert schedule.slots[0].start == start
     schedule = Schedule(start, start + 5*u.hour)

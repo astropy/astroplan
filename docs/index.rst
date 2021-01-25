@@ -26,7 +26,7 @@ Features:
   plots (airmass, parallactic angle, sky maps).
 * Determining observability of sets of targets given an arbitrary set of
   constraints (i.e., altitude, airmass, moon separation/illumination, etc.).
-* `Astropy`_ powered!
+* `Astropy <https://astropy.org>`__ powered!
 
 Links
 =====
