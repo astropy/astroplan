@@ -18,27 +18,6 @@ Observation planning package for astronomers
     :target: https://arxiv.org/abs/1712.09631
     :alt: arXiv paper
 
-Status shields
-++++++++++++++
-
-(mostly useful for developers)
-
-.. image:: http://img.shields.io/travis/astropy/astroplan.svg?branch=master
-    :target: https://travis-ci.org/astropy/astroplan
-    :alt: Travis Status
-
-.. image:: https://img.shields.io/coveralls/astropy/astroplan.svg
-    :target: https://coveralls.io/r/astropy/astroplan
-    :alt: Code Coverage
-
-.. image:: https://readthedocs.org/projects/astroplan/badge/?version=stable
-    :target: http://astroplan.readthedocs.io/en/stable/
-    :alt: Stable Documentation Status
-
-.. image:: https://readthedocs.org/projects/astroplan/badge/?version=latest
-    :target: http://astroplan.readthedocs.io/en/latest/
-    :alt: Latest Documentation Status
-
 Attribution
 +++++++++++
 
