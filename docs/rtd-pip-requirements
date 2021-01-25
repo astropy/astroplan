@@ -4,4 +4,4 @@ Cython
 astropy >= 1.3
 pytz
 astroquery
-
+sphinx-astropy
