@@ -55,7 +55,7 @@ Sirius over Apache Point Observatory, by specifying ``n_grid_points=1000``:
 
 That's the rise time computed on a grid of 1000 altitudes in a 24 hour period,
 so it should be very accurate, but we can run the ``timeit`` function on the
-above code snippet to see how slow this is::
+above code snippet to see how slow this is:
 
 .. code-block:: 
 
@@ -70,7 +70,7 @@ this time:
     >>> rise_time_fast.iso  # doctest: +SKIP
     '2019-01-01 01:54:09.946'
 
-And timing the above snippet, we find::
+And timing the above snippet, we find:
 
 .. code-block:: 
 
