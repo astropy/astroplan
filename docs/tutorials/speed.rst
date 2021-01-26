@@ -58,6 +58,7 @@ so it should be very accurate, but we can run the ``timeit`` function on the
 above code snippet to see how slow this is::
 
 .. code-block:: 
+
     290 ms ± 4.6 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 
 Now let's compute a lower precision, but much faster rise time, using ``N=10``
@@ -72,6 +73,7 @@ this time:
 And timing the above snippet, we find::
 
 .. code-block:: 
+
     27.3 ms ± 709 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
 
 You can see that the rise time returned by
