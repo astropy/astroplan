@@ -39,7 +39,7 @@ You can install the stable version of astroplan from PyPI with::
 
 or from anaconda::
 
-    conda install -c astropy astroplan
+    conda install -c conda-forge astroplan
 
 Alternatively, you can install the latest developer version of astroplan by
 cloning the git repository::
