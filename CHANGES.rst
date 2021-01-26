@@ -1,7 +1,13 @@
-0.8 (unreleased)
+0.8 (2021-01-26)
 ----------------
 
-- No changes yet.
+- Fix Read The Docs compatibility [#497]
+
+- Move to APE 17 infrastructure, change to github actions [#493]
+
+- Update conda channel in favor of conda-forge [#491]
+
+- Fix for astropy cache compatibility [#481]
 
 0.7 (2020-10-27)
 ----------------
