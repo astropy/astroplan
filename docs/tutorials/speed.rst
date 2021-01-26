@@ -57,7 +57,7 @@ That's the rise time computed on a grid of 1000 altitudes in a 24 hour period,
 so it should be very accurate, but we can run the ``timeit`` function on the
 above code snippet to see how slow this is:
 
-.. code-block:: 
+.. code-block:: shell
 
     290 ms ± 4.6 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 
@@ -72,7 +72,7 @@ this time:
 
 And timing the above snippet, we find:
 
-.. code-block:: 
+.. code-block:: shell
 
     27.3 ms ± 709 µs per loop (mean ± std. dev. of 7 runs, 10 loops each)
 
