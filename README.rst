@@ -18,6 +18,9 @@ Observation planning package for astronomers
     :target: https://arxiv.org/abs/1712.09631
     :alt: arXiv paper
 
+.. image:: https://github.com/astropy/astroplan/workflows/CI%20Tests/badge.svg
+    :target: https://github.com/astropy/astroplan/actions
+
 Attribution
 +++++++++++
 
