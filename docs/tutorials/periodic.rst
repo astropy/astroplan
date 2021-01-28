@@ -117,7 +117,7 @@ calculate the times of the next three transits with
     >>> # get relevant planet properties
     >>> epoch = Time(planet_properties['pl_tranmid'], format='jd')
     >>> period = planet_properties['pl_orbper']
-    >>> transit_duration = planet_properties['pl_trandur'] * u.day
+    >>> transit_duration = planet_properties['pl_trandur']
 
     >>> # Create an EclipsingSystem object for HD 209458
     >>> from astroplan import EclipsingSystem
