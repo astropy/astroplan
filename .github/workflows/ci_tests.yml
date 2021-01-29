@@ -11,7 +11,7 @@ on:
   #  tags: # run CI if specific tags are pushed
   pull_request:
      branches: # only build on PRs against 'main' if you need to further limit when CI is run.
-      - main
+      - master
 
 jobs:
   # Github Actions supports ubuntu, windows, and macos virtual environments:
