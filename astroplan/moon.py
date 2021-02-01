@@ -29,7 +29,7 @@ def moon_phase_angle(time, ephemeris=None):
 
     Returns
     -------
-    i : float
+    i : `~astropy.units.Quantity`
         Phase angle of the moon [radians]
     """
     # TODO: cache these sun/moon SkyCoord objects
