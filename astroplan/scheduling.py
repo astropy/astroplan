@@ -278,8 +278,8 @@ class Schedule(object):
                 end_times.append(slot.end.iso)
                 durations.append(slot.duration.to(u.minute).value)
                 target_names.append(slot.block.target.name)
-                ra.append(slot.block.target.ra)
-                dec.append(slot.block.target.dec)
+                ra.append(u.Quantity(slot.block.target.ra))
+                dec.append(u.Quantity(slot.block.target.dec))
                 config.append(slot.block.configuration)
             elif show_transitions and slot.block:
                 start_times.append(slot.start.iso)
@@ -300,8 +300,7 @@ class Schedule(object):
                 ra.append('')
                 dec.append('')
                 config.append('')
-        return Table([target_names, start_times, end_times, durations,
-                      u.Quantity(ra), u.Quantity(dec), config],
+        return Table([target_names, start_times, end_times, durations, ra, dec, config],
                      names=('target', 'start time (UTC)', 'end time (UTC)',
                             'duration (minutes)', 'ra', 'dec', 'configuration'))
 
