@@ -100,7 +100,7 @@ astropy's IERS machinery:
                                                      iers_table=iers_b)
 
     # Compare input times to the times available in the table. For details, see
-    # https://github.com/astropy/astropy/blob/master/astropy/utils/iers/iers.py#L80
+    # https://github.com/astropy/astropy/blob/main/astropy/utils/iers/iers.py#L80
     measurements_from_b = (success_b == FROM_IERS_B)
 
     # Make a plot of the time difference
