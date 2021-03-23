@@ -806,7 +806,7 @@ class PriorityScheduler(Scheduler):
 
     def attempt_insert_block(self, b, new_start_time, start_time_idx):
         # set duration to be exact multiple of time resolution
-        duration_indices = np.int(np.ceil(
+        duration_indices = np.int(np.floor(
             float(b.duration / self.time_resolution)))
         b.duration = duration_indices * self.time_resolution
 
