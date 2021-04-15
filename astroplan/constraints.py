@@ -1112,7 +1112,7 @@ def months_observable(constraints, observer, targets,
 
     time_range : `~astropy.time.Time` (optional)
         Lower and upper bounds on time sequence
-        If `time_range` is not specified, defaults to current year (localtime)
+        If ``time_range`` is not specified, defaults to current year (localtime)
 
     time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
