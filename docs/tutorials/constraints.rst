@@ -101,7 +101,7 @@ This list of constraints can now be applied to our target list to determine:
     always_observable = is_always_observable(constraints, subaru, targets, time_range=time_range)
 
     # During what months are the targets ever observable?
-    best_months = months_observable(constraints, subaru, targets)
+    best_months = months_observable(constraints, subaru, targets, time_range)
 
 The `~astroplan.is_observable` and `~astroplan.is_always_observable` functions
 will return boolean arrays which tell you whether or not each target is

@@ -10,6 +10,7 @@ from __future__ import (absolute_import, division, print_function,
 # Standard library
 from abc import ABCMeta, abstractmethod
 import datetime
+import time
 import warnings
 
 # Third-party
@@ -34,6 +35,12 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
            "min_best_rescale", "PhaseConstraint", "is_event_observable"]
+
+_current_year = time.localtime().tm_year  # needed for backward compatibility
+_current_year_time_range = Time(  # needed for backward compatibility
+    [str(_current_year) + '-01-01',
+     str(_current_year) + '-12-31']
+)
 
 
 def _make_cache_key(times, targets):
@@ -1086,10 +1093,11 @@ def is_event_observable(constraints, observer, target, times=None,
 
 
 def months_observable(constraints, observer, targets,
+                      time_range=_current_year_time_range,
                       time_grid_resolution=0.5*u.hour):
     """
     Determines which month the specified ``targets`` are observable for a
-    specific ``observer``, given the supplied ``constriants``.
+    specific ``observer``, given the supplied ``constraints``.
 
     Parameters
     ----------
@@ -1101,6 +1109,10 @@ def months_observable(constraints, observer, targets,
 
     targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
         Target or list of targets
+
+    time_range : `~astropy.time.Time` (optional)
+        Lower and upper bounds on time sequence
+        If `time_range` is not specified, defaults to current year (localtime)
 
     time_grid_resolution : `~astropy.units.Quantity` (optional)
         If ``time_range`` is specified, determine whether constraints are met
@@ -1121,9 +1133,6 @@ def months_observable(constraints, observer, targets,
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
 
-    # Calculate throughout the year of 2014 so as not to require forward
-    # extrapolation off of the IERS tables
-    time_range = Time(['2014-01-01', '2014-12-31'])
     times = time_grid_from_range(time_range, time_grid_resolution)
 
     # TODO: This method could be sped up a lot by dropping to the trigonometric

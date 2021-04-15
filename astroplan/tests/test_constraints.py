@@ -376,7 +376,8 @@ def test_months_observable():
     targets = [FixedTarget(coord=coord) for coord in coords]
     constraints = [AltitudeConstraint(min=80*u.deg),
                    AtNightConstraint.twilight_astronomical()]
-    months = months_observable(constraints, obs, targets)
+    time_range = Time(['2014-01-01', '2014-12-31'])
+    months = months_observable(constraints, obs, targets, time_range)
 
     should_be = [set({7, 8, 9, 10, 11, 12}), set({1, 2, 3, 10, 11, 12}),
                  set({1, 2, 3, 4, 5, 6}), set({4, 5, 6, 7, 8, 9})]
