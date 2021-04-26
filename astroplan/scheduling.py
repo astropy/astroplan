@@ -30,7 +30,7 @@ class ObservingBlock(object):
     constraints on observations.
     """
     @u.quantity_input(duration=u.second)
-    def __init__(self, target, duration, priority, configuration={}, constraints=None):
+    def __init__(self, target, duration, priority, configuration={}, constraints=None, name=None):
         """
         Parameters
         ----------
@@ -52,12 +52,16 @@ class ObservingBlock(object):
             that constraints applicable to the entire list should go into the
             scheduler.
 
+        name : integer or str
+            User-defined name or ID.
+
         """
         self.target = target
         self.duration = duration
         self.priority = priority
         self.configuration = configuration
         self.constraints = constraints
+        self.name = name
         self.start_time = self.end_time = None
         self.observer = None
 
