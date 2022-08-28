@@ -1961,12 +1961,24 @@ class Observer(object):
 
     @property
     def longtitude(self):
+        """longitude : float, str, `~astropy.units.Quantity` (optional)
+            The longitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Longitude` object.
+        """
         return self.location.lon
 
     @property
     def latitude(self):
+        """latitude : float, str, `~astropy.units.Quantity` (optional)
+            The latitude of the observing location. Should be valid input for
+            initializing a `~astropy.coordinates.Latitude` object.
+        """
         return self.location.lat
 
     @property
     def elevation(self):
+        """ elevation : `~astropy.units.Quantity` (optional), default = 0 meters
+            The elevation of the observing location, with respect to sea
+            level. Defaults to sea level.
+        """
         return self.location.height
