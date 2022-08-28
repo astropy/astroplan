@@ -4,8 +4,8 @@
 - Fix time range in ``months_observable`` to not be only in 2014. Function now
   accepts argument ``time_range`` and defaults to the current year. [#458]
 
-- Fix ``Observer`` not having longtitude, lattitude, and elevation parameters
-  as class instances. They are now properties calculated from the ``location``.
+- Fix ``Observer`` not having longtitude, latitude, and elevation parameters
+  as class attributes. They are now properties calculated from the ``location``.
 
 0.8 (2021-01-26)
 ----------------

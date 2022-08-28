@@ -209,6 +209,27 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
+    @property
+    def longitude(self):
+        """longitude : `~astropy.coordinates.angles.Longitude` 
+            The longitude of the observing location derived from the `location`.
+        """
+        return self.location.lon
+
+    @property
+    def latitude(self):
+        """latitude : `~astropy.coordinates.angles.Latitude`
+            The latitude of the observing location derived from the `location`.
+        """
+        return self.location.lat
+
+    @property
+    def elevation(self):
+        """ elevation : `~astropy.units.Quantity`, default = 0 meters
+            The elevation of the observing `location` with respect to sea level.
+        """
+        return self.location.height
+
     def __repr__(self):
         """
         String representation of the `~astroplan.Observer` object.
@@ -1958,27 +1979,3 @@ class Observer(object):
         end_time = self.sun_rise_time(start_time, which='next', horizon=horizon)
 
         return start_time, end_time
-
-    @property
-    def longitude(self):
-        """longitude : float, str, `~astropy.units.Quantity` (optional)
-            The longitude of the observing location. Should be valid input for
-            initializing a `~astropy.coordinates.Longitude` object.
-        """
-        return self.location.lon
-
-    @property
-    def latitude(self):
-        """latitude : float, str, `~astropy.units.Quantity` (optional)
-            The latitude of the observing location. Should be valid input for
-            initializing a `~astropy.coordinates.Latitude` object.
-        """
-        return self.location.lat
-
-    @property
-    def elevation(self):
-        """ elevation : `~astropy.units.Quantity` (optional), default = 0 meters
-            The elevation of the observing location, with respect to sea
-            level. Defaults to sea level.
-        """
-        return self.location.height
