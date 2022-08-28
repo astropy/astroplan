@@ -199,9 +199,6 @@ class Observer(object):
                             'latitude and longitude in degrees as '
                             'accepted by astropy.coordinates.Latitude and '
                             'astropy.coordinates.Latitude.')
-            
-        # Save location info to match docs:
-        self.longtitude, self.latitude, self.elevation = self.location.to_geodetic()[:3]  
 
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
@@ -1961,3 +1958,15 @@ class Observer(object):
         end_time = self.sun_rise_time(start_time, which='next', horizon=horizon)
 
         return start_time, end_time
+
+    @property
+    def longtitude(self):
+        return self.location.lon
+
+    @property
+    def latitude(self):
+        return self.location.lat
+
+    @property
+    def elevation(self):
+        return self.location.height
