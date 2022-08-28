@@ -1344,3 +1344,10 @@ def test_sun_set_vs_mmto_almanac(mmto_sunset):
                                         horizon=-0.8333*u.deg, which='next')
 
     assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min
+
+def test_observer_long_lat_el():
+    obs = Observer.at_site('Subaru')
+    lon, lat, el = obs.location.to_geodetic()[:3]
+    assert obs.longtitude == lon
+    assert obs.lattitude == lat
+    assert obs.elevation == el
