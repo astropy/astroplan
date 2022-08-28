@@ -1346,7 +1346,7 @@ def test_sun_set_vs_mmto_almanac(mmto_sunset):
     assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min
 
 def test_observer_long_lat_el():
-    """Test that astropy.EarthLocation conversion to longtitude,
+    """Test that astropy.EarthLocation conversion to longitude,
     latitude, and elevation is working correctly in Observer,
     and that Observer.location is of type EarthLocation.
     """
