@@ -1960,7 +1960,7 @@ class Observer(object):
         return start_time, end_time
 
     @property
-    def longtitude(self):
+    def longitude(self):
         """longitude : float, str, `~astropy.units.Quantity` (optional)
             The longitude of the observing location. Should be valid input for
             initializing a `~astropy.coordinates.Longitude` object.
