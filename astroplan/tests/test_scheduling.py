@@ -39,7 +39,7 @@ def test_observing_block():
     for index in range(len(times_per_exposure)):
         block = ObservingBlock.from_exposures(vega, 0, times_per_exposure[index],
                                               numbers_of_exposures[index], readout_time)
-        assert (block.duration == numbers_of_exposures[index] * 
+        assert (block.duration == numbers_of_exposures[index] *
                 (times_per_exposure[index] + readout_time))
 
 
