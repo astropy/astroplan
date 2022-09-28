@@ -100,7 +100,7 @@ Transit times via astroquery
 
 The development version of `astroquery`_ allows users to query for properties of
 known exoplanets with three different services:
-`~astroquery.exoplanet_orbit_database`, `~astroquery.nasa_exoplanet_archive`,
+`~astroquery.ipac.nexsci.nasa_exoplanet_archive`, `~astroquery.exoplanet_orbit_database`,
 and `~astroquery.open_exoplanet_catalogue`. In the example below, we will query
 for the properties of the transiting exoplanet TRAPPIST-1 b with astroquery, and
 calculate the times of the next three transits with
@@ -111,8 +111,9 @@ calculate the times of the next three transits with
     >>> # NASA Exoplanet Archive for planet properties
     >>> import astropy.units as u
     >>> from astropy.time import Time
-    >>> from astroquery.nasa_exoplanet_archive import NasaExoplanetArchive
-    >>> planet_properties = NasaExoplanetArchive.query_planet('TRAPPIST-1 b', all_columns=True)
+    >>> from astroquery.ipac.nexsci.nasa_exoplanet_archive import NasaExoplanetArchive
+    >>> planet_properties = NasaExoplanetArchive.query_object('TRAPPIST-1 b', select='*', table='pscomppars')
+
 
     >>> # get relevant planet properties
     >>> epoch = Time(planet_properties['pl_tranmid'], format='jd')
