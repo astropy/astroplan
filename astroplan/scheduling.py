@@ -731,7 +731,7 @@ class PriorityScheduler(Scheduler):
             _all_times.append(b.duration)
             b.observer = self.observer
 
-        # Define a main schedule
+        # Define a master schedule
         # Generate grid of time slots, and a mask for previous observations
 
         time_resolution = self.time_resolution
@@ -751,7 +751,7 @@ class PriorityScheduler(Scheduler):
         for i in sorted_indices:
             b = blocks[i]
             # Compute possible observing times by combining object constraints
-            # with the main open times mask
+            # with the master open times mask
             constraint_scores = score_array[i]
 
             # Add up the applied constraints to prioritize the best blocks
