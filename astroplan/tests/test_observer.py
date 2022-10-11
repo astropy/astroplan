@@ -1345,14 +1345,11 @@ def test_sun_set_vs_mmto_almanac(mmto_sunset):
 
     assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min
 
-def test_observer_long_lat_el():
+
+def test_observer_lon_lat_el():
     """Test that astropy.EarthLocation conversion to longitude,
-    latitude, and elevation is working correctly in Observer,
-    and that Observer.location is of type EarthLocation.
+    latitude, and elevation works correctly.
     """
     obs = Observer.at_site('Subaru')
-    assert isinstance(obs.location, EarthLocation)
-    lon, lat, el = obs.location.to_geodetic()[:3]
-    assert obs.longitude == lon
-    assert obs.latitude == lat
-    assert obs.elevation == el
+    for attr in ['longitude', 'latitude', 'longitude']:
+        assert hasattr(obs, attr)
