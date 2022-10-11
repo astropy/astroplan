@@ -1351,5 +1351,5 @@ def test_observer_lon_lat_el():
     latitude, and elevation works correctly.
     """
     obs = Observer.at_site('Subaru')
-    for attr in ['longitude', 'latitude', 'longitude']:
+    for attr in ['longitude', 'latitude', 'elevation']:
         assert hasattr(obs, attr)
