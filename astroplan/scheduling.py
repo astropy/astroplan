@@ -235,7 +235,7 @@ class Schedule(object):
     def __init__(self, start_time, end_time, constraints=None):
         """
         Parameters
-        -----------
+        ----------
         start_time : `~astropy.time.Time`
             The starting time of the schedule; the start of your
             observing window.
@@ -431,7 +431,7 @@ class Slot(object):
     def __init__(self, start_time, end_time):
         """
         Parameters
-        -----------
+        ----------
         start_time : `~astropy.time.Time`
             The starting time of the slot
         end_time : `~astropy.time.Time`
