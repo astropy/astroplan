@@ -159,7 +159,10 @@ if setup_cfg.get('edit_on_github').lower() == 'true':
 #_mock_remote_data()
 
 # Add additional Sphinx extensions:
-extensions += ['matplotlib.sphinxext.plot_directive']
+extensions += [
+    'matplotlib.sphinxext.plot_directive',
+    'sphinx.ext.graphviz'
+]
 
 # -- Resolving issue number to links in changelog -----------------------------
 github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_p\

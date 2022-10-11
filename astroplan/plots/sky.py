@@ -117,7 +117,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     # Set up axes & plot styles if needed.
     if ax is None:
-        ax = plt.gca(projection='polar')
+        ax = plt.gcf().add_subplot(projection='polar')
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
