@@ -209,6 +209,21 @@ class Observer(object):
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
 
+    @property
+    def longitude(self):
+        """The longitude of the observing location, derived from the location."""
+        return self.location.lon
+
+    @property
+    def latitude(self):
+        """The latitude of the observing location, derived from the location."""
+        return self.location.lat
+
+    @property
+    def elevation(self):
+        """The elevation of the observing location with respect to sea level."""
+        return self.location.height
+
     def __repr__(self):
         """
         String representation of the `~astroplan.Observer` object.

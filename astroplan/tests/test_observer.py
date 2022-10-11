@@ -1344,3 +1344,12 @@ def test_sun_set_vs_mmto_almanac(mmto_sunset):
                                         horizon=-0.8333*u.deg, which='next')
 
     assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min
+
+
+def test_observer_lon_lat_el():
+    """Test that astropy.EarthLocation conversion to longitude,
+    latitude, and elevation works correctly.
+    """
+    obs = Observer.at_site('Subaru')
+    for attr in ['longitude', 'latitude', 'elevation']:
+        assert hasattr(obs, attr)
