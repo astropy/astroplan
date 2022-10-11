@@ -211,23 +211,17 @@ class Observer(object):
 
     @property
     def longitude(self):
-        """longitude : `~astropy.coordinates.angles.Longitude` 
-            The longitude of the observing location derived from the `location`.
-        """
+        """The longitude of the observing location, derived from the `location`."""
         return self.location.lon
 
     @property
     def latitude(self):
-        """latitude : `~astropy.coordinates.angles.Latitude`
-            The latitude of the observing location derived from the `location`.
-        """
+        """The latitude of the observing location, derived from the `location`."""
         return self.location.lat
 
     @property
     def elevation(self):
-        """ elevation : `~astropy.units.Quantity`, default = 0 meters
-            The elevation of the observing `location` with respect to sea level.
-        """
+        """The elevation of the observing `location` with respect to sea level."""
         return self.location.height
 
     def __repr__(self):
