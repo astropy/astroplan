@@ -156,7 +156,7 @@ def test_rise_set_transit_nearest_vector():
     sc_list = [vega, mira, sirius, polaris]
 
     location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
-    time = Time('1995-06-21 00:00:00')
+    time = Time('2022-06-21 00:00:00')
 
     obs = Observer(location=location)
     rise_vector = obs.target_rise_time(time, sc_list)
