@@ -7,11 +7,14 @@ name: CI Tests
 on:
   push:
     branches:
-      - main  # GitHub now defaults to 'main' as the name of the primary branch. Change this as needed.
-  #  tags: # run CI if specific tags are pushed
+      - main
   pull_request:
      branches: # only build on PRs against 'main' if you need to further limit when CI is run.
       - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Github Actions supports ubuntu, windows, and macos virtual environments:
@@ -48,11 +51,6 @@ jobs:
             python: 3.8
             toxenv: py38-test-alldeps
 
-          # - name: Python 3.7 with oldest supported version of all dependencies
-          #   os: ubuntu-16.04
-          #   python: 3.7
-          #   toxenv: py37-test-oldestdeps
-
           - name: Python 3.9 with latest dev versions of key dependencies
             os: ubuntu-latest
             python: 3.9
@@ -82,9 +80,3 @@ jobs:
     - name: Test with tox
       run: |
         tox -e ${{ matrix.toxenv }}
-    # This is an example of how to upload coverage to codecov
-    # - name: Upload coverage to codecov
-    #   if: "contains(matrix.toxenv, '-cov')"
-    #   uses: codecov/codecov-action@v2
-    #   with:
-    #     file: ./coverage.xml
