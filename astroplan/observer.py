@@ -211,17 +211,17 @@ class Observer(object):
 
     @property
     def longitude(self):
-        """The longitude of the observing location, derived from the `location`."""
+        """The longitude of the observing location, derived from the location."""
         return self.location.lon
 
     @property
     def latitude(self):
-        """The latitude of the observing location, derived from the `location`."""
+        """The latitude of the observing location, derived from the location."""
         return self.location.lat
 
     @property
     def elevation(self):
-        """The elevation of the observing `location` with respect to sea level."""
+        """The elevation of the observing location with respect to sea level."""
         return self.location.height
 
     def __repr__(self):
