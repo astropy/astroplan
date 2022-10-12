@@ -48,6 +48,20 @@ sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
                                                 deprecated=['MAGIC_TIME'])
 
 
+def _process_nans_in_jds(jds):
+    """
+    Some functions calculate times for events that won't happen, yielding nans. This wrapper
+    manages vectors of (potentially) invalid JDs that must be passed to the astropy.time.Time
+    constructor. Returns a masked Time object.
+    """
+    if np.isscalar(jds):
+        jds = np.array([jds])
+    not_finite = ~np.isfinite(jds)
+    masked_jds = np.ma.masked_array(jds.to(u.day).value if hasattr(jds, 'unit') else jds.copy())
+    masked_jds[not_finite] = np.ma.masked
+    return masked_jds
+
+
 def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     """
     Generate a nearly linearly spaced grid of time durations.
@@ -699,17 +713,9 @@ class Observer(object):
         slope = (alt_after-alt_before) / ((jd_after - jd_before) * u.d)
         crossing_jd = (jd_after * u.d - ((alt_after - horizon) / slope))
 
-        # TODO: edit after https://github.com/astropy/astropy/issues/9612 has
-        # been addressed.
-
         # Determine whether or not there are NaNs in the crossing_jd array which
         # represent computations where no horizon crossing was found:
-        nans = np.isnan(crossing_jd)
-        # If there are, set them equal to zero, rather than np.nan
-        crossing_jd[nans] = 0
-        times = Time(crossing_jd, format='jd')
-        # Create a Time object with masked out times where there were NaNs
-        times[nans] = np.ma.masked
+        times = Time(_process_nans_in_jds(crossing_jd), format='jd')
 
         return np.squeeze(times)
 
@@ -939,20 +945,13 @@ class Observer(object):
                 return previous_event
 
         if which == 'nearest':
-            # Use some hacks to handle the non-rising/non-setting cases
             try:
                 mask = abs(time - previous_event) < abs(time - next_event)
+                ma = np.where(mask, previous_event.utc.jd, next_event.utc.jd)
             except TypeError:
                 # encountered if time is scalar & nan
-                return next_event
-            ma = np.where(mask, previous_event.utc.jd, next_event.utc.jd)
-            # HACK: Time objects cannot be initiated w/NaN, so we first
-            # make them zero, then change them to NaN
-            not_finite = ~np.isfinite(ma)
-            ma[not_finite] = 0
-            tm = Time(ma, format='jd')
-            tm[not_finite] = np.nan
-            return tm
+                ma = next_event.utc.jd if not next_event.isscalar else [next_event.utc.jd]
+            return Time(_process_nans_in_jds(ma), format='jd', scale='utc')
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')

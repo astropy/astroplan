@@ -26,6 +26,7 @@ from numpy.lib.stride_tricks import as_strided
 from .moon import moon_illumination
 from .utils import time_grid_from_range
 from .target import get_skycoord
+from .exceptions import MissingConstraintWarning
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -1135,9 +1136,18 @@ def months_observable(constraints, observer, targets,
 
     times = time_grid_from_range(time_range, time_grid_resolution)
 
+    # If the constraints don't include AltitudeConstraint or its subclasses,
+    # warn the user that they may get months when the target is below the horizon
+    altitude_constraint_supplied = any(
+        [isinstance(constraint, AltitudeConstraint) for constraint in constraints]
+    )
+    if not altitude_constraint_supplied:
+        message = ("months_observable usually expects an AltitudeConstraint or "
+                   "AirmassConstraint to ensure targets are above horizon.")
+        warnings.warn(message, MissingConstraintWarning)
+
     # TODO: This method could be sped up a lot by dropping to the trigonometric
     # altitude calculations.
-
     applied_constraints = [constraint(observer, targets,
                                       times=times,
                                       grid_times_targets=True)
