@@ -778,22 +778,24 @@ class LocalTimeConstraint(Constraint):
             max_time = self.max
         else:
             max_time = datetime.time(23, 59, 59)
-
+        
+        local_times = times.to_datetime(timezone)
+        
         # If time limits occur on same day:
         if min_time < max_time:
             try:
-                mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
+                mask = np.array([min_time <= t.time() <= max_time for t in local_times])
             except BaseException:                # use np.bool so shape queries don't cause problems
-                mask = np.bool_(min_time <= times.datetime.time() <= max_time)
+                mask = np.bool_(min_time <= local_times.time() <= max_time)
 
         # If time boundaries straddle midnight:
         else:
             try:
                 mask = np.array([(t.time() >= min_time) or
-                                (t.time() <= max_time) for t in times.datetime])
+                                (t.time() <= max_time) for t in local_times])
             except BaseException:
-                mask = np.bool_((times.datetime.time() >= min_time) or
-                                (times.datetime.time() <= max_time))
+                mask = np.bool_((local_times.time() >= min_time) or
+                                (local_times.time() <= max_time))
         return mask
 
 
