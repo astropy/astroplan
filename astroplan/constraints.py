@@ -40,7 +40,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
     [str(_current_year) + '-01-01',
-     str(_current_year) + '-12-31']
+     str(_current_year) + '-01-01']
 )
 
 
@@ -1093,11 +1093,12 @@ def is_event_observable(constraints, observer, target, times=None,
     return constraint_arr
 
 
-def months_observable(constraints, observer, targets,
+def target_observable(constraints, observer, targets,
                       time_range=_current_year_time_range,
-                      time_grid_resolution=0.5*u.hour):
+                      time_grid_resolution=0.5*u.hour,
+                      time_standard = 'months'):
     """
-    Determines which month the specified ``targets`` are observable for a
+    Determines when the specified ``targets`` are observable for a
     specific ``observer``, given the supplied ``constraints``.
 
     Parameters
@@ -1120,6 +1121,10 @@ def months_observable(constraints, observer, targets,
         between test times in ``time_range`` by checking constraint at
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
         hours.
+    
+    time_standard : str (optional)
+        Determines the scale of when target observability is calculated. 
+        ('Days','Weeks','Months') Default is 'Months'
 
     Returns
     -------
@@ -1133,6 +1138,8 @@ def months_observable(constraints, observer, targets,
     # altitude calculations.
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
+    if time_standard not in ['days','weeks','months']:
+        raise ValueError('time_standard is of an incorrect type. Please choose days, weeks, or months')
 
     times = time_grid_from_range(time_range, time_grid_resolution)
 
@@ -1142,7 +1149,7 @@ def months_observable(constraints, observer, targets,
         [isinstance(constraint, AltitudeConstraint) for constraint in constraints]
     )
     if not altitude_constraint_supplied:
-        message = ("months_observable usually expects an AltitudeConstraint or "
+        message = ("target_observable usually expects an AltitudeConstraint or "
                    "AirmassConstraint to ensure targets are above horizon.")
         warnings.warn(message, MissingConstraintWarning)
 
@@ -1154,12 +1161,16 @@ def months_observable(constraints, observer, targets,
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
 
-    months_observable = []
+    observability = []
+    method_dic = {'days':lambda t: t.datetime.timetuple().tm_yday,
+                  'weeks':lambda t: t.datetime.isocalendar()[1],
+                  'months':lambda t: t.datetime.month}
+    
     for target, observable in zip(targets, constraint_arr):
-        s = set([t.datetime.month for t in times[observable]])
-        months_observable.append(s)
+        s = set([method_dic[time_standard] for t in times[observable]])
+        observability.append(s)
 
-    return months_observable
+    return observability
 
 
 def observability_table(constraints, observer, targets, times=None,
