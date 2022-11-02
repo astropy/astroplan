@@ -1098,9 +1098,8 @@ def observable_interval(constraints, observer, targets,
                       time_grid_resolution=0.5*u.hour,
                       interval='months'):
     """
-    Determines which weeks the specified ``targets`` are observable for a
-    specific ``observer``, given the supplied ``constraints``. Generic version of
-    `months_observable` that includes functionality for days and weeks.
+    Determines which ``intervals`` in ``time_range`` the specified ``targets`` are observable for a
+    specific ``observer``, given the supplied ``constraints``. 
 
     Parameters
     ----------
@@ -1123,8 +1122,9 @@ def observable_interval(constraints, observer, targets,
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
         hours.
         
-    interval : str (optional)
-        Defines the interval of what dates to calculate ``constraints`` on.
+    interval : str; ('days','weeks','months') (optional)
+        Defines the interval  of what dates to calculate ``constraints`` on.
+        Default is 'months'.
         
 
     Returns
