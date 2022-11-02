@@ -1092,6 +1092,88 @@ def is_event_observable(constraints, observer, target, times=None,
                                         np.logical_and.reduce(applied_constraints_egr))
     return constraint_arr
 
+  
+def observable_interval(constraints, observer, targets,
+                      time_range=_current_year_time_range,
+                      time_grid_resolution=0.5*u.hour,
+                      interval='months'):
+    """
+    Determines which weeks the specified ``targets`` are observable for a
+    specific ``observer``, given the supplied ``constraints``. Generic version of
+    `months_observable` that includes functionality for days and weeks.
+
+    Parameters
+    ----------
+    constraints : list or `~astroplan.constraints.Constraint`
+        Observational constraint(s)
+
+    observer : `~astroplan.Observer`
+        The observer who has constraints ``constraints``
+
+    targets : {list, `~astropy.coordinates.SkyCoord`, `~astroplan.FixedTarget`}
+        Target or list of targets
+
+    time_range : `~astropy.time.Time` (optional)
+        Lower and upper bounds on time sequence
+        If ``time_range`` is not specified, defaults to current year (localtime)
+
+    time_grid_resolution : `~astropy.units.Quantity` (optional)
+        If ``time_range`` is specified, determine whether constraints are met
+        between test times in ``time_range`` by checking constraint at
+        linearly-spaced times separated by ``time_resolution``. Default is 0.5
+        hours.
+        
+    interval : str (optional)
+        Defines the interval of what dates to calculate ``constraints`` on.
+        
+
+    Returns
+    -------
+    observability : list
+        List of sets of unique integers representing each interval that a target is
+        observable, one set per target. These integers are 1-based so that
+        January maps to 1, Feburary maps to 2, etc., and it is a similar structure
+        for day and week intervals.
+
+    """
+    # TODO: This method could be sped up a lot by dropping to the trigonometric
+    # altitude calculations.
+    if not hasattr(constraints, '__len__'):
+        constraints = [constraints]
+    if interval not in ['days','weeks','months']:
+        raise ValueError('interval is of an incorrect type. Please choose days, weeks, or months')
+    
+    times = time_grid_from_range(time_range, time_grid_resolution)
+    
+    # If the constraints don't include AltitudeConstraint or its subclasses,
+    # warn the user that they may get months when the target is below the horizon
+    altitude_constraint_supplied = any(
+        [isinstance(constraint, AltitudeConstraint) for constraint in constraints]
+    )
+    if not altitude_constraint_supplied:
+        message = ("observable_interval usually expects an AltitudeConstraint or "
+                   "AirmassConstraint to ensure targets are above horizon.")
+        warnings.warn(message, MissingConstraintWarning)
+
+    applied_constraints = [constraint(observer, targets,
+                                      times=times,
+                                      grid_times_targets=True)
+                           for constraint in constraints]
+    constraint_arr = np.logical_and.reduce(applied_constraints)
+    
+    
+    observability = []
+    
+    method_dic = {'days':lambda t: t.datetime.timetuple().tm_yday,
+                  'weeks':lambda t: t.datetime.isocalendar()[1],
+                  'months':lambda t: t.datetime.month}
+    
+    
+    for target, observable in zip(targets, constraint_arr):
+        s = set([method_dic[interval](t) for t in times[observable]])
+        observability.append(s)
+
+    return observability
 
 def months_observable(constraints, observer, targets,
                       time_range=_current_year_time_range,
