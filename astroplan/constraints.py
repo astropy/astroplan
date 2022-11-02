@@ -40,7 +40,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
     [str(_current_year) + '-01-01',
-     str(_current_year) + '-12-31']
+     str(_current_year + 1) + '-01-01']
 )
 
 
