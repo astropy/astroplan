@@ -1092,14 +1092,15 @@ def is_event_observable(constraints, observer, target, times=None,
                                         np.logical_and.reduce(applied_constraints_egr))
     return constraint_arr
 
-  
+
 def observable_interval(constraints, observer, targets,
-                      time_range=_current_year_time_range,
-                      time_grid_resolution=0.5*u.hour,
-                      interval='months'):
+                        time_range=_current_year_time_range,
+                        time_grid_resolution=0.5*u.hour,
+                        interval='months'):
     """
-    Determines which ``intervals`` in ``time_range`` the specified ``targets`` are observable for a
-    specific ``observer``, given the supplied ``constraints``. 
+    Determines which ``intervals`` in ``time_range`` the specified ``targets``
+    are observable for a specific ``observer``,
+    given the supplied ``constraints``.
 
     Parameters
     ----------
@@ -1121,11 +1122,11 @@ def observable_interval(constraints, observer, targets,
         between test times in ``time_range`` by checking constraint at
         linearly-spaced times separated by ``time_resolution``. Default is 0.5
         hours.
-        
+
     interval : str; ('days','weeks','months') (optional)
         Defines the interval  of what dates to calculate ``constraints`` on.
         Default is 'months'.
-        
+
 
     Returns
     -------
@@ -1140,11 +1141,11 @@ def observable_interval(constraints, observer, targets,
     # altitude calculations.
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
-    if interval not in ['days','weeks','months']:
-        raise ValueError('interval is of an incorrect type. Please choose days, weeks, or months')
-    
+    if interval not in ['days', 'weeks', 'months']:
+        raise ValueError('Interval is of an incorrect type. Please choose days, weeks, or months')
+
     times = time_grid_from_range(time_range, time_grid_resolution)
-    
+
     # If the constraints don't include AltitudeConstraint or its subclasses,
     # warn the user that they may get months when the target is below the horizon
     altitude_constraint_supplied = any(
@@ -1160,17 +1161,15 @@ def observable_interval(constraints, observer, targets,
                                       grid_times_targets=True)
                            for constraint in constraints]
     constraint_arr = np.logical_and.reduce(applied_constraints)
-    
-    
+
     observability = []
-    
-    method_dic = {'days':lambda t: t.datetime.timetuple().tm_yday,
-                  'weeks':lambda t: t.datetime.isocalendar()[1],
-                  'months':lambda t: t.datetime.month}
-    
-    
+
+    method_dic = {'days': lambda t: t.datetime.timetuple().tm_yday,
+                  'weeks': lambda t: t.datetime.isocalendar()[1],
+                  'months': lambda t: t.datetime.month}
+
     for target, observable in zip(targets, constraint_arr):
-        if observable.any() == True:
+        if observable.any():
             s = set([method_dic[interval](t) for t in times[observable]])
         else:
             s = {}
@@ -1178,41 +1177,50 @@ def observable_interval(constraints, observer, targets,
 
     return observability
 
+
 def months_observable(constraints, observer, targets,
                       time_range=_current_year_time_range,
                       time_grid_resolution=0.5*u.hour):
     """
-    Determines which months in ``time_range`` the specified ``targets`` are observable for a
-    specific ``observer``, given the supplied ``constraints``.
-    
+    Determines which months in ``time_range`` the specified ``targets`` 
+    are observable for a specific ``observer``, 
+    given the supplied ``constraints``.
+
     This is an alias of observable_interval(..., interval = 'months')
     """
 
-    return observable_interval(constraints, observer, targets, time_range, time_grid_resolution, interval = 'months')
+    return observable_interval(constraints, observer, targets, time_range,
+                               time_grid_resolution, interval='months')
   
+
 def weeks_observable(constraints, observer, targets,
-                      time_range=_current_year_time_range,
-                      time_grid_resolution=0.5*u.hour):
+                     time_range=_current_year_time_range,
+                     time_grid_resolution=0.5*u.hour):
     """
-    Determines which weeks in ``time_range`` the specified ``targets`` are observable for a
-    specific ``observer``, given the supplied ``constraints``.
+    Determines which weeks in ``time_range`` the specified ``targets`` 
+    are observable for a specific ``observer``,
+    given the supplied ``constraints``.
     
     This is an alias of observable_interval(..., interval = 'weeks')
     """
 
-    return observable_interval(constraints, observer, targets, time_range, time_grid_resolution, interval = 'weeks')
+    return observable_interval(constraints, observer, targets, time_range,
+                               time_grid_resolution, interval='weeks')
   
+
 def days_observable(constraints, observer, targets,
-                      time_range=_current_year_time_range,
-                      time_grid_resolution=0.5*u.hour):
+                    time_range=_current_year_time_range,
+                    time_grid_resolution=0.5*u.hour):
     """
-    Determines which days in ``time_range`` the specified ``targets`` are observable for a
-    specific ``observer``, given the supplied ``constraints``.
+    Determines which days in ``time_range`` the specified ``targets`` 
+    are observable for a specific ``observer``, 
+    given the supplied ``constraints``.
     
     This is an alias of observable_interval(..., interval = 'days')
     """
 
-    return observable_interval(constraints, observer, targets, time_range, time_grid_resolution, interval = 'days')
+    return observable_interval(constraints, observer, targets, time_range,
+                               time_grid_resolution, interval='days')
 
 
 def observability_table(constraints, observer, targets, times=None,
