@@ -1182,8 +1182,8 @@ def months_observable(constraints, observer, targets,
                       time_range=_current_year_time_range,
                       time_grid_resolution=0.5*u.hour):
     """
-    Determines which months in ``time_range`` the specified ``targets`` 
-    are observable for a specific ``observer``, 
+    Determines which months in ``time_range`` the specified ``targets``
+    are observable for a specific ``observer``,
     given the supplied ``constraints``.
 
     This is an alias of observable_interval(..., interval = 'months')
@@ -1191,31 +1191,31 @@ def months_observable(constraints, observer, targets,
 
     return observable_interval(constraints, observer, targets, time_range,
                                time_grid_resolution, interval='months')
-  
+
 
 def weeks_observable(constraints, observer, targets,
                      time_range=_current_year_time_range,
                      time_grid_resolution=0.5*u.hour):
     """
-    Determines which weeks in ``time_range`` the specified ``targets`` 
+    Determines which weeks in ``time_range`` the specified ``targets``
     are observable for a specific ``observer``,
     given the supplied ``constraints``.
-    
+
     This is an alias of observable_interval(..., interval = 'weeks')
     """
 
     return observable_interval(constraints, observer, targets, time_range,
                                time_grid_resolution, interval='weeks')
-  
+
 
 def days_observable(constraints, observer, targets,
                     time_range=_current_year_time_range,
                     time_grid_resolution=0.5*u.hour):
     """
-    Determines which days in ``time_range`` the specified ``targets`` 
-    are observable for a specific ``observer``, 
+    Determines which days in ``time_range`` the specified ``targets``
+    are observable for a specific ``observer``,
     given the supplied ``constraints``.
-    
+
     This is an alias of observable_interval(..., interval = 'days')
     """
 
