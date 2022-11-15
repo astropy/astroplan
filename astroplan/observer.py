@@ -7,7 +7,6 @@ from six import string_types
 import sys
 import datetime
 import warnings
-
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_moon, Angle, Longitude)
@@ -870,12 +869,15 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
+
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, n_grid_points,
                                         for_deriv=True)
         else:
             times = _generate_24hr_grid(time, -1, 0, n_grid_points,
                                         for_deriv=True)
+
+        
 
         # The derivative of the altitude with respect to time is increasing
         # from negative to positive values at the anti-transit of the meridian
@@ -884,7 +886,17 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target, grid_times_targets=grid_times_targets)
+        #copied from cls._calc_riseset
+        if target is MoonFlag:
+            altaz = self.altaz(times, get_moon(times, location=self.location),
+                               grid_times_targets=grid_times_targets)
+        elif target is SunFlag:
+            altaz = self.altaz(times, get_sun(times),
+                               grid_times_targets=grid_times_targets)
+        else:
+            altaz = self.altaz(times, target,
+                               grid_times_targets=grid_times_targets)
+        
         altitudes = altaz.alt
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
