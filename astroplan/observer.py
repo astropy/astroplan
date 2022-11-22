@@ -512,6 +512,11 @@ class Observer(object):
         >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
         if target is not None:
+            if target is MoonFlag:
+                target = get_moon(times, location=self.location)
+            elif target is SunFlag:
+                target = get_sun(times)
+
             time, target = self._preprocess_inputs(time, target, grid_times_targets)
 
         altaz_frame = AltAz(location=self.location, obstime=time,
@@ -809,15 +814,8 @@ class Observer(object):
 
         times = _generate_24hr_grid(time, start, end, n_grid_points)
 
-        if target is MoonFlag:
-            altaz = self.altaz(times, get_moon(times, location=self.location),
-                               grid_times_targets=grid_times_targets)
-        elif target is SunFlag:
-            altaz = self.altaz(times, get_sun(times),
-                               grid_times_targets=grid_times_targets)
-        else:
-            altaz = self.altaz(times, target,
-                               grid_times_targets=grid_times_targets)
+        altaz = self.altaz(times, target,
+                           grid_times_targets=grid_times_targets)
 
         altitudes = altaz.alt
 
@@ -886,16 +884,8 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        #copied from cls._calc_riseset
-        if target is MoonFlag:
-            altaz = self.altaz(times, get_moon(times, location=self.location),
-                               grid_times_targets=grid_times_targets)
-        elif target is SunFlag:
-            altaz = self.altaz(times, get_sun(times),
-                               grid_times_targets=grid_times_targets)
-        else:
-            altaz = self.altaz(times, target,
-                               grid_times_targets=grid_times_targets)
+        altaz = self.altaz(times, target,
+                           grid_times_targets=grid_times_targets)
         
         altitudes = altaz.alt
         if altitudes.ndim > 2:
