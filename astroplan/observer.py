@@ -513,9 +513,9 @@ class Observer(object):
         """
         if target is not None:
             if target is MoonFlag:
-                target = get_moon(times, location=self.location)
+                target = get_moon(time, location=self.location)
             elif target is SunFlag:
-                target = get_sun(times)
+                target = get_sun(time)
 
             time, target = self._preprocess_inputs(time, target, grid_times_targets)
 
@@ -867,15 +867,12 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-
         if prev_next == 'next':
             times = _generate_24hr_grid(time, 0, 1, n_grid_points,
                                         for_deriv=True)
         else:
             times = _generate_24hr_grid(time, -1, 0, n_grid_points,
                                         for_deriv=True)
-
-        
 
         # The derivative of the altitude with respect to time is increasing
         # from negative to positive values at the anti-transit of the meridian
@@ -886,7 +883,7 @@ class Observer(object):
 
         altaz = self.altaz(times, target,
                            grid_times_targets=grid_times_targets)
-        
+
         altitudes = altaz.alt
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
