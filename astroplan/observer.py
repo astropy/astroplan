@@ -529,7 +529,8 @@ class Observer(object):
         else:
             return target.transform_to(altaz_frame)
 
-    def parallactic_angle(self, time, target, grid_times_targets=False):
+    def parallactic_angle(self, time, target, grid_times_targets=False,
+                          kind='mean', model=None):
         """
         Calculate the parallactic angle.
 
@@ -546,6 +547,15 @@ class Observer(object):
             the end, so that calculations with M targets and N times will
             return an (M, N) shaped result. Otherwise, we rely on broadcasting
             the shapes together using standard numpy rules.
+
+        kind : str
+            Argument to the `~astropy.time.Time.sidereal_time` function, which may
+            be either ``'mean'`` or ``'apparent'``, i.e., accounting for precession only,
+            or also for nutation.
+
+        model : str or None; optional
+            Precession (and nutation) model to use in the call to
+            `~astropy.time.Time.sidereal_time`, see docs for that method for details.
 
         Returns
         -------
@@ -564,7 +574,7 @@ class Observer(object):
         time, coordinate = self._preprocess_inputs(time, target, grid_times_targets)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        LST = time.sidereal_time('mean', longitude=self.location.lon)
+        LST = time.sidereal_time(kind, longitude=self.location.lon, model=model)
         H = (LST - coordinate.ra).radian
         q = np.arctan2(np.sin(H),
                        (np.tan(self.location.lat.radian) *
