@@ -184,9 +184,9 @@ the positions of the targets throughout the time range:
                       style_kwargs=dict(color=cmap(float(i)/len(targets)),
                                         label=target.name))
 
-    legend = ax.legend(loc='lower center')
-    legend.get_frame().set_facecolor('w')
-    plt.show()
+        legend = ax.legend(loc='lower center')
+        legend.get_frame().set_facecolor('w')
+        plt.show()
 
 We can see that Vega is in the sweet spot in altitude and azimuth for this
 time range and is always observable. Albireo is not always observable given
