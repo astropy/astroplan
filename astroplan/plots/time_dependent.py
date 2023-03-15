@@ -502,16 +502,11 @@ def plot_schedule_airmass(schedule, show_night=False):
     enable_brightness_shading = show_night
     # lighter, bluer colors indicate higher priority
     for target, ci in zip(set(targets), color_idx):
-        plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)), brightness_shading=enable_brightness_shading)
+        plot_airmass(target, schedule.observer, ts,
+                     style_kwargs=dict(color=plt.cm.cool(ci)),
+                     brightness_shading=enable_brightness_shading)
         targ_to_color[target.name] = plt.cm.cool(ci)
         enable_brightness_shading = False
-
-    if show_night:
-        midnights = []
-        test_time = schedule.start_time
-        while (midnight := schedule.observer.midnight(test_time, which='next')) < schedule.end_time:
-            test_time = midnight + 6 * u.hour
-            midnights.append(midnight)
 
     for block in blocks:
         if hasattr(block, 'target'):
