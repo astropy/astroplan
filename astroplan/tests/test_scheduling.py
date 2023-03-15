@@ -158,6 +158,29 @@ def test_priority_scheduler():
     scheduler(blocks, schedule)
     scheduler(blocks, schedule)
 
+    # Check if the order of equal values is respected:
+    # 1. For equal priorities in blocks
+    # 2. For equal scores (boolean_constraint)
+    constraints = [AirmassConstraint(3, boolean_constraint=True)]
+    scheduler.constraints = constraints
+    # Any resolution coarser than this may result in gaps between the blocks
+    scheduler.time_resolution = 20*u.second
+    # This only happens with more than 16 items or so
+    targets_18 = [polaris, polaris, polaris, polaris, polaris, polaris, 
+                  polaris, polaris, polaris, polaris, polaris, polaris, 
+                  polaris, polaris, polaris, polaris, polaris, polaris]
+    blocks = [ObservingBlock(t, 4*u.minute, 5, name=i) for i, t in enumerate(targets_18)]
+
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
+
+    for i, t in enumerate(targets_18):
+        # Order of blocks
+        assert schedule.observing_blocks[i].name == i
+        if i < len(targets_18) - 1:
+            # Same score for all timeslots, should be filled from the start without gaps
+            assert schedule.observing_blocks[i].end_time.isclose(schedule.observing_blocks[i+1].start_time)
+
 
 def test_sequential_scheduler():
     constraints = [AirmassConstraint(2.5, boolean_constraint=False)]
