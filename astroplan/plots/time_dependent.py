@@ -260,6 +260,17 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             am_vals = np.where((~cons_mask)&(airmass>1), airmass, np.nan)
             ax.plot_date(time_vals, am_vals, "k", lw=3)
 
+        # Plot black curves for where the target is outside constraints
+        if constraints:
+            cons_mask = np.ones(len(airmass), dtype=bool)
+            for cons in constraints:
+                cons_mask &= cons(observer, target, time_ut)
+
+            # Handle discontinuous curves:
+            time_vals = np.where((~cons_mask)&(airmass>1),timetoplot.plot_date, np.nan)
+            am_vals = np.where((~cons_mask)&(airmass>1), airmass, np.nan)
+            ax.plot_date(time_vals, am_vals, "k", lw=3)
+
     # Format the time axis
     xlo, xhi = (timetoplot[0]), (timetoplot[-1])
     ax.xaxis_date()
