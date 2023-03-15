@@ -176,10 +176,11 @@ def test_priority_scheduler():
 
     for i, t in enumerate(targets_18):
         # Order of blocks
-        assert schedule.observing_blocks[i].name == i
+        block = schedule.observing_blocks[i]
+        assert block.name == i
         if i < len(targets_18) - 1:
             # Same score for all timeslots, should be filled from the start without gaps
-            assert schedule.observing_blocks[i].end_time.isclose(schedule.observing_blocks[i+1].start_time)
+            assert block.end_time.isclose(schedule.observing_blocks[i+1].start_time)
 
 
 def test_sequential_scheduler():
