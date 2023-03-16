@@ -166,8 +166,8 @@ def test_priority_scheduler():
     # Any resolution coarser than this may result in gaps between the blocks
     scheduler.time_resolution = 20*u.second
     # This only happens with more than 16 items or so
-    targets_18 = [polaris, polaris, polaris, polaris, polaris, polaris, 
-                  polaris, polaris, polaris, polaris, polaris, polaris, 
+    targets_18 = [polaris, polaris, polaris, polaris, polaris, polaris,
+                  polaris, polaris, polaris, polaris, polaris, polaris,
                   polaris, polaris, polaris, polaris, polaris, polaris]
     blocks = [ObservingBlock(t, 4*u.minute, 5, name=i) for i, t in enumerate(targets_18)]
 
