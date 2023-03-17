@@ -35,26 +35,26 @@ jobs:
             python: 3.7
             toxenv: py37-test
 
-          - name: Python 3.8 with all optional dependencies, coverage checking and remote data
+          - name: OS X - Python 3.9 with minimal dependencies
+            os: macos-latest
+            python: 3.9
+            toxenv: py39-test
+
+          - name: Windows - Python 3.11 with all optional dependencies
+            os: windows-latest
+            python: 3.11
+            toxenv: py11-test-alldeps
+
+          - name: Python 3.11 with remote data, all dependencies, and coverage
             os: ubuntu-latest
-            python: 3.8
-            toxenv: py38-test-alldeps-cov
+            python: 3.11
+            toxenv: py11-test-alldeps-cov
             toxposargs: --remote-data
 
-          - name: OS X - Python 3.8 with all optional dependencies
-            os: macos-latest
-            python: 3.8
-            toxenv: py38-test-alldeps
-
-          - name: Windows - Python 3.8 with all optional dependencies
-            os: windows-latest
-            python: 3.8
-            toxenv: py38-test-alldeps
-
-          - name: Python 3.9 with latest dev versions of key dependencies
+          - name: Python 3.11 with latest dev versions of key dependencies
             os: ubuntu-latest
-            python: 3.9
-            toxenv: py39-test-devdeps
+            python: 3.11
+            toxenv: py11-test-devdeps
 
           - name: Test building of Sphinx docs
             os: ubuntu-latest
