@@ -40,10 +40,10 @@ jobs:
             python: 3.9
             toxenv: py39-test
 
-          - name: Windows - Python 3.10 with all optional dependencies
+          - name: Windows - Python 3.11 with all optional dependencies
             os: windows-latest
-            python: 3.10
-            toxenv: py10-test-alldeps
+            python: 3.11
+            toxenv: py11-test-alldeps
 
           - name: Python 3.11 with remote data, all dependencies, and coverage
             os: ubuntu-latest
