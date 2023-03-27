@@ -590,10 +590,7 @@ class MoonSeparationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        # removed the location argument here, which causes small <1 deg
-        # innacuracies, but it is needed until astropy PR #5897 is released
-        # which should be astropy 1.3.2
-        moon = get_moon(times,
+        moon = get_moon(times, location=observer.location,
                         ephemeris=self.ephemeris)
         # note to future editors - the order matters here
         # moon.separation(targets) is NOT the same as targets.separation(moon)
