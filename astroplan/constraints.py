@@ -590,8 +590,7 @@ class MoonSeparationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        moon = get_moon(times, location=observer.location,
-                        ephemeris=self.ephemeris)
+        moon = get_moon(times, location=observer.location, ephemeris=self.ephemeris)
         # note to future editors - the order matters here
         # moon.separation(targets) is NOT the same as targets.separation(moon)
         # the former calculates the separation in the frame of the moon coord
