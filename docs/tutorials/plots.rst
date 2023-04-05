@@ -1074,7 +1074,7 @@ We can also create a `~matplotlib.axes.Axes` object entirely outside of
 
 .. code-block:: python
 
-    >>> my_ax = plt.gca(projection='polar')
+    >>> my_ax = plt.gcf().add_subplot(projection='polar')
     >>> plot_sky(polaris, observer, observe_time, my_ax)
 
 Passing in named `matplotlib.axes.Axes` objects comes in handy when you want to

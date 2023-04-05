@@ -6,7 +6,8 @@ from astropy.utils.exceptions import AstropyWarning
 
 __all__ = ["TargetAlwaysUpWarning", "TargetNeverUpWarning",
            "OldEarthOrientationDataWarning", "PlotWarning",
-           "PlotBelowHorizonWarning", "AstroplanWarning"]
+           "PlotBelowHorizonWarning", "AstroplanWarning",
+           "MissingConstraintWarning"]
 
 
 class AstroplanWarning(AstropyWarning):
@@ -35,4 +36,9 @@ class PlotWarning(AstroplanWarning):
 
 class PlotBelowHorizonWarning(PlotWarning):
     """Warning for when something is hidden on a plot because it's below the horizon"""
+    pass
+
+
+class MissingConstraintWarning(AstroplanWarning):
+    """Triggered when a constraint is expected but not supplied"""
     pass

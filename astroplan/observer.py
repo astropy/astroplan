@@ -7,7 +7,6 @@ from six import string_types
 import sys
 import datetime
 import warnings
-
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_moon, Angle, Longitude)
@@ -46,6 +45,20 @@ def deprecation_wrap_module(mod, deprecated):
 
 sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
                                                 deprecated=['MAGIC_TIME'])
+
+
+def _process_nans_in_jds(jds):
+    """
+    Some functions calculate times for events that won't happen, yielding nans. This wrapper
+    manages vectors of (potentially) invalid JDs that must be passed to the astropy.time.Time
+    constructor. Returns a masked Time object.
+    """
+    if np.isscalar(jds):
+        jds = np.array([jds])
+    not_finite = ~np.isfinite(jds)
+    masked_jds = np.ma.masked_array(jds.to(u.day).value if hasattr(jds, 'unit') else jds.copy())
+    masked_jds[not_finite] = np.ma.masked
+    return masked_jds
 
 
 def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
@@ -208,6 +221,21 @@ class Observer(object):
         else:
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
+
+    @property
+    def longitude(self):
+        """The longitude of the observing location, derived from the location."""
+        return self.location.lon
+
+    @property
+    def latitude(self):
+        """The latitude of the observing location, derived from the location."""
+        return self.location.lat
+
+    @property
+    def elevation(self):
+        """The elevation of the observing location with respect to sea level."""
+        return self.location.height
 
     def __repr__(self):
         """
@@ -484,6 +512,11 @@ class Observer(object):
         >>> target_altaz = apo.altaz(time, target) # doctest: +SKIP
         """
         if target is not None:
+            if target is MoonFlag:
+                target = get_moon(time, location=self.location)
+            elif target is SunFlag:
+                target = get_sun(time)
+
             time, target = self._preprocess_inputs(time, target, grid_times_targets)
 
         altaz_frame = AltAz(location=self.location, obstime=time,
@@ -496,7 +529,8 @@ class Observer(object):
         else:
             return target.transform_to(altaz_frame)
 
-    def parallactic_angle(self, time, target, grid_times_targets=False):
+    def parallactic_angle(self, time, target, grid_times_targets=False,
+                          kind='mean', model=None):
         """
         Calculate the parallactic angle.
 
@@ -513,6 +547,15 @@ class Observer(object):
             the end, so that calculations with M targets and N times will
             return an (M, N) shaped result. Otherwise, we rely on broadcasting
             the shapes together using standard numpy rules.
+
+        kind : str
+            Argument to the `~astropy.time.Time.sidereal_time` function, which may
+            be either ``'mean'`` or ``'apparent'``, i.e., accounting for precession only,
+            or also for nutation.
+
+        model : str or None; optional
+            Precession (and nutation) model to use in the call to
+            `~astropy.time.Time.sidereal_time`, see docs for that method for details.
 
         Returns
         -------
@@ -531,7 +574,7 @@ class Observer(object):
         time, coordinate = self._preprocess_inputs(time, target, grid_times_targets)
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        LST = time.sidereal_time('mean', longitude=self.location.lon)
+        LST = time.sidereal_time(kind, longitude=self.location.lon, model=model)
         H = (LST - coordinate.ra).radian
         q = np.arctan2(np.sin(H),
                        (np.tan(self.location.lat.radian) *
@@ -684,17 +727,9 @@ class Observer(object):
         slope = (alt_after-alt_before) / ((jd_after - jd_before) * u.d)
         crossing_jd = (jd_after * u.d - ((alt_after - horizon) / slope))
 
-        # TODO: edit after https://github.com/astropy/astropy/issues/9612 has
-        # been addressed.
-
         # Determine whether or not there are NaNs in the crossing_jd array which
         # represent computations where no horizon crossing was found:
-        nans = np.isnan(crossing_jd)
-        # If there are, set them equal to zero, rather than np.nan
-        crossing_jd[nans] = 0
-        times = Time(crossing_jd, format='jd')
-        # Create a Time object with masked out times where there were NaNs
-        times[nans] = np.ma.masked
+        times = Time(_process_nans_in_jds(crossing_jd), format='jd')
 
         return np.squeeze(times)
 
@@ -789,15 +824,8 @@ class Observer(object):
 
         times = _generate_24hr_grid(time, start, end, n_grid_points)
 
-        if target is MoonFlag:
-            altaz = self.altaz(times, get_moon(times, location=self.location),
-                               grid_times_targets=grid_times_targets)
-        elif target is SunFlag:
-            altaz = self.altaz(times, get_sun(times),
-                               grid_times_targets=grid_times_targets)
-        else:
-            altaz = self.altaz(times, target,
-                               grid_times_targets=grid_times_targets)
+        altaz = self.altaz(times, target,
+                           grid_times_targets=grid_times_targets)
 
         altitudes = altaz.alt
 
@@ -863,7 +891,9 @@ class Observer(object):
         else:
             rise_set = 'setting'
 
-        altaz = self.altaz(times, target, grid_times_targets=grid_times_targets)
+        altaz = self.altaz(times, target,
+                           grid_times_targets=grid_times_targets)
+
         altitudes = altaz.alt
         if altitudes.ndim > 2:
             # shape is (M, N, ...) where M is targets and N is grid
@@ -924,20 +954,13 @@ class Observer(object):
                 return previous_event
 
         if which == 'nearest':
-            # Use some hacks to handle the non-rising/non-setting cases
             try:
                 mask = abs(time - previous_event) < abs(time - next_event)
+                ma = np.where(mask, previous_event.utc.jd, next_event.utc.jd)
             except TypeError:
                 # encountered if time is scalar & nan
-                return next_event
-            ma = np.where(mask, previous_event.utc.jd, next_event.utc.jd)
-            # HACK: Time objects cannot be initiated w/NaN, so we first
-            # make them zero, then change them to NaN
-            not_finite = ~np.isfinite(ma)
-            ma[not_finite] = 0
-            tm = Time(ma, format='jd')
-            tm[not_finite] = np.nan
-            return tm
+                ma = next_event.utc.jd if not next_event.isscalar else [next_event.utc.jd]
+            return Time(_process_nans_in_jds(ma), format='jd', scale='utc')
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
                          '"nearest".')

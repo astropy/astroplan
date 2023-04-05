@@ -22,6 +22,8 @@ from ..constraints import (AltitudeConstraint, AirmassConstraint, AtNightConstra
                            PrimaryEclipseConstraint, SecondaryEclipseConstraint,
                            is_event_observable)
 from ..periodic import EclipsingSystem
+from ..exceptions import MissingConstraintWarning
+
 
 APY_LT104 = not minversion('astropy', '1.0.4')
 
@@ -383,6 +385,10 @@ def test_months_observable():
                  set({1, 2, 3, 4, 5, 6}), set({4, 5, 6, 7, 8, 9})]
 
     assert months == should_be
+
+    with pytest.warns(MissingConstraintWarning):
+        constraints = [AtNightConstraint.twilight_astronomical()]
+        months_observable(constraints, obs, targets, time_range)
 
 
 def test_rescale_minmax():

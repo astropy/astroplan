@@ -13,9 +13,16 @@ sphinx:
 formats:
    - pdf
 
+build:
+  os: ubuntu-20.04
+  apt_packages:
+    - graphviz
+  tools:
+    python: "3.9"
+
+
 # Optionally set the version of Python and requirements required to build your docs
 python:
-  version: 3.7
   install:
     - requirements: docs/rtd-pip-requirements
     - method: pip

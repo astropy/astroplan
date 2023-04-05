@@ -156,7 +156,7 @@ def test_rise_set_transit_nearest_vector():
     sc_list = [vega, mira, sirius, polaris]
 
     location = EarthLocation(10*u.deg, 45*u.deg, 0*u.m)
-    time = Time('1995-06-21 00:00:00')
+    time = Time('2022-06-21 00:00:00')
 
     obs = Observer(location=location)
     rise_vector = obs.target_rise_time(time, sc_list)
@@ -1344,3 +1344,12 @@ def test_sun_set_vs_mmto_almanac(mmto_sunset):
                                         horizon=-0.8333*u.deg, which='next')
 
     assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min
+
+
+def test_observer_lon_lat_el():
+    """Test that astropy.EarthLocation conversion to longitude,
+    latitude, and elevation works correctly.
+    """
+    obs = Observer.at_site('Subaru')
+    for attr in ['longitude', 'latitude', 'elevation']:
+        assert hasattr(obs, attr)
