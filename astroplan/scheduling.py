@@ -710,10 +710,8 @@ class PriorityScheduler(Scheduler):
                                block in self.schedule.scheduled_blocks if
                                isinstance(block, ObservingBlock)])
         for start_end in pre_filled:
-            filled = np.where((start_end[0] < times) & (times < start_end[1]))
-            if len(filled[0]) > 0:
-                is_open_time[filled[0]] = False
-                is_open_time[min(filled[0]) - 1] = False
+            filled = np.where((start_end[0]-0.5*u.second < times) & (times < start_end[1]))
+            is_open_time[filled[0]] = False
         return is_open_time
 
     def _make_schedule(self, blocks):
