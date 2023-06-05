@@ -8,7 +8,7 @@ from __future__ import (absolute_import, division, print_function,
 
 # Third-party
 import numpy as np
-from astropy.coordinates import get_moon, get_sun
+from astropy.coordinates import get_sun, get_body
 
 __all__ = ["moon_phase_angle", "moon_illumination"]
 
@@ -35,7 +35,7 @@ def moon_phase_angle(time, ephemeris=None):
     # TODO: cache these sun/moon SkyCoord objects
 
     sun = get_sun(time)
-    moon = get_moon(time, ephemeris=ephemeris)
+    moon = get_body("moon", time, ephemeris=ephemeris)
     elongation = sun.separation(moon)
     return np.arctan2(sun.distance*np.sin(elongation),
                       moon.distance - sun.distance*np.cos(elongation))
