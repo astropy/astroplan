@@ -9,7 +9,7 @@ import datetime
 import warnings
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_moon, Angle, Longitude)
+                                 get_body, Angle, Longitude)
 import astropy.units as u
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
@@ -513,7 +513,7 @@ class Observer(object):
         """
         if target is not None:
             if target is MoonFlag:
-                target = get_moon(time, location=self.location)
+                target = get_body("moon", time, location=self.location)
             elif target is SunFlag:
                 target = get_sun(time)
 
@@ -1734,7 +1734,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        moon = get_moon(time, location=self.location, ephemeris=ephemeris)
+        moon = get_body("moon", time, location=self.location, ephemeris=ephemeris)
         return self.altaz(time, moon)
 
     def sun_altaz(self, time):
