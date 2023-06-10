@@ -98,6 +98,17 @@ def test_observability_table():
     assert 'time observable' in stab.colnames
 
 
+def test_altitude_constraint():
+    subaru = Observer.at_site("Subaru")
+    time = Time('2001-02-03 15:35:00')
+    time_range = Time([time, time+3*u.hour])
+
+    constraint = AltitudeConstraint(min=40*u.deg, max=50*u.deg, boolean_constraint=False)
+    results = constraint(subaru, vega, times=time_grid_from_range(time_range))
+    # Check if below min and above max values are 0
+    assert np.all([results != 0][0] == [False, False, True,  True,  False, False])
+
+
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
     time_ranges = [Time([time, time+1*u.hour]) + offset
