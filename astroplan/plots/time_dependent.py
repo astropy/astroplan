@@ -222,7 +222,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             ]
             nights.append(twilights)
 
-            next_sun_rise = observer.sun_rise_time(next_sun_rise, which='next')
+            next_sun_rise = observer.sun_rise_time(next_sun_rise+1*u.hour, which='next')
             sun_set = observer.sun_set_time(next_sun_rise, which='previous')
 
         for twilights in nights:
