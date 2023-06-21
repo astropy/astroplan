@@ -17,7 +17,8 @@ from astroplan.constraints import (
     TimeConstraint, LocalTimeConstraint, months_observable,
     max_best_rescale, min_best_rescale, PhaseConstraint,
     PrimaryEclipseConstraint, SecondaryEclipseConstraint,
-    is_event_observable, MeridianSeparationConstraint)
+    is_event_observable, MeridianSeparationConstraint,
+    HourAngleConstraint)
 from astroplan.exceptions import MissingConstraintWarning
 from astroplan.observer import Observer
 from astroplan.periodic import EclipsingSystem
@@ -209,6 +210,21 @@ def test_galactic_plane_separation():
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [False, True, True])
+
+
+def test_hour_angle_constraint():
+    time = Time('2003-04-05 06:07:08')
+    apo = Observer.at_site("APO") 
+    targets = [vega, rigel, polaris]
+
+    constraint = HourAngleConstraint()
+
+    is_constraint_met = constraint(times=time, observer=apo, targets=targets)
+    assert np.all(is_constraint_met == [False, False, False])
+
+    time = Time('2003-10-05 06:07:08')
+    is_constraint_met = constraint(times=time, observer=apo, targets=targets)
+    assert np.all(is_constraint_met == [True, True, True])
 
 
 @pytest.mark.remote_data
