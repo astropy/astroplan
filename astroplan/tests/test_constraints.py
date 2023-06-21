@@ -165,7 +165,7 @@ def test_galactic_plane_separation():
 
 def test_hour_angle_constraint():
     time = Time('2003-04-05 06:07:08')
-    apo = Observer.at_site("APO") 
+    apo = Observer.at_site("APO")
     targets = [vega, rigel, polaris]
 
     constraint = HourAngleConstraint()

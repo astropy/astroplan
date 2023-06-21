@@ -944,8 +944,8 @@ class HourAngleConstraint(Constraint):
     Parameters
     ----------
     min : float or `None`
-        Minimum hour angle of the target. `None` indicates no limit.            
-    max : float or `None`                                                       
+        Minimum hour angle of the target. `None` indicates no limit.
+    max : float or `None`
         Maximum hour angle of the target. `None` indicates no limit.
     """
 
