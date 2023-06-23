@@ -947,35 +947,42 @@ class HourAngleConstraint(Constraint):
         Minimum hour angle of the target. `None` indicates no limit.
     max : float or `None`
         Maximum hour angle of the target. `None` indicates no limit.
+    use_astropy : boolean
+        Use Astropy for hour angle calculation
     """
 
-    def __init__(self, min=-5.5, max=5.5):
+    def __init__(self, min=-5.5, max=5.5, use_astropy=True):
         self.min = min
         self.max = max
+        self.use_astropy = use_astropy
 
     def compute_constraint(self, times, observer, targets):
-        if times.isscalar:
-            jds = np.array([times.jd])
-        else:
-            jds = np.array([t.jd for t in times])
-        GMST = 18.697374558 + 24.06570982441908 * (jds - 2451545)
-        GMST = np.mod(GMST, 24)
 
-        lon = observer.location.lon.value / 15
-        if targets.size == 1:
-            lst = np.mod(GMST + lon, 24)
-            ras = np.tile([targets.ra.hour], len(jds))
+        if self.use_astropy:
+            has = np.array(observer.target_hour_angle(times, targets).hour)
         else:
-            if len(jds) == 1:
-                lst = np.array([np.mod(GMST + lon, 24)] * len(targets)).flatten()
-                ras = np.array([target.ra.hour for target in targets]).flatten()
+            if times.isscalar:
+                jds = np.array([times.jd])
             else:
-                lst = np.tile(np.mod(GMST + lon, 24), (len(targets), 1))
-                ras = np.tile(
-                    np.array([target.ra.hour for target in targets]).flatten(),
-                    (len(jds), 1),
-                ).T
-        has = np.mod(lst - ras, 24)
+                jds = np.array([t.jd for t in times])
+            GMST = 18.697374558 + 24.06570982441908 * (jds - 2451545)
+            GMST = np.mod(GMST, 24)
+
+            lon = observer.location.lon.value / 15
+            if targets.size == 1:
+                lst = np.mod(GMST + lon, 24)
+                ras = np.tile([targets.ra.hour], len(jds))
+            else:
+                if len(jds) == 1:
+                    lst = np.array([np.mod(GMST + lon, 24)] * len(targets)).flatten()
+                    ras = np.array([target.ra.hour for target in targets]).flatten()
+                else:
+                    lst = np.tile(np.mod(GMST + lon, 24), (len(targets), 1))
+                    ras = np.tile(
+                        np.array([target.ra.hour for target in targets]).flatten(),
+                        (len(jds), 1),
+                    ).T
+            has = np.mod(lst - ras, 24)
 
         # Use hours from -12 to 12
         idx = np.where(has > 12)[0]
