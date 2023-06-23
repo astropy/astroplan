@@ -968,10 +968,13 @@ class HourAngleConstraint(Constraint):
         else:
             if len(jds) == 1:
                 lst = np.array([np.mod(GMST + lon, 24)] * len(targets)).flatten()
-                ras = np.array([target.ra.hour for target in targets])
+                ras = np.array([target.ra.hour for target in targets]).flatten()
             else:
                 lst = np.tile(np.mod(GMST + lon, 24), (len(targets), 1))
-                ras = np.tile([target.ra.hour for target in targets], len(jds))
+                ras = np.tile(
+                    np.array([target.ra.hour for target in targets]).flatten(),
+                    (len(jds), 1),
+                ).T
         has = np.mod(lst - ras, 24)
 
         # Use hours from -12 to 12
