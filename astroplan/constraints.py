@@ -984,6 +984,8 @@ class HourAngleConstraint(Constraint):
                     ).T
             has = np.mod(lst - ras, 24)
 
+        # ensures no extra dimensions
+        has = np.squeeze(has)
         # Use hours from -12 to 12
         idx = np.where(has > 12)[0]
         has[idx] = has[idx] - 24
