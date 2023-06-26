@@ -949,17 +949,26 @@ class HourAngleConstraint(Constraint):
         Maximum hour angle of the target. `None` indicates no limit.
     use_astropy : boolean
         Use Astropy for hour angle calculation
+    sidereal_model : str
+        Sidereal time model.
+        See astropy.time.Time.sidereal_time docs for options.
     """
 
-    def __init__(self, min=-5.5, max=5.5, use_astropy=True):
+    def __init__(self, min=-5.5, max=5.5, use_astropy=True,
+                 sidereal_model=None):
         self.min = min
         self.max = max
         self.use_astropy = use_astropy
+        self.sidereal_model = sidereal_model
 
     def compute_constraint(self, times, observer, targets):
 
         if self.use_astropy:
-            has = np.array(observer.target_hour_angle(times, targets).hour)
+            lst = times.sidereal_time('mean',
+                                      longitude='tio',
+                                      model=self.sidereal_model) + \
+                                              observer.location.lon
+            has = np.mod([(lst - target.ra).hour for target in targets], 24)
         else:
             if times.isscalar:
                 jds = np.array([times.jd])
