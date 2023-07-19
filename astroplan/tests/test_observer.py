@@ -1359,6 +1359,7 @@ def test_observer_lon_lat_el():
     for attr in ['longitude', 'latitude', 'elevation']:
         assert hasattr(obs, attr)
 
+
 def test_hash_observer():
     """Test that Observer objects are hashable."""
     obs1 = Observer.at_site('Subaru')
@@ -1370,7 +1371,8 @@ def test_hash_observer():
 
     obs4 = Observer.at_site('Keck', timezone='US/Hawaii')
     assert hash(obs3) == hash(obs4)
-    
+
+
 def test_eq_observer():
     """Test that Observer objects are comparable."""
     obs1 = Observer.at_site('Subaru')

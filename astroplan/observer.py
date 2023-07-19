@@ -290,7 +290,7 @@ class Observer(object):
         >>> keck._key()
         ('Keck', None, None, None, <Longitude -155.47833333 deg>,
             <Latitude 19.82833333 deg>, <Quantity 4160. m>,
-            <DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>)        
+            <DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>)
         """
 
         return (self.name,
@@ -311,7 +311,7 @@ class Observer(object):
 
         >>> from astroplan import Observer
         >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
-        >>> hash(keck)                                    
+        >>> hash(keck)
         -3872382927731250571
         """
 
