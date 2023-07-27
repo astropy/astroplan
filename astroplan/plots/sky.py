@@ -1,7 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -120,7 +117,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         if isinstance(plt.gca(), plt.PolarAxes):
             ax = plt.gca()
         else:
-            ax = plt.axes(polar=True)
+            plt.close()
+            fig = plt.gcf()
+            ax = fig.add_subplot(projection='polar')
 
     if style_kwargs is None:
         style_kwargs = {}
