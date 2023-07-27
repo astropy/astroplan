@@ -354,7 +354,7 @@ class AltitudeConstraint(Constraint):
             uppermask = alt <= self.max
             return lowermask & uppermask
         else:
-            return max_best_rescale(alt, self.min, self.max)
+            return max_best_rescale(alt, self.min, self.max, greater_than_max=0)
 
 
 class AirmassConstraint(AltitudeConstraint):
