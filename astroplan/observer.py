@@ -273,6 +273,85 @@ class Observer(object):
                     attributes_strings.append("{}={}".format(name, value))
         return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
 
+    def _key(self):
+        """
+        Generate a tuple of the attributes that determine uniqueness of
+        `~astroplan.Observer` objects.
+
+        Returns
+        -------
+        key : tuple
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck._key()
+        ('Keck', None, None, None, <Longitude -155.47833333 deg>,
+            <Latitude 19.82833333 deg>, <Quantity 4160. m>,
+            <DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>)
+        """
+
+        return (self.name,
+                self.pressure,
+                self.temperature,
+                self.relative_humidity,
+                self.longitude,
+                self.latitude,
+                self.elevation,
+                self.timezone,)
+
+    def __hash__(self):
+        """
+        Hash the `~astroplan.Observer` object.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> hash(keck)
+        -3872382927731250571
+        """
+
+        return hash(self._key())
+
+    def __eq__(self, other):
+        """
+        Equality check for `~astroplan.Observer` objects.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck2 = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck == keck2
+        True
+        """
+
+        if isinstance(other, Observer):
+            return self._key() == other._key()
+        else:
+            return NotImplemented
+
+    def __ne__(self, other):
+        """
+        Inequality check for `~astroplan.Observer` objects.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> kpno = Observer.at_site("KPNO", timezone="US/Arizona")
+        >>> keck != kpno
+        True
+        """
+
+        return not self.__eq__(other)
+
     @classmethod
     def at_site(cls, site_name, **kwargs):
         """
