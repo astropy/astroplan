@@ -748,7 +748,7 @@ class PriorityScheduler(Scheduler):
         score_array = scorer.create_score_array(time_resolution)
 
         # Sort the list of blocks by priority
-        sorted_indices = np.argsort(_block_priorities)
+        sorted_indices = np.argsort(_block_priorities, kind='mergesort')
 
         unscheduled_blocks = []
         # Compute the optimal observation time in priority order
@@ -786,7 +786,7 @@ class PriorityScheduler(Scheduler):
                 # does not prevent us from fitting it in.
                 # loop over valid times and see if it fits
                 # TODO: speed up by searching multiples of time resolution?
-                for idx in np.argsort(sum_scores)[::-1]:
+                for idx in np.argsort(-sum_scores, kind='mergesort'):
                     if sum_scores[idx] <= 0.0:
                         # we've run through all optimal blocks
                         _is_scheduled = False
