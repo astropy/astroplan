@@ -152,8 +152,11 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
-    style_kwargs.setdefault('linewidth', 1.5)
-    style_kwargs.setdefault('fmt', '-')
+
+    if 'lw' not in style_kwargs:
+        style_kwargs.setdefault('linewidth', 1.5)
+    if 'ls' not in style_kwargs and 'linestyle' not in style_kwargs:
+        style_kwargs.setdefault('fmt', '-')
 
     if hasattr(time, 'utcoffset') and use_local_tz:
         tzoffset = time.utcoffset()
@@ -366,7 +369,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
-    if 'ls' not in style_kwargs:
+    if 'ls' not in style_kwargs and 'fmt' not in style_kwargs:
         style_kwargs.setdefault('linestyle', '-')
     if 'lw' not in style_kwargs:
         style_kwargs.setdefault('linewidth', 1.5)
@@ -592,8 +595,9 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
-    style_kwargs.setdefault('linestyle', '-')
     style_kwargs.setdefault('fmt', '-')
+    if 'ls' not in style_kwargs and 'fmt' not in style_kwargs:
+        style_kwargs.setdefault('linestyle', '-')
 
     # Populate time window if needed.
     time = Time(time)

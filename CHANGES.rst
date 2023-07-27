@@ -7,7 +7,7 @@
 - Fix ``Observer`` not having longtitude, latitude, and elevation parameters
   as class attributes. They are now properties calculated from the ``location``.
 
-- Documentation revisions and theme update
+- Documentation revisions and theme update [#563]
 
 0.8 (2021-01-26)
 ----------------
