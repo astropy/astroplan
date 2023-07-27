@@ -678,6 +678,8 @@ Altair, Vega and Deneb. To plot a map of the sky:
     plot_sky(vega, observer, observe_time, style_kwargs=vega_style)
     plot_sky(deneb, observer, observe_time, style_kwargs=deneb_style)
 
+
+
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
     ax = plt.gca()

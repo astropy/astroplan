@@ -7,7 +7,7 @@ Getting Started
 General Guidelines
 ==================
 
-`astroplan` is based on `Astropy <https://astropy.org>`__ and was built around the creation of Python
+`astroplan` is based on `astropy <https://astropy.org>`__ and was built around the creation of Python
 objects that contain all the information needed to perform certain tasks.  You,
 the user, will create and manipulate these objects to plan your observation. For
 instance, an `~astroplan.Target` object contains information associated with
@@ -57,7 +57,7 @@ Or you can specify your own location parameters::
                    timezone=timezone('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
-`astroplan` makes heavy use of certain `Astropy <https://astropy.org>`__ machinery, including the
+`astroplan` makes heavy use of certain `astropy <https://astropy.org>`__ machinery, including the
 `~astropy.coordinates` objects and transformations and
 `~astropy.units`. Most importantly for basic use of `astroplan` is the
 representation of dates/times as `~astropy.time.Time` objects (note that
@@ -66,10 +66,6 @@ these are in the UTC timezone by default)::
     from astropy.time import Time
     time = Time(['2015-06-16 06:00:00'])
 
-Since `astroplan` objects are Python objects, manipulating them or accessing
-attributes follows Python syntax and conventions.  See Python documentation on
-`objects <https://docs.python.org/2/tutorial/classes.html#instance-objects>`_
-for more information.
 
 Doing More
 ==========

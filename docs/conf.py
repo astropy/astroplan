@@ -12,12 +12,12 @@
 # See astropy.sphinx.conf for which values are set there.
 
 from configparser import ConfigParser
-import os
+from astroplan import __version__
 import sys
 import datetime
 
 try:
-    from sphinx_astropy.conf.v1 import *  # noqa
+    from sphinx_astropy.conf.v2 import *  # noqa
 except ImportError:
     print('ERROR: the documentation requires the sphinx-astropy package to '
           'be installed')
@@ -34,7 +34,7 @@ setup_cfg = dict(conf.items('metadata'))
 highlight_language = 'python3'
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.7'
+# needs_sphinx = '1.7'
 
 # Extend astropy intersphinx_mapping with packages we use here
 intersphinx_mapping['astroquery'] = ('http://astroquery.readthedocs.io/en/latest/', None)
@@ -84,12 +84,6 @@ release = package.__version__
 # the options for this theme can be modified by overriding some of the
 # variables set in the global configuration. The variables set in the
 # global configuration are listed below, commented out.
-
-html_theme_options = {
-    'logotext1': 'astro',  # white,  semi-bold
-    'logotext2': 'plan',  # orange, light
-    'logotext3': ':docs'   # white,  light
-    }
 
 # Add any paths that contain custom themes here, relative to this directory.
 # To use a different custom theme, add the directory containing the theme.
@@ -178,6 +172,31 @@ linkcheck_anchors = False
 
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 nitpicky = True
+
+release = __version__
+dev = "dev" in release
+
+html_copy_source = False
+
+html_theme_options.update(  # noqa: F405
+    {
+        "github_url": "https://github.com/astropy/astroplan",
+        "external_links": [
+            {"name": "astropy docs", "url": "https://docs.astropy.org/en/stable/"},
+        ],
+        "use_edit_page_button": True,
+    }
+)
+
+html_context = {
+    "default_mode": "light",
+    "to_be_indexed": ["stable", "latest"],
+    "is_development": dev,
+    "github_user": "astropy",
+    "github_repo": "astroplan",
+    "github_version": "main",
+    "doc_path": "docs",
+}
 
 #
 # Some warnings are impossible to suppress, and you can list specific references

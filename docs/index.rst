@@ -2,13 +2,6 @@
 
 .. _astroplan:
 
-**********************************
-Observation Planning (`astroplan`)
-**********************************
-
-What is astroplan?
-==================
-
 **astroplan** is an open source Python package to help astronomers plan
 observations.
 
@@ -16,7 +9,6 @@ The goal of astroplan is to make a flexible toolbox for observation planning and
 scheduling.  When complete, the goal is to be easy for Python beginners and new
 observers to to pick up, but powerful enough for observatories preparing nightly
 and long-term schedules.
-
 
 Features:
 
@@ -26,7 +18,7 @@ Features:
   plots (airmass, parallactic angle, sky maps).
 * Determining observability of sets of targets given an arbitrary set of
   constraints (i.e., altitude, airmass, moon separation/illumination, etc.).
-* `Astropy <https://astropy.org>`__ powered!
+* `astropy <https://astropy.org>`__ powered!
 
 Links
 =====

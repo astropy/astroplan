@@ -120,7 +120,7 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         if isinstance(plt.gca(), plt.PolarAxes):
             ax = plt.gca()
         else:
-            ax = plt.axes(polar=True)
+            fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
 
     if style_kwargs is None:
         style_kwargs = {}
