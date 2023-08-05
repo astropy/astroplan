@@ -41,6 +41,7 @@ class MissingConstraintWarning(AstroplanWarning):
     """Triggered when a constraint is expected but not supplied"""
     pass
 
+
 class InvalidTLEDataWarning(AstroplanWarning):
     """TLE data invalid for the requested time"""
     pass

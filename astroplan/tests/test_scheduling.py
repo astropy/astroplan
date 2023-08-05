@@ -339,8 +339,8 @@ def test_scorer():
 
 @pytest.mark.skipif('not HAS_SKYFIELD')
 def test_priority_scheduler_TLETarget():
-    line1="1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990"
-    line2="2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092"
+    line1 = "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990"
+    line2 = "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092"
     iss = TLETarget(name="ISS (ZARYA)", line1=line1, line2=line2, observer=apo)
     constraints = [AirmassConstraint(3, boolean_constraint=False)]
     blocks = [ObservingBlock(t, 5*u.minute, i) for i, t in enumerate(targets)]
