@@ -467,7 +467,8 @@ def test_caches_shapes():
     observer = Observer.at_site('lapalma')
     ac = AltitudeConstraint(min=30*u.deg)
 
-    # When time and targets have the same size, they are broadcastable so grid_times_targets is ignored
+    # When time and targets are the same size,
+    # they're broadcastable and grid_times_targets is ignored
     assert ac(observer, targets, times, grid_times_targets=True).shape == (3,)
     targets = get_skycoord([m31, ippeg])
     assert ac(observer, targets, times, grid_times_targets=True).shape == (2, 3)
