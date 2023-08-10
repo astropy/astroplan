@@ -61,7 +61,7 @@ def test_TLETarget():
                   "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092")
     line1 = "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990"
     line2 = "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092"
-    subaru = Observer.at_site('subaru')
+    subaru = Observer.at_site('subaru')  # (lon, lat, el)=(-155.476111 deg, 19.825555 deg, 4139.0 m)
     time = Time("2023-08-02 10:00", scale='utc')
     times = time_grid_from_range([time, time + 3.1*u.hour],
                                  time_resolution=1 * u.hour)
@@ -74,23 +74,57 @@ def test_TLETarget():
     assert repr(tle_target1) == repr(tle_target2)
     assert str(tle_target1) == str(tle_target2)
 
-    # Single time
-    ra_dec1 = tle_target1.coord(time)
+    # Single time (Below Horizon)
+    ra_dec1 = tle_target1.coord(time)   # '08h29m26.00003243s +07d31m36.65950907s'
     ra_dec2 = tle_target2.coord(time)
-    ra_dec_from_horizon = SkyCoord("08h29m26.36s +07d31m24.0s")
 
-    assert ra_dec1.separation(ra_dec_from_horizon) < 30*u.arcsec
+    # Comparison with the JPL Horizons System
+    ra_dec_horizon_icrf = SkyCoord("08h29m27.029117s +07d31m28.35610s")
+    # ICRF: Compensated for the down-leg light-time delay aberration
+    # ra_dec1.separation(ra_dec_horizon_icrf).to(u.arcsec) # Difference: 17.41″
+    # ~ 2 * tan(17,41/2/3600) * 11801,56 = 57 km
+
+    ra_dec_horizon_ref_apparent = SkyCoord("08h30m54.567398s +08d05m32.72764s")
+    # Refracted Apparent: In an equatorial coordinate system with all compensations
+    # ra_dec1.separation(ra_dec_horizon_ref_apparent).to(u.arcsec) # Difference: 2424.44″
+
+    ra_dec_horizon_icrf_ref_apparent = SkyCoord("08h29m37.373866s +08d10m14.78811s")
+    # ICRF Refracted Apparent: In the ICRF reference frame with all compensations
+    # ra_dec1.separation(ra_dec_horizon_icrf_ref_apparent).to(u.arcsec) # Difference: 2324.28″
+
+    # Skyfield appears to use no compensations. According to this, it's not even recommended to
+    # compensate for light travel time. Compensating changes the difference to ra_dec_horizon_icrf
+    # to 20.05 arcsec.
+    # https://rhodesmill.org/skyfield/earth-satellites.html#avoid-calling-the-observe-method
+
+    assert ra_dec1.separation(ra_dec_horizon_icrf) < 20*u.arcsec
     assert ra_dec1.to_string('hmsdms') == ra_dec2.to_string('hmsdms')
+
+    # Single time (Above Horizon)
+    time_ah = Time("2023-08-02 07:20", scale='utc')
+    ra_dec_ah = tle_target1.coord(time_ah)  # '11h19m48.53631001s +44d49m45.22194611s'
+
+    ra_dec_ah_horizon_icrf = SkyCoord("11h19m49.660349s +44d49m34.65875s")  # 15.95″
+    ra_dec_ah_horizon_ref_apparent = SkyCoord("11h21m34.102381s +44d43m40.06899s")  # 1181.84″
+    ra_dec_ah_horizon_icrf_ref_apparent = SkyCoord("11h20m16.627261s +44d51m24.25337s")  # 314.75″
+
+    # Default is WGS72 for Skyfield. Coordinates with WGS84 gravity model that Horizon uses:
+    # '11h19m48.28084569s +44d49m46.33649241s' - 18.75″
+    # See 'Build a satellite with a specific gravity model' in Skyfield's Earth Satellites docu
+
+    # There are many potential sources of inaccuracies, and it's not all super precise.
+    # Should the accuracy be better than < 25*u.arcsec when compared to the JPL Horizons System?
+    assert ra_dec_ah.separation(ra_dec_ah_horizon_icrf) < 20*u.arcsec
 
     # Multiple times
     ra_dec1 = tle_target1.coord(times)
     ra_dec2 = tle_target2.coord(times)
-    ra_dec_from_horizon = SkyCoord(["08h29m26.36s +07d31m24.0s",
-                                    "06h25m46.81s -54d32m20.2s",
-                                    "13h52m09.08s +04d26m40.1s",
-                                    "09h20m04.74s -00d51m19.2s"])
+    ra_dec_from_horizon = SkyCoord(["08h29m27.029117s +07d31m28.35610s",   # 17.41″
+                                    "06h25m46.672661s -54d32m16.77533s",   # 22.05″
+                                    "13h52m08.854291s +04d26m49.56432s",   #  3.20″
+                                    "09h20m04.872215s -00d51m21.17432s"])  # 17.55″
 
-    assert all(list(ra_dec1.separation(ra_dec_from_horizon) < 30*u.arcsec))
+    assert all(list(ra_dec1.separation(ra_dec_from_horizon) < 25*u.arcsec))
     assert ra_dec1.to_string('hmsdms') == ra_dec2.to_string('hmsdms')
 
     # TLE Check
