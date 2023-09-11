@@ -24,6 +24,7 @@ def test_image_example():
     return fig
 
 
+@pytest.mark.remote_data
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
 @pytest.mark.mpl_image_compare
 def test_timezone():

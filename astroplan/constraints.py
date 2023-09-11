@@ -734,7 +734,7 @@ class LocalTimeConstraint(Constraint):
         >>> from astroplan import Observer
         >>> from astroplan.constraints import LocalTimeConstraint
         >>> import datetime as dt
-        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
+        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")  # doctest: +REMOTE_DATA
         >>> # bound times between 23:50 and 04:08 local Hawaiian time
         >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
         """
@@ -821,7 +821,7 @@ class TimeConstraint(Constraint):
 
         >>> from astroplan import Observer
         >>> from astropy.time import Time
-        >>> subaru = Observer.at_site("Subaru")
+        >>> subaru = Observer.at_site("Subaru")  # doctest: +REMOTE_DATA
         >>> t1 = Time("2016-03-28T12:00:00")
         >>> t2 = Time("2016-03-30T12:00:00")
         >>> constraint = TimeConstraint(t1,t2)
