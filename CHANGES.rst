@@ -1,4 +1,4 @@
-0.9.1 (unreleased)
+0.9.1 (2023-09-20)
 ------------------
 
 - Fix bug when ``FixedTarget`` objects are passed to methods that calculate
