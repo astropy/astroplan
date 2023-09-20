@@ -550,6 +550,7 @@ class SunSeparationConstraint(Constraint):
         # by the observer.
         # 'get_sun' returns ICRS coords.
         sun = get_body('sun', times, location=observer.location)
+        targets = get_skycoord(targets)
         solar_separation = sun.separation(targets)
 
         if self.min is None and self.max is not None:
@@ -595,6 +596,7 @@ class MoonSeparationConstraint(Constraint):
         # moon.separation(targets) is NOT the same as targets.separation(moon)
         # the former calculates the separation in the frame of the moon coord
         # which is GCRS, and that is what we want.
+        targets = get_skycoord(targets)
         moon_separation = moon.separation(targets)
 
         if self.min is None and self.max is not None:
