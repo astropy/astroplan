@@ -12,9 +12,9 @@
 # See astropy.sphinx.conf for which values are set there.
 
 from configparser import ConfigParser
-from astroplan import __version__
 import sys
 import datetime
+from importlib import metadata
 
 try:
     from sphinx_astropy.conf.v2 import *  # noqa
@@ -70,10 +70,17 @@ copyright = '{0}, {1}'.format(
 __import__(project)
 package = sys.modules[project]
 
-# The short X.Y version.
-version = package.__version__.split('-', 1)[0]
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+
 # The full version, including alpha/beta/rc tags.
-release = package.__version__
+release = metadata.version(project)
+# The short X.Y version.
+version = ".".join(release.split(".")[:2])
+
+# Only include dev docs in dev version.
+dev = "dev" in release
 
 
 # -- Options for HTML output ---------------------------------------------------
@@ -173,9 +180,6 @@ linkcheck_anchors = False
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 nitpicky = True
 
-release = __version__
-dev = "dev" in release
-
 html_copy_source = False
 
 html_theme_options.update(  # noqa: F405
@@ -197,6 +201,11 @@ html_context = {
     "github_version": "main",
     "doc_path": "docs",
 }
+
+# Add any extra paths that contain custom files (such as robots.txt or
+# .htaccess) here, relative to this directory. These files are copied
+# directly to the root of the documentation.
+html_extra_path = ["robots.txt"]
 
 #
 # Some warnings are impossible to suppress, and you can list specific references

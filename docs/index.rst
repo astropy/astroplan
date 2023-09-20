@@ -31,8 +31,8 @@ License: BSD-3
 
 .. _astroplan_docs:
 
-General Documentation
-=====================
+Documentation
+=============
 
 .. toctree::
    :maxdepth: 2
@@ -44,13 +44,8 @@ General Documentation
    api
    changelog
 
-.. _astroplan_authors:
-
-Authors
-=======
-
 Maintainers
------------
++++++++++++
 * `Brett Morris, including contributions from Google Summer of Code 2015 <https://www.google-melange.com/gsoc/project/details/google/gsoc2015/bmmorris/5707702298738688>`_
 
 Attribution
