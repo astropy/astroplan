@@ -1,4 +1,10 @@
-0.9 (unreleased)
+0.9.1 (unreleased)
+------------------
+
+- Fix bug when ``FixedTarget`` objects are passed to methods that calculate
+  lunar coordinates. [#568]
+
+0.9 (2023-07-27)
 ----------------
 
 - Fix time range in ``months_observable`` to not be only in 2014. Function now
