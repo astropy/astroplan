@@ -707,13 +707,13 @@ class PriorityScheduler(Scheduler):
 
     def _get_filled_indices(self, times):
         is_open_time = np.ones(len(times), bool)
-        times_resolution = np.min(np.diff(times))
+        times_resolution = np.min(times[1:] - times[:-1])
         # close times that are already filled
         pre_filled = np.array([[block.start_time, block.end_time] for
                                block in self.schedule.scheduled_blocks if
                                isinstance(block, ObservingBlock)])
         for start_end in pre_filled:
-            if np.diff(start_end)[0] <= times_resolution:
+            if start_end[1] - start_end[0] <= times_resolution:
                 warnings.warn(
                     "Unexpected behavior may occur when the time "
                     f"resolution ({times_resolution.to(u.second)}) "
