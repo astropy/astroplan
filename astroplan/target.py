@@ -79,13 +79,13 @@ class FixedTarget(Target):
     >>> from astropy.coordinates import SkyCoord
     >>> import astropy.units as u
     >>> sirius_coord = SkyCoord(ra=101.28715533*u.deg, dec=16.71611586*u.deg)
-    >>> sirius = FixedTarget(coord=sirius_coord, name="Sirius")
+    >>> sirius = FixedTarget(coord=sirius_coord, name="Sirius")  # doctest: +REMOTE_DATA
 
     Create an equivalent `~astroplan.FixedTarget` object for Sirius by querying
     for the coordinates of Sirius by name:
 
     >>> from astroplan import FixedTarget
-    >>> sirius = FixedTarget.from_name("Sirius")
+    >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
     """
 
     def __init__(self, coord, name=None, **kwargs):
@@ -127,7 +127,7 @@ class FixedTarget(Target):
         Examples
         --------
         >>> from astroplan import FixedTarget
-        >>> sirius = FixedTarget.from_name("Sirius")
+        >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
         >>> sirius.coord                              # doctest: +FLOAT_CMP
         <SkyCoord (ICRS): (ra, dec) in deg
             ( 101.28715533, -16.71611586)>
@@ -149,7 +149,7 @@ class FixedTarget(Target):
         >>> from astroplan import FixedTarget
         >>> from astropy.coordinates import SkyCoord
         >>> vega_coord = SkyCoord(ra='279.23473479d', dec='38.78368896d')
-        >>> vega = FixedTarget(coord=vega_coord, name="Vega")
+        >>> vega = FixedTarget(coord=vega_coord, name="Vega")  # doctest: +REMOTE_DATA
         >>> print(vega)                             # doctest: +FLOAT_CMP
         <FixedTarget "Vega" at SkyCoord (ICRS): (ra, dec) in deg ( 279.23473479, 38.78368894)>
         """
