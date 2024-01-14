@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import zoneinfo
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, Angle, FK5, HADec, TETE, get_body, get_sun)
+                                 AltAz, Angle, FK5, HADec, TETE, get_body)
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
@@ -386,8 +386,10 @@ def test_parallactic_angle_flags_and_grid():
     moon = get_body('moon', time, location=obs.location)
     assert_quantity_allclose(obs.parallactic_angle(time, MoonFlag),
                              obs.parallactic_angle(time, moon))
+    # SunFlag resolves to the topocentric sun (``get_body``), not ``get_sun``
+    sun = get_body('sun', time, location=obs.location)
     assert_quantity_allclose(obs.parallactic_angle(time, SunFlag),
-                             obs.parallactic_angle(time, get_sun(time)))
+                             obs.parallactic_angle(time, sun))
 
     times = time + np.arange(3)*u.hour
     targets = [SkyCoord(0*u.deg, -30*u.deg), SkyCoord(90*u.deg, 20*u.deg)]
