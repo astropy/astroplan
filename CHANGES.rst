@@ -1,4 +1,4 @@
-0.10 (unreleased)
+0.10 (2024-04-04)
 -----------------
 
 - Fix compatibility with astropy v6.0.
