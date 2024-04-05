@@ -12,21 +12,18 @@ infuriating.
 * Docs: https://astroplan.readthedocs.io/
 """
 
-# Affiliated packages may add whatever they like to this file, but
-# should keep this content at the top.
-# ----------------------------------------------------------------------------
-from ._astropy_init import *
-# ----------------------------------------------------------------------------
+try:
+    from .version import version as __version__
+except ImportError:
+    __version__ = ''
 
-# For egg_info test builds to pass, put package imports here.
-if not _ASTROPY_SETUP_:
-    from .utils import *
-    from .observer import *
-    from .target import *
-    from .exceptions import *
-    from .moon import *
-    from .constraints import *
-    from .scheduling import *
-    from .periodic import *
+from .utils import *
+from .observer import *
+from .target import *
+from .exceptions import *
+from .moon import *
+from .constraints import *
+from .scheduling import *
+from .periodic import *
 
-    download_IERS_A()
+download_IERS_A()
