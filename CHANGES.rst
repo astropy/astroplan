@@ -1,6 +1,7 @@
 0.10 (unreleased)
 -----------------
 
+- Fix compatibility with astropy v6.0.
 
 0.9.1 (2023-09-20)
 ------------------
