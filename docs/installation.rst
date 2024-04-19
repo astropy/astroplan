@@ -10,7 +10,7 @@ Requirements
 ============
 
 **astroplan** works on Linux, Mac OS X and Windows.
-It requires Python 3.7+ as well as numpy, astropy, pytz, and six.
+It requires Python 3.7+ as well as numpy, astropy, and pytz.
 Additional features are available when you install `Matplotlib`_
 and `astroquery`_.
 
