@@ -8,6 +8,7 @@ from __future__ import (absolute_import, division, print_function,
 
 import copy
 from abc import ABCMeta, abstractmethod
+import warnings
 
 import numpy as np
 
@@ -18,6 +19,7 @@ from astropy.table import Table
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
 from .target import get_skycoord
+from .exceptions import AstroplanWarning
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',
@@ -705,15 +707,21 @@ class PriorityScheduler(Scheduler):
 
     def _get_filled_indices(self, times):
         is_open_time = np.ones(len(times), bool)
+        times_resolution = np.min(times[1:] - times[:-1])
         # close times that are already filled
         pre_filled = np.array([[block.start_time, block.end_time] for
                                block in self.schedule.scheduled_blocks if
                                isinstance(block, ObservingBlock)])
         for start_end in pre_filled:
-            filled = np.where((start_end[0] < times) & (times < start_end[1]))
-            if len(filled[0]) > 0:
-                is_open_time[filled[0]] = False
-                is_open_time[min(filled[0]) - 1] = False
+            if start_end[1] - start_end[0] <= times_resolution:
+                warnings.warn(
+                    "Unexpected behavior may occur when the time "
+                    f"resolution ({times_resolution.to(u.second)}) "
+                    "is not smaller than the block duration "
+                    f"({np.diff(start_end)[0].to(u.second)}).", AstroplanWarning
+                )
+            filled = np.where((start_end[0]-0.5*u.second < times) & (times < start_end[1]))
+            is_open_time[filled[0]] = False
         return is_open_time
 
     def _make_schedule(self, blocks):
