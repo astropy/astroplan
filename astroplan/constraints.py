@@ -35,7 +35,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "LocalTimeConstraint", "PrimaryEclipseConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
-           "min_best_rescale", "PhaseConstraint", "is_event_observable"]
+           "min_best_rescale", "PhaseConstraint", "is_event_observable", "NearMeridianConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
@@ -936,6 +936,46 @@ class PhaseConstraint(Constraint):
                         (phase >= self.min) & (phase <= self.max),
                         (phase >= self.min) | (phase <= self.max))
         return mask
+
+
+class NearMeridianConstraint(Constraint):
+    """
+    Constraint near the Meridian.
+    """
+    def __init__(self, min=None, boolean_constraint=True):
+        """
+        Parameters
+        ----------
+        min : `~astropy.units.Quantity` or `None`, optional
+            Minimum acceptable distance to meridian.
+            `None` indicates no limit.
+
+        boolean_constraint : bool
+
+        Examples
+        --------
+        Constrain observations to targets that are 3 degrees away from the meridian.
+        >>> import astropy.units as u
+        >>> constraint = NearMeridianConstraint(min=3*u.deg)
+
+        This can be useful for observations using German-Equatorial Mounts, to avoid
+        flipping the side of the pier during exposures.
+        """
+        self.min = min if min is not None else 0*u.hourangle
+        self.boolean_constraint = boolean_constraint
+
+    def compute_constraint(self, times, observer, targets):
+        lst = observer.local_sidereal_time(times)
+        meridian = SkyCoord(ra=lst, dec=targets.dec)
+
+        meridian_separation = meridian.separation(targets)
+
+        if self.boolean_constraint:
+            mask = (self.min < meridian_separation)
+            return mask
+        else:
+            rescale = min_best_rescale(meridian_separation, self.min, less_than_min=0)
+            return rescale
 
 
 def is_always_observable(constraints, observer, targets, times=None,
