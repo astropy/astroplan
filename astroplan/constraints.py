@@ -948,7 +948,7 @@ class MeridianSeparationConstraint(Constraint):
         Parameters
         ----------
         min : `~astropy.units.Quantity` or `None`, optional
-            Minimum acceptable distance to meridian.
+            Minimum acceptable angular distance from the meridian.
             `None` indicates no lower limit.
 
         max : `~astropy.units.Quantity` or `None`, optional
