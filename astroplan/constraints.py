@@ -35,7 +35,8 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "LocalTimeConstraint", "PrimaryEclipseConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
-           "min_best_rescale", "PhaseConstraint", "is_event_observable", "MeridianSeparationConstraint"]
+           "min_best_rescale", "PhaseConstraint", "is_event_observable", 
+           "MeridianSeparationConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
@@ -949,7 +950,7 @@ class MeridianSeparationConstraint(Constraint):
         min : `~astropy.units.Quantity` or `None`, optional
             Minimum acceptable distance to meridian.
             `None` indicates no lower limit.
-        
+
         max : `~astropy.units.Quantity` or `None`, optional
             Maximum acceptable distance to meridian.
             `None` indicates no upper limit.
