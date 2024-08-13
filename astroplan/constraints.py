@@ -35,7 +35,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "LocalTimeConstraint", "PrimaryEclipseConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
-           "min_best_rescale", "PhaseConstraint", "is_event_observable", "NearMeridianConstraint"]
+           "min_best_rescale", "PhaseConstraint", "is_event_observable", "MeridianSeparationConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
@@ -938,30 +938,36 @@ class PhaseConstraint(Constraint):
         return mask
 
 
-class NearMeridianConstraint(Constraint):
+class MeridianSeparationConstraint(Constraint):
     """
-    Constraint near the Meridian.
+    Constraint on angular separation from the meridian.
     """
-    def __init__(self, min=None, boolean_constraint=True):
+    def __init__(self, min=None, max=None, boolean_constraint=True):
         """
         Parameters
         ----------
         min : `~astropy.units.Quantity` or `None`, optional
             Minimum acceptable distance to meridian.
-            `None` indicates no limit.
+            `None` indicates no lower limit.
+        
+        max : `~astropy.units.Quantity` or `None`, optional
+            Maximum acceptable distance to meridian.
+            `None` indicates no upper limit.
 
         boolean_constraint : bool
 
         Examples
         --------
-        Constrain observations to targets that are 3 degrees away from the meridian.
+        Constrain observations to targets that are between 3 and 35 degrees
+        away from the meridian.
         >>> import astropy.units as u
-        >>> constraint = NearMeridianConstraint(min=3*u.deg)
+        >>> constraint = MeridianSeparationConstraint(min=3*u.deg, max=35*u.deg)
 
         This can be useful for observations using German-Equatorial Mounts, to avoid
         flipping the side of the pier during exposures.
         """
-        self.min = min if min is not None else 0*u.hourangle
+        self.min = min if min is not None else 0*u.deg
+        self.max = max if max is not None else 180*u.deg
         self.boolean_constraint = boolean_constraint
 
     def compute_constraint(self, times, observer, targets):
@@ -971,10 +977,10 @@ class NearMeridianConstraint(Constraint):
         meridian_separation = meridian.separation(targets)
 
         if self.boolean_constraint:
-            mask = (self.min < meridian_separation)
+            mask = (self.min < meridian_separation) & (meridian_separation < self.max)
             return mask
         else:
-            rescale = min_best_rescale(meridian_separation, self.min, less_than_min=0)
+            rescale = min_best_rescale(meridian_separation, self.min, self.max, less_than_min=0)
             return rescale
 
 
