@@ -35,7 +35,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "LocalTimeConstraint", "PrimaryEclipseConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
-           "min_best_rescale", "PhaseConstraint", "is_event_observable", 
+           "min_best_rescale", "PhaseConstraint", "is_event_observable",
            "MeridianSeparationConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
