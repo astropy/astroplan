@@ -1,7 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from six import string_types
 
 # Standard library
 import sys
@@ -216,7 +213,7 @@ class Observer(object):
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
-        elif isinstance(timezone, string_types):
+        elif isinstance(timezone, str):
             self.timezone = pytz.timezone(timezone)
         else:
             raise TypeError('timezone keyword should be a string, or an '
