@@ -1,12 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+from typing import Any, Optional
 
 # Standard library
 from abc import ABCMeta
 
 # Third-party
 import astropy.units as u
+from astropy.units import Quantity
 from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
@@ -29,7 +31,8 @@ class Target(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, name=None, ra=None, dec=None, marker=None):
+    def __init__(self, name: Optional[str] = None, ra: Optional[Quantity["angle"]] = None,  # noqa: F821
+                 dec: Optional[Quantity["angle"]] = None, marker: Optional[str] = None):  # noqa: F821
         """
         Defines a single observation target.
 
@@ -37,9 +40,9 @@ class Target(object):
         ----------
         name : str, optional
 
-        ra : WHAT TYPE IS ra ?
+        ra : Right ascension, optional
 
-        dec : WHAT TYPE IS dec ?
+        dec : Declination, optional
 
         marker : str, optional
             User-defined markers to differentiate between different types
@@ -48,7 +51,7 @@ class Target(object):
         raise NotImplementedError()
 
     @property
-    def ra(self):
+    def ra(self) -> Quantity["angle"]:  # noqa: F821
         """
         Right ascension.
         """
@@ -57,7 +60,7 @@ class Target(object):
         raise NotImplementedError()
 
     @property
-    def dec(self):
+    def dec(self) -> Quantity["angle"]:  # noqa: F821
         """
         Declination.
         """
@@ -88,7 +91,7 @@ class FixedTarget(Target):
     >>> sirius = FixedTarget.from_name("Sirius")
     """
 
-    def __init__(self, coord, name=None, **kwargs):
+    def __init__(self, coord: SkyCoord, name: Optional[str] = None, **kwargs):
         """
         Parameters
         ----------
@@ -107,7 +110,7 @@ class FixedTarget(Target):
         self.coord = coord
 
     @classmethod
-    def from_name(cls, query_name, name=None, **kwargs):
+    def from_name(cls, query_name: str, name: Optional[str] = None, **kwargs) -> "FixedTarget":
         """
         Initialize a `FixedTarget` by querying for a name from the CDS name
         resolver, using the machinery in
@@ -138,7 +141,7 @@ class FixedTarget(Target):
             name = query_name
         return cls(SkyCoord.from_name(query_name), name=name, **kwargs)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         String representation of `~astroplan.FixedTarget`.
 
@@ -158,7 +161,7 @@ class FixedTarget(Target):
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
     @classmethod
-    def _from_name_mock(cls, query_name, name=None):
+    def _from_name_mock(cls, query_name: str, name: Optional[str] = None) -> "FixedTarget":
         """
         Mock method to replace `FixedTarget.from_name` in tests without
         internet connection.
@@ -190,7 +193,7 @@ class NonFixedTarget(Target):
     """
 
 
-def get_skycoord(targets):
+def get_skycoord(targets: list[FixedTarget]) -> SkyCoord:
     """
     Return an `~astropy.coordinates.SkyCoord` object.
 

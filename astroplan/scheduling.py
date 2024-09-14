@@ -3,21 +3,22 @@
 Tools for scheduling observations.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import copy
 from abc import ABCMeta, abstractmethod
+from typing import Optional, Sequence, Type, Union
 
 import numpy as np
-
 from astropy import units as u
-from astropy.time import Time
 from astropy.table import Table
+from astropy.time import Time, TimeDelta
+from astropy.units import Quantity
 
-from .utils import time_grid_from_range, stride_array
-from .constraints import AltitudeConstraint
-from .target import get_skycoord
+from .constraints import AltitudeConstraint, Constraint
+from .observer import Observer
+from .target import FixedTarget, get_skycoord
+from .utils import stride_array, time_grid_from_range
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',
@@ -30,7 +31,9 @@ class ObservingBlock(object):
     constraints on observations.
     """
     @u.quantity_input(duration=u.second)
-    def __init__(self, target, duration, priority, configuration={}, constraints=None, name=None):
+    def __init__(self, target: FixedTarget, duration: Quantity["time"], priority: Union[int, float],  # noqa: F821
+                 configuration: dict = {}, constraints: Optional[list[Constraint]] =None,
+                 name: Optional[Union[str, int]] = None):
         """
         Parameters
         ----------
@@ -65,7 +68,7 @@ class ObservingBlock(object):
         self.start_time = self.end_time = None
         self.observer = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         orig_repr = object.__repr__(self)
         if self.start_time is None or self.end_time is None:
             return orig_repr.replace('object at',
@@ -77,7 +80,7 @@ class ObservingBlock(object):
             return orig_repr.replace('object at', s)
 
     @property
-    def constraints_scores(self):
+    def constraints_scores(self) -> Optional[dict[Constraint, np.ndarray]]:
         if not (self.start_time and self.duration):
             return None
         # TODO: setup a way of caching or defining it as an attribute during scheduling
@@ -87,9 +90,10 @@ class ObservingBlock(object):
                     for constraint in self.constraints}
 
     @classmethod
-    def from_exposures(cls, target, priority, time_per_exposure,
-                       number_exposures, readout_time=0 * u.second,
-                       configuration={}, constraints=None):
+    def from_exposures(cls, target: FixedTarget, priority: Union[int, float],
+                       time_per_exposure: Quantity["time"], number_exposures: int,  # noqa: F821
+                       readout_time: Quantity["time"] = 0 * u.second,  # noqa: F821
+                       configuration: dict = {}, constraints: Optional[list[Constraint]] = None) -> "ObservingBlock":
         duration = number_exposures * (time_per_exposure + readout_time)
         ob = cls(target, duration, priority, configuration, constraints)
         ob.time_per_exposure = time_per_exposure
@@ -104,7 +108,8 @@ class Scorer(object):
     observing blocks
     """
 
-    def __init__(self, blocks, observer, schedule, global_constraints=[]):
+    def __init__(self, blocks: list[ObservingBlock], observer: Observer, schedule: "Schedule",
+                 global_constraints: list[Constraint] = []):
         """
         Parameters
         ----------
@@ -123,7 +128,7 @@ class Scorer(object):
         self.global_constraints = global_constraints
         self.targets = get_skycoord([block.target for block in self.blocks])
 
-    def create_score_array(self, time_resolution=1*u.minute):
+    def create_score_array(self, time_resolution: Quantity["time"] = 1*u.minute) -> np.ndarray:  # noqa: F821
         """
         this makes a score array over the entire schedule for all of the
         blocks and each `~astroplan.Constraint` in the .constraints of
@@ -156,7 +161,7 @@ class Scorer(object):
         return score_array
 
     @classmethod
-    def from_start_end(cls, blocks, observer, start_time, end_time,
+    def from_start_end(cls, blocks: ObservingBlock, observer: Observer, start_time: Time, end_time: Time,
                        global_constraints=[]):
         """
         for if you don't have a schedule/ aren't inside a scheduler
@@ -172,7 +177,7 @@ class TransitionBlock(object):
     telescope is slewing, instrument is reconfiguring, etc.
     """
 
-    def __init__(self, components, start_time=None):
+    def __init__(self, components: dict[str, Quantity["time"]], start_time: Optional[Time] =None):  # noqa: F821
         """
         Parameters
         ----------
@@ -188,7 +193,7 @@ class TransitionBlock(object):
         self.start_time = start_time
         self.components = components
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         orig_repr = object.__repr__(self)
         comp_info = ', '.join(['{0}: {1}'.format(c, t)
                                for c, t in self.components.items()])
@@ -199,15 +204,15 @@ class TransitionBlock(object):
             return orig_repr.replace('object at', s)
 
     @property
-    def end_time(self):
+    def end_time(self) -> Time:
         return self.start_time + self.duration
 
     @property
-    def components(self):
+    def components(self) -> dict[str, Quantity["time"]]:  # noqa: F821
         return self._components
 
     @components.setter
-    def components(self, val):
+    def components(self, val: dict[str, Quantity["time"]]) -> None:  # noqa: F821
         duration = 0*u.second
         for t in val.values():
             duration += t
@@ -217,7 +222,7 @@ class TransitionBlock(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_duration(cls, duration):
+    def from_duration(cls, duration: Quantity["time"]) -> "TransitionBlock":  # noqa: F821
         # for testing how to put transitions between observations during
         # scheduling without considering the complexities of duration
         tb = TransitionBlock({'duration': duration})
@@ -232,7 +237,8 @@ class Schedule(object):
     # as currently written, there should be no consecutive unoccupied slots
     # this should change to allow for more flexibility (e.g. dark slots, grey slots)
 
-    def __init__(self, start_time, end_time, constraints=None):
+    # TODO: Remove unused constraints arg?
+    def __init__(self, start_time: Time, end_time: Time, constraints: Optional[Sequence[Constraint]]  = None):
         """
         Parameters
         ----------
@@ -250,24 +256,24 @@ class Schedule(object):
         self.slots = [Slot(start_time, end_time)]
         self.observer = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return ('Schedule containing ' + str(len(self.observing_blocks)) +
                 ' observing blocks between ' + str(self.slots[0].start.iso) +
                 ' and ' + str(self.slots[-1].end.iso))
 
     @property
-    def observing_blocks(self):
+    def observing_blocks(self) -> list[ObservingBlock]:
         return [slot.block for slot in self.slots if isinstance(slot.block, ObservingBlock)]
 
     @property
-    def scheduled_blocks(self):
+    def scheduled_blocks(self) -> list[ObservingBlock]:
         return [slot.block for slot in self.slots if slot.block]
 
     @property
-    def open_slots(self):
+    def open_slots(self) -> list["Slot"]:
         return [slot for slot in self.slots if not slot.occupied]
 
-    def to_table(self, show_transitions=True, show_unused=False):
+    def to_table(self, show_transitions: bool = True, show_unused: bool = False) -> Table:
         # TODO: allow different coordinate types
         target_names = []
         start_times = []
@@ -308,7 +314,7 @@ class Schedule(object):
                      names=('target', 'start time (UTC)', 'end time (UTC)',
                             'duration (minutes)', 'ra', 'dec', 'configuration'))
 
-    def new_slots(self, slot_index, start_time, end_time):
+    def new_slots(self, slot_index: int, start_time: Time, end_time: Time) -> list["Slot"]:
         """
         Create new slots by splitting a current slot.
 
@@ -332,7 +338,7 @@ class Schedule(object):
         new_slots = self.slots[slot_index].split_slot(start_time, end_time)
         return new_slots
 
-    def insert_slot(self, start_time, block):
+    def insert_slot(self, start_time: Time, block: ObservingBlock) -> list["Slot"]:
         """
         Insert a slot into schedule and associate a block to the new slot.
 
@@ -391,7 +397,7 @@ class Schedule(object):
         self.slots = earlier_slots + new_slots + later_slots
         return earlier_slots + new_slots + later_slots
 
-    def change_slot_block(self, slot_index, new_block=None):
+    def change_slot_block(self, slot_index: int, new_block: Optional[TransitionBlock] = None) -> int:
         """
         Change the block associated with a slot.
 
@@ -428,7 +434,7 @@ class Slot(object):
     A time slot consisting of a start and end time
     """
 
-    def __init__(self, start_time, end_time):
+    def __init__(self, start_time: Time, end_time: Time):
         """
         Parameters
         ----------
@@ -447,7 +453,7 @@ class Slot(object):
     def duration(self):
         return self.end - self.start
 
-    def split_slot(self, early_time, later_time):
+    def split_slot(self, early_time: Time, later_time: Time) -> list["Slot"]:
         """
         Split this slot and insert a new one.
 
@@ -489,8 +495,9 @@ class Scheduler(object):
     __metaclass__ = ABCMeta
 
     @u.quantity_input(gap_time=u.second, time_resolution=u.second)
-    def __init__(self, constraints, observer, transitioner=None,
-                 gap_time=5*u.min, time_resolution=20*u.second):
+    def __init__(self, constraints: Sequence[Constraint], observer: Observer,
+                 transitioner: Optional["Transitioner"] = None, gap_time: Quantity["time"] = 5*u.min,  # noqa: F821
+                 time_resolution: Quantity["time"] = 20*u.second):  # noqa: F821
         """
         Parameters
         ----------
@@ -519,7 +526,7 @@ class Scheduler(object):
         self.gap_time = gap_time
         self.time_resolution = time_resolution
 
-    def __call__(self, blocks, schedule):
+    def __call__(self, blocks: list[ObservingBlock], schedule: Schedule) -> Schedule:
         """
         Schedule a set of `~astroplan.scheduling.ObservingBlock` objects.
 
@@ -550,7 +557,7 @@ class Scheduler(object):
         return schedule
 
     @abstractmethod
-    def _make_schedule(self, blocks):
+    def _make_schedule(self, blocks: list[ObservingBlock]):
         """
         Does the actual business of scheduling. The ``blocks`` passed in should
         have their ``start_time` and `end_time`` modified to reflect the
@@ -577,7 +584,7 @@ class Scheduler(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time, duration, **kwargs):
+    def from_timespan(cls, center_time: Time, duration: Union[Quantity["time"], TimeDelta], **kwargs) -> "Scheduler":  # noqa: F821
         """
         Create a new instance of this class given a center time and duration.
 
@@ -604,7 +611,7 @@ class SequentialScheduler(Scheduler):
     def __init__(self, *args, **kwargs):
         super(SequentialScheduler, self).__init__(*args, **kwargs)
 
-    def _make_schedule(self, blocks):
+    def _make_schedule(self, blocks: list[ObservingBlock]) -> Schedule:
         pre_filled = np.array([[block.start_time, block.end_time] for
                                block in self.schedule.scheduled_blocks])
         if len(pre_filled) == 0:
@@ -703,7 +710,7 @@ class PriorityScheduler(Scheduler):
         """
         super(PriorityScheduler, self).__init__(*args, **kwargs)
 
-    def _get_filled_indices(self, times):
+    def _get_filled_indices(self, times: Time) -> np.ndarray[bool]:
         is_open_time = np.ones(len(times), bool)
         # close times that are already filled
         pre_filled = np.array([[block.start_time, block.end_time] for
@@ -716,7 +723,7 @@ class PriorityScheduler(Scheduler):
                 is_open_time[min(filled[0]) - 1] = False
         return is_open_time
 
-    def _make_schedule(self, blocks):
+    def _make_schedule(self, blocks: list[ObservingBlock]) -> Schedule:
         # Combine individual constraints with global constraints, and
         # retrieve priorities from each block to define scheduling order
 
@@ -808,7 +815,7 @@ class PriorityScheduler(Scheduler):
 
         return self.schedule
 
-    def attempt_insert_block(self, b, new_start_time, start_time_idx):
+    def attempt_insert_block(self, b: ObservingBlock, new_start_time: Time, start_time_idx: int) -> bool:
         # set duration to be exact multiple of time resolution
         duration_indices = int(np.floor(
             float(b.duration / self.time_resolution)))
@@ -955,7 +962,8 @@ class Transitioner(object):
     """
     u.quantity_input(slew_rate=u.deg/u.second)
 
-    def __init__(self, slew_rate=None, instrument_reconfig_times=None):
+    def __init__(self, slew_rate: Optional[Quantity["angular frequency"]] = None,  # noqa: F722
+                 instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity["time"]]]] = None):  # noqa: F722
         """
         Parameters
         ----------
@@ -971,7 +979,7 @@ class Transitioner(object):
         self.slew_rate = slew_rate
         self.instrument_reconfig_times = instrument_reconfig_times
 
-    def __call__(self, oldblock, newblock, start_time, observer):
+    def __call__(self, oldblock: ObservingBlock, newblock: ObservingBlock, start_time: Time, observer: Observer) -> Optional[TransitionBlock]:
         """
         Determines the amount of time needed to transition from one observing
         block to another.  This uses the parameters defined in
@@ -1015,7 +1023,8 @@ class Transitioner(object):
         else:
             return None
 
-    def compute_instrument_transitions(self, oldblock, newblock):
+    def compute_instrument_transitions(self, oldblock: ObservingBlock,
+                                       newblock: ObservingBlock) -> dict[str, Quantity["time"]]:  # noqa: F821
         components = {}
         for conf_name, old_conf in oldblock.configuration.items():
             if conf_name in newblock.configuration:
