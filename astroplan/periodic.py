@@ -1,9 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+# Standard library
+from typing import Optional, Union
+
+# Third party
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
+from astropy.units import Quantity
 
 __all__ = ['PeriodicEvent', 'EclipsingSystem']
 
@@ -13,7 +18,8 @@ class PeriodicEvent(object):
     A periodic event defined by an epoch and period.
     """
     @u.quantity_input(period=u.day, duration=u.day)
-    def __init__(self, epoch, period, duration=None, name=None):
+    def __init__(self, epoch: Time, period: Quantity["time"], duration: Optional[Quantity["time"]] = None,  # noqa: F821
+                 name: Optional[str] = None):
         """
 
         Parameters
@@ -32,7 +38,7 @@ class PeriodicEvent(object):
         self.name = name
         self.duration = duration
 
-    def phase(self, time):
+    def phase(self, time: Time) -> np.ndarray[float]:
         """
         Phase of periodic event, on interval [0, 1). For example, the phase
         could be an orbital phase for an eclipsing binary system.
@@ -66,8 +72,9 @@ class EclipsingSystem(PeriodicEvent):
         barycentric correction error (<=16 minutes).
     """
     @u.quantity_input(period=u.day, duration=u.day)
-    def __init__(self, primary_eclipse_time, orbital_period, duration=None,
-                 name=None, eccentricity=None, argument_of_periapsis=None):
+    def __init__(self, primary_eclipse_time: Time, orbital_period: Quantity["time"],  # noqa: F821
+                 duration: Optional[Quantity["time"]] = None, name: Optional[str] = None,  # noqa: F821
+                 eccentricity: Optional[float] = None, argument_of_periapsis: Optional[float] = None):
         """
         Parameters
         ----------
@@ -99,7 +106,7 @@ class EclipsingSystem(PeriodicEvent):
             argument_of_periapsis = np.pi/2
         self.argument_of_periapsis = argument_of_periapsis
 
-    def in_primary_eclipse(self, time):
+    def in_primary_eclipse(self, time: Time) -> Union[np.ndarray[bool], bool]:
         """
         Returns `True` when ``time`` is during a primary eclipse.
 
@@ -120,7 +127,7 @@ class EclipsingSystem(PeriodicEvent):
         return ((phases < float(self.duration/self.period)/2) |
                 (phases > 1 - float(self.duration/self.period)/2))
 
-    def in_secondary_eclipse(self, time):
+    def in_secondary_eclipse(self, time: Time) -> Union[np.ndarray[bool], bool]:
         r"""
         Returns `True` when ``time`` is during a secondary eclipse
 
@@ -161,7 +168,7 @@ class EclipsingSystem(PeriodicEvent):
         return ((phases < secondary_eclipse_phase + float(self.duration/self.period)/2) &
                 (phases > secondary_eclipse_phase - float(self.duration/self.period)/2))
 
-    def out_of_eclipse(self, time):
+    def out_of_eclipse(self, time: Time) -> Union[np.ndarray[bool], bool]:
         """
         Returns `True` when ``time`` is not during primary or secondary eclipse.
 
@@ -181,7 +188,7 @@ class EclipsingSystem(PeriodicEvent):
         return np.logical_not(np.logical_or(self.in_primary_eclipse(time),
                                             self.in_secondary_eclipse(time)))
 
-    def next_primary_eclipse_time(self, time, n_eclipses=1):
+    def next_primary_eclipse_time(self, time: Time, n_eclipses: int = 1) -> Time:
         """
         Time of the next primary eclipse after ``time``.
 
@@ -205,7 +212,7 @@ class EclipsingSystem(PeriodicEvent):
                          np.arange(n_eclipses) * self.period)
         return eclipse_times
 
-    def next_secondary_eclipse_time(self, time, n_eclipses=1):
+    def next_secondary_eclipse_time(self, time: Time, n_eclipses: int = 1) -> Time:
         """
         Time of the next secondary eclipse after ``time``.
 
@@ -234,7 +241,7 @@ class EclipsingSystem(PeriodicEvent):
                          np.arange(n_eclipses) * self.period)
         return eclipse_times
 
-    def next_primary_ingress_egress_time(self, time, n_eclipses=1):
+    def next_primary_ingress_egress_time(self, time: Time, n_eclipses: int = 1) -> Time:
         """
         Calculate the times of ingress and egress for the next ``n_eclipses``
         primary eclipses after ``time``
@@ -264,7 +271,7 @@ class EclipsingSystem(PeriodicEvent):
 
         return Time(ing_egr, format='jd', scale='utc')
 
-    def next_secondary_ingress_egress_time(self, time, n_eclipses=1):
+    def next_secondary_ingress_egress_time(self, time: Time, n_eclipses: int = 1) -> Time:
         """
         Calculate the times of ingress and egress for the next ``n_eclipses``
         secondary eclipses after ``time``

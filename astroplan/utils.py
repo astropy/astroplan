@@ -4,6 +4,8 @@ from __future__ import (absolute_import, division, print_function,
 
 # Standard library
 import warnings
+from typing import Union
+import os
 
 # Third-party
 import numpy as np
@@ -11,6 +13,8 @@ from astropy.utils.iers import IERS_Auto
 from astropy.time import Time
 import astropy.units as u
 from astropy.coordinates import EarthLocation
+from astropy.units import Quantity
+from numpy.typing import ArrayLike
 
 # Package
 from .exceptions import OldEarthOrientationDataWarning
@@ -30,7 +34,7 @@ IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
 BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
 
 
-def _low_precision_utc_to_ut1(self, jd1, jd2):
+def _low_precision_utc_to_ut1(self, jd1: np.ndarray[float], jd2: np.ndarray[float]) -> np.ndarray[float]:
     """
     When no IERS Bulletin A is available (no internet connection), use low
     precision time conversion by assuming UT1-UTC=0 always.
@@ -46,7 +50,7 @@ def _low_precision_utc_to_ut1(self, jd1, jd2):
         return np.zeros(self.shape)
 
 
-def download_IERS_A(show_progress=True):
+def download_IERS_A(show_progres: bool = True) -> None:
     """
     Download and cache the IERS Bulletin A table.
 
@@ -76,7 +80,7 @@ def download_IERS_A(show_progress=True):
 
 
 @u.quantity_input(time_resolution=u.hour)
-def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
+def time_grid_from_range(time_range: Time, time_resolution: Quantity["time"] = 0.5*u.hour) -> Time:  # noqa: F821
     """
     Get linearly-spaced sequence of times.
 
@@ -151,7 +155,7 @@ def _unmock_remote_data():
     # otherwise assume it's already correct
 
 
-def _set_mpl_style_sheet(style_sheet):
+def _set_mpl_style_sheet(style_sheet: dict) -> None:
     """
     Import matplotlib, set the style sheet to ``style_sheet`` using
     the most backward compatible import pattern.
@@ -161,7 +165,7 @@ def _set_mpl_style_sheet(style_sheet):
     matplotlib.rcParams.update(style_sheet)
 
 
-def stride_array(arr, window_width):
+def stride_array(arr: ArrayLike, window_width: int) -> np.ndarray:
     """
     Computes all possible sequential subarrays of arr with length = window_width
 
@@ -194,7 +198,7 @@ class EarthLocation_mock(EarthLocation):
     """
 
     @classmethod
-    def of_site_mock(cls, string):
+    def of_site_mock(cls, string: str) -> EarthLocation:
         subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
                                              19.825555555555564*u.deg,
                                              4139*u.m)
@@ -233,7 +237,8 @@ class EarthLocation_mock(EarthLocation):
         return observatories[string.lower()]
 
 
-def _open_shelve(shelffn, withclosing=False):
+# NOTE: using dict as alias to avoid importing shelve above since they have similar properties
+def _open_shelve(shelffn: Union[str, os.PathLike], withclosing: bool = False) -> dict:
     """
     Opens a shelf file.  If ``withclosing`` is True, it will be opened with
     closing, allowing use like:
