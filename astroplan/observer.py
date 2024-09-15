@@ -5,13 +5,16 @@ from six import string_types
 
 # Standard library
 import sys
+from typing import Any, Callable, Optional, Sequence, Union
 import datetime
 import warnings
+
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_body, Angle, Longitude)
 import astropy.units as u
 from astropy.time import Time
+from astropy.units import Quantity
 from astropy.utils.exceptions import AstropyDeprecationWarning
 import numpy as np
 import pytz
@@ -19,21 +22,22 @@ import pytz
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
-from .target import get_skycoord, SunFlag, MoonFlag
+from .target import get_skycoord, SunFlag, MoonFlag, FixedTarget
 
 
 __all__ = ["Observer"]
 
 MAGIC_TIME = Time(-999, format='jd')
 
+TargetType = Union[FixedTarget, SkyCoord, list[FixedTarget]]
 
 # Handle deprecated MAGIC_TIME variable
-def deprecation_wrap_module(mod, deprecated):
+def deprecation_wrap_module(mod: str, deprecated: Sequence[str]) -> Any:  # noqa: F821
     """Return a wrapped object that warns about deprecated accesses"""
     deprecated = set(deprecated)
 
     class DeprecateWrapper(object):
-        def __getattr__(self, attr):
+        def __getattr__(self, attr: str) -> Any:
             if attr in deprecated:
                 warnmsg = ("`MAGIC_TIME` will be deprecated in future versions "
                            "of astroplan. Use masked Time objects instead.")
@@ -47,7 +51,7 @@ sys.modules[__name__] = deprecation_wrap_module(sys.modules[__name__],
                                                 deprecated=['MAGIC_TIME'])
 
 
-def _process_nans_in_jds(jds):
+def _process_nans_in_jds(jds: Union[float, int, np.ndarray, Quantity["time"], Time]) -> np.ma.MaskedArray:  # noqa: F821
     """
     Some functions calculate times for events that won't happen, yielding nans. This wrapper
     manages vectors of (potentially) invalid JDs that must be passed to the astropy.time.Time
@@ -61,7 +65,7 @@ def _process_nans_in_jds(jds):
     return masked_jds
 
 
-def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
+def _generate_24hr_grid(t0: Time, start: float, end: float, n_grid_points: int, for_deriv: bool = False) -> Time:
     """
     Generate a nearly linearly spaced grid of time durations.
 
@@ -80,7 +84,7 @@ def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     end : float
         Number of days before/after ``t0`` to end the grid.
 
-    n_grid_points : int (optional)
+    n_grid_points : int
         Number of grid points to generate
 
     for_deriv : bool
@@ -148,9 +152,11 @@ class Observer(object):
 
     """
     @u.quantity_input(elevation=u.m)
-    def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
-                 longitude=None, elevation=0*u.m, pressure=None,
-                 relative_humidity=None, temperature=None, description=None):
+    def __init__(self, location: Optional[EarthLocation] = None, timezone: Union[str, datetime.tzinfo] = 'UTC',
+                 name: Optional[str] = None, latitude: Optional[Union[float, str, Quantity["angle"]]] = None,  # noqa: F821
+                 longitude: Optional[Union[float, str, Quantity["angle"]]] = None, elevation: Quantity["length"] = 0*u.m,  # noqa: F821
+                 pressure: Optional[Quantity["pressure"]] =None, relative_humidity: Optional[float] = None,  # noqa: F821
+                 temperature: Quantity["temperature"] = None, description: Optional[str] = None):  # noqa: F821
         """
         Parameters
         ----------
@@ -223,21 +229,21 @@ class Observer(object):
                             'instance of datetime.tzinfo')
 
     @property
-    def longitude(self):
+    def longitude(self) -> Quantity["angle"]:  # noqa: F821
         """The longitude of the observing location, derived from the location."""
         return self.location.lon
 
     @property
-    def latitude(self):
+    def latitude(self) -> Quantity["angle"]:  # noqa: F821
         """The latitude of the observing location, derived from the location."""
         return self.location.lat
 
     @property
-    def elevation(self):
+    def elevation(self) -> Quantity["length"]:  # noqa: F821
         """The elevation of the observing location with respect to sea level."""
         return self.location.height
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         String representation of the `~astroplan.Observer` object.
 
@@ -273,7 +279,7 @@ class Observer(object):
                     attributes_strings.append("{}={}".format(name, value))
         return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
 
-    def _key(self):
+    def _key(self) -> tuple:
         """
         Generate a tuple of the attributes that determine uniqueness of
         `~astroplan.Observer` objects.
@@ -302,7 +308,7 @@ class Observer(object):
                 self.elevation,
                 self.timezone,)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """
         Hash the `~astroplan.Observer` object.
 
@@ -317,7 +323,7 @@ class Observer(object):
 
         return hash(self._key())
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Observer") -> bool:
         """
         Equality check for `~astroplan.Observer` objects.
 
@@ -336,7 +342,7 @@ class Observer(object):
         else:
             return NotImplemented
 
-    def __ne__(self, other):
+    def __ne__(self, other: "Observer") -> bool:
         """
         Inequality check for `~astroplan.Observer` objects.
 
@@ -353,7 +359,7 @@ class Observer(object):
         return not self.__eq__(other)
 
     @classmethod
-    def at_site(cls, site_name, **kwargs):
+    def at_site(cls, site_name: str, **kwargs) -> "Observer":
         """
         Initialize an `~astroplan.observer.Observer` object with a site name.
 
@@ -387,7 +393,7 @@ class Observer(object):
                              "initializing an Observer with Observer.at_site()")
         return cls(location=EarthLocation.of_site(site_name), name=name, **kwargs)
 
-    def astropy_time_to_datetime(self, astropy_time):
+    def astropy_time_to_datetime(self, astropy_time: Time) -> datetime.datetime:
         """
         Convert the `~astropy.time.Time` object ``astropy_time`` to a
         localized `~datetime.datetime` object.
@@ -429,7 +435,7 @@ class Observer(object):
         # Convert UTC to local timezone
         return self.timezone.normalize(utc_datetime)
 
-    def datetime_to_astropy_time(self, date_time):
+    def datetime_to_astropy_time(self, date_time: datetime.datetime) -> Time:
         """
         Convert the `~datetime.datetime` object ``date_time`` to a
         `~astropy.time.Time` object.
@@ -474,7 +480,7 @@ class Observer(object):
 
         return Time(date_time, location=self.location)
 
-    def _is_broadcastable(self, shp1, shp2):
+    def _is_broadcastable(self, shp1: tuple[int], shp2: tuple[int]) -> bool:
         """Test if two shape tuples are broadcastable"""
         if shp1 == shp2:
             return True
@@ -485,7 +491,7 @@ class Observer(object):
                 return False
         return True
 
-    def _preprocess_inputs(self, time, target=None, grid_times_targets=False):
+    def _preprocess_inputs(self, time: Any, target: Optional[TargetType] = None, grid_times_targets: bool = False) -> tuple[Time, SkyCoord]:
         """
         Preprocess time and target inputs
 
@@ -531,7 +537,8 @@ class Observer(object):
                              .format(time.shape, target.shape))
         return time, target
 
-    def altaz(self, time, target=None, obswl=None, grid_times_targets=False):
+    def altaz(self, time: Time, target: Optional[TargetType] = None,
+              obswl: Optional[Quantity["length"]] = None, grid_times_targets: bool = False) -> Union[AltAz, SkyCoord]:  # noqa: F821
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
@@ -608,8 +615,8 @@ class Observer(object):
         else:
             return target.transform_to(altaz_frame)
 
-    def parallactic_angle(self, time, target, grid_times_targets=False,
-                          kind='mean', model=None):
+    def parallactic_angle(self, time: Time, target: Union[TargetType],
+                          grid_times_targets: bool = False, kind: str = 'mean', model: Optional[str] = None) -> Angle:
         """
         Calculate the parallactic angle.
 
@@ -664,7 +671,9 @@ class Observer(object):
 
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
-    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree):
+    def _horiz_cross(self, t: Time, alt: Quantity["angle"], rise_set: str,  # noqa: F821
+                     horizon: Quantity["angle"] = 0*u.degree  # noqa: F821
+                     ) -> tuple[Union[Quantity["angle"], np.ndarray[float]]]:  # noqa: F821
         """
         Find time ``t`` when values in array ``a`` go from
         negative to positive or positive to negative (exclude endpoints)
@@ -771,8 +780,9 @@ class Observer(object):
             return alt_lims1, alt_lims2, jd_lims1, jd_lims2
 
     @u.quantity_input(horizon=u.deg)
-    def _two_point_interp(self, jd_before, jd_after,
-                          alt_before, alt_after, horizon=0*u.deg):
+    def _two_point_interp(self, jd_before: float, jd_after: float,
+                          alt_before: Quantity["angle"], alt_after: Quantity["angle"],  # noqa: F821
+                          horizon: Quantity["angle"] = 0*u.deg) -> Time:  # noqa: F821
         """
         Do linear interpolation between two ``altitudes`` at
         two ``times`` to determine the time where the altitude
@@ -812,7 +822,8 @@ class Observer(object):
 
         return np.squeeze(times)
 
-    def _altitude_trig(self, LST, target, grid_times_targets=False):
+    def _altitude_trig(self, LST: Time, target: Union[SkyCoord, FixedTarget],
+                       grid_times_targets: bool = False) -> Quantity["angle"]:  # noqa: F821
         """
         Calculate the altitude of ``target`` at local sidereal times ``LST``.
 
@@ -846,8 +857,9 @@ class Observer(object):
                         np.cos(LST.radian - target.ra.radian))
         return alt
 
-    def _calc_riseset(self, time, target, prev_next, rise_set, horizon,
-                      n_grid_points=150, grid_times_targets=False):
+    def _calc_riseset(self, time: Any, target: SkyCoord, prev_next: str, rise_set: str,
+                      horizon: Quantity["angle"], n_grid_points: int = 150,  # noqa: F821
+                      grid_times_targets: bool = False) -> Time:
         """
         Time at next rise/set of ``target``.
 
@@ -913,8 +925,9 @@ class Observer(object):
         return self._two_point_interp(jd1, jd2, al1, al2,
                                       horizon=horizon)
 
-    def _calc_transit(self, time, target, prev_next, antitransit=False,
-                      n_grid_points=150, grid_times_targets=False):
+    def _calc_transit(self, time: Any, target: SkyCoord, prev_next: str,
+                      antitransit: bool = False, n_grid_points: int = 150,
+                      grid_times_targets: bool = False) -> Time:
         """
         Time at next transit of the meridian of `target`.
 
@@ -989,7 +1002,7 @@ class Observer(object):
         return self._two_point_interp(jd1, jd2, al1, al2,
                                       horizon=horizon)
 
-    def _determine_which_event(self, function, args_dict):
+    def _determine_which_event(self, function: Callable, args_dict: dict[str, Any]) -> Time:
         """
         Run through the next/previous/nearest permutations of the solutions
         to `function(time, ...)`, and return the previous/next/nearest one
@@ -1006,12 +1019,12 @@ class Observer(object):
 
         # Assemble arguments for function, depending on the function.
         if function == self._calc_riseset:
-            def event_function(w):
+            def event_function(w: str) -> Time:
                 return function(time, target, w, rise_set, horizon,
                                 grid_times_targets=grid_times_targets,
                                 n_grid_points=n_grid_points)
         elif function == self._calc_transit:
-            def event_function(w):
+            def event_function(w: str) -> Time:
                 return function(time, target, w, antitransit=antitransit,
                                 grid_times_targets=grid_times_targets,
                                 n_grid_points=n_grid_points)
@@ -1045,8 +1058,9 @@ class Observer(object):
                          '"nearest".')
 
     @u.quantity_input(horizon=u.deg)
-    def target_rise_time(self, time, target, which='nearest',
-                         horizon=0*u.degree, grid_times_targets=False, n_grid_points=150):
+    def target_rise_time(self, time: Time, target: TargetType,
+                         which: str = 'nearest', horizon: Quantity["angle"] = 0*u.degree,  # noqa: F821
+                         grid_times_targets: bool = False, n_grid_points: int = 150) -> Time:
         """
         Calculate rise time.
 
@@ -1112,8 +1126,9 @@ class Observer(object):
                                                 grid_times_targets=grid_times_targets))
 
     @u.quantity_input(horizon=u.deg)
-    def target_set_time(self, time, target, which='nearest', horizon=0*u.degree,
-                        grid_times_targets=False, n_grid_points=150):
+    def target_set_time(self, time: Time, target: SkyCoord, which: str = 'nearest',
+                        horizon: Quantity["angle"] = 0*u.degree, grid_times_targets: bool = False,  # noqa: F821
+                        n_grid_points: int = 150) -> Time:
         """
         Calculate set time.
 
@@ -1178,8 +1193,8 @@ class Observer(object):
                                                 n_grid_points=n_grid_points,
                                                 grid_times_targets=grid_times_targets))
 
-    def target_meridian_transit_time(self, time, target, which='nearest',
-                                     grid_times_targets=False, n_grid_points=150):
+    def target_meridian_transit_time(self, time: Time, target: TargetType, which: str = 'nearest',
+                                     grid_times_targets: bool = False, n_grid_points: int = 150) -> Time:
         """
         Calculate time at the transit of the meridian.
 
@@ -1238,8 +1253,8 @@ class Observer(object):
                                                 rise_set='setting',
                                                 grid_times_targets=grid_times_targets))
 
-    def target_meridian_antitransit_time(self, time, target, which='nearest',
-                                         grid_times_targets=False, n_grid_points=150):
+    def target_meridian_antitransit_time(self, time: Time, target: TargetType, which: str = 'nearest',
+                                         grid_times_targets: bool = False, n_grid_points: int = 150) -> Time:
         """
         Calculate time at the antitransit of the meridian.
 
@@ -1300,7 +1315,8 @@ class Observer(object):
                                                 grid_times_targets=grid_times_targets))
 
     @u.quantity_input(horizon=u.deg)
-    def sun_rise_time(self, time, which='nearest', horizon=0*u.degree, n_grid_points=150):
+    def sun_rise_time(self, time: Time, which: str = 'nearest', horizon: Quantity["angle"] = 0*u.degree,  # noqa: F821
+                      n_grid_points: int = 150) -> Time:
         """
         Time of sunrise.
 
@@ -1351,7 +1367,8 @@ class Observer(object):
                                      n_grid_points=n_grid_points)
 
     @u.quantity_input(horizon=u.deg)
-    def sun_set_time(self, time, which='nearest', horizon=0*u.degree, n_grid_points=150):
+    def sun_set_time(self, time: Time, which: str = 'nearest', horizon: Quantity["angle"] = 0*u.degree,  # noqa: F821
+                     n_grid_points: int = 150) -> Time:
         """
         Time of sunset.
 
@@ -1401,7 +1418,7 @@ class Observer(object):
         return self.target_set_time(time, get_sun(time), which, horizon,
                                     n_grid_points=n_grid_points)
 
-    def noon(self, time, which='nearest', n_grid_points=150):
+    def noon(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
         """
         Time at solar noon.
 
@@ -1430,7 +1447,7 @@ class Observer(object):
         return self.target_meridian_transit_time(time, get_sun(time), which,
                                                  n_grid_points=n_grid_points)
 
-    def midnight(self, time, which='nearest', n_grid_points=150):
+    def midnight(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
         """
         Time at solar midnight.
 
@@ -1461,7 +1478,7 @@ class Observer(object):
 
     # Twilight convenience functions
 
-    def twilight_evening_astronomical(self, time, which='nearest', n_grid_points=150):
+    def twilight_evening_astronomical(self, time: Time, which: str = 'nearest', n_grid_points: int =150) -> Time:
         """
         Time at evening astronomical (-18 degree) twilight.
 
@@ -1490,7 +1507,7 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-18*u.degree,
                                  n_grid_points=n_grid_points)
 
-    def twilight_evening_nautical(self, time, which='nearest', n_grid_points=150):
+    def twilight_evening_nautical(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
         """
         Time at evening nautical (-12 degree) twilight.
 
@@ -1519,7 +1536,7 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-12*u.degree,
                                  n_grid_points=n_grid_points)
 
-    def twilight_evening_civil(self, time, which='nearest', n_grid_points=150):
+    def twilight_evening_civil(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
         """
         Time at evening civil (-6 degree) twilight.
 
@@ -1548,7 +1565,7 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-6*u.degree,
                                  n_grid_points=n_grid_points)
 
-    def twilight_morning_astronomical(self, time, which='nearest', n_grid_points=150):
+    def twilight_morning_astronomical(self, time: Time, which: str = 'nearest', n_grid_points: int =150) -> Time:
         """
         Time at morning astronomical (-18 degree) twilight.
 
@@ -1577,7 +1594,7 @@ class Observer(object):
         return self.sun_rise_time(time, which, horizon=-18*u.degree,
                                   n_grid_points=n_grid_points)
 
-    def twilight_morning_nautical(self, time, which='nearest', n_grid_points=150):
+    def twilight_morning_nautical(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
         """
         Time at morning nautical (-12 degree) twilight.
 
@@ -1606,7 +1623,7 @@ class Observer(object):
         return self.sun_rise_time(time, which, horizon=-12*u.degree,
                                   n_grid_points=n_grid_points)
 
-    def twilight_morning_civil(self, time, which='nearest', n_grid_points=150):
+    def twilight_morning_civil(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
         """
         Time at morning civil (-6 degree) twilight.
 
@@ -1637,7 +1654,8 @@ class Observer(object):
 
     # Moon-related methods.
 
-    def moon_rise_time(self, time, which='nearest', horizon=0*u.deg, n_grid_points=150):
+    def moon_rise_time(self, time: Time, which: str = 'nearest', horizon: Quantity["angle"] = 0*u.deg,  # noqa: F821
+                       n_grid_points: int = 150) -> Time:
         """
         Returns the local moon rise time.
 
@@ -1670,7 +1688,8 @@ class Observer(object):
         return self.target_rise_time(time, MoonFlag, which, horizon,
                                      n_grid_points=n_grid_points)
 
-    def moon_set_time(self, time, which='nearest', horizon=0*u.deg, n_grid_points=150):
+    def moon_set_time(self, time: Time, which: str = 'nearest', horizon: Quantity["angle"] = 0*u.deg,  # noqa: F821
+                      n_grid_points: int = 150) -> Time:
         """
         Returns the local moon set time.
 
@@ -1703,7 +1722,7 @@ class Observer(object):
         return self.target_set_time(time, MoonFlag, which, horizon,
                                     n_grid_points=n_grid_points)
 
-    def moon_illumination(self, time):
+    def moon_illumination(self, time: Any):
         """
         Calculate the illuminated fraction of the moon.
 
@@ -1737,7 +1756,7 @@ class Observer(object):
 
         return moon_illumination(time)
 
-    def moon_phase(self, time=None):
+    def moon_phase(self, time: Optional[Any] = None) -> Quantity["angle"]:  # noqa: F821
         """
         Calculate lunar orbital phase.
 
@@ -1774,7 +1793,7 @@ class Observer(object):
 
         return moon_phase_angle(time)
 
-    def moon_altaz(self, time, ephemeris=None):
+    def moon_altaz(self, time: Any, ephemeris: Optional[str] = None) -> SkyCoord:
         """
         Returns the position of the moon in alt/az.
 
@@ -1816,7 +1835,7 @@ class Observer(object):
         moon = get_body("moon", time, location=self.location, ephemeris=ephemeris)
         return self.altaz(time, moon)
 
-    def sun_altaz(self, time):
+    def sun_altaz(self, time: Any) -> SkyCoord:
         """
         Returns the position of the Sun in alt/az.
 
@@ -1846,8 +1865,8 @@ class Observer(object):
         return self.altaz(time, sun)
 
     @u.quantity_input(horizon=u.deg)
-    def target_is_up(self, time, target, horizon=0*u.degree,
-                     return_altaz=False, grid_times_targets=False):
+    def target_is_up(self, time: Any, target: TargetType, horizon: Quantity["angle"] = 0*u.degree,  # noqa: F821
+                     return_altaz: bool = False, grid_times_targets: bool = False) -> Union[bool, np.ndarray[bool]]:
         """
         Is ``target`` above ``horizon`` at this ``time``?
 
@@ -1912,7 +1931,8 @@ class Observer(object):
             return observable, altaz
 
     @u.quantity_input(horizon=u.deg)
-    def is_night(self, time, horizon=0*u.deg, obswl=None):
+    def is_night(self, time: Any, horizon: Quantity["angle"] = 0*u.deg,  # noqa: F821
+                 obswl: Optional[Quantity["length"]] = None) -> Union[bool, np.ndarray[bool]]:  # noqa: F821
         """
         Is the Sun below ``horizon`` at ``time``?
 
@@ -1959,7 +1979,7 @@ class Observer(object):
         else:
             return solar_altitude < horizon
 
-    def local_sidereal_time(self, time, kind='apparent', model=None):
+    def local_sidereal_time(self, time: Any, kind: str = 'apparent', model: Optional[str] = None):
         """
         Convert ``time`` to local sidereal time for observer.
 
@@ -1993,7 +2013,7 @@ class Observer(object):
         return time.sidereal_time(kind, longitude=self.location.lon,
                                   model=model)
 
-    def target_hour_angle(self, time, target, grid_times_targets=False):
+    def target_hour_angle(self, time: Any, target: TargetType, grid_times_targets: bool = False) -> Angle:
         """
         Calculate the local hour angle of ``target`` at ``time``.
 
@@ -2023,7 +2043,7 @@ class Observer(object):
         return Longitude(self.local_sidereal_time(time) - target.ra)
 
     @u.quantity_input(horizon=u.degree)
-    def tonight(self, time=None, horizon=0 * u.degree, obswl=None):
+    def tonight(self, time: Optional[Time] = None, horizon: Quantity["angle"] = 0 * u.degree, obswl: Optional[Quantity["length"]] =None):  # noqa: F821
         """
         Return a time range corresponding to the nearest night
 

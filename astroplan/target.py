@@ -1,10 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from typing import Optional
 
 # Standard library
 from abc import ABCMeta
+from typing import Optional, Union
 
 # Third-party
 import astropy.units as u
@@ -193,7 +193,7 @@ class NonFixedTarget(Target):
     """
 
 
-def get_skycoord(targets: list[FixedTarget]) -> SkyCoord:
+def get_skycoord(targets: Union[list[FixedTarget], FixedTarget, SkyCoord]) -> SkyCoord:
     """
     Return an `~astropy.coordinates.SkyCoord` object.
 
