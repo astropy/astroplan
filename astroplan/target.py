@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 
 # Standard library
 from abc import ABCMeta
-from typing import Optional, Union
+from typing import Optional, Self, Union
 
 # Third-party
 import astropy.units as u
@@ -110,7 +110,7 @@ class FixedTarget(Target):
         self.coord = coord
 
     @classmethod
-    def from_name(cls, query_name: str, name: Optional[str] = None, **kwargs) -> "FixedTarget":
+    def from_name(cls, query_name: str, name: Optional[str] = None, **kwargs) -> Self:
         """
         Initialize a `FixedTarget` by querying for a name from the CDS name
         resolver, using the machinery in
@@ -161,7 +161,7 @@ class FixedTarget(Target):
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
 
     @classmethod
-    def _from_name_mock(cls, query_name: str, name: Optional[str] = None) -> "FixedTarget":
+    def _from_name_mock(cls, query_name: str, name: Optional[str] = None) -> Self:
         """
         Mock method to replace `FixedTarget.from_name` in tests without
         internet connection.

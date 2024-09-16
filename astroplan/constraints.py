@@ -9,7 +9,7 @@ from __future__ import (absolute_import, division, print_function,
 
 # Standard library
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Sequence, Union
+from typing import Optional, Self, Sequence, Union
 import datetime
 import time
 import warnings
@@ -444,21 +444,21 @@ class AtNightConstraint(Constraint):
         self.force_pressure_zero = force_pressure_zero
 
     @classmethod
-    def twilight_civil(cls, **kwargs) -> "AtNightConstraint":
+    def twilight_civil(cls, **kwargs) -> Self:
         """
         Consider nighttime as time between civil twilights (-6 degrees).
         """
         return cls(max_solar_altitude=-6*u.deg, **kwargs)
 
     @classmethod
-    def twilight_nautical(cls, **kwargs) -> "AtNightConstraint":
+    def twilight_nautical(cls, **kwargs) -> Self:
         """
         Consider nighttime as time between nautical twilights (-12 degrees).
         """
         return cls(max_solar_altitude=-12*u.deg, **kwargs)
 
     @classmethod
-    def twilight_astronomical(cls, **kwargs) -> "AtNightConstraint":
+    def twilight_astronomical(cls, **kwargs) -> Self:
         """
         Consider nighttime as time between astronomical twilights (-18 degrees).
         """
@@ -645,7 +645,7 @@ class MoonIlluminationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     @classmethod
-    def dark(cls, min: Optional[float] = None, max: Optional[float] = 0.25, **kwargs) -> "MoonIlluminationConstraint":
+    def dark(cls, min: Optional[float] = None, max: Optional[float] = 0.25, **kwargs) -> Self:
         """
         initialize a `~astroplan.constraints.MoonIlluminationConstraint`
         with defaults of no minimum and a maximum of 0.25
@@ -662,7 +662,7 @@ class MoonIlluminationConstraint(Constraint):
         return cls(min, max, **kwargs)
 
     @classmethod
-    def grey(cls, min: Optional[float] = 0.25, max: Optional[float] = 0.65, **kwargs) -> "MoonIlluminationConstraint":
+    def grey(cls, min: Optional[float] = 0.25, max: Optional[float] = 0.65, **kwargs) -> Self:
         """
         initialize a `~astroplan.constraints.MoonIlluminationConstraint`
         with defaults of a minimum of 0.25 and a maximum of 0.65
@@ -679,7 +679,7 @@ class MoonIlluminationConstraint(Constraint):
         return cls(min, max, **kwargs)
 
     @classmethod
-    def bright(cls, min: Optional[float] = 0.65, max: Optional[float] = None, **kwargs) -> "MoonIlluminationConstraint":
+    def bright(cls, min: Optional[float] = 0.65, max: Optional[float] = None, **kwargs) -> Self:
         """
         initialize a `~astroplan.constraints.MoonIlluminationConstraint`
         with defaults of a minimum of 0.65 and no maximum

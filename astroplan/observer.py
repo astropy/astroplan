@@ -5,7 +5,7 @@ from six import string_types
 
 # Standard library
 import sys
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Optional, Self, Sequence, Union
 import datetime
 import warnings
 
@@ -359,7 +359,7 @@ class Observer(object):
         return not self.__eq__(other)
 
     @classmethod
-    def at_site(cls, site_name: str, **kwargs) -> "Observer":
+    def at_site(cls, site_name: str, **kwargs) -> Self:
         """
         Initialize an `~astroplan.observer.Observer` object with a site name.
 

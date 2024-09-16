@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import copy
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Sequence, Union
+from typing import Optional, Self, Sequence, Union
 
 import numpy as np
 from astropy import units as u
@@ -93,7 +93,7 @@ class ObservingBlock(object):
     def from_exposures(cls, target: FixedTarget, priority: Union[int, float],
                        time_per_exposure: Quantity, number_exposures: int,
                        readout_time: Quantity = 0 * u.second,
-                       configuration: dict = {}, constraints: Optional[list[Constraint]] = None) -> "ObservingBlock":
+                       configuration: dict = {}, constraints: Optional[list[Constraint]] = None) -> Self:
         duration = number_exposures * (time_per_exposure + readout_time)
         ob = cls(target, duration, priority, configuration, constraints)
         ob.time_per_exposure = time_per_exposure
@@ -222,7 +222,7 @@ class TransitionBlock(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_duration(cls, duration: Quantity) -> "TransitionBlock":
+    def from_duration(cls, duration: Quantity) -> Self:
         # for testing how to put transitions between observations during
         # scheduling without considering the complexities of duration
         tb = TransitionBlock({'duration': duration})
@@ -584,7 +584,7 @@ class Scheduler(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time: Time, duration: Union[Quantity, TimeDelta], **kwargs) -> "Scheduler":
+    def from_timespan(cls, center_time: Time, duration: Union[Quantity, TimeDelta], **kwargs) -> Self:
         """
         Create a new instance of this class given a center time and duration.
 
