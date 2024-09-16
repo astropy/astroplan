@@ -967,7 +967,8 @@ class Transitioner(object):
     """
     u.quantity_input(slew_rate=u.deg/u.second)
 
-    def __init__(self, slew_rate: Optional[Quantity] = None,
+    def __init__(
+        self, slew_rate: Optional[Quantity] = None,
         instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity]]] = None,
     ):
         """
