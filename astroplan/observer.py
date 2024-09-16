@@ -31,6 +31,7 @@ MAGIC_TIME = Time(-999, format='jd')
 
 TargetType = Union[FixedTarget, SkyCoord, list[FixedTarget]]
 
+
 # Handle deprecated MAGIC_TIME variable
 def deprecation_wrap_module(mod: str, deprecated: Sequence[str]) -> Any:
     """Return a wrapped object that warns about deprecated accesses"""
@@ -157,7 +158,7 @@ class Observer(object):
                  timezone: Union[str, datetime.tzinfo] = 'UTC', name: Optional[str] = None,
                  latitude: Optional[Union[float, str, Quantity]] = None,
                  longitude: Optional[Union[float, str, Quantity]] = None,
-                 elevation: Quantity = 0*u.m, pressure: Optional[Quantity] =None,
+                 elevation: Quantity = 0*u.m, pressure: Optional[Quantity] = None,
                  relative_humidity: Optional[float] = None, temperature: Quantity = None,
                  description: Optional[str] = None):
         """
@@ -1487,7 +1488,7 @@ class Observer(object):
     # Twilight convenience functions
 
     def twilight_evening_astronomical(self, time: Time, which: str = 'nearest',
-                                      n_grid_points: int =150) -> Time:
+                                      n_grid_points: int = 150) -> Time:
         """
         Time at evening astronomical (-18 degree) twilight.
 
@@ -1577,7 +1578,7 @@ class Observer(object):
                                  n_grid_points=n_grid_points)
 
     def twilight_morning_astronomical(self, time: Time, which: str = 'nearest',
-                                      n_grid_points: int =150) -> Time:
+                                      n_grid_points: int = 150) -> Time:
         """
         Time at morning astronomical (-18 degree) twilight.
 
@@ -2060,7 +2061,7 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.degree)
     def tonight(self, time: Optional[Time] = None, horizon: Quantity = 0 * u.degree,
-                obswl: Optional[Quantity] =None) -> Time:
+                obswl: Optional[Quantity] = None) -> Time:
         """
         Return a time range corresponding to the nearest night
 

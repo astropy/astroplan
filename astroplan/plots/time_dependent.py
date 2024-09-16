@@ -536,7 +536,8 @@ def plot_schedule_airmass(schedule: Schedule, show_night: bool = False) -> Axes:
 
 
 def plot_parallactic(target: FixedTarget, observer: Observer, time: Time, ax: Optional[Axes] = None,
-                style_kwargs: Optional[dict] = None, style_sheet: Optional[dict] = None) -> Axes:
+                     style_kwargs: Optional[dict] = None,
+                     style_sheet: Optional[dict] = None) -> Axes:
     """
     Plots parallactic angle as a function of time for a given target.
 

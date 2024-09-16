@@ -1069,8 +1069,8 @@ def is_observable(constraints: Union[list[Constraint], Constraint], observer: Ob
 
 
 def is_event_observable(constraints: Union[list[Constraint], Constraint],
-                         observer: Observer, target: FixedTarget, times: Optional[Time] = None,
-                         times_ingress_egress: Optional[Time] = None) -> np.ndarray[bool]:
+                        observer: Observer, target: FixedTarget, times: Optional[Time] = None,
+                        times_ingress_egress: Optional[Time] = None) -> np.ndarray[bool]:
     """
     Determines if the ``target`` is observable at each time in ``times``, given
     constraints in ``constraints`` for a particular ``observer``.

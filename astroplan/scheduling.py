@@ -32,7 +32,7 @@ class ObservingBlock(object):
     """
     @u.quantity_input(duration=u.second)
     def __init__(self, target: FixedTarget, duration: Quantity, priority: Union[int, float],
-                 configuration: dict = {}, constraints: Optional[list[Constraint]] =None,
+                 configuration: dict = {}, constraints: Optional[list[Constraint]] = None,
                  name: Optional[Union[str, int]] = None):
         """
         Parameters
@@ -178,7 +178,7 @@ class TransitionBlock(object):
     telescope is slewing, instrument is reconfiguring, etc.
     """
 
-    def __init__(self, components: dict[str, Quantity], start_time: Optional[Time] =None):
+    def __init__(self, components: dict[str, Quantity], start_time: Optional[Time] = None):
         """
         Parameters
         ----------
@@ -240,7 +240,7 @@ class Schedule(object):
 
     # TODO: Remove unused constraints arg?
     def __init__(self, start_time: Time, end_time: Time,
-                 constraints: Optional[Sequence[Constraint]]  = None):
+                 constraints: Optional[Sequence[Constraint]] = None):
         """
         Parameters
         ----------
@@ -968,7 +968,8 @@ class Transitioner(object):
     u.quantity_input(slew_rate=u.deg/u.second)
 
     def __init__(self, slew_rate: Optional[Quantity] = None,
-            instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity]]] = None):
+        instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity]]] = None,
+    ):
         """
         Parameters
         ----------
