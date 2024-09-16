@@ -5,7 +5,7 @@ from six import string_types
 
 # Standard library
 import sys
-from typing import Any, Callable, Optional, Self, Sequence, Union
+from typing import Any, Callable, Optional, Sequence, Union
 import datetime
 import warnings
 
@@ -23,6 +23,9 @@ import pytz
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
 from .target import get_skycoord, SunFlag, MoonFlag, FixedTarget
+from .utils import _import_typing_self_compat
+
+Self = _import_typing_self_compat()
 
 
 __all__ = ["Observer"]

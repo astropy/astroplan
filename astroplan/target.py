@@ -1,15 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 # Standard library
 from abc import ABCMeta
-from typing import Optional, Self, Union
+from typing import Optional, Union
 
 # Third-party
 import astropy.units as u
+from astropy.coordinates import ICRS, SkyCoord, UnitSphericalRepresentation
 from astropy.units import Quantity
-from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation
+
+from .utils import _import_typing_self_compat
+
+Self = _import_typing_self_compat()
 
 __all__ = ["Target", "FixedTarget", "NonFixedTarget"]
 

@@ -9,7 +9,7 @@ from __future__ import (absolute_import, division, print_function,
 
 # Standard library
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Self, Sequence, Union
+from typing import Optional, Sequence, TypeVar, Union, _SpecialForm
 import datetime
 import time
 import warnings
@@ -28,10 +28,12 @@ from numpy.typing import ArrayLike
 # Package
 from .moon import moon_illumination
 from .periodic import EclipsingSystem, PeriodicEvent
-from .utils import time_grid_from_range
+from .utils import time_grid_from_range, _import_typing_self_compat
 from .observer import Observer
 from .target import get_skycoord, FixedTarget
 from .exceptions import MissingConstraintWarning
+
+Self: Union[TypeVar, _SpecialForm] = _import_typing_self_compat()
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",

@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import copy
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Self, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
 from astropy import units as u
@@ -18,7 +18,9 @@ from astropy.units import Quantity
 from .constraints import AltitudeConstraint, Constraint
 from .observer import Observer
 from .target import FixedTarget, get_skycoord
-from .utils import stride_array, time_grid_from_range
+from .utils import stride_array, time_grid_from_range, _import_typing_self_compat
+
+Self = _import_typing_self_compat()
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',

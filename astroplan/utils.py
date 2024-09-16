@@ -4,7 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 
 # Standard library
 import warnings
-from typing import Union
+from typing import Union, _SpecialForm, TypeVar
 import os
 
 # Third-party
@@ -21,7 +21,7 @@ from .exceptions import OldEarthOrientationDataWarning
 
 __all__ = ["download_IERS_A",
            "time_grid_from_range", "_set_mpl_style_sheet",
-           "stride_array"]
+           "stride_array", "_import_typing_self_compat"]
 
 IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   "download an up-to-date IERS Bulletin A table. To do so, run:"
@@ -259,3 +259,12 @@ def _open_shelve(shelffn: Union[str, os.PathLike], withclosing: bool = False) ->
         return contextlib.closing(shelf)
     else:
         return shelf
+
+
+def _import_typing_self_compat() -> Union[_SpecialForm, TypeVar]:
+    # TODO: Remove when no support for Python<3.11
+    try:
+        from typing import Self
+    except ImportError:
+        Self = TypeVar("Self")
+    return Self
