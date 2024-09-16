@@ -65,7 +65,8 @@ def _process_nans_in_jds(jds: Union[float, int, np.ndarray, Quantity, Time]) -> 
     return masked_jds
 
 
-def _generate_24hr_grid(t0: Time, start: float, end: float, n_grid_points: int, for_deriv: bool = False) -> Time:
+def _generate_24hr_grid(t0: Time, start: float, end: float, n_grid_points: int,
+                        for_deriv: bool = False) -> Time:
     """
     Generate a nearly linearly spaced grid of time durations.
 
@@ -152,11 +153,13 @@ class Observer(object):
 
     """
     @u.quantity_input(elevation=u.m)
-    def __init__(self, location: Optional[EarthLocation] = None, timezone: Union[str, datetime.tzinfo] = 'UTC',
-                 name: Optional[str] = None, latitude: Optional[Union[float, str, Quantity]] = None,
-                 longitude: Optional[Union[float, str, Quantity]] = None, elevation: Quantity = 0*u.m,
-                 pressure: Optional[Quantity] =None, relative_humidity: Optional[float] = None,
-                 temperature: Quantity = None, description: Optional[str] = None):
+    def __init__(self, location: Optional[EarthLocation] = None,
+                 timezone: Union[str, datetime.tzinfo] = 'UTC', name: Optional[str] = None,
+                 latitude: Optional[Union[float, str, Quantity]] = None,
+                 longitude: Optional[Union[float, str, Quantity]] = None,
+                 elevation: Quantity = 0*u.m, pressure: Optional[Quantity] =None,
+                 relative_humidity: Optional[float] = None, temperature: Quantity = None,
+                 description: Optional[str] = None):
         """
         Parameters
         ----------
@@ -323,7 +326,7 @@ class Observer(object):
 
         return hash(self._key())
 
-    def __eq__(self, other: "Observer") -> bool:
+    def __eq__(self, other: Self) -> bool:
         """
         Equality check for `~astroplan.Observer` objects.
 
@@ -342,7 +345,7 @@ class Observer(object):
         else:
             return NotImplemented
 
-    def __ne__(self, other: "Observer") -> bool:
+    def __ne__(self, other: Self) -> bool:
         """
         Inequality check for `~astroplan.Observer` objects.
 
@@ -491,7 +494,8 @@ class Observer(object):
                 return False
         return True
 
-    def _preprocess_inputs(self, time: Any, target: Optional[TargetType] = None, grid_times_targets: bool = False) -> tuple[Time, SkyCoord]:
+    def _preprocess_inputs(self, time: Any, target: Optional[TargetType] = None,
+                           grid_times_targets: bool = False) -> tuple[Time, SkyCoord]:
         """
         Preprocess time and target inputs
 
@@ -538,7 +542,8 @@ class Observer(object):
         return time, target
 
     def altaz(self, time: Time, target: Optional[TargetType] = None,
-              obswl: Optional[Quantity] = None, grid_times_targets: bool = False) -> Union[AltAz, SkyCoord]:
+              obswl: Optional[Quantity] = None,
+              grid_times_targets: bool = False) -> Union[AltAz, SkyCoord]:
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
 
@@ -616,7 +621,8 @@ class Observer(object):
             return target.transform_to(altaz_frame)
 
     def parallactic_angle(self, time: Time, target: Union[TargetType],
-                          grid_times_targets: bool = False, kind: str = 'mean', model: Optional[str] = None) -> Angle:
+                          grid_times_targets: bool = False, kind: str = 'mean',
+                          model: Optional[str] = None) -> Angle:
         """
         Calculate the parallactic angle.
 
@@ -1194,7 +1200,8 @@ class Observer(object):
                                                 grid_times_targets=grid_times_targets))
 
     def target_meridian_transit_time(self, time: Time, target: TargetType, which: str = 'nearest',
-                                     grid_times_targets: bool = False, n_grid_points: int = 150) -> Time:
+                                     grid_times_targets: bool = False,
+                                     n_grid_points: int = 150) -> Time:
         """
         Calculate time at the transit of the meridian.
 
@@ -1253,8 +1260,9 @@ class Observer(object):
                                                 rise_set='setting',
                                                 grid_times_targets=grid_times_targets))
 
-    def target_meridian_antitransit_time(self, time: Time, target: TargetType, which: str = 'nearest',
-                                         grid_times_targets: bool = False, n_grid_points: int = 150) -> Time:
+    def target_meridian_antitransit_time(self, time: Time, target: TargetType,
+                                         which: str = 'nearest', grid_times_targets: bool = False,
+                                         n_grid_points: int = 150) -> Time:
         """
         Calculate time at the antitransit of the meridian.
 
@@ -1478,7 +1486,8 @@ class Observer(object):
 
     # Twilight convenience functions
 
-    def twilight_evening_astronomical(self, time: Time, which: str = 'nearest', n_grid_points: int =150) -> Time:
+    def twilight_evening_astronomical(self, time: Time, which: str = 'nearest',
+                                      n_grid_points: int =150) -> Time:
         """
         Time at evening astronomical (-18 degree) twilight.
 
@@ -1507,7 +1516,8 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-18*u.degree,
                                  n_grid_points=n_grid_points)
 
-    def twilight_evening_nautical(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
+    def twilight_evening_nautical(self, time: Time, which: str = 'nearest',
+                                  n_grid_points: int = 150) -> Time:
         """
         Time at evening nautical (-12 degree) twilight.
 
@@ -1536,7 +1546,8 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-12*u.degree,
                                  n_grid_points=n_grid_points)
 
-    def twilight_evening_civil(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
+    def twilight_evening_civil(self, time: Time, which: str = 'nearest',
+                               n_grid_points: int = 150) -> Time:
         """
         Time at evening civil (-6 degree) twilight.
 
@@ -1565,7 +1576,8 @@ class Observer(object):
         return self.sun_set_time(time, which, horizon=-6*u.degree,
                                  n_grid_points=n_grid_points)
 
-    def twilight_morning_astronomical(self, time: Time, which: str = 'nearest', n_grid_points: int =150) -> Time:
+    def twilight_morning_astronomical(self, time: Time, which: str = 'nearest',
+                                      n_grid_points: int =150) -> Time:
         """
         Time at morning astronomical (-18 degree) twilight.
 
@@ -1594,7 +1606,8 @@ class Observer(object):
         return self.sun_rise_time(time, which, horizon=-18*u.degree,
                                   n_grid_points=n_grid_points)
 
-    def twilight_morning_nautical(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
+    def twilight_morning_nautical(self, time: Time, which: str = 'nearest',
+                                  n_grid_points: int = 150) -> Time:
         """
         Time at morning nautical (-12 degree) twilight.
 
@@ -1623,7 +1636,8 @@ class Observer(object):
         return self.sun_rise_time(time, which, horizon=-12*u.degree,
                                   n_grid_points=n_grid_points)
 
-    def twilight_morning_civil(self, time: Time, which: str = 'nearest', n_grid_points: int = 150) -> Time:
+    def twilight_morning_civil(self, time: Time, which: str = 'nearest',
+                               n_grid_points: int = 150) -> Time:
         """
         Time at morning civil (-6 degree) twilight.
 
@@ -1866,7 +1880,8 @@ class Observer(object):
 
     @u.quantity_input(horizon=u.deg)
     def target_is_up(self, time: Any, target: TargetType, horizon: Quantity = 0*u.degree,
-                     return_altaz: bool = False, grid_times_targets: bool = False) -> Union[bool, np.ndarray[bool]]:
+                     return_altaz: bool = False,
+                     grid_times_targets: bool = False) -> Union[bool, np.ndarray[bool]]:
         """
         Is ``target`` above ``horizon`` at this ``time``?
 
@@ -2013,7 +2028,8 @@ class Observer(object):
         return time.sidereal_time(kind, longitude=self.location.lon,
                                   model=model)
 
-    def target_hour_angle(self, time: Any, target: TargetType, grid_times_targets: bool = False) -> Angle:
+    def target_hour_angle(self, time: Any, target: TargetType,
+                          grid_times_targets: bool = False) -> Angle:
         """
         Calculate the local hour angle of ``target`` at ``time``.
 
@@ -2043,7 +2059,8 @@ class Observer(object):
         return Longitude(self.local_sidereal_time(time) - target.ra)
 
     @u.quantity_input(horizon=u.degree)
-    def tonight(self, time: Optional[Time] = None, horizon: Quantity = 0 * u.degree, obswl: Optional[Quantity] =None):
+    def tonight(self, time: Optional[Time] = None, horizon: Quantity = 0 * u.degree,
+                obswl: Optional[Quantity] =None) -> Time:
         """
         Return a time range corresponding to the nearest night
 

@@ -93,7 +93,8 @@ class ObservingBlock(object):
     def from_exposures(cls, target: FixedTarget, priority: Union[int, float],
                        time_per_exposure: Quantity, number_exposures: int,
                        readout_time: Quantity = 0 * u.second,
-                       configuration: dict = {}, constraints: Optional[list[Constraint]] = None) -> Self:
+                       configuration: dict = {},
+                       constraints: Optional[list[Constraint]] = None) -> Self:
         duration = number_exposures * (time_per_exposure + readout_time)
         ob = cls(target, duration, priority, configuration, constraints)
         ob.time_per_exposure = time_per_exposure
@@ -161,8 +162,8 @@ class Scorer(object):
         return score_array
 
     @classmethod
-    def from_start_end(cls, blocks: ObservingBlock, observer: Observer, start_time: Time, end_time: Time,
-                       global_constraints=[]):
+    def from_start_end(cls, blocks: ObservingBlock, observer: Observer, start_time: Time,
+                       end_time: Time, global_constraints=[]) -> Self:
         """
         for if you don't have a schedule/ aren't inside a scheduler
         """
@@ -238,7 +239,8 @@ class Schedule(object):
     # this should change to allow for more flexibility (e.g. dark slots, grey slots)
 
     # TODO: Remove unused constraints arg?
-    def __init__(self, start_time: Time, end_time: Time, constraints: Optional[Sequence[Constraint]]  = None):
+    def __init__(self, start_time: Time, end_time: Time,
+                 constraints: Optional[Sequence[Constraint]]  = None):
         """
         Parameters
         ----------
@@ -397,7 +399,8 @@ class Schedule(object):
         self.slots = earlier_slots + new_slots + later_slots
         return earlier_slots + new_slots + later_slots
 
-    def change_slot_block(self, slot_index: int, new_block: Optional[TransitionBlock] = None) -> int:
+    def change_slot_block(self, slot_index: int,
+                          new_block: Optional[TransitionBlock] = None) -> int:
         """
         Change the block associated with a slot.
 
@@ -584,7 +587,8 @@ class Scheduler(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time: Time, duration: Union[Quantity, TimeDelta], **kwargs) -> Self:
+    def from_timespan(cls, center_time: Time, duration: Union[Quantity, TimeDelta],
+                      **kwargs) -> Self:
         """
         Create a new instance of this class given a center time and duration.
 
@@ -815,7 +819,8 @@ class PriorityScheduler(Scheduler):
 
         return self.schedule
 
-    def attempt_insert_block(self, b: ObservingBlock, new_start_time: Time, start_time_idx: int) -> bool:
+    def attempt_insert_block(self, b: ObservingBlock, new_start_time: Time,
+                             start_time_idx: int) -> bool:
         # set duration to be exact multiple of time resolution
         duration_indices = int(np.floor(
             float(b.duration / self.time_resolution)))
@@ -962,8 +967,8 @@ class Transitioner(object):
     """
     u.quantity_input(slew_rate=u.deg/u.second)
 
-    def __init__(self, slew_rate: Optional[Quantity["angular frequency"]] = None,  # noqa: F722
-                 instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity]]] = None):  # noqa: F722
+    def __init__(self, slew_rate: Optional[Quantity] = None,
+            instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity]]] = None):
         """
         Parameters
         ----------
@@ -979,7 +984,8 @@ class Transitioner(object):
         self.slew_rate = slew_rate
         self.instrument_reconfig_times = instrument_reconfig_times
 
-    def __call__(self, oldblock: ObservingBlock, newblock: ObservingBlock, start_time: Time, observer: Observer) -> Optional[TransitionBlock]:
+    def __call__(self, oldblock: ObservingBlock, newblock: ObservingBlock, start_time: Time,
+                 observer: Observer) -> Optional[TransitionBlock]:
         """
         Determines the amount of time needed to transition from one observing
         block to another.  This uses the parameters defined in

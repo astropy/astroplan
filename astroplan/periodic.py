@@ -74,7 +74,8 @@ class EclipsingSystem(PeriodicEvent):
     @u.quantity_input(period=u.day, duration=u.day)
     def __init__(self, primary_eclipse_time: Time, orbital_period: Quantity,
                  duration: Optional[Quantity] = None, name: Optional[str] = None,
-                 eccentricity: Optional[float] = None, argument_of_periapsis: Optional[float] = None):
+                 eccentricity: Optional[float] = None,
+                 argument_of_periapsis: Optional[float] = None):
         """
         Parameters
         ----------

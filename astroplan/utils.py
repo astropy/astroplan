@@ -34,7 +34,8 @@ IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
 BACKUP_Time_get_delta_ut1_utc = Time._get_delta_ut1_utc
 
 
-def _low_precision_utc_to_ut1(self, jd1: np.ndarray[float], jd2: np.ndarray[float]) -> np.ndarray[float]:
+def _low_precision_utc_to_ut1(self, jd1: np.ndarray[float],
+                              jd2: np.ndarray[float]) -> np.ndarray[float]:
     """
     When no IERS Bulletin A is available (no internet connection), use low
     precision time conversion by assuming UT1-UTC=0 always.

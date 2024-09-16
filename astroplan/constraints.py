@@ -139,7 +139,8 @@ def _get_altaz(times: Time, observer: Observer, targets: Union[list[FixedTarget]
     return observer._altaz_cache[aakey]
 
 
-def _get_moon_data(times: Time, observer: Observer, force_zero_pressure: bool = False) -> dict[str, Union[Time, AltAz, np.ndarray]]:
+def _get_moon_data(times: Time, observer: Observer,
+                   force_zero_pressure: bool = False) -> dict[str, Union[Time, AltAz, np.ndarray]]:
     """
     Calculate moon altitude az and illumination for an array of times for
     ``observer``.
@@ -187,7 +188,8 @@ def _get_moon_data(times: Time, observer: Observer, force_zero_pressure: bool = 
     return observer._moon_cache[aakey]
 
 
-def _get_meridian_transit_times(times: Time, observer: Observer, targets: Union[list[FixedTarget], SkyCoord]) -> dict[str, Time]:
+def _get_meridian_transit_times(times: Time, observer: Observer, targets: Union[list[FixedTarget],
+                                SkyCoord]) -> dict[str, Time]:
     """
     Calculate next meridian transit for an array of times for ``targets`` and
     ``observer``.
@@ -229,8 +231,9 @@ class Constraint(object):
     """
     __metaclass__ = ABCMeta
 
-    def __call__(self, observer: Observer, targets: Sequence[FixedTarget], times: Optional[Time] = None,
-                 time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour,
+    def __call__(self, observer: Observer, targets: Sequence[FixedTarget],
+                 times: Optional[Time] = None, time_range: Optional[Time] = None,
+                 time_grid_resolution: Quantity = 0.5*u.hour,
                  grid_times_targets: bool = False) -> np.ndarray[Union[float, bool]]:
         """
         Compute the constraint for this class
@@ -295,7 +298,8 @@ class Constraint(object):
         return result
 
     @abstractmethod
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[Union[float, bool]]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[Union[float, bool]]:
         """
         Actually do the real work of computing the constraint.  Subclasses
         override this.
@@ -340,7 +344,8 @@ class AltitudeConstraint(Constraint):
         float on [0, 1], where 0 is the min altitude and 1 is the max.
     """
 
-    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None, boolean_constraint: bool = True):
+    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None,
+                 boolean_constraint: bool = True):
         if min is None:
             self.min = -90*u.deg
         else:
@@ -352,7 +357,8 @@ class AltitudeConstraint(Constraint):
 
         self.boolean_constraint = boolean_constraint
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[Union[float, bool]]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[Union[float, bool]]:
         cached_altaz = _get_altaz(times, observer, targets)
         alt = cached_altaz['altaz'].alt
         if self.boolean_constraint:
@@ -392,12 +398,14 @@ class AirmassConstraint(AltitudeConstraint):
         AirmassConstraint(2)
     """
 
-    def __init__(self, max: Optional[float] = None, min: Optional[float] = 1.0, boolean_constraint: bool = True):
+    def __init__(self, max: Optional[float] = None, min: Optional[float] = 1.0,
+                 boolean_constraint: bool = True):
         self.min = min
         self.max = max
         self.boolean_constraint = boolean_constraint
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[Union[float, bool]]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[Union[float, bool]]:
         cached_altaz = _get_altaz(times, observer, targets)
         secz = cached_altaz['altaz'].secz.value
         if self.boolean_constraint:
@@ -464,7 +472,8 @@ class AtNightConstraint(Constraint):
         """
         return cls(max_solar_altitude=-18*u.deg, **kwargs)
 
-    def _get_solar_altitudes(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> Quantity:
+    def _get_solar_altitudes(self, times: Time, observer: Observer,
+                             targets: Sequence[FixedTarget]) -> Quantity:
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
 
@@ -490,7 +499,8 @@ class AtNightConstraint(Constraint):
 
         return altitude
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         solar_altitude = self._get_solar_altitudes(times, observer, targets)
         mask = solar_altitude <= self.max_solar_altitude
         return mask
@@ -515,7 +525,8 @@ class GalacticLatitudeConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         separation = abs(targets.transform_to(Galactic).b)
 
         if self.min is None and self.max is not None:
@@ -549,7 +560,8 @@ class SunSeparationConstraint(Constraint):
         self.min = min
         self.max = max
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         # use get_body rather than get sun here, since
         # it returns the Sun's coordinates in an observer
         # centred frame, so the separation is as-seen
@@ -577,7 +589,8 @@ class MoonSeparationConstraint(Constraint):
     Constrain the distance between the Earth's moon and some targets.
     """
 
-    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None, ephemeris: Optional[str] = None):
+    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None,
+                 ephemeris: Optional[str] = None):
         """
         Parameters
         ----------
@@ -596,7 +609,8 @@ class MoonSeparationConstraint(Constraint):
         self.max = max
         self.ephemeris = ephemeris
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         moon = get_body("moon", times, location=observer.location, ephemeris=self.ephemeris)
         # note to future editors - the order matters here
         # moon.separation(targets) is NOT the same as targets.separation(moon)
@@ -625,7 +639,8 @@ class MoonIlluminationConstraint(Constraint):
     Constraint is also satisfied if the Moon has set.
     """
 
-    def __init__(self, min: Optional[float] = None, max: Optional[float] = None, ephemeris: Optional[str] = None):
+    def __init__(self, min: Optional[float] = None, max: Optional[float] = None,
+                 ephemeris: Optional[str] = None):
         """
         Parameters
         ----------
@@ -695,7 +710,8 @@ class MoonIlluminationConstraint(Constraint):
         """
         return cls(min, max, **kwargs)
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         # first is the moon up?
         cached_moon = _get_moon_data(times, observer)
         moon_alt = cached_moon['altaz'].alt
@@ -759,7 +775,8 @@ class LocalTimeConstraint(Constraint):
             if not isinstance(self.max, datetime.time):
                 raise TypeError("Time limits must be specified as datetime.time objects.")
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
 
         timezone = None
 
@@ -849,7 +866,8 @@ class TimeConstraint(Constraint):
                 raise TypeError("Time limits must be specified as "
                                 "astropy.time.Time objects.")
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
@@ -891,7 +909,8 @@ class SecondaryEclipseConstraint(Constraint):
         """
         self.eclipsing_system = eclipsing_system
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         mask = self.eclipsing_system.in_secondary_eclipse(times)
         return mask
 
@@ -902,7 +921,8 @@ class PhaseConstraint(Constraint):
     (e.g.~transiting exoplanets, eclipsing binaries).
     """
 
-    def __init__(self, periodic_event: PeriodicEvent, min: Optional[float] = None, max: Optional[float] = None):
+    def __init__(self, periodic_event: PeriodicEvent, min: Optional[float] = None,
+                 max: Optional[float] = None):
         """
         Parameters
         ----------
@@ -935,7 +955,8 @@ class PhaseConstraint(Constraint):
         self.min = min if min is not None else 0.0
         self.max = max if max is not None else 1.0
 
-    def compute_constraint(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
+    def compute_constraint(self, times: Time, observer: Observer,
+                           targets: Sequence[FixedTarget]) -> np.ndarray[bool]:
         phase = self.periodic_event.phase(times)
 
         mask = np.where(self.max > self.min,
@@ -946,7 +967,8 @@ class PhaseConstraint(Constraint):
 
 def is_always_observable(constraints: Union[list[Constraint], Constraint], observer: Observer,
                          targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
-                         time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour) -> list[bool]:
+                         time_range: Optional[Time] = None,
+                         time_grid_resolution: Quantity = 0.5*u.hour) -> list[bool]:
     """
     A function to determine whether ``targets`` are always observable throughout
     ``time_range`` given constraints in the ``constraints_list`` for a
@@ -997,7 +1019,8 @@ def is_always_observable(constraints: Union[list[Constraint], Constraint], obser
 
 def is_observable(constraints: Union[list[Constraint], Constraint], observer: Observer,
                   targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
-                  time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour) -> list[bool]:
+                  time_range: Optional[Time] = None,
+                  time_grid_resolution: Quantity = 0.5*u.hour) -> list[bool]:
     """
     Determines if the ``targets`` are observable during ``time_range`` given
     constraints in ``constraints_list`` for a particular ``observer``.
@@ -1101,8 +1124,9 @@ def is_event_observable(constraints: Union[list[Constraint], Constraint],
 
 
 def months_observable(constraints: Union[list[Constraint], Constraint], observer: Observer,
-                  targets: Union[list[FixedTarget], SkyCoord], time_range: Time = _current_year_time_range,
-                  time_grid_resolution: Quantity = 0.5*u.hour) -> list[set[int]]:
+                      targets: Union[list[FixedTarget], SkyCoord],
+                      time_range: Time = _current_year_time_range,
+                      time_grid_resolution: Quantity = 0.5*u.hour) -> list[set[int]]:
     """
     Determines which month the specified ``targets`` are observable for a
     specific ``observer``, given the supplied ``constraints``.
@@ -1170,8 +1194,9 @@ def months_observable(constraints: Union[list[Constraint], Constraint], observer
 
 
 def observability_table(constraints: Union[list[Constraint], Constraint], observer: Observer,
-                  targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
-                  time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour) -> table.Table:
+                        targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
+                        time_range: Optional[Time] = None,
+                        time_grid_resolution: Quantity = 0.5*u.hour) -> table.Table:
     """
     Creates a table with information about observability for all  the ``targets``
     over the requested ``time_range``, given the constraints in
@@ -1300,7 +1325,8 @@ def min_best_rescale(vals: ArrayLike, min_val: float, max_val: float, less_than_
     return rescaled
 
 
-def max_best_rescale(vals: ArrayLike, min_val: float, max_val: float, greater_than_max: int = 1) -> ArrayLike:
+def max_best_rescale(vals: ArrayLike, min_val: float, max_val: float,
+                     greater_than_max: int = 1) -> ArrayLike:
     """
     rescales an input array ``vals`` to be a score (between zero and one),
     where the ``max_val`` goes to one, and the ``min_val`` goes to zero.
