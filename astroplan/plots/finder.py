@@ -1,21 +1,26 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-import numpy as np
+from typing import Optional, Union
 
 import astropy.units as u
-
+from matplotlib.axes import Axes
+import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.wcs import WCS
+from astropy.units import Quantity
+
+from ..target import FixedTarget
 
 __all__ = ['plot_finder_image']
 
 
 @u.quantity_input(fov_radius=u.deg)
-def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
-                      log=False, ax=None, grid=False, reticle=False,
-                      style_kwargs=None, reticle_style_kwargs=None):
+def plot_finder_image(target: Union[FixedTarget, SkyCoord], survey: str = 'DSS',
+                      fov_radius: Quantity = 10*u.arcmin, log: bool = False,
+                      ax: Optional[Axes] = None, grid: bool = False, reticle: bool = False,
+                      style_kwargs: Optional[dict] = None,
+                      reticle_style_kwargs: Optional[dict] = None) -> Axes:
     """
     Plot survey image centered on ``target``.
 
