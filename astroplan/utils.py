@@ -80,7 +80,7 @@ def download_IERS_A(show_progres: bool = True) -> None:
 
 
 @u.quantity_input(time_resolution=u.hour)
-def time_grid_from_range(time_range: Time, time_resolution: Quantity["time"] = 0.5*u.hour) -> Time:  # noqa: F821
+def time_grid_from_range(time_range: Time, time_resolution: Quantity = 0.5*u.hour) -> Time:
     """
     Get linearly-spaced sequence of times.
 

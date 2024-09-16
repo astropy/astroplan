@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import copy
 from abc import ABCMeta, abstractmethod
-from typing import Optional, Sequence, Type, Union
+from typing import Optional, Sequence, Union
 
 import numpy as np
 from astropy import units as u
@@ -31,7 +31,7 @@ class ObservingBlock(object):
     constraints on observations.
     """
     @u.quantity_input(duration=u.second)
-    def __init__(self, target: FixedTarget, duration: Quantity["time"], priority: Union[int, float],  # noqa: F821
+    def __init__(self, target: FixedTarget, duration: Quantity, priority: Union[int, float],
                  configuration: dict = {}, constraints: Optional[list[Constraint]] =None,
                  name: Optional[Union[str, int]] = None):
         """
@@ -91,8 +91,8 @@ class ObservingBlock(object):
 
     @classmethod
     def from_exposures(cls, target: FixedTarget, priority: Union[int, float],
-                       time_per_exposure: Quantity["time"], number_exposures: int,  # noqa: F821
-                       readout_time: Quantity["time"] = 0 * u.second,  # noqa: F821
+                       time_per_exposure: Quantity, number_exposures: int,
+                       readout_time: Quantity = 0 * u.second,
                        configuration: dict = {}, constraints: Optional[list[Constraint]] = None) -> "ObservingBlock":
         duration = number_exposures * (time_per_exposure + readout_time)
         ob = cls(target, duration, priority, configuration, constraints)
@@ -128,7 +128,7 @@ class Scorer(object):
         self.global_constraints = global_constraints
         self.targets = get_skycoord([block.target for block in self.blocks])
 
-    def create_score_array(self, time_resolution: Quantity["time"] = 1*u.minute) -> np.ndarray:  # noqa: F821
+    def create_score_array(self, time_resolution: Quantity = 1*u.minute) -> np.ndarray:
         """
         this makes a score array over the entire schedule for all of the
         blocks and each `~astroplan.Constraint` in the .constraints of
@@ -177,7 +177,7 @@ class TransitionBlock(object):
     telescope is slewing, instrument is reconfiguring, etc.
     """
 
-    def __init__(self, components: dict[str, Quantity["time"]], start_time: Optional[Time] =None):  # noqa: F821
+    def __init__(self, components: dict[str, Quantity], start_time: Optional[Time] =None):
         """
         Parameters
         ----------
@@ -208,11 +208,11 @@ class TransitionBlock(object):
         return self.start_time + self.duration
 
     @property
-    def components(self) -> dict[str, Quantity["time"]]:  # noqa: F821
+    def components(self) -> dict[str, Quantity]:
         return self._components
 
     @components.setter
-    def components(self, val: dict[str, Quantity["time"]]) -> None:  # noqa: F821
+    def components(self, val: dict[str, Quantity]) -> None:
         duration = 0*u.second
         for t in val.values():
             duration += t
@@ -222,7 +222,7 @@ class TransitionBlock(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_duration(cls, duration: Quantity["time"]) -> "TransitionBlock":  # noqa: F821
+    def from_duration(cls, duration: Quantity) -> "TransitionBlock":
         # for testing how to put transitions between observations during
         # scheduling without considering the complexities of duration
         tb = TransitionBlock({'duration': duration})
@@ -496,8 +496,8 @@ class Scheduler(object):
 
     @u.quantity_input(gap_time=u.second, time_resolution=u.second)
     def __init__(self, constraints: Sequence[Constraint], observer: Observer,
-                 transitioner: Optional["Transitioner"] = None, gap_time: Quantity["time"] = 5*u.min,  # noqa: F821
-                 time_resolution: Quantity["time"] = 20*u.second):  # noqa: F821
+                 transitioner: Optional["Transitioner"] = None, gap_time: Quantity = 5*u.min,
+                 time_resolution: Quantity = 20*u.second):
         """
         Parameters
         ----------
@@ -584,7 +584,7 @@ class Scheduler(object):
 
     @classmethod
     @u.quantity_input(duration=u.second)
-    def from_timespan(cls, center_time: Time, duration: Union[Quantity["time"], TimeDelta], **kwargs) -> "Scheduler":  # noqa: F821
+    def from_timespan(cls, center_time: Time, duration: Union[Quantity, TimeDelta], **kwargs) -> "Scheduler":
         """
         Create a new instance of this class given a center time and duration.
 
@@ -963,7 +963,7 @@ class Transitioner(object):
     u.quantity_input(slew_rate=u.deg/u.second)
 
     def __init__(self, slew_rate: Optional[Quantity["angular frequency"]] = None,  # noqa: F722
-                 instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity["time"]]]] = None):  # noqa: F722
+                 instrument_reconfig_times: Optional[dict[str, dict[tuple[str, str], Quantity]]] = None):  # noqa: F722
         """
         Parameters
         ----------
@@ -1024,7 +1024,7 @@ class Transitioner(object):
             return None
 
     def compute_instrument_transitions(self, oldblock: ObservingBlock,
-                                       newblock: ObservingBlock) -> dict[str, Quantity["time"]]:  # noqa: F821
+                                       newblock: ObservingBlock) -> dict[str, Quantity]:
         components = {}
         for conf_name, old_conf in oldblock.configuration.items():
             if conf_name in newblock.configuration:

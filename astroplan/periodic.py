@@ -18,7 +18,7 @@ class PeriodicEvent(object):
     A periodic event defined by an epoch and period.
     """
     @u.quantity_input(period=u.day, duration=u.day)
-    def __init__(self, epoch: Time, period: Quantity["time"], duration: Optional[Quantity["time"]] = None,  # noqa: F821
+    def __init__(self, epoch: Time, period: Quantity, duration: Optional[Quantity] = None,
                  name: Optional[str] = None):
         """
 
@@ -72,8 +72,8 @@ class EclipsingSystem(PeriodicEvent):
         barycentric correction error (<=16 minutes).
     """
     @u.quantity_input(period=u.day, duration=u.day)
-    def __init__(self, primary_eclipse_time: Time, orbital_period: Quantity["time"],  # noqa: F821
-                 duration: Optional[Quantity["time"]] = None, name: Optional[str] = None,  # noqa: F821
+    def __init__(self, primary_eclipse_time: Time, orbital_period: Quantity,
+                 duration: Optional[Quantity] = None, name: Optional[str] = None,
                  eccentricity: Optional[float] = None, argument_of_periapsis: Optional[float] = None):
         """
         Parameters

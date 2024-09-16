@@ -230,7 +230,7 @@ class Constraint(object):
     __metaclass__ = ABCMeta
 
     def __call__(self, observer: Observer, targets: Sequence[FixedTarget], times: Optional[Time] = None,
-                 time_range: Optional[Time] = None, time_grid_resolution: Quantity["time"] = 0.5*u.hour,
+                 time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour,
                  grid_times_targets: bool = False) -> np.ndarray[Union[float, bool]]:
         """
         Compute the constraint for this class
@@ -340,7 +340,7 @@ class AltitudeConstraint(Constraint):
         float on [0, 1], where 0 is the min altitude and 1 is the max.
     """
 
-    def __init__(self, min: Optional[Quantity["angle"]] = None, max: Optional[Quantity["angle"]] = None, boolean_constraint: bool = True):  # noqa: F821
+    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None, boolean_constraint: bool = True):
         if min is None:
             self.min = -90*u.deg
         else:
@@ -427,7 +427,7 @@ class AtNightConstraint(Constraint):
     Constrain the Sun to be below ``horizon``.
     """
     @u.quantity_input(horizon=u.deg)
-    def __init__(self, max_solar_altitude: Quantity["angle"] = 0*u.deg, force_pressure_zero: bool = True):  # noqa: F821
+    def __init__(self, max_solar_altitude: Quantity = 0*u.deg, force_pressure_zero: bool = True):
         """
         Parameters
         ----------
@@ -464,7 +464,7 @@ class AtNightConstraint(Constraint):
         """
         return cls(max_solar_altitude=-18*u.deg, **kwargs)
 
-    def _get_solar_altitudes(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> Quantity["angle"]:  # noqa: F821
+    def _get_solar_altitudes(self, times: Time, observer: Observer, targets: Sequence[FixedTarget]) -> Quantity:
         if not hasattr(observer, '_altaz_cache'):
             observer._altaz_cache = {}
 
@@ -501,7 +501,7 @@ class GalacticLatitudeConstraint(Constraint):
     Constrain the distance between the Galactic plane and some targets.
     """
 
-    def __init__(self, min: Optional[Quantity["angle"]] = None, max: Optional[Quantity["angle"]] = None):  # noqa: F821
+    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None):
         """
         Parameters
         ----------
@@ -535,7 +535,7 @@ class SunSeparationConstraint(Constraint):
     Constrain the distance between the Sun and some targets.
     """
 
-    def __init__(self, min: Optional[Quantity["angle"]] = None, max: Optional[Quantity["angle"]] = None):  # noqa: F821
+    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None):
         """
         Parameters
         ----------
@@ -577,7 +577,7 @@ class MoonSeparationConstraint(Constraint):
     Constrain the distance between the Earth's moon and some targets.
     """
 
-    def __init__(self, min: Optional[Quantity["angle"]] = None, max: Optional[Quantity["angle"]] = None, ephemeris: Optional[str] = None):  # noqa: F821
+    def __init__(self, min: Optional[Quantity] = None, max: Optional[Quantity] = None, ephemeris: Optional[str] = None):
         """
         Parameters
         ----------
@@ -946,7 +946,7 @@ class PhaseConstraint(Constraint):
 
 def is_always_observable(constraints: Union[list[Constraint], Constraint], observer: Observer,
                          targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
-                         time_range: Optional[Time] = None, time_grid_resolution: Quantity["time"] = 0.5*u.hour) -> list[bool]:
+                         time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour) -> list[bool]:
     """
     A function to determine whether ``targets`` are always observable throughout
     ``time_range`` given constraints in the ``constraints_list`` for a
@@ -997,7 +997,7 @@ def is_always_observable(constraints: Union[list[Constraint], Constraint], obser
 
 def is_observable(constraints: Union[list[Constraint], Constraint], observer: Observer,
                   targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
-                  time_range: Optional[Time] = None, time_grid_resolution: Quantity["time"] = 0.5*u.hour) -> list[bool]:
+                  time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour) -> list[bool]:
     """
     Determines if the ``targets`` are observable during ``time_range`` given
     constraints in ``constraints_list`` for a particular ``observer``.
@@ -1102,7 +1102,7 @@ def is_event_observable(constraints: Union[list[Constraint], Constraint],
 
 def months_observable(constraints: Union[list[Constraint], Constraint], observer: Observer,
                   targets: Union[list[FixedTarget], SkyCoord], time_range: Time = _current_year_time_range,
-                  time_grid_resolution: Quantity["time"] = 0.5*u.hour) -> list[set[int]]:
+                  time_grid_resolution: Quantity = 0.5*u.hour) -> list[set[int]]:
     """
     Determines which month the specified ``targets`` are observable for a
     specific ``observer``, given the supplied ``constraints``.
@@ -1171,7 +1171,7 @@ def months_observable(constraints: Union[list[Constraint], Constraint], observer
 
 def observability_table(constraints: Union[list[Constraint], Constraint], observer: Observer,
                   targets: Union[list[FixedTarget], SkyCoord], times: Optional[Time] = None,
-                  time_range: Optional[Time] = None, time_grid_resolution: Quantity["time"] = 0.5*u.hour) -> table.Table:
+                  time_range: Optional[Time] = None, time_grid_resolution: Quantity = 0.5*u.hour) -> table.Table:
     """
     Creates a table with information about observability for all  the ``targets``
     over the requested ``time_range``, given the constraints in

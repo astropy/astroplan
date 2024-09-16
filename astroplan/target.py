@@ -31,8 +31,8 @@ class Target(object):
     """
     __metaclass__ = ABCMeta
 
-    def __init__(self, name: Optional[str] = None, ra: Optional[Quantity["angle"]] = None,  # noqa: F821
-                 dec: Optional[Quantity["angle"]] = None, marker: Optional[str] = None):  # noqa: F821
+    def __init__(self, name: Optional[str] = None, ra: Optional[Quantity] = None,
+                 dec: Optional[Quantity] = None, marker: Optional[str] = None):
         """
         Defines a single observation target.
 
@@ -51,7 +51,7 @@ class Target(object):
         raise NotImplementedError()
 
     @property
-    def ra(self) -> Quantity["angle"]:  # noqa: F821
+    def ra(self) -> Quantity:
         """
         Right ascension.
         """
@@ -60,7 +60,7 @@ class Target(object):
         raise NotImplementedError()
 
     @property
-    def dec(self) -> Quantity["angle"]:  # noqa: F821
+    def dec(self) -> Quantity:
         """
         Declination.
         """
