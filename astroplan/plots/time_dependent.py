@@ -158,7 +158,6 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if 'ls' not in style_kwargs and 'linestyle' not in style_kwargs:
         style_kwargs.setdefault('linestyle', '-')
 
-    time.to_datetime().utcoffset()
     if hasattr(time, 'utcoffset') and use_local_tz:
         tzoffset = time.utcoffset()
         tzname = time.tzname()
