@@ -6,14 +6,20 @@ This version of the `moon` module calculates lunar phase angle for a geocentric
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
+# Standard library
+from typing import Optional
+
 # Third-party
 import numpy as np
 from astropy.coordinates import get_sun, get_body
+from astropy.time import Time
+import astropy.units as u
+from astropy.units import Quantity
 
 __all__ = ["moon_phase_angle", "moon_illumination"]
 
 
-def moon_phase_angle(time, ephemeris=None):
+def moon_phase_angle(time: Time, ephemeris: Optional[str] = None) -> Quantity[u.rad]:
     """
     Calculate lunar orbital phase in radians.
 
@@ -41,7 +47,7 @@ def moon_phase_angle(time, ephemeris=None):
                       moon.distance - sun.distance*np.cos(elongation))
 
 
-def moon_illumination(time, ephemeris=None):
+def moon_illumination(time: Time, ephemeris: Optional[str] = None) -> Quantity[u.rad]:
     """
     Calculate fraction of the moon illuminated.
 

@@ -1,19 +1,26 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
-import astropy.units as u
-from astropy.time import Time
 import warnings
+from typing import Optional
+
+import astropy.units as u
+import numpy as np
+from astropy.time import Time
+from astropy.units import Quantity
+from matplotlib.axes import Axes
 
 from ..exceptions import PlotBelowHorizonWarning
+from ..observer import Observer
+from ..target import FixedTarget
 from ..utils import _set_mpl_style_sheet
 
 __all__ = ['plot_sky', 'plot_sky_24hr']
 
 
 @u.quantity_input(az_label_offset=u.deg)
-def plot_sky(target, observer, time, ax=None, style_kwargs=None,
-             north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
-             warn_below_horizon=False, style_sheet=None):
+def plot_sky(target: FixedTarget, observer: Observer, time: Time, ax: Optional[Axes] = None,
+             style_kwargs: Optional[dict] = None, north_to_east_ccw: bool = True, grid: bool = True,
+             az_label_offset: Quantity = 0.0*u.deg,
+             warn_below_horizon: bool = False, style_sheet: Optional[dict] = None) -> Axes:
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -229,9 +236,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
 
 @u.quantity_input(delta=u.hour)
-def plot_sky_24hr(target, observer, time, delta=1*u.hour, ax=None,
-                  style_kwargs=None, north_to_east_ccw=True, grid=True,
-                  az_label_offset=0.0*u.deg, center_time_style_kwargs=None):
+def plot_sky_24hr(target: FixedTarget, observer: Observer, time: Time, delta: Quantity = 1*u.hour,
+                  ax: Axes = None, style_kwargs: Optional[dict] = None,
+                  north_to_east_ccw: bool = True, grid: bool = True,
+                  az_label_offset: Quantity = 0.0*u.deg,
+                  center_time_style_kwargs: Optional[dict] = None) -> Axes:
     """
     Plots target positions in the sky with respect to the observer's location
     over a twenty-four hour period centered on ``time``.

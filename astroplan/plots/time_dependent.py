@@ -1,23 +1,29 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import copy
-import numpy as np
 import operator
-import astropy.units as u
-from astropy.time import Time
-from collections.abc import Sequence
 import warnings
+from collections.abc import Sequence
+from typing import Optional
+
+import astropy.units as u
+import numpy as np
 import pytz
+from astropy.time import Time
+from matplotlib.axes import Axes
 
 from ..exceptions import PlotWarning
+from ..observer import Observer
+from ..scheduling import Schedule
+from ..target import FixedTarget
 from ..utils import _set_mpl_style_sheet
 
 __all__ = ['plot_airmass', 'plot_schedule_airmass', 'plot_parallactic',
            'plot_altitude']
 
 
-def _secz_to_altitude(secant_z):
+def _secz_to_altitude(secant_z: float) -> float:
     """
     Convert airmass (approximated as the secant of the zenith angle) to
     an altitude (aka elevation) in degrees.
@@ -35,7 +41,7 @@ def _secz_to_altitude(secant_z):
     return np.degrees(np.pi/2 - np.arccos(1./secant_z))
 
 
-def _has_twin(ax):
+def _has_twin(ax: Axes) -> bool:
     """
     Solution for detecting twin axes built on `ax`. Courtesy of
     Jake Vanderplas http://stackoverflow.com/a/36209590/1340208
@@ -48,10 +54,12 @@ def _has_twin(ax):
     return False
 
 
-def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
-                 style_sheet=None, brightness_shading=False,
-                 altitude_yaxis=False, min_airmass=1.0, min_region=None,
-                 max_airmass=3.0, max_region=None, use_local_tz=False):
+def plot_airmass(targets: FixedTarget, observer: Observer, time: Time, ax: Optional[Axes] = None,
+                 style_kwargs: Optional[dict] = None, style_sheet: Optional[dict] = None,
+                 brightness_shading: bool = False, altitude_yaxis: bool = False,
+                 min_airmass: float = 1.0, min_region: Optional[float] = None,
+                 max_airmass: float = 3.0, max_region: Optional[float] = None,
+                 use_local_tz: bool = False) -> Axes:
     r"""
     Plots airmass as a function of time for a given target.
 
@@ -276,10 +284,11 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     return ax
 
 
-def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
-                  style_sheet=None, brightness_shading=False,
-                  airmass_yaxis=False, min_altitude=0, min_region=None,
-                  max_altitude=90, max_region=None):
+def plot_altitude(targets: FixedTarget, observer: Observer, time: Time, ax: Optional[Axes] = None,
+                  style_kwargs: Optional[dict] = None, style_sheet: Optional[dict] = None,
+                  brightness_shading: bool = False, airmass_yaxis: bool = False,
+                  min_altitude: float = 0, min_region: Optional[float] = None,
+                  max_altitude: float = 90, max_region: Optional[float] = None) -> Axes:
     r"""
     Plots altitude as a function of time for a given target.
 
@@ -467,7 +476,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     return ax
 
 
-def plot_schedule_airmass(schedule, show_night=False):
+def plot_schedule_airmass(schedule: Schedule, show_night: bool = False) -> Axes:
     """
     Plots when observations of targets are scheduled to occur superimposed
     upon plots of the airmasses of the targets.
@@ -526,8 +535,9 @@ def plot_schedule_airmass(schedule, show_night=False):
     # TODO: make this output a `axes` object
 
 
-def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
-                     style_sheet=None):
+def plot_parallactic(target: FixedTarget, observer: Observer, time: Time, ax: Optional[Axes] = None,
+                     style_kwargs: Optional[dict] = None,
+                     style_sheet: Optional[dict] = None) -> Axes:
     """
     Plots parallactic angle as a function of time for a given target.
 
@@ -586,7 +596,6 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
         _set_mpl_style_sheet(style_sheet)
 
     import matplotlib.pyplot as plt
-
     from matplotlib import dates
 
     # Set up plot axes and style if needed.
