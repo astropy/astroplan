@@ -174,6 +174,8 @@ def test_galactic_plane_separation():
 
 # in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
+# astropy.coordinates.errors.NonRotationTransformationWarning
+@pytest.mark.filterwarnings("ignore")
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -198,6 +200,8 @@ def test_sun_separation():
     assert np.all(is_constraint_met == [False, True, True])
 
 
+# astropy.coordinates.errors.NonRotationTransformationWarning
+@pytest.mark.filterwarnings("ignore")
 def test_moon_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -423,6 +427,8 @@ constraint_tests = [
 
 
 @pytest.mark.parametrize('constraint', constraint_tests)
+# astropy.coordinates.errors.NonRotationTransformationWarning
+@pytest.mark.filterwarnings("ignore")
 def test_regression_shapes(constraint):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     targets = get_skycoord([FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),
