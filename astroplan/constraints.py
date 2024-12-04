@@ -4,9 +4,6 @@ Specify and constraints to determine which targets are observable for
 an observer.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 # Standard library
 from abc import ABCMeta, abstractmethod
 import datetime
