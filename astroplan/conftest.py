@@ -33,6 +33,7 @@ except ImportError:
 packagename = os.path.basename(os.path.dirname(__file__))
 TESTED_VERSIONS[packagename] = version
 
+
 # Define list of packages for which to display version numbers in the test log
 try:
     PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
