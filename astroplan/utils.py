@@ -83,7 +83,7 @@ def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     time_range : `~astropy.time.Time` (length = 2)
         Lower and upper bounds on time sequence.
 
-    time_resolution : `~astropy.units.quantity` (optional)
+    time_resolution : `~astropy.units.Quantity` (optional)
         Time-grid spacing
 
     Returns
