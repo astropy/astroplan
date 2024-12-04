@@ -12,12 +12,12 @@
 # See astropy.sphinx.conf for which values are set there.
 
 from configparser import ConfigParser
-import os
 import sys
 import datetime
+from importlib import metadata
 
 try:
-    from sphinx_astropy.conf.v1 import *  # noqa
+    from sphinx_astropy.conf.v2 import *  # noqa
 except ImportError:
     print('ERROR: the documentation requires the sphinx-astropy package to '
           'be installed')
@@ -34,7 +34,7 @@ setup_cfg = dict(conf.items('metadata'))
 highlight_language = 'python3'
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.7'
+# needs_sphinx = '1.7'
 
 # Extend astropy intersphinx_mapping with packages we use here
 intersphinx_mapping['astroquery'] = ('http://astroquery.readthedocs.io/en/latest/', None)
@@ -70,10 +70,17 @@ copyright = '{0}, {1}'.format(
 __import__(project)
 package = sys.modules[project]
 
-# The short X.Y version.
-version = package.__version__.split('-', 1)[0]
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+
 # The full version, including alpha/beta/rc tags.
-release = package.__version__
+release = metadata.version(project)
+# The short X.Y version.
+version = ".".join(release.split(".")[:2])
+
+# Only include dev docs in dev version.
+dev = "dev" in release
 
 
 # -- Options for HTML output ---------------------------------------------------
@@ -84,12 +91,6 @@ release = package.__version__
 # the options for this theme can be modified by overriding some of the
 # variables set in the global configuration. The variables set in the
 # global configuration are listed below, commented out.
-
-html_theme_options = {
-    'logotext1': 'astro',  # white,  semi-bold
-    'logotext2': 'plan',  # orange, light
-    'logotext3': ':docs'   # white,  light
-    }
 
 # Add any paths that contain custom themes here, relative to this directory.
 # To use a different custom theme, add the directory containing the theme.
@@ -179,6 +180,33 @@ linkcheck_anchors = False
 # -- Turn on nitpicky mode for sphinx (to warn about references not found) ----
 nitpicky = True
 
+html_copy_source = False
+
+html_theme_options.update(  # noqa: F405
+    {
+        "github_url": "https://github.com/astropy/astroplan",
+        "external_links": [
+            {"name": "astropy docs", "url": "https://docs.astropy.org/en/stable/"},
+        ],
+        "use_edit_page_button": True,
+    }
+)
+
+html_context = {
+    "default_mode": "light",
+    "to_be_indexed": ["stable", "latest"],
+    "is_development": dev,
+    "github_user": "astropy",
+    "github_repo": "astroplan",
+    "github_version": "main",
+    "doc_path": "docs",
+}
+
+# Add any extra paths that contain custom files (such as robots.txt or
+# .htaccess) here, relative to this directory. These files are copied
+# directly to the root of the documentation.
+html_extra_path = ["robots.txt"]
+
 #
 # Some warnings are impossible to suppress, and you can list specific references
 # that should be ignored in a nitpick-exceptions file which should be inside
@@ -199,4 +227,4 @@ nitpicky = True
 #         continue
 #     dtype, target = line.split(None, 1)
 #     target = target.strip()
-#     nitpick_ignore.append((dtype, six.u(target)))
+#     nitpick_ignore.append((dtype, str(target)))

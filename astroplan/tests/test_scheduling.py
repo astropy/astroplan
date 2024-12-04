@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 import numpy as np
 from astropy.time import Time
@@ -157,6 +155,30 @@ def test_priority_scheduler():
     # filled schedule
     scheduler(blocks, schedule)
     scheduler(blocks, schedule)
+
+    # Check if the order of equal values is respected:
+    # 1. For equal priorities in blocks
+    # 2. For equal scores (boolean_constraint)
+    constraints = [AirmassConstraint(3, boolean_constraint=True)]
+    scheduler.constraints = constraints
+    # Any resolution coarser than this may result in gaps between the blocks
+    scheduler.time_resolution = 20*u.second
+    # This only happens with more than 16 items or so
+    targets_18 = [polaris, polaris, polaris, polaris, polaris, polaris,
+                  polaris, polaris, polaris, polaris, polaris, polaris,
+                  polaris, polaris, polaris, polaris, polaris, polaris]
+    blocks = [ObservingBlock(t, 4*u.minute, 5, name=i) for i, t in enumerate(targets_18)]
+
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
+
+    for i, t in enumerate(targets_18):
+        # Order of blocks
+        block = schedule.observing_blocks[i]
+        assert block.name == i
+        if i < len(targets_18) - 1:
+            # Same score for all timeslots, should be filled from the start without gaps
+            assert block.end_time.isclose(schedule.observing_blocks[i+1].start_time)
 
 
 def test_sequential_scheduler():

@@ -4,9 +4,6 @@ Specify and constraints to determine which targets are observable for
 an observer.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 # Standard library
 from abc import ABCMeta, abstractmethod
 import datetime
@@ -16,7 +13,7 @@ import warnings
 # Third-party
 from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_body, get_sun, get_moon, Galactic, SkyCoord
+from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
 from astropy import table
 
 import numpy as np
@@ -354,7 +351,7 @@ class AltitudeConstraint(Constraint):
             uppermask = alt <= self.max
             return lowermask & uppermask
         else:
-            return max_best_rescale(alt, self.min, self.max)
+            return max_best_rescale(alt, self.min, self.max, greater_than_max=0)
 
 
 class AirmassConstraint(AltitudeConstraint):
@@ -550,6 +547,7 @@ class SunSeparationConstraint(Constraint):
         # by the observer.
         # 'get_sun' returns ICRS coords.
         sun = get_body('sun', times, location=observer.location)
+        targets = get_skycoord(targets)
         solar_separation = sun.separation(targets)
 
         if self.min is None and self.max is not None:
@@ -590,11 +588,12 @@ class MoonSeparationConstraint(Constraint):
         self.ephemeris = ephemeris
 
     def compute_constraint(self, times, observer, targets):
-        moon = get_moon(times, location=observer.location, ephemeris=self.ephemeris)
+        moon = get_body("moon", times, location=observer.location, ephemeris=self.ephemeris)
         # note to future editors - the order matters here
         # moon.separation(targets) is NOT the same as targets.separation(moon)
         # the former calculates the separation in the frame of the moon coord
         # which is GCRS, and that is what we want.
+        targets = get_skycoord(targets)
         moon_separation = moon.separation(targets)
 
         if self.min is None and self.max is not None:

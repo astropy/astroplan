@@ -1,11 +1,9 @@
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 import datetime as dt
 
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import Galactic, SkyCoord, get_sun, get_moon
+from astropy.coordinates import Galactic, SkyCoord, get_sun, get_body
 from astropy.utils import minversion
 import pytest
 
@@ -96,6 +94,17 @@ def test_observability_table():
 
     assert all(ttab['fraction of time observable'] == stab['fraction of time observable'])
     assert 'time observable' in stab.colnames
+
+
+def test_altitude_constraint():
+    subaru = Observer.at_site("Subaru")
+    time = Time('2001-02-03 15:35:00')
+    time_range = Time([time, time+3*u.hour])
+
+    constraint = AltitudeConstraint(min=40*u.deg, max=50*u.deg, boolean_constraint=False)
+    results = constraint(subaru, vega, times=time_grid_from_range(time_range))
+    # Check if below min and above max values are 0
+    assert np.all([results != 0][0] == [False, False, True,  True,  False, False])
 
 
 def test_compare_altitude_constraint_and_observer():
@@ -193,7 +202,7 @@ def test_moon_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
     altaz_frame = apo.altaz(time)
-    moon = get_moon(time, apo.location).transform_to(altaz_frame)
+    moon = get_body("moon", time, apo.location).transform_to(altaz_frame)
     one_deg_away = SkyCoord(az=moon.az, alt=moon.alt+1*u.deg, frame=altaz_frame)
     five_deg_away = SkyCoord(az=moon.az+5*u.deg, alt=moon.alt,
                              frame=altaz_frame)

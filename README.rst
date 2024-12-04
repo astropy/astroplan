@@ -7,19 +7,23 @@ Observation planning package for astronomers
 * Docs: https://astroplan.readthedocs.io/
 * License: BSD-3
 
-.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
-    :target: http://www.astropy.org/
+.. image:: https://readthedocs.org/projects/astroplan/badge/?version=latest
+    :target: https://astroplan.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
-.. image:: http://img.shields.io/pypi/v/astroplan.svg?text=version
-    :target: https://pypi.python.org/pypi/astroplan/
-    :alt: Latest release
-    
 .. image:: http://img.shields.io/badge/arXiv-1709.03913-red.svg?style=flat
     :target: https://arxiv.org/abs/1712.09631
     :alt: arXiv paper
 
 .. image:: https://github.com/astropy/astroplan/workflows/CI%20Tests/badge.svg
     :target: https://github.com/astropy/astroplan/actions
+
+.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
+    :target: http://www.astropy.org/
+
+.. image:: http://img.shields.io/pypi/v/astroplan.svg?text=version
+    :target: https://pypi.python.org/pypi/astroplan/
+    :alt: Latest release
 
 Attribution
 +++++++++++

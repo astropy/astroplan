@@ -1,4 +1,23 @@
-0.9 (unreleased)
+0.11 (unreleased)
+-----------------
+
+0.10.1 (2024-08-13)
+-------------------
+
+- Compatibility with numpy 2.0. [#587]
+
+0.10 (2024-04-04)
+-----------------
+
+- Fix compatibility with astropy v6.0.
+
+0.9.1 (2023-09-20)
+------------------
+
+- Fix bug when ``FixedTarget`` objects are passed to methods that calculate
+  lunar coordinates. [#568]
+
+0.9 (2023-07-27)
 ----------------
 
 - Fix time range in ``months_observable`` to not be only in 2014. Function now
@@ -6,6 +25,8 @@
 
 - Fix ``Observer`` not having longtitude, latitude, and elevation parameters
   as class attributes. They are now properties calculated from the ``location``.
+
+- Documentation revisions and theme update [#563]
 
 0.8 (2021-01-26)
 ----------------

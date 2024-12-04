@@ -3,9 +3,6 @@
 Tools for scheduling observations.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import copy
 from abc import ABCMeta, abstractmethod
 
@@ -24,7 +21,7 @@ __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Transitioner', 'Scorer']
 
 
-class ObservingBlock(object):
+class ObservingBlock:
     """
     An observation to be scheduled, consisting of a target and associated
     constraints on observations.
@@ -98,7 +95,7 @@ class ObservingBlock(object):
         return ob
 
 
-class Scorer(object):
+class Scorer:
     """
     Returns scores and score arrays from the evaluation of constraints on
     observing blocks
@@ -166,7 +163,7 @@ class Scorer(object):
         return sc
 
 
-class TransitionBlock(object):
+class TransitionBlock:
     """
     Parameterizes the "dead time", e.g. between observations, while the
     telescope is slewing, instrument is reconfiguring, etc.
@@ -224,7 +221,7 @@ class TransitionBlock(object):
         return tb
 
 
-class Schedule(object):
+class Schedule:
     """
     An object that represents a schedule, consisting of a list of
     `~astroplan.scheduling.Slot` objects.
@@ -423,7 +420,7 @@ class Schedule(object):
             return slot_index - 1
 
 
-class Slot(object):
+class Slot:
     """
     A time slot consisting of a start and end time
     """
@@ -481,7 +478,7 @@ class Slot(object):
             return [new_slot]
 
 
-class Scheduler(object):
+class Scheduler:
     """
     Schedule a set of `~astroplan.scheduling.ObservingBlock` objects
     """
@@ -748,7 +745,7 @@ class PriorityScheduler(Scheduler):
         score_array = scorer.create_score_array(time_resolution)
 
         # Sort the list of blocks by priority
-        sorted_indices = np.argsort(_block_priorities)
+        sorted_indices = np.argsort(_block_priorities, kind='mergesort')
 
         unscheduled_blocks = []
         # Compute the optimal observation time in priority order
@@ -786,7 +783,7 @@ class PriorityScheduler(Scheduler):
                 # does not prevent us from fitting it in.
                 # loop over valid times and see if it fits
                 # TODO: speed up by searching multiples of time resolution?
-                for idx in np.argsort(sum_scores)[::-1]:
+                for idx in np.argsort(-sum_scores, kind='mergesort'):
                     if sum_scores[idx] <= 0.0:
                         # we've run through all optimal blocks
                         _is_scheduled = False
@@ -948,7 +945,7 @@ class PriorityScheduler(Scheduler):
         return True
 
 
-class Transitioner(object):
+class Transitioner:
     """
     A class that defines how to compute transition times from one block to
     another.

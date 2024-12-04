@@ -1,7 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from six import string_types
 
 # Standard library
 import sys
@@ -9,7 +6,7 @@ import datetime
 import warnings
 # Third-party
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_moon, Angle, Longitude)
+                                 get_body, Angle, Longitude)
 import astropy.units as u
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
@@ -216,7 +213,7 @@ class Observer(object):
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
-        elif isinstance(timezone, string_types):
+        elif isinstance(timezone, str):
             self.timezone = pytz.timezone(timezone)
         else:
             raise TypeError('timezone keyword should be a string, or an '
@@ -272,6 +269,85 @@ class Observer(object):
                         value = "'{}'".format(value)
                     attributes_strings.append("{}={}".format(name, value))
         return "<{}: {}>".format(class_name, ",\n    ".join(attributes_strings))
+
+    def _key(self):
+        """
+        Generate a tuple of the attributes that determine uniqueness of
+        `~astroplan.Observer` objects.
+
+        Returns
+        -------
+        key : tuple
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck._key()
+        ('Keck', None, None, None, <Longitude -155.47833333 deg>,
+            <Latitude 19.82833333 deg>, <Quantity 4160. m>,
+            <DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>)
+        """
+
+        return (self.name,
+                self.pressure,
+                self.temperature,
+                self.relative_humidity,
+                self.longitude,
+                self.latitude,
+                self.elevation,
+                self.timezone,)
+
+    def __hash__(self):
+        """
+        Hash the `~astroplan.Observer` object.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> hash(keck)
+        -3872382927731250571
+        """
+
+        return hash(self._key())
+
+    def __eq__(self, other):
+        """
+        Equality check for `~astroplan.Observer` objects.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck2 = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> keck == keck2
+        True
+        """
+
+        if isinstance(other, Observer):
+            return self._key() == other._key()
+        else:
+            return NotImplemented
+
+    def __ne__(self, other):
+        """
+        Inequality check for `~astroplan.Observer` objects.
+
+        Examples
+        --------
+
+        >>> from astroplan import Observer
+        >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
+        >>> kpno = Observer.at_site("KPNO", timezone="US/Arizona")
+        >>> keck != kpno
+        True
+        """
+
+        return not self.__eq__(other)
 
     @classmethod
     def at_site(cls, site_name, **kwargs):
@@ -513,7 +589,7 @@ class Observer(object):
         """
         if target is not None:
             if target is MoonFlag:
-                target = get_moon(time, location=self.location)
+                target = get_body("moon", time, location=self.location)
             elif target is SunFlag:
                 target = get_sun(time)
 
@@ -1734,7 +1810,7 @@ class Observer(object):
         if not isinstance(time, Time):
             time = Time(time)
 
-        moon = get_moon(time, location=self.location, ephemeris=ephemeris)
+        moon = get_body("moon", time, location=self.location, ephemeris=ephemeris)
         return self.altaz(time, moon)
 
     def sun_altaz(self, time):

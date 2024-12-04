@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 # Standard library
 import datetime
@@ -159,22 +157,27 @@ def test_rise_set_transit_nearest_vector():
     time = Time('2022-06-21 00:00:00')
 
     obs = Observer(location=location)
-    rise_vector = obs.target_rise_time(time, sc_list)
+
+    with pytest.warns(TargetAlwaysUpWarning):
+        rise_vector = obs.target_rise_time(time, sc_list)
+        polaris_rise = obs.target_rise_time(time, polaris)
+
     vega_rise = obs.target_rise_time(time, vega)
     mira_rise = obs.target_rise_time(time, mira)
     sirius_rise = obs.target_rise_time(time, sirius)
-    polaris_rise = obs.target_rise_time(time, polaris)
 
     assert rise_vector[0] == vega_rise
     assert rise_vector[1] == mira_rise
     assert rise_vector[2] == sirius_rise
     assert rise_vector[3].value.mask and polaris_rise.value.mask
 
-    set_vector = obs.target_set_time(time, sc_list)
+    with pytest.warns(TargetAlwaysUpWarning):
+        set_vector = obs.target_set_time(time, sc_list)
+        polaris_set = obs.target_set_time(time, polaris)
+
     vega_set = obs.target_set_time(time, vega)
     mira_set = obs.target_set_time(time, mira)
     sirius_set = obs.target_set_time(time, sirius)
-    polaris_set = obs.target_set_time(time, polaris)
 
     assert set_vector[0] == vega_set
     assert set_vector[1] == mira_set
@@ -1353,3 +1356,32 @@ def test_observer_lon_lat_el():
     obs = Observer.at_site('Subaru')
     for attr in ['longitude', 'latitude', 'elevation']:
         assert hasattr(obs, attr)
+
+
+def test_hash_observer():
+    """Test that Observer objects are hashable."""
+    obs1 = Observer.at_site('Subaru')
+    obs2 = Observer.at_site('Subaru')
+    assert hash(obs1) == hash(obs2)
+
+    obs3 = Observer.at_site('Keck', timezone='US/Hawaii')
+    assert hash(obs1) != hash(obs3)
+
+    obs4 = Observer.at_site('Keck', timezone='US/Hawaii')
+    assert hash(obs3) == hash(obs4)
+
+
+def test_eq_observer():
+    """Test that Observer objects are comparable."""
+    obs1 = Observer.at_site('Subaru')
+    obs2 = Observer.at_site('Subaru')
+    assert obs1 == obs2
+
+    obs3 = Observer.at_site('Keck')
+    assert obs1 != obs3
+
+    obs4 = Observer.at_site('Subaru', timezone='US/Hawaii')
+    assert obs1 != obs4
+
+    obs5 = Observer.at_site('Subaru', timezone='US/Hawaii')
+    assert obs4 == obs5
