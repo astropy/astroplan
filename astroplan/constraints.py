@@ -728,12 +728,9 @@ class LocalTimeConstraint(Constraint):
         Constrain the observations to targets that are observable between
         23:50 and 04:08 local time:
 
-        >>> from astroplan import Observer
-        >>> from astroplan.constraints import LocalTimeConstraint
         >>> import datetime as dt
-        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")  # doctest: +REMOTE_DATA
-        >>> # bound times between 23:50 and 04:08 local Hawaiian time
-        >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
+        >>> from astroplan.constraints import LocalTimeConstraint
+        >>> constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
         """
 
         self.min = min
