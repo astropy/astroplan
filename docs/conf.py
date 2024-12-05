@@ -67,12 +67,6 @@ copyright = '{0}, {1}'.format(
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-__import__(project)
-package = sys.modules[project]
-
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
 
 # The full version, including alpha/beta/rc tags.
 release = metadata.version(project)
@@ -166,8 +160,7 @@ extensions += [
 ]
 
 # -- Resolving issue number to links in changelog -----------------------------
-github_issues_url = 'https://github.com/{0}/issues/'.format(setup_cfg['github_p\
-roject'])
+github_issues_url = 'https://github.com/astropy/astroplan/issues/'
 
 # -- Options for linkcheck output -------------------------------------------
 linkcheck_retry = 5

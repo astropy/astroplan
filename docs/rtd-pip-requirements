@@ -1,7 +1,0 @@
-numpy >= 1.6
-matplotlib
-Cython
-astropy >= 5
-pytz
-astroquery
-sphinx-astropy
