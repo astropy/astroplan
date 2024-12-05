@@ -42,18 +42,20 @@ jobs:
 
           - name: Windows - Python 3.11 with all optional dependencies
             os: windows-latest
-            python: 3.11
+            python: '3.11'
             toxenv: py11-test-alldeps
+            toxargs: -v
 
           - name: Python 3.11 with remote data, all dependencies, and coverage
             os: ubuntu-latest
-            python: 3.11
+            python: '3.11'
             toxenv: py11-test-alldeps-cov
-            toxposargs: --remote-data
+            toxargs: -v
+            posargs: --remote-data=any
 
           - name: Python 3.11 with latest dev versions of key dependencies
             os: ubuntu-latest
-            python: 3.11
+            python: '3.11'
             toxenv: py11-test-devdeps
 
           - name: Test building of Sphinx docs
@@ -79,4 +81,4 @@ jobs:
       run: sudo apt-get -y install graphviz
     - name: Test with tox
       run: |
-        tox -e ${{ matrix.toxenv }}
+        python -m tox -e ${{ matrix.toxenv }} ${{ matrix.toxargs }} -- ${{ matrix.posargs }}
