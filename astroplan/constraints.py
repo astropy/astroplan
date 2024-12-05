@@ -4,9 +4,6 @@ Specify and constraints to determine which targets are observable for
 an observer.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 # Standard library
 from abc import ABCMeta, abstractmethod
 import datetime
@@ -240,7 +237,7 @@ class Constraint(object):
             WHAT HAPPENS WHEN BOTH TIMES AND TIME_RANGE ARE SET?
         time_range : `~astropy.time.Time` (length = 2)
             Lower and upper bounds on time sequence.
-        time_grid_resolution : `~astropy.units.quantity`
+        time_grid_resolution : `~astropy.units.Quantity`
             Time-grid spacing
         grid_times_targets : bool
             if True, grids the constraint result with targets along the first
