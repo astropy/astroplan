@@ -33,6 +33,7 @@ polaris = FixedTarget(coord=SkyCoord(ra=37.95456067*u.deg,
                                      dec=89.26410897*u.deg), name="Polaris")
 
 
+@pytest.mark.remote_data
 def test_at_night_basic():
     subaru = Observer.at_site("Subaru")
     time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
@@ -53,6 +54,7 @@ def test_at_night_basic():
                    len(targets)*[observer_is_night_all])
 
 
+@pytest.mark.remote_data
 def test_observability_table():
     subaru = Observer.at_site("Subaru")
     # time_ranges = [Time(['2001-02-03 04:05:06', '2001-02-04 04:05:06']),  # 1 day
@@ -96,6 +98,7 @@ def test_observability_table():
     assert 'time observable' in stab.colnames
 
 
+@pytest.mark.remote_data
 def test_altitude_constraint():
     subaru = Observer.at_site("Subaru")
     time = Time('2001-02-03 15:35:00')
@@ -107,6 +110,7 @@ def test_altitude_constraint():
     assert np.all([results != 0][0] == [False, False, True,  True,  False, False])
 
 
+@pytest.mark.remote_data
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
     time_ranges = [Time([time, time+1*u.hour]) + offset
@@ -128,6 +132,7 @@ def test_compare_altitude_constraint_and_observer():
         assert all(always_from_observer == always_from_constraint)
 
 
+@pytest.mark.remote_data
 def test_compare_airmass_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
     time_ranges = [Time([time, time+1*u.hour]) + offset
@@ -149,6 +154,7 @@ def test_compare_airmass_constraint_and_observer():
         assert all(always_from_observer == always_from_constraint)
 
 
+@pytest.mark.remote_data
 def test_galactic_plane_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -174,6 +180,7 @@ def test_galactic_plane_separation():
 
 # in astropy before v1.0.4, a recursion error is triggered by this test
 @pytest.mark.skipif('APY_LT104')
+@pytest.mark.remote_data
 # astropy.coordinates.errors.NonRotationTransformationWarning
 @pytest.mark.filterwarnings("ignore")
 def test_sun_separation():
@@ -200,6 +207,7 @@ def test_sun_separation():
     assert np.all(is_constraint_met == [False, True, True])
 
 
+@pytest.mark.remote_data
 # astropy.coordinates.errors.NonRotationTransformationWarning
 @pytest.mark.filterwarnings("ignore")
 def test_moon_separation():
@@ -230,6 +238,7 @@ def test_moon_separation():
     assert np.all(is_constraint_met == [False, True, True])
 
 
+@pytest.mark.remote_data
 def test_moon_illumination():
     times = Time(["2015-08-28 03:30", "2015-08-28 12:00",
                   "2015-09-05 10:30", "2015-09-15 18:35"])
@@ -268,6 +277,7 @@ def test_moon_illumination():
     assert np.all(is_constraint_met == [True, False, False, False])
 
 
+@pytest.mark.remote_data
 def test_local_time_constraint_utc():
     time = Time('2001-02-03 04:05:06')
     subaru = Observer.at_site("Subaru")
@@ -284,6 +294,7 @@ def test_local_time_constraint_utc():
     assert is_constraint_met is np.bool_(True)
 
 
+@pytest.mark.remote_data
 def test_local_time_constraint_hawaii_tz():
     # Define timezone in Observer.timezone
     time = Time('2001-02-03 04:05:06')
@@ -301,6 +312,7 @@ def test_local_time_constraint_hawaii_tz():
     assert is_constraint_met is np.bool_(True)
 
 
+@pytest.mark.remote_data
 def test_docs_example():
     # Test the example in astroplan/docs/tutorials/constraints.rst
     target_table_string = """# name ra_degrees dec_degrees
@@ -364,6 +376,7 @@ def test_docs_example():
     assert all(observability == [False, False, True, False, False, False])
 
 
+@pytest.mark.remote_data
 def test_regression_airmass_141():
     subaru = Observer.at_site("Subaru")
     time = Time('2001-1-1 12:00')
@@ -426,6 +439,7 @@ constraint_tests = [
 ]
 
 
+@pytest.mark.remote_data
 @pytest.mark.parametrize('constraint', constraint_tests)
 # astropy.coordinates.errors.NonRotationTransformationWarning
 @pytest.mark.filterwarnings("ignore")
@@ -443,6 +457,7 @@ def test_regression_shapes(constraint):
         constraint(lapalma, targets, times)
 
 
+@pytest.mark.remote_data
 def test_caches_shapes():
     times = Time([2457884.43350526, 2457884.5029497, 2457884.57239415], format='jd')
     m31 = SkyCoord(10.6847929*u.deg, 41.269065*u.deg)
@@ -455,6 +470,7 @@ def test_caches_shapes():
     assert ac(observer, targets, times, grid_times_targets=False).shape == (3,)
 
 
+@pytest.mark.remote_data
 def test_eclipses():
     subaru = Observer.at_site("Subaru")
 
@@ -476,6 +492,7 @@ def test_eclipses():
     assert np.all(np.array([False, True, False]) == pc(subaru, None, times))
 
 
+@pytest.mark.remote_data
 def test_event_observable():
 
     epoch = Time(2452826.628514, format='jd')

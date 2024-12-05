@@ -83,7 +83,7 @@ class FixedTarget(Target):
     for the coordinates of Sirius by name:
 
     >>> from astroplan import FixedTarget
-    >>> sirius = FixedTarget.from_name("Sirius")
+    >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
     """
 
     def __init__(self, coord, name=None, **kwargs):
@@ -125,8 +125,8 @@ class FixedTarget(Target):
         Examples
         --------
         >>> from astroplan import FixedTarget
-        >>> sirius = FixedTarget.from_name("Sirius")
-        >>> sirius.coord                              # doctest: +FLOAT_CMP
+        >>> sirius = FixedTarget.from_name("Sirius")  # doctest: +REMOTE_DATA
+        >>> sirius.coord                              # doctest: +FLOAT_CMP +REMOTE_DATA
         <SkyCoord (ICRS): (ra, dec) in deg
             ( 101.28715533, -16.71611586)>
         """
