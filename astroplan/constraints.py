@@ -813,12 +813,11 @@ class TimeConstraint(Constraint):
         Constrain the observations to targets that are observable between
         2016-03-28 and 2016-03-30:
 
-        >>> from astroplan import Observer
         >>> from astropy.time import Time
-        >>> subaru = Observer.at_site("Subaru")  # doctest: +REMOTE_DATA
+        >>> from astroplan.constraints import TimeConstraint
         >>> t1 = Time("2016-03-28T12:00:00")
         >>> t2 = Time("2016-03-30T12:00:00")
-        >>> constraint = TimeConstraint(t1,t2)
+        >>> constraint = TimeConstraint(t1, t2)
         """
         self.min = min
         self.max = max
@@ -904,7 +903,8 @@ class PhaseConstraint(Constraint):
 
         Examples
         --------
-        To constrain observations on orbital phases between 0.4 and 0.6,
+        To constrain observations on orbital phases between 0.4 and 0.6:
+
         >>> from astroplan import PeriodicEvent
         >>> from astropy.time import Time
         >>> import astropy.units as u
@@ -914,6 +914,7 @@ class PhaseConstraint(Constraint):
         The minimum and maximum phase must be described on the interval [0, 1).
         To constrain observations on orbital phases between 0.6 and 1.2, for
         example, you should subtract one from the second number:
+
         >>> constraint = PhaseConstraint(binary, min=0.6, max=0.2)
         """
         self.periodic_event = periodic_event
