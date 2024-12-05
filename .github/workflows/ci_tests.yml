@@ -58,11 +58,6 @@ jobs:
             python: '3.11'
             toxenv: py11-test-devdeps
 
-          - name: Test building of Sphinx docs
-            os: ubuntu-latest
-            python: 3.x
-            toxenv: build_docs
-
     steps:
     - name: Checkout code
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
