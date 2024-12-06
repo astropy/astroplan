@@ -30,33 +30,38 @@ jobs:
             python: 3.x
             toxenv: codestyle
 
-          - name: Python 3.7 with minimal dependencies
+          - name: Link checks
             os: ubuntu-latest
-            python: 3.7
-            toxenv: py37-test
+            python: 3.x
+            toxenv: linkcheck
 
-          - name: OS X - Python 3.9 with minimal dependencies
+          - name: OS X - Python 3.13 with minimal dependencies
             os: macos-latest
-            python: 3.9
-            toxenv: py39-test
+            python: '3.13'
+            toxenv: py313-test
 
           - name: Windows - Python 3.11 with all optional dependencies
             os: windows-latest
             python: '3.11'
-            toxenv: py11-test-alldeps
+            toxenv: py311-test-alldeps
             toxargs: -v
 
-          - name: Python 3.11 with remote data, all dependencies, and coverage
+          - name: Python 3.12 with remote data, all dependencies, and coverage
             os: ubuntu-latest
-            python: '3.11'
-            toxenv: py11-test-alldeps-cov
+            python: '3.12'
+            toxenv: py312-test-alldeps-cov
             toxargs: -v
             posargs: --remote-data=any
 
-          - name: Python 3.11 with latest dev versions of key dependencies
+          - name: Python 3.13 with latest dev versions of key dependencies
+            os: ubuntu-latest
+            python: '3.13'
+            toxenv: py313-test-devdeps
+
+          - name: Python 3.11 with oldest version of key dependencies
             os: ubuntu-latest
             python: '3.11'
-            toxenv: py11-test-devdeps
+            toxenv: py311-test-oldestdeps
 
     steps:
     - name: Checkout code
@@ -70,7 +75,7 @@ jobs:
     - name: Install base dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install tox codecov
+        python -m pip install tox
     - name: Install graphviz dependency
       if: ${{ contains(matrix.toxenv, 'build_docs') }}
       run: sudo apt-get -y install graphviz
