@@ -70,6 +70,9 @@ namespaces = true
     "baseline_images/*.png",
 ]
 
+[tool.setuptools_scm]
+write_to = "astroplan/_version.py"
+
 [build-system]
 requires = ["setuptools",
             "setuptools_scm"]
