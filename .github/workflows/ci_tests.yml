@@ -45,6 +45,7 @@ jobs:
           linux: py312-test-alldeps-cov
           toxargs: -v
           posargs: --remote-data=any
+          coverage: codecov
 
         - name: Python 3.11 with oldest version of key dependencies
           linux: py311-test-oldestdeps
