@@ -5,12 +5,20 @@
 name: CI Tests
 
 on:
+  schedule:
+    # run every Wednesday at 6am UTC
+    - cron: '0 6 * * 3'
   push:
     branches:
       - main
+    tags:
+    - '*'
   pull_request:
      branches: # only build on PRs against 'main' if you need to further limit when CI is run.
       - main
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
