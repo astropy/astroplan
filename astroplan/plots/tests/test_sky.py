@@ -35,7 +35,7 @@ def test_timezone():
     from astropy import units as u
 
     from astroplan import Observer
-    from astroplan.time_dependent import plot_airmass
+    from astroplan.plots.time_dependent import plot_airmass
 
     betelgeuse = coordinates.SkyCoord(88.79293899*u.deg, 7.407064*u.deg, frame='icrs')
     observer = Observer(coordinates.EarthLocation.of_site('subaru'))
