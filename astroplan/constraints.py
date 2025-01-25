@@ -32,7 +32,8 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "LocalTimeConstraint", "PrimaryEclipseConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
-           "min_best_rescale", "PhaseConstraint", "is_event_observable"]
+           "min_best_rescale", "PhaseConstraint", "is_event_observable",
+           "HourAngleConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
@@ -931,6 +932,80 @@ class PhaseConstraint(Constraint):
                         (phase >= self.min) & (phase <= self.max),
                         (phase >= self.min) | (phase <= self.max))
         return mask
+
+
+class HourAngleConstraint(Constraint):
+    """
+    Constrain the hour angle of a target.
+
+    Parameters
+    ----------
+    min : float or `None`
+        Minimum hour angle of the target. `None` indicates no limit.
+    max : float or `None`
+        Maximum hour angle of the target. `None` indicates no limit.
+    use_astropy : boolean
+        Use Astropy for hour angle calculation
+    sidereal_model : str
+        Sidereal time model.
+        See astropy.time.Time.sidereal_time docs for options.
+    """
+
+    def __init__(self, min=-5.5, max=5.5, use_astropy=True,
+                 sidereal_model=None):
+        self.min = min
+        self.max = max
+        self.use_astropy = use_astropy
+        self.sidereal_model = sidereal_model
+
+    def compute_constraint(self, times, observer, targets):
+
+        if self.use_astropy:
+            lst = times.sidereal_time('mean',
+                                      longitude='tio',
+                                      model=self.sidereal_model) + \
+                                              observer.location.lon
+            has = np.mod([(lst - target.ra).hour for target in targets], 24)
+        else:
+            if times.isscalar:
+                jds = np.array([times.jd])
+            else:
+                jds = np.array([t.jd for t in times])
+            GMST = 18.697374558 + 24.06570982441908 * (jds - 2451545)
+            GMST = np.mod(GMST, 24)
+
+            lon = observer.location.lon.value / 15
+            if targets.size == 1:
+                lst = np.mod(GMST + lon, 24)
+                ras = np.tile([targets.ra.hour], len(jds))
+            else:
+                if len(jds) == 1:
+                    lst = np.array([np.mod(GMST + lon, 24)] * len(targets)).flatten()
+                    ras = np.array([target.ra.hour for target in targets]).flatten()
+                else:
+                    lst = np.tile(np.mod(GMST + lon, 24), (len(targets), 1))
+                    ras = np.tile(
+                        np.array([target.ra.hour for target in targets]).flatten(),
+                        (len(jds), 1),
+                    ).T
+            has = np.mod(lst - ras, 24)
+
+        # ensures no extra dimensions
+        has = np.squeeze(has)
+        # Use hours from -12 to 12
+        idx = np.where(has > 12)[0]
+        has[idx] = has[idx] - 24
+
+        if self.min is None and self.max is not None:
+            mask = has <= self.max
+        elif self.max is None and self.min is not None:
+            mask = self.min <= has
+        elif self.min is not None and self.max is not None:
+            mask = (self.min <= has) & (has <= self.max)
+        else:
+            raise ValueError("No max and/or min specified in " "HourAngleConstraint.")
+
+        return np.squeeze(mask)
 
 
 def is_always_observable(constraints, observer, targets, times=None,
