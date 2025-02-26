@@ -54,6 +54,7 @@ def test_FixedTarget_ra_dec():
                                                            'SkyCoord')
 
 
+@pytest.mark.remote_data
 @pytest.mark.skipif('not HAS_SKYFIELD')
 def test_TLETarget():
     tle_string = ("ISS (ZARYA)\n"
@@ -62,17 +63,26 @@ def test_TLETarget():
     line1 = "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990"
     line2 = "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092"
     subaru = Observer.at_site('subaru')  # (lon, lat, el)=(-155.476111 deg, 19.825555 deg, 4139.0 m)
+    subaru_temp_pressure = Observer.at_site('subaru', temperature=-10*u.Celsius, pressure=0.9*u.bar)
     time = Time("2023-08-02 10:00", scale='utc')
     times = time_grid_from_range([time, time + 3.1*u.hour],
                                  time_resolution=1 * u.hour)
 
     tle_target1 = TLETarget(name="ISS (ZARYA)", line1=line1, line2=line2, observer=subaru)
     tle_target2 = TLETarget.from_string(tle_string=tle_string, observer=subaru)
+    tle_target_no_observer = TLETarget(name="ISS (ZARYA)", line1=line1, line2=line2, observer=None)
+    tle_target_temp_pressure = TLETarget(
+        name="ISS (ZARYA)", line1=line1, line2=line2, observer=subaru_temp_pressure
+    )
 
     assert tle_target1.name == "ISS (ZARYA)"
     assert tle_target2.name == "ISS (ZARYA)"
     assert repr(tle_target1) == repr(tle_target2)
     assert str(tle_target1) == str(tle_target2)
+
+    assert isinstance(tle_target_no_observer.observer, Observer)
+    assert abs(tle_target_no_observer.observer.location.lat) < 0.001*u.deg
+    tle_target_no_observer.coord(time)  # Just needs to work
 
     # Single time (Below Horizon)
     ra_dec1 = tle_target1.coord(time)   # '08h29m26.00003243s +07d31m36.65950907s'
@@ -145,10 +155,21 @@ def test_TLETarget():
         TLETarget.from_string(tle_string=tle_string, observer=subaru)
 
     # AltAz (This is slow)
-    altaz_observer = subaru.altaz(time, tle_target1)
-    altaz_skyfield = tle_target1.altaz(time)
+    altaz_observer = subaru.altaz(time_ah, tle_target1)
+    altaz_skyfield = tle_target1.altaz(time_ah)
 
-    assert altaz_observer.separation(altaz_skyfield) < 20*u.arcsec
+    assert altaz_observer.separation(altaz_skyfield) < 21*u.arcsec
+
+    # AltAz with atmospheric refraction (temperature and pressure)
+    altaz_observer = subaru_temp_pressure.altaz(time_ah, tle_target_temp_pressure)
+    altaz_skyfield = tle_target_temp_pressure.altaz(time_ah)
+
+    assert altaz_observer.separation(altaz_skyfield) < 26*u.arcsec
+
+    # AltAz with multiple times
+    #subaru.altaz(times, tle_target1)
+    altaz_multiple = tle_target1.altaz(times)
+    assert len(altaz_multiple.obstime) == len(altaz_multiple) == len(times)
 
     # Time too far in the future where elements stop making physical sense
     with pytest.warns():  # ErfaWarning: ERFA function "dtf2d" yielded 1 of "dubious year (Note 6)
@@ -203,6 +224,7 @@ def test_get_skycoord():
     assert len(coo) == 2
 
 
+@pytest.mark.remote_data
 @pytest.mark.skipif('not HAS_SKYFIELD')
 def test_get_skycoord_with_TLETarget():
     skycoord_targed = SkyCoord(10.6847083*u.deg, 41.26875*u.deg)

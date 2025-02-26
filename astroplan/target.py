@@ -220,7 +220,7 @@ class TLETarget(Target):
             Name of the target, used for plotting and representing the target
             as a string
 
-        observer : `~astropy.coordinates.EarthLocation`, `~astroplan.Observer`, optional
+        observer : `~astroplan.Observer`, optional
             The location of observer.
             If `None`, the observer is assumed to be at sea level at the equator.
 
@@ -237,13 +237,16 @@ class TLETarget(Target):
         self.satellite = EarthSatellite(line1, line2, name, load.timescale())
 
         if observer is None:
-            self.observer = wgs84.latlon(0, 0, 0)
+            # Prevent circular import and usually not used
+            from .observer import Observer
+            self.observer = Observer(latitude=0*u.deg, longitude=0*u.deg, elevation=0*u.m)
         else:
-            observer = getattr(observer, 'location', observer)
-            longitude, latitude, height = observer.to_geodetic()
-            self.observer = wgs84.latlon(latitude.to(u.deg).value,
-                                         longitude.to(u.deg).value,
-                                         height.to(u.m).value)
+            self.observer = observer
+
+        longitude, latitude, height = self.observer.location.to_geodetic()
+        self.geographic_position = wgs84.latlon(latitude.to(u.deg).value,
+                                                longitude.to(u.deg).value,
+                                                height.to(u.m).value)
 
     @classmethod
     def from_string(cls, tle_string, name=None, *args, **kwargs):
@@ -300,7 +303,7 @@ class TLETarget(Target):
         ts = load.timescale()
         t = ts.from_astropy(time)
 
-        topocentric = (self.satellite - self.observer).at(t)
+        topocentric = (self.satellite - self.geographic_position).at(t)
 
         # Check for invalid TLE data. A non-None usually message means the computation went beyond
         # the physically sensible point. Details:
@@ -333,7 +336,13 @@ class TLETarget(Target):
         topocentric = self._compute_topocentric(time)
         ra, dec, distance = topocentric.radec()
         # No distance, in SkyCoord, distance is from frame origin, but here, it's from observer.
-        return SkyCoord(ra.hours*u.hourangle, dec.degrees*u.deg, obstime=time, frame='icrs')
+        return SkyCoord(
+            ra.hours*u.hourangle,
+            dec.degrees*u.deg,
+            obstime=time,
+            frame='icrs',
+            location=self.observer.location,
+        )
 
     def altaz(self, time=None):
         """
@@ -350,15 +359,28 @@ class TLETarget(Target):
             SkyCoord object representing the target's altitude and azimuth at the specified time(s)
         """
         topocentric = self._compute_topocentric(time)
-        alt, az, distance = topocentric.altaz()
 
-        earth_location = EarthLocation(lat=self.observer.latitude.degrees*u.deg,
-                                       lon=self.observer.longitude.degrees*u.deg,
-                                       height=self.observer.elevation.m*u.m)
+        temperature_C = None
+        pressure_mbar = None
+        if self.observer.temperature is not None:
+            temperature_C = self.observer.temperature.to_value(u.deg_C)
+        if self.observer.pressure is not None:
+            pressure_mbar = self.observer.pressure.to_value(u.mbar)
+            
+        alt, az, distance = topocentric.altaz(
+            temperature_C=temperature_C,
+            pressure_mbar=pressure_mbar,
+        )
+        
+        # 'relative_humidity' and 'obswl' were not used in coordinate calculation
+        altaz_frame = AltAz(
+            location=self.observer.location,
+            obstime=time,
+            pressure=self.observer.pressure,
+            temperature=self.observer.temperature,
+        )
 
-        altaz = AltAz(alt=alt.degrees*u.deg, az=az.degrees*u.deg,
-                      obstime=time, location=earth_location)
-        return SkyCoord(altaz)
+        return SkyCoord(alt=alt.degrees*u.deg, az=az.degrees*u.deg, frame=altaz_frame)
 
     def __repr__(self):
         return f'<{self.__class__.__name__} "{self.name}">'
