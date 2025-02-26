@@ -369,7 +369,10 @@ def test_priority_scheduler_TLETarget():
         start_time = Time('2035-08-02 10:00:00')
         end_time = start_time + 1*u.hour
         schedule = Schedule(start_time, end_time)
-    with pytest.warns(InvalidTLEDataWarning):
+    
+    # InvalidTLEDataWarning/AstropyWarning and
+    # ErfaWarning: ERFA function "utctai" yielded 121 of "dubious year (Note 3)"
+    with pytest.warns():
         scheduler(blocks, schedule)
     assert len(schedule.observing_blocks) == 3
     assert all([schedule.observing_blocks[0].target == vega,
