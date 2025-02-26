@@ -151,14 +151,18 @@ def test_TLETarget():
     assert altaz_observer.separation(altaz_skyfield) < 20*u.arcsec
 
     # Time too far in the future where elements stop making physical sense
-    with pytest.warns():    # ErfaWarning: ERFA function "dtf2d" yielded 1 of "dubious year (Note 6)
+    with pytest.warns():  # ErfaWarning: ERFA function "dtf2d" yielded 1 of "dubious year (Note 6)
         time_invalid = Time("2035-08-02 10:00", scale='utc')
         times_list = list(times)
         times_list[2] = Time("2035-08-02 10:00", scale='utc')
         times_invalid = Time(times_list)
-    with pytest.warns(InvalidTLEDataWarning):
+    # InvalidTLEDataWarning and
+    # ErfaWarning: ERFA function "utctai" yielded 1 of "dubious year (Note 3)"
+    with pytest.warns():
         assert np.isnan(tle_target1.coord(time_invalid).ra)
-    with pytest.warns(InvalidTLEDataWarning):
+    # InvalidTLEDataWarning and
+    # ErfaWarning: ERFA function "utctai" yielded 1 of "dubious year (Note 3)"
+    with pytest.warns():
         assert np.isnan(tle_target1.coord(times_invalid)[2].ra)
 
 
