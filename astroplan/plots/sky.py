@@ -13,7 +13,7 @@ __all__ = ['plot_sky', 'plot_sky_24hr']
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
              north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
-             warn_below_horizon=False, style_sheet=None):
+             warn_below_horizon=False, style_sheet=None, hours_value=np.array([])):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -80,6 +80,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         matplotlib style sheet to use. To see available style sheets in
         astroplan, print *astroplan.plots.available_style_sheets*. Defaults
         to the light theme.
+
+    hours_value : `numpy.ndarray`
+        Array with the labels of the hours to be plotted. The length of
+        this array must be equal to the length of the time array. If
+        passed, the hours will be plotted on the sky map.
 
     Returns
     -------
@@ -171,8 +176,35 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     if north_to_east_ccw is False:
         ax.set_theta_direction(-1)
 
-    # Plot target coordinates.
-    ax.scatter(az_plot, alt_plot, **style_kwargs)
+    # Hours added to map by F. Herpich 2025-05-19
+    if isinstance(hours_value, (list, tuple)):
+        hours_value = np.array(hours_value)
+    if not isinstance(hours_value, np.ndarray):
+        raise TypeError("hours_value must be a numpy array, list or tuple")
+
+    if len(hours_value) != len(time):
+        raise ValueError("hours_value must have the same length as the time array")
+
+    if hours_value.size > 0:
+        hoursvalue = hours_value[altitude <= 91.0]
+        if len(hoursvalue) > 1:
+            hoursname = ["%.1f" % i for i in hoursvalue]
+            for i, txt in enumerate(hoursname):
+                ax.annotate(txt, (az_plot[i].value, alt_plot[i].value),
+                            fontsize=8)
+        elif len(hoursvalue) == 1:
+            hoursname = ["%.1f" % hoursvalue[0]]
+            ax.annotate(hoursname[0], (az_plot[0].value, alt_plot[0].value),
+                        fontsize=8)
+        else:
+            pass
+
+    # Plot target coordinates. Modified by F. Herpich 2025-05-19
+    if 'c' in style_kwargs.keys():
+        colorformap = style_kwargs.pop('c')[altitude <= 91.0]
+        ax.scatter(az_plot, alt_plot, c=colorformap, **style_kwargs)
+    else:
+        ax.scatter(az_plot, alt_plot, **style_kwargs)
 
     # Set radial limits.
     ax.set_rlim(1, 91)
