@@ -190,11 +190,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         if len(hoursvalue) > 1:
             hoursname = ["%.1f" % i for i in hoursvalue]
             for i, txt in enumerate(hoursname):
-                ax.annotate(txt, (az_plot[i].value, alt_plot[i].value),
+                ax.annotate(txt, (az_plot[i], alt_plot[i]),
                             fontsize=8)
         elif len(hoursvalue) == 1:
             hoursname = ["%.1f" % hoursvalue[0]]
-            ax.annotate(hoursname[0], (az_plot[0].value, alt_plot[0].value),
+            ax.annotate(hoursname[0], (az_plot[0], alt_plot[0]),
                         fontsize=8)
         else:
             pass
