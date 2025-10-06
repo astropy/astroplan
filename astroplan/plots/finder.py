@@ -14,8 +14,7 @@ __all__ = ['plot_finder_image']
 def plot_finder_image(target, survey='DSS', fov_radius=10*u.arcmin,
                       log=False, ax=None, grid=False, reticle=False,
                       style_kwargs=None, reticle_style_kwargs=None,
-                      skyview_kwargs={}
-                     ):
+                      skyview_kwargs={}):
     """
     Plot survey image centered on ``target``.
 
