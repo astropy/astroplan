@@ -962,8 +962,8 @@ You can turn off the grid lines by setting the *grid* option to *False*:
 
     >>> guide_style = {'marker': '*'}
 
-    >>> plot_sky(polaris, observer, observe_time, style_kwargs=guide_style, grid=False)
-    >>> plot_sky(altair, observer, observe_time, grid=False)
+    >>> plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
+    >>> plot_sky(altair, observer, observe_time)
 
     >>> plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     >>> plt.show()
@@ -1006,9 +1006,8 @@ You can turn off the grid lines by setting the *grid* option to *False*:
 
     guide_style = {'marker': '*'}
 
-    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style,
-             grid=False)
-    plot_sky(altair, observer, observe_time, grid=False)
+    plot_sky(polaris, observer, observe_time, style_kwargs=guide_style)
+    plot_sky(altair, observer, observe_time)
 
     # Note that you don't need this code block to produce the plot.
     # It reduces the plot size for the documentation.
@@ -1019,11 +1018,6 @@ You can turn off the grid lines by setting the *grid* option to *False*:
     plt.legend(loc='center left', bbox_to_anchor=(1.25, 0.5))
     plt.tight_layout()
     plt.show()
-
-.. note::
-
-    Since grids are redrawn with every call to `~astroplan.plots.plot_sky`,
-    you must set ``grid=False`` for every target in the same plot.
 
 Other tweaks
 ++++++++++++
