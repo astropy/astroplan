@@ -3,11 +3,11 @@ name = "astroplan"
 authors = [
     { name = "Astroplan developers", email = "astropy-dev@googlegroups.com" }
 ]
-license = { text = "BSD-3-Clause" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE.rst", "licenses/*.rst"]
 description = "Observation planning package for astronomers"
 classifiers = [
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: Implementation :: CPython",
@@ -60,7 +60,6 @@ Documentation = "https://astroplan.readthedocs.io/en/latest/"
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = ["LICENSE.rst", "licenses/*.rst"]
 
 [tool.setuptools.packages.find]
 namespaces = true
@@ -74,7 +73,7 @@ namespaces = true
 write_to = "astroplan/_version.py"
 
 [build-system]
-requires = ["setuptools",
+requires = ["setuptools>=77.0.1",
             "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
