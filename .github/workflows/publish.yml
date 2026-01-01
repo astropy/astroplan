@@ -21,7 +21,7 @@ jobs:
   build_and_publish:
     permissions:
       contents: none
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish_pure_python.yml@28e947497bed4d6ec3fa1d66d198e95a1d17bc63  # v2.2.1
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/publish_pure_python.yml@9f1fedda61294df4c004c05519a3fbf3b8e1f32f  # v2.3.1
     if: github.repository == 'astropy/astroplan'
     with:
       submodules: false
