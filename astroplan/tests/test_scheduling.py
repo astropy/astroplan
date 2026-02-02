@@ -19,7 +19,6 @@ from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_al
 from astroplan.periodic import EclipsingSystem
 from astroplan.scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                                   Transitioner, TransitionBlock, Schedule, Slot, Scorer)
-from astroplan.exceptions import InvalidTLEDataWarning
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -369,7 +368,7 @@ def test_priority_scheduler_TLETarget():
         start_time = Time('2035-08-02 10:00:00')
         end_time = start_time + 1*u.hour
         schedule = Schedule(start_time, end_time)
-    
+
     # InvalidTLEDataWarning/AstropyWarning and
     # ErfaWarning: ERFA function "utctai" yielded 121 of "dubious year (Note 3)"
     with pytest.warns():

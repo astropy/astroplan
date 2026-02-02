@@ -16,7 +16,6 @@ except ImportError:
 from astroplan.target import FixedTarget, TLETarget, get_skycoord
 from astroplan.observer import Observer
 from astroplan.utils import time_grid_from_range
-from astroplan.exceptions import InvalidTLEDataWarning
 
 
 @pytest.mark.remote_data
@@ -166,7 +165,7 @@ def test_TLETarget():
     assert altaz_observer.separation(altaz_skyfield) < 26*u.arcsec
 
     # AltAz with multiple times
-    #subaru.altaz(times, tle_target1)
+    # subaru.altaz(times, tle_target1)
     altaz_multiple = tle_target1.altaz(times)
     assert len(altaz_multiple.obstime) == len(altaz_multiple) == len(times)
 

@@ -7,7 +7,7 @@ import warnings
 # Third-party
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation, AltAz, EarthLocation
+from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation, AltAz
 try:
     from sgp4.io import twoline2rv
     from sgp4.earth_gravity import wgs84 as sgp4_wgs84
@@ -340,12 +340,12 @@ class TLETarget(Target):
             temperature_C = self.observer.temperature.to_value(u.deg_C)
         if self.observer.pressure is not None:
             pressure_mbar = self.observer.pressure.to_value(u.mbar)
-            
+
         alt, az, distance = topocentric.altaz(
             temperature_C=temperature_C,
             pressure_mbar=pressure_mbar,
         )
-        
+
         # 'relative_humidity' and 'obswl' were not used in coordinate calculation
         altaz_frame = AltAz(
             location=self.observer.location,
