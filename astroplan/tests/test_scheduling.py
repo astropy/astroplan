@@ -8,7 +8,7 @@ from astropy.time import Time
 
 from astroplan.utils import time_grid_from_range
 from astroplan.observer import Observer
-from astroplan.target import FixedTarget, get_skycoord
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
 from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
                                    MoonIlluminationConstraint, PhaseConstraint)
 from astroplan.periodic import EclipsingSystem
@@ -65,6 +65,37 @@ def test_schedule():
     assert np.abs(new_slots[0].duration - 1*u.hour) < 1*u.second
     assert np.abs(new_slots[1].duration - 3*u.hour) < 1*u.second
     assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
+
+
+def test_schedule_to_table():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    start = Time("2026-02-05T00:00:00", scale="utc")
+    end = Time("2026-02-05T00:20:00", scale="utc")
+
+    fixed = FixedTarget(SkyCoord(ra=10*u.deg, dec=20*u.deg), name="fixed")
+    horiz = AltAzTarget(alt=50*u.deg, az=200*u.deg, location=location, name="horiz")
+    block_fixed = ObservingBlock(fixed, 600*u.second, priority=1, constraints=[AirmassConstraint(max=4)])
+    block_horiz = ObservingBlock(horiz, 600*u.second, priority=1, constraints=[AirmassConstraint(max=4)])
+
+    schedule = Schedule(start, end)
+    schedule.insert_slot(start, block_fixed)
+    schedule.insert_slot(start + 600*u.second, block_horiz)
+
+    tab = schedule.to_table(show_transitions=False, show_unused=False)
+
+    assert "target type" in tab.colnames
+    assert "target info" in tab.colnames
+
+    assert tab["target"][0] == "fixed"
+    assert tab["target type"][0] == "FixedTarget"
+    info = tab["target info"][0]
+    assert "00h40m00s +20d00m00s" in info.lower()
+
+    assert tab["target"][1] == "horiz"
+    assert tab["target type"][1] == "AltAzTarget"
+    info = tab["target info"][1]
+    assert "alt=50" in info.lower()
+    assert "az=200" in info.lower()
 
 
 def test_schedule_insert_slot():
@@ -329,3 +360,27 @@ def test_scorer():
     scores = scorer.create_score_array(time_resolution=20 * u.minute)
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
+
+
+def test_scorer_mixed_targets():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location, pressure=0*u.bar, temperature=0*u.deg_C,
+                        relative_humidity=0.0, timezone="UTC")
+
+    start = Time("2026-02-05T00:00:00", scale="utc")
+    end = Time("2026-02-05T01:00:00", scale="utc")
+
+    fixed = FixedTarget(SkyCoord(ra=10*u.deg, dec=20*u.deg), name="fixed")
+    horiz = AltAzTarget(alt=50*u.deg, az=200*u.deg, location=location, name="horiz")
+
+    blocks = [
+        ObservingBlock(fixed, 300*u.second, priority=1, constraints=[AirmassConstraint(max=4)]),
+        ObservingBlock(horiz, 300*u.second, priority=1, constraints=[AirmassConstraint(min=4)]),
+    ]
+
+    schedule = Schedule(start, end)
+    scorer = Scorer(blocks, observer, schedule, global_constraints=[AirmassConstraint(max=4)])
+
+    score = scorer.create_score_array(time_resolution=10*u.minute)
+
+    assert score.shape == (len(blocks), 6)  # 1 hour / 10 min

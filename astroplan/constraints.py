@@ -15,7 +15,7 @@ import astropy.units as u
 import numpy as np
 from astropy import table
 from astropy.time import Time
-from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
+from astropy.coordinates import get_body, get_sun, Galactic
 from numpy.lib.stride_tricks import as_strided
 
 # Package
@@ -223,48 +223,45 @@ class Constraint:
                  time_range=None, time_grid_resolution=0.5*u.hour,
                  grid_times_targets=False):
         """
-        Compute the constraint for this class
+        Compute the constraint for this class.
 
         Parameters
         ----------
         observer : `~astroplan.Observer`
-            the observation location from which to apply the constraints
-        targets : sequence of `~astroplan.Target`
+            The observation location from which to apply the constraints.
+
+        targets : sequence of `~astroplan.Target` or `~astropy.coordinates.SkyCoord`
             The targets on which to apply the constraints.
-        times : `~astropy.time.Time`
+        times : `~astropy.time.Time` (optional)
             The times to compute the constraint.
-            WHAT HAPPENS WHEN BOTH TIMES AND TIME_RANGE ARE SET?
-        time_range : `~astropy.time.Time` (length = 2)
+        time_range : `~astropy.time.Time` (length = 2) (optional)
             Lower and upper bounds on time sequence.
+            Only used when ``times`` is not provided.
         time_grid_resolution : `~astropy.units.Quantity`
-            Time-grid spacing
+            Time-grid spacing.
         grid_times_targets : bool
-            if True, grids the constraint result with targets along the first
+            If True, grids the constraint result with targets along the first
             index and times along the second. Otherwise, we rely on broadcasting
             the shapes together using standard numpy rules.
+
         Returns
         -------
         constraint_result : 1D or 2D array of float or bool
-            The constraints. If 2D with targets along the first index and times along
+            The constraint values. If 2D with targets along the first index and times along
             the second.
         """
-
         if times is None and time_range is not None:
             times = time_grid_from_range(time_range,
                                          time_resolution=time_grid_resolution)
 
-        if grid_times_targets:
-            targets = get_skycoord(targets)
-            # TODO: these broadcasting operations are relatively slow
-            # but there is potential for huge speedup if the end user
-            # disables gridding and re-shapes the coords themselves
-            # prior to evaluating multiple constraints.
-            if targets.isscalar:
-                # ensure we have a (1, 1) shape coord
-                targets = SkyCoord(np.tile(targets, 1))[:, np.newaxis]
-            else:
-                targets = targets[..., np.newaxis]
-        times, targets = observer._preprocess_inputs(times, targets, grid_times_targets=False)
+        # TODO: broadcasting operations in _preprocess_inputs are relatively slow
+        # but there is potential for huge speedup if the end user
+        # disables gridding and re-shapes the coords themselves
+        # prior to evaluating multiple constraints.
+        times, targets = observer._preprocess_inputs(
+            times, targets, grid_times_targets=grid_times_targets
+        )
+
         result = self.compute_constraint(times, observer, targets)
 
         # make sure the output has the same shape as would result from
