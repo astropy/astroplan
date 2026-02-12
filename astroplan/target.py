@@ -196,7 +196,8 @@ class AltAzTarget(Target):
     >>> import astropy.units as u
     >>> from astropy.coordinates import EarthLocation
     >>> from astroplan import AltAzTarget
-    >>> location = EarthLocation.of_site("greenwich")  # doctest: +REMOTE_DATA
+    >>> location = EarthLocation.from_geodetic(-155.4761*u.deg, 19.825*u.deg,
+    ...                                        4139*u.m)
     >>> t = AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location, name="Pointing")
     """
 
@@ -309,7 +310,6 @@ class AltAzTarget(Target):
             **kwargs
         )
 
-
     def __repr__(self):
         class_name = self.__class__.__name__
         alt = self.alt.to(u.deg).value
@@ -352,7 +352,6 @@ class AltAzTarget(Target):
         az = u.Quantity(np.broadcast_to(self.az.to_value(u.deg), times.shape), u.deg)
 
         return SkyCoord(az=az, alt=alt, frame=altaz_frame).icrs
-
 
 
 class NonFixedTarget(Target):

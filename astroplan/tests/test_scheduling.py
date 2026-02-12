@@ -74,8 +74,12 @@ def test_schedule_to_table():
 
     fixed = FixedTarget(SkyCoord(ra=10*u.deg, dec=20*u.deg), name="fixed")
     horiz = AltAzTarget(alt=50*u.deg, az=200*u.deg, location=location, name="horiz")
-    block_fixed = ObservingBlock(fixed, 600*u.second, priority=1, constraints=[AirmassConstraint(max=4)])
-    block_horiz = ObservingBlock(horiz, 600*u.second, priority=1, constraints=[AirmassConstraint(max=4)])
+    block_fixed = ObservingBlock(
+        fixed, 600 * u.second, priority=1, constraints=[AirmassConstraint(max=4)]
+    )
+    block_horiz = ObservingBlock(
+        horiz, 600 * u.second, priority=1, constraints=[AirmassConstraint(max=4)]
+    )
 
     schedule = Schedule(start, end)
     schedule.insert_slot(start, block_fixed)

@@ -342,7 +342,6 @@ class Schedule:
             ),
         )
 
-
     def new_slots(self, slot_index, start_time, end_time):
         """
         Create new slots by splitting a current slot.

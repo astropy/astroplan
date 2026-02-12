@@ -198,7 +198,7 @@ def test_altaz_accepts_altaztarget():
     assert altaz_grid.alt.shape == (len(targets), len(times))
     assert np.allclose(altaz_grid.alt[0].to_value(u.deg), 60.0)
     assert np.allclose(altaz_grid.alt[1].to_value(u.deg), 45.0)
-    assert np.allclose(altaz_grid.alt[2].to_value(u.deg), 35.0) 
+    assert np.allclose(altaz_grid.alt[2].to_value(u.deg), 35.0)
 
 
 def test_rise_set_transit_nearest_vector():
