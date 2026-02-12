@@ -472,7 +472,7 @@ def get_skycoord(targets, times=None):
                     dist = _broadcast_quantity(dist, times_shape)
                 distances.append(dist)
 
-    # Convert all longitude/latitude quantities to a common unit 
+    # Convert all longitude/latitude quantities to a common unit
     # and plain ndarrays before stacking (robust across units/Quantity subclasses).
     lon_unit = longitudes[0].unit
     lat_unit = latitudes[0].unit

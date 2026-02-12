@@ -15,7 +15,7 @@ import astropy.units as u
 import numpy as np
 from astropy import table
 from astropy.time import Time
-from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
+from astropy.coordinates import get_body, get_sun, Galactic
 from numpy.lib.stride_tricks import as_strided
 
 # Package
@@ -236,7 +236,7 @@ class Constraint:
             The times to compute the constraint.
         time_range : `~astropy.time.Time` (length = 2) (optional)
             Lower and upper bounds on time sequence.
-            Only used when `times` is not provided.
+            Only used when ``times`` is not provided.
         time_grid_resolution : `~astropy.units.Quantity`
             Time-grid spacing.
         grid_times_targets : bool

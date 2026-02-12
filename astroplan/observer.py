@@ -538,7 +538,11 @@ class Observer:
         if grid_times_targets:
             # Only ambiguous case: a single time-dependent target produces shape == time.shape
             # but grid mode requires a leading target axis (1, ...).
-            if is_single_time_dependent_target and (not target.isscalar) and (target.shape == time.shape):
+            if (
+                is_single_time_dependent_target
+                and (not target.isscalar)
+                and (target.shape == time.shape)
+            ):
                 target = target[np.newaxis, ...]
 
             # Ensure at least one targets axis for scalar targets
