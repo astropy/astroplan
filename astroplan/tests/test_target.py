@@ -80,11 +80,11 @@ def test_TLETarget():
 
     assert isinstance(tle_target_no_observer.observer, Observer)
     assert abs(tle_target_no_observer.observer.location.lat) < 0.001*u.deg
-    tle_target_no_observer.coord(time)  # Just needs to work
+    tle_target_no_observer.get_skycoord(time)  # Just needs to work
 
     # Single time (Below Horizon)
-    ra_dec1 = tle_target1.coord(time)   # '08h29m26.00003243s +07d31m36.65950907s'
-    ra_dec2 = tle_target2.coord(time)
+    ra_dec1 = tle_target1.get_skycoord(time)   # '08h29m26.00003243s +07d31m36.65950907s'
+    ra_dec2 = tle_target2.get_skycoord(time)
     assert ra_dec1.to_string('hmsdms') == ra_dec2.to_string('hmsdms')
 
     # Comparison with the JPL Horizons System
@@ -108,7 +108,7 @@ def test_TLETarget():
 
     # Single time (Above Horizon)
     time_ah = Time("2023-08-02 07:20", scale='utc')
-    ra_dec_ah = tle_target1.coord(time_ah)  # '11h19m48.53631001s +44d49m45.22194611s'
+    ra_dec_ah = tle_target1.get_skycoord(time_ah)  # '11h19m48.53631001s +44d49m45.22194611s'
 
     ra_dec_ah_horizon_icrf = SkyCoord("11h19m49.660349s +44d49m34.65875s")
     assert ra_dec_ah.separation(ra_dec_ah_horizon_icrf) < 20*u.arcsec  # 15.95″
@@ -125,8 +125,8 @@ def test_TLETarget():
     # Should the accuracy be better than < 25*u.arcsec when compared to the JPL Horizons System?
 
     # Multiple times
-    ra_dec1 = tle_target1.coord(times)
-    ra_dec2 = tle_target2.coord(times)
+    ra_dec1 = tle_target1.get_skycoord(times)
+    ra_dec2 = tle_target2.get_skycoord(times)
     ra_dec_from_horizon = SkyCoord(["08h29m27.029117s +07d31m28.35610s",
                                     "06h25m46.672661s -54d32m16.77533s",
                                     "13h52m08.854291s +04d26m49.56432s",
@@ -178,11 +178,11 @@ def test_TLETarget():
     # InvalidTLEDataWarning and
     # ErfaWarning: ERFA function "utctai" yielded 1 of "dubious year (Note 3)"
     with pytest.warns():
-        assert np.isnan(tle_target1.coord(time_invalid).ra)
+        assert np.isnan(tle_target1.get_skycoord(time_invalid).ra)
     # InvalidTLEDataWarning and
     # ErfaWarning: ERFA function "utctai" yielded 1 of "dubious year (Note 3)"
     with pytest.warns():
-        assert np.isnan(tle_target1.coord(times_invalid)[2].ra)
+        assert np.isnan(tle_target1.get_skycoord(times_invalid)[2].ra)
 
 
 @pytest.mark.remote_data
@@ -249,20 +249,3 @@ def test_get_skycoord_with_TLETarget():
     assert mixed_output.shape == (3,)
     mixed_output = get_skycoord([skycoord_targed, fixed_target1, tle_target1], times)
     assert mixed_output.shape == (3, 4)
-
-    # backwards_compatible
-    tle_output = get_skycoord(skycoord_targed, time, backwards_compatible=False)
-    assert tle_output.size == 1
-
-    tle_output = get_skycoord(skycoord_targed, times)
-    assert tle_output.size == 1
-    tle_output = get_skycoord(skycoord_targed, times, backwards_compatible=False)
-    assert tle_output.shape == (4,)
-
-    tle_output = get_skycoord([skycoord_targed, skycoord_targed], time, backwards_compatible=False)
-    assert tle_output.shape == (2,)
-
-    tle_output = get_skycoord([skycoord_targed, skycoord_targed], times)
-    assert tle_output.shape == (2,)
-    tle_output = get_skycoord([skycoord_targed, skycoord_targed], times, backwards_compatible=False)
-    assert tle_output.shape == (2, 4)

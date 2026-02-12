@@ -5,6 +5,7 @@ from abc import ABCMeta
 import warnings
 
 # Third-party
+import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, ICRS, UnitSphericalRepresentation, AltAz
@@ -21,7 +22,7 @@ except ImportError:
 from .exceptions import InvalidTLEDataWarning
 
 
-__all__ = ["Target", "FixedTarget", "NonFixedTarget", "TLETarget"]
+__all__ = ["Target", "FixedTarget", "TLETarget", "NonFixedTarget"]
 
 # Docstring code examples include printed SkyCoords, but the format changed
 # in astropy 1.3. Thus the doctest needs astropy >=1.3 and this is the
@@ -190,15 +191,15 @@ class TLETarget(Target):
         line2 : str
             The second line of the TLE set
 
-        name : str, optional
+        name : str (optional)
             Name of the target, used for plotting and representing the target
             as a string
 
-        observer : `~astroplan.Observer`, optional
+        observer : `~astroplan.Observer` (optional)
             The location of observer.
             If `None`, the observer is assumed to be at sea level at the equator.
 
-        skip_tle_check : bool, optional
+        skip_tle_check : bool (optional)
             Whether to skip TLE validation
         """
         if not skyfield_available:
@@ -232,11 +233,11 @@ class TLETarget(Target):
         tle_string : str
             String to be parsed, expected to contain 2 or 3 newline-separated lines.
 
-        name : str, optional
+        name : str (optional)
             Name of the target. If not provided and the tle_string contains 3 lines,
             the first line will be used as the name.
 
-        args, kwargs : tuple, dict, optional
+        args, kwargs : tuple, dict (optional)
             Additional arguments and keyword arguments to be passed to the TLETarget constructor.
         """
         lines = tle_string.strip().splitlines()
@@ -250,21 +251,13 @@ class TLETarget(Target):
             line1, line2 = lines
         return cls(line1, line2, name, *args, **kwargs)
 
-    @property
-    def ra(self):
-        raise NotImplementedError("Compute satellite RA at a specific time with self.coord(time)")
-
-    @property
-    def dec(self):
-        raise NotImplementedError("Compute satellite RA at a specific time with self.coord(time)")
-
-    def _compute_topocentric(self, time=None):
+    def _compute_topocentric(self, times=None):
         """
         Compute the topocentric coordinates (relative to observer) at a particular time.
 
         Parameters
         ----------
-        time : `~astropy.time.Time`, optional
+        times : `~astropy.time.Time` (optional)
             The time(s) to use in the calculation.
 
         Returns
@@ -272,10 +265,10 @@ class TLETarget(Target):
         topocentric : `skyfield.positionlib.ICRF`
             The topocentric object representing the relative coordinates of the target.
         """
-        if time is None:
-            time = Time.now()
+        if times is None:
+            times = Time.now()
         ts = load.timescale()
-        t = ts.from_astropy(time)
+        t = ts.from_astropy(times)
 
         topocentric = (self.satellite - self.geographic_position).at(t)
 
@@ -291,13 +284,13 @@ class TLETarget(Target):
 
         return topocentric
 
-    def coord(self, time=None):
+    def get_skycoord(self, times=None):
         """
         Get the coordinates of the target at a particular time.
 
         Parameters
         ----------
-        time : `~astropy.time.Time`, optional
+        times : `~astropy.time.Time` (optional)
             The time(s) to use in the calculation.
 
         Returns
@@ -307,24 +300,24 @@ class TLETarget(Target):
             RA/Dec coordinates at the specified time(s). Might return np.nan and output a
             warning for times where the elements stop making physical sense.
         """
-        topocentric = self._compute_topocentric(time)
+        topocentric = self._compute_topocentric(times)
         ra, dec, distance = topocentric.radec()
         # No distance, in SkyCoord, distance is from frame origin, but here, it's from observer.
         return SkyCoord(
             ra.hours*u.hourangle,
             dec.degrees*u.deg,
-            obstime=time,
+            obstime=times,
             frame='icrs',
             location=self.observer.location,
         )
 
-    def altaz(self, time=None):
+    def altaz(self, times=None):
         """
         Get the altitude and azimuth of the target at a particular time.
 
         Parameters
         ----------
-        time : `~astropy.time.Time`, optional
+        times : `~astropy.time.Time` (optional)
             The time(s) to use in the calculation.
 
         Returns
@@ -332,7 +325,7 @@ class TLETarget(Target):
         altaz_coord : `~astropy.coordinates.SkyCoord`
             SkyCoord object representing the target's altitude and azimuth at the specified time(s)
         """
-        topocentric = self._compute_topocentric(time)
+        topocentric = self._compute_topocentric(times)
 
         temperature_C = None
         pressure_mbar = None
@@ -349,7 +342,7 @@ class TLETarget(Target):
         # 'relative_humidity' and 'obswl' were not used in coordinate calculation
         altaz_frame = AltAz(
             location=self.observer.location,
-            obstime=time,
+            obstime=times,
             pressure=self.observer.pressure,
             temperature=self.observer.temperature,
         )
@@ -363,38 +356,7 @@ class TLETarget(Target):
         return self.name
 
 
-def repeat_skycoord(coord, times):
-    """
-    Repeats the coordinates of a SkyCoord object 'times.size' number of times.
-
-    Parameters
-    ----------
-    coord : `~astropy.coordinates.SkyCoord`
-        The original SkyCoord object whose coordinates need to be repeated.
-
-    times : `~astropy.time.Time`
-        The size of times determines the number of times the coordinates should be repeated.
-
-    Returns
-    --------
-    SkyCoord : `~astropy.coordinates.SkyCoord`
-        A new SkyCoord object with the coordinates of the original object
-        repeated 'times.size' number of times. If the SkyCoord object is scalar
-        or 'times' is None or a scalar, this function returns the
-        original SkyCoord object.
-    """
-    if coord.size != 1 or times is None or times.size == 1:
-        return coord
-    return SkyCoord(
-        ra=coord.ra.repeat(times.size),
-        dec=coord.dec.repeat(times.size),
-        distance=None if coord.distance.unit is u.one else coord.distance.repeat(times.size),
-        frame=coord.frame,
-        obstime=times
-    )
-
-
-def get_skycoord(targets, time=None, backwards_compatible=True):
+def get_skycoord(targets, times=None):
     """
     Return an `~astropy.coordinates.SkyCoord` object.
 
@@ -402,67 +364,61 @@ def get_skycoord(targets, time=None, backwards_compatible=True):
     a single `~astropy.coordinates.SkyCoord` object, rather than a
     list of `Target` or `~astropy.coordinates.SkyCoord` objects.
 
-    This is a convenience routine to do that.
+    This is a convenience routine to do that, and it also supports targets
+    that require evaluation at specific times (e.g., AltAz-defined targets).
 
     Parameters
-    -----------
-    targets : list, `~astropy.coordinates.SkyCoord`, `Target`
-        either a single target or a list of targets
+    ----------
+    targets : list, `~astropy.coordinates.SkyCoord`, `~astroplan.Target`
+        Either a single target or a list of targets.
 
-    time : `~astropy.time.Time`, optional
-        The time(s) to use in the calculation.
-
-    backwards_compatible : bool, optional
-        Controls output format when FixedTarget or SkyCoord targets are used with a time argument.
-        If False, it will return (targets x times), where all coordinates per target are the same.
-        If True, it will return one coordinate per target (default is True).
+    times : `~astropy.time.Time` or time-like (optional)
+        Times at which to evaluate time-dependent targets. Required if any
+        target in ``targets`` needs evaluation at a time.
 
     Returns
-    --------
+    -------
     coord : `~astropy.coordinates.SkyCoord`
-        a single SkyCoord object, which may be non-scalar
+        A single SkyCoord object, which may be non-scalar. If ``times``
+        is provided and any target is time-dependent, coordinates are broadcast
+        or evaluated across time along subsequent axes.
     """
+    if times is not None and not isinstance(times, Time):
+        times = Time(times)
 
-    # Note on backwards_compatible:
-    # Method always returns (targets x times) with TLETarget in targets, as RA/Dec changes with time
-    # Do we want to be 100% backwards compatible, or do we prefer consistent output,
-    # for FixedTarget or SkyCoord targets combined with multiple times?
-    # backwards_compatible = True will continue to return one coordinate per target
-    # backwards_compatible = False, returns (targets x times) with identical coordinates per target
+    def _is_time_dependent(obj):
+        return callable(getattr(obj, "get_skycoord", None)) and not hasattr(obj, "coord")
 
-    # Early exit for single target
-    if not isinstance(targets, list):
-        if isinstance(targets, TLETarget):
-            return targets.coord(time)
-        else:
-            if backwards_compatible:
-                return getattr(targets, 'coord', targets)
-            else:
-                return repeat_skycoord(getattr(targets, 'coord', targets), time)
+    def _as_coord(obj):
+        if hasattr(obj, "coord"):
+            return obj.coord
+        if callable(getattr(obj, "get_skycoord", None)):
+            return obj.get_skycoord(times)
+        return obj
 
-    # Identify if any of the targets is not FixedTarget or SkyCoord
-    has_non_fixed_target = any(
-        not isinstance(target, (FixedTarget, SkyCoord))
-        for target in targets
+    is_multiple_targets = (
+        isinstance(targets, (list, tuple)) or
+        (isinstance(targets, SkyCoord) and not targets.isscalar)
     )
+    if not is_multiple_targets:
+        return _as_coord(targets)
 
-    # Get the SkyCoord object itself
-    coords = [
-        target.coord(time) if isinstance(target, TLETarget)
-        else getattr(target, 'coord', target)
-        for target in targets
-    ]
+    coords = [_as_coord(t) for t in targets]
 
-    # Fill time dimension for SkyCoords that only have a single coordinate
-    if (
-        (backwards_compatible and has_non_fixed_target or not backwards_compatible) and
-        time is not None
-    ):
-        coords = [repeat_skycoord(coord, time) for coord in coords]
+    # If any target is time dependent, broadcast fixed coords to match times.shape
+    time_dependent = (times is not None) and any(_is_time_dependent(t) for t in targets)
+    times_shape = times.shape if time_dependent else None
 
-    # are all SkyCoordinate's in equivalent frames? If not, convert to ICRS
+    def _broadcast_quantity(q, shape):
+        """Broadcast quantity to target shape if needed."""
+        if shape is None or q.shape == shape:
+            return q
+        return u.Quantity(np.broadcast_to(q.to_value(q.unit), shape), q.unit)
+
+    # Are all SkyCoord's in equivalent frames? If not, convert to ICRS
     convert_to_icrs = not all(
-        [coord.frame.is_equivalent_frame(coords[0].frame) for coord in coords[1:]])
+        [coord.frame.is_equivalent_frame(coords[0].frame) for coord in coords[1:]]
+    )
 
     # we also need to be careful about handling mixtures of
     # UnitSphericalRepresentations and others
@@ -477,10 +433,18 @@ def get_skycoord(targets, time=None, backwards_compatible=True):
         # mixture of frames
         for coordinate in coords:
             icrs_coordinate = coordinate.icrs
-            longitudes.append(icrs_coordinate.ra)
-            latitudes.append(icrs_coordinate.dec)
+            lon = icrs_coordinate.ra
+            lat = icrs_coordinate.dec
+            if times_shape is not None:
+                lon = _broadcast_quantity(lon, times_shape)
+                lat = _broadcast_quantity(lat, times_shape)
+            longitudes.append(lon)
+            latitudes.append(lat)
             if get_distances:
-                distances.append(icrs_coordinate.distance)
+                dist = icrs_coordinate.distance
+                if times_shape is not None:
+                    dist = _broadcast_quantity(dist, times_shape)
+                distances.append(dist)
         frame = ICRS()
     else:
         # all the same frame, get the longitude and latitude names
@@ -495,27 +459,53 @@ def get_skycoord(targets, time=None, backwards_compatible=True):
 
         frame = coords[0].frame
         for coordinate in coords:
-            longitudes.append(getattr(coordinate, lon_name))
-            latitudes.append(getattr(coordinate, lat_name))
+            lon = getattr(coordinate, lon_name)
+            lat = getattr(coordinate, lat_name)
+            if times_shape is not None:
+                lon = _broadcast_quantity(lon, times_shape)
+                lat = _broadcast_quantity(lat, times_shape)
+            longitudes.append(lon)
+            latitudes.append(lat)
             if get_distances:
-                distances.append(coordinate.distance)
+                dist = coordinate.distance
+                if times_shape is not None:
+                    dist = _broadcast_quantity(dist, times_shape)
+                distances.append(dist)
+
+    # Convert all longitude/latitude quantities to a common unit 
+    # and plain ndarrays before stacking (robust across units/Quantity subclasses).
+    lon_unit = longitudes[0].unit
+    lat_unit = latitudes[0].unit
+    lon_vals = np.stack([lon.to_value(lon_unit) for lon in longitudes], axis=0)
+    lat_vals = np.stack([lat.to_value(lat_unit) for lat in latitudes], axis=0)
+    lon_q = u.Quantity(lon_vals, unit=lon_unit)
+    lat_q = u.Quantity(lat_vals, unit=lat_unit)
 
     # now let's deal with the fact that we may have a mixture of coords with distances and
     # coords with UnitSphericalRepresentations
     if all(targets_is_unitsphericalrep):
-        return SkyCoord(longitudes, latitudes, frame=frame)
-    elif not any(targets_is_unitsphericalrep):
-        return SkyCoord(longitudes, latitudes, distances, frame=frame)
-    else:
-        """
-        We have a mixture of coords with distances and without.
-        Since we don't know in advance the origin of the frame where further transformation
-        will take place, it's not safe to drop the distances from those coords with them set.
+        return SkyCoord(lon_q, lat_q, frame=frame)
 
-        Instead, let's assign large distances to those objects with none.
-        """
-        distances = [distance if distance != 1 else 100*u.kpc for distance in distances]
-        return SkyCoord(longitudes, latitudes, distances, frame=frame)
+    if not any(targets_is_unitsphericalrep):
+        dist_unit = distances[0].unit
+        dist_vals = np.stack([d.to_value(dist_unit) for d in distances], axis=0)
+        dist_q = u.Quantity(dist_vals, unit=dist_unit)
+        return SkyCoord(lon_q, lat_q, dist_q, frame=frame)
+
+    # Mixture of coords with distances and without.
+    # Assign large distances to UnitSphericalRepresentation objects.
+    filled_distances = []
+    for dist, is_unitspherical in zip(distances, targets_is_unitsphericalrep):
+        if is_unitspherical:
+            fill_vals = np.broadcast_to(100.0, dist.shape if dist.shape else ())
+            filled_distances.append(u.Quantity(fill_vals, u.kpc))
+        else:
+            filled_distances.append(dist)
+
+    dist_unit = filled_distances[0].unit
+    dist_vals = np.stack([d.to_value(dist_unit) for d in filled_distances], axis=0)
+    dist_q = u.Quantity(dist_vals, unit=dist_unit)
+    return SkyCoord(lon_q, lat_q, dist_q, frame=frame)
 
 
 class SpecialObjectFlag:

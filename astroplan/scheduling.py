@@ -14,7 +14,7 @@ from astropy.table import Table
 
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
-from .target import get_skycoord, FixedTarget, TLETarget
+from .target import get_skycoord
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',
@@ -118,6 +118,7 @@ class Scorer:
         self.observer = observer
         self.schedule = schedule
         self.global_constraints = global_constraints
+        self.targets = [block.target for block in self.blocks]
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -138,7 +139,6 @@ class Scorer:
         start = self.schedule.start_time
         end = self.schedule.end_time
         times = time_grid_from_range((start, end), time_resolution)
-        targets = get_skycoord([block.target for block in self.blocks], times)
         score_array = np.ones((len(self.blocks), len(times)))
         for i, block in enumerate(self.blocks):
             # TODO: change the default constraints from None to []
@@ -147,6 +147,7 @@ class Scorer:
                     applied_score = constraint(self.observer, block.target,
                                                times=times)
                     score_array[i] *= applied_score
+        targets = get_skycoord(self.targets, times=times)
         for constraint in self.global_constraints:
             score_array *= constraint(self.observer, targets, times,
                                       grid_times_targets=True)
@@ -265,54 +266,81 @@ class Schedule:
         return [slot for slot in self.slots if not slot.occupied]
 
     def to_table(self, show_transitions=True, show_unused=False):
-        # TODO: allow different coordinate types
+        def _format_target_info(target):
+            if hasattr(target, "coord"):
+                try:
+                    return target.coord.icrs.to_string("hmsdms")
+                except Exception:
+                    return repr(target.coord)
+            if hasattr(target, "alt") and hasattr(target, "az"):
+                parts = [
+                    "alt={:.6f} deg".format(u.Quantity(target.alt).to_value(u.deg)),
+                    "az={:.6f} deg".format(u.Quantity(target.az).to_value(u.deg)),
+                ]
+                if hasattr(target, "pressure"):
+                    try:
+                        p = u.Quantity(target.pressure)
+                        if p.to_value(u.hPa) != 0.0:
+                            parts.append("pressure={:.3f} hPa".format(p.to_value(u.hPa)))
+                    except Exception:
+                        pass
+                return ", ".join(parts)
+            if hasattr(target, "satellite"):
+                return (
+                    f"#{target.satellite.model.satnum} "
+                    f"epoch {target.satellite.epoch.utc_strftime(format='%Y-%m-%d %H:%M:%S')}"
+                )
+            return ""
+
         target_names = []
         start_times = []
         end_times = []
         durations = []
-        coordiante_type = []
-        coordinate_info = []
+        target_types = []
+        target_info = []
         config = []
+
         for slot in self.slots:
-            if hasattr(slot.block, 'target'):
+            if hasattr(slot.block, "target"):
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
-                durations.append('{:.4f}'.format(slot.duration.to(u.minute).value))
-                target = slot.block.target
-                target_names.append(target.name)
-                if isinstance(target, FixedTarget):
-                    coordiante_type.append("RA/Dec")
-                    coordinate_info.append(target.coord.to_string('hmsdms'))
-                elif isinstance(target, TLETarget):
-                    coordiante_type.append("TLE")
-                    coordinate_info.append(
-                        f"#{target.satellite.model.satnum} "
-                        f"epoch {target.satellite.epoch.utc_strftime(format='%Y-%m-%d %H:%M:%S')}"
-                    )
+                durations.append(slot.duration.to(u.minute).value)
+                target_names.append(slot.block.target.name)
+                target_types.append(slot.block.target.__class__.__name__)
+                target_info.append(_format_target_info(slot.block.target))
                 config.append(slot.block.configuration)
             elif show_transitions and slot.block:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
-                durations.append('{:.4f}'.format(slot.duration.to(u.minute).value))
-                target_names.append('TransitionBlock')
-                coordiante_type.append('')
-                coordinate_info.append('')
+                durations.append(slot.duration.to(u.minute).value)
+                target_names.append("TransitionBlock")
+                target_types.append("TransitionBlock")
+                target_info.append("")
                 changes = list(slot.block.components.keys())
-                if 'slew_time' in changes:
-                    changes.remove('slew_time')
+                if "slew_time" in changes:
+                    changes.remove("slew_time")
                 config.append(changes)
             elif slot.block is None and show_unused:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
-                durations.append('{:.4f}'.format(slot.duration.to(u.minute).value))
-                target_names.append('Unused Time')
-                coordiante_type.append('')
-                coordinate_info.append('')
-                config.append('')
-        return Table([target_names, start_times, end_times,
-                      durations, coordiante_type, coordinate_info, config],
-                     names=('target', 'start time (UTC)', 'end time (UTC)',
-                            'duration (min)', 'type', 'coordinates/info', 'configuration'))
+                durations.append(slot.duration.to(u.minute).value)
+                target_names.append("Unused Time")
+                target_types.append("")
+                target_info.append("")
+                config.append("")
+
+        return Table(
+            [target_names, start_times, end_times, durations, target_types, target_info, config],
+            names=(
+                "target",
+                "start time (UTC)",
+                "end time (UTC)",
+                "duration (minutes)",
+                "target type",
+                "target info",
+                "configuration",
+            ),
+        )
 
     def new_slots(self, slot_index, start_time, end_time):
         """
@@ -1006,7 +1034,7 @@ class Transitioner:
             # to observer
             from .constraints import _get_altaz
             if oldblock.target != newblock.target:
-                targets = get_skycoord([oldblock.target, newblock.target], start_time)
+                targets = get_skycoord([oldblock.target, newblock.target], times=start_time)
                 aaz = _get_altaz(start_time, observer, targets)['altaz']
                 sep = aaz[0].separation(aaz[1])
                 if sep/self.slew_rate > 1 * u.second:
