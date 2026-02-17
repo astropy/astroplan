@@ -522,10 +522,7 @@ class Observer:
             return time, None
 
         # Remember whether target is a single time-dependent target
-        is_multiple_targets = (
-            isinstance(target, (list, tuple)) or
-            (isinstance(target, SkyCoord) and not target.isscalar)
-        )
+        is_multiple_targets = isinstance(target, (list, tuple))
         is_target_time_dependent = (
             callable(getattr(target, "get_skycoord", None)) and not
             hasattr(target, "coord")

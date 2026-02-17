@@ -396,10 +396,9 @@ def get_skycoord(targets, times=None):
             return obj.get_skycoord(times)
         return obj
 
-    is_multiple_targets = (
-        isinstance(targets, (list, tuple)) or
-        (isinstance(targets, SkyCoord) and not targets.isscalar)
-    )
+    # Ignore non-scalar SkyCoords targets here
+    # e.g. from get_body/get_sun, because they represent a single target
+    is_multiple_targets = isinstance(targets, (list, tuple))
     if not is_multiple_targets:
         return _as_coord(targets)
 
