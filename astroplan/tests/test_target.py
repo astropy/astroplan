@@ -1,19 +1,17 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
-import pytest
 
 # Third-party
 import astropy.units as u
+import pytest
 from astropy.coordinates import SkyCoord, GCRS, ICRS
 from astropy.time import Time
 
 # Package
-from ..target import FixedTarget, get_skycoord
-from ..observer import Observer
+from astroplan.target import FixedTarget, get_skycoord
+from astroplan.observer import Observer
 
 
+@pytest.mark.remote_data
 def test_FixedTarget_from_name():
     """
     Check that resolving target names with the `SkyCoord.from_name` constructor
@@ -30,6 +28,7 @@ def test_FixedTarget_from_name():
     assert polaris_from_name.coord.separation(polaris_from_SIMBAD) < 1*u.arcsec
 
 
+@pytest.mark.remote_data
 def test_FixedTarget_ra_dec():
     """
     Confirm that FixedTarget.ra and FixedTarget.dec are the same as the
@@ -46,6 +45,7 @@ def test_FixedTarget_ra_dec():
                                                            'SkyCoord')
 
 
+@pytest.mark.remote_data
 def test_get_skycoord():
     m31 = SkyCoord(10.6847083*u.deg, 41.26875*u.deg)
     m31_with_distance = SkyCoord(10.6847083*u.deg, 41.26875*u.deg, 780*u.kpc)

@@ -1,25 +1,23 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 # Standard library
 import datetime
 
 # Third-party
 import astropy.units as u
-from astropy.time import Time
-import pytest
 import numpy as np
-from numpy.testing import assert_allclose
+import pytest
 import pytz
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, Angle)
 from astropy.tests.helper import assert_quantity_allclose
+from astropy.time import Time
+from numpy.testing import assert_allclose
 
 # Package
-from ..observer import Observer
-from ..target import FixedTarget
-from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
+from astroplan.observer import Observer
+from astroplan.target import FixedTarget
+from astroplan.exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 
 def test_Observer_constructor_location():
@@ -1094,6 +1092,7 @@ def test_timezone_convenience_methods():
     assert all(naive_dts == times_dt_ndarray - datetime.timedelta(hours=4))
 
 
+@pytest.mark.remote_data
 def test_is_night():
     lco = Observer(location=EarthLocation.of_site('lco'))  # Las Campanas
     aao = Observer(location=EarthLocation.of_site('aao'))  # Sydney, Australia
@@ -1224,6 +1223,7 @@ def test_hour_angle():
     assert_quantity_allclose(hour_angle, lst, atol=0.001*u.deg)
 
 
+@pytest.mark.remote_data
 def test_tonight():
     obs = Observer.at_site('Subaru')
     obs.height = 0 * u.m
@@ -1351,6 +1351,7 @@ def test_sun_set_vs_mmto_almanac(mmto_sunset):
     assert abs(mmto_sunset - astroplan_sunset) < 1 * u.min
 
 
+@pytest.mark.remote_data
 def test_observer_lon_lat_el():
     """Test that astropy.EarthLocation conversion to longitude,
     latitude, and elevation works correctly.
@@ -1360,6 +1361,7 @@ def test_observer_lon_lat_el():
         assert hasattr(obs, attr)
 
 
+@pytest.mark.remote_data
 def test_hash_observer():
     """Test that Observer objects are hashable."""
     obs1 = Observer.at_site('Subaru')
@@ -1373,6 +1375,7 @@ def test_hash_observer():
     assert hash(obs3) == hash(obs4)
 
 
+@pytest.mark.remote_data
 def test_eq_observer():
     """Test that Observer objects are comparable."""
     obs1 = Observer.at_site('Subaru')

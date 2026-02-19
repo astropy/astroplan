@@ -1,12 +1,9 @@
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
+import astropy.units as u
 import numpy as np
 from astropy.time import Time
-import astropy.units as u
 from numpy.testing import assert_allclose
 
-from ..periodic import PeriodicEvent, EclipsingSystem
+from astroplan.periodic import PeriodicEvent, EclipsingSystem
 
 PRECISION = 0.00001  # days
 

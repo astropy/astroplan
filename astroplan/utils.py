@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
 # Standard library
 import warnings
@@ -85,7 +83,7 @@ def time_grid_from_range(time_range, time_resolution=0.5*u.hour):
     time_range : `~astropy.time.Time` (length = 2)
         Lower and upper bounds on time sequence.
 
-    time_resolution : `~astropy.units.quantity` (optional)
+    time_resolution : `~astropy.units.Quantity` (optional)
         Time-grid spacing
 
     Returns

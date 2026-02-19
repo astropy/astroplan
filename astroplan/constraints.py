@@ -4,29 +4,25 @@ Specify and constraints to determine which targets are observable for
 an observer.
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 # Standard library
-from abc import ABCMeta, abstractmethod
 import datetime
 import time
 import warnings
+from abc import ABCMeta, abstractmethod
 
 # Third-party
-from astropy.time import Time
 import astropy.units as u
-from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
-from astropy import table
-
 import numpy as np
+from astropy import table
+from astropy.time import Time
+from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
 from numpy.lib.stride_tricks import as_strided
 
 # Package
-from .moon import moon_illumination
-from .utils import time_grid_from_range
-from .target import get_skycoord
 from .exceptions import MissingConstraintWarning
+from .moon import moon_illumination
+from .target import get_skycoord
+from .utils import time_grid_from_range
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",
@@ -218,7 +214,7 @@ def _get_meridian_transit_times(times, observer, targets):
 
 
 @abstractmethod
-class Constraint(object):
+class Constraint:
     """
     Abstract class for objects defining observational constraints.
     """
@@ -241,7 +237,7 @@ class Constraint(object):
             WHAT HAPPENS WHEN BOTH TIMES AND TIME_RANGE ARE SET?
         time_range : `~astropy.time.Time` (length = 2)
             Lower and upper bounds on time sequence.
-        time_grid_resolution : `~astropy.units.quantity`
+        time_grid_resolution : `~astropy.units.Quantity`
             Time-grid spacing
         grid_times_targets : bool
             if True, grids the constraint result with targets along the first
@@ -322,7 +318,6 @@ class AltitudeConstraint(Constraint):
         This can misbehave if you try to constrain negative altitudes, as
         the `~astropy.coordinates.AltAz` frame tends to mishandle negative
 
-
     Parameters
     ----------
     min : `~astropy.units.Quantity` or `None`
@@ -382,7 +377,7 @@ class AirmassConstraint(AltitudeConstraint):
     Examples
     --------
     To create a constraint that requires the airmass be "better than 2",
-    i.e. at a higher altitude than airmass=2::
+    i.e., at a higher altitude than airmass=2::
 
         AirmassConstraint(2)
     """
@@ -494,19 +489,18 @@ class AtNightConstraint(Constraint):
 class GalacticLatitudeConstraint(Constraint):
     """
     Constrain the distance between the Galactic plane and some targets.
+
+    Parameters
+    ----------
+    min : `~astropy.units.Quantity` or `None` (optional)
+        Minimum acceptable Galactic latitude of target (inclusive).
+        `None` indicates no limit.
+    max : `~astropy.units.Quantity` or `None` (optional)
+        Minimum acceptable Galactic latitude of target (inclusive).
+        `None` indicates no limit.
     """
 
     def __init__(self, min=None, max=None):
-        """
-        Parameters
-        ----------
-        min : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable Galactic latitude of target (inclusive).
-            `None` indicates no limit.
-        max : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable Galactic latitude of target (inclusive).
-            `None` indicates no limit.
-        """
         self.min = min
         self.max = max
 
@@ -528,19 +522,18 @@ class GalacticLatitudeConstraint(Constraint):
 class SunSeparationConstraint(Constraint):
     """
     Constrain the distance between the Sun and some targets.
+
+    Parameters
+    ----------
+    min : `~astropy.units.Quantity` or `None` (optional)
+        Minimum acceptable separation between Sun and target (inclusive).
+        `None` indicates no limit.
+    max : `~astropy.units.Quantity` or `None` (optional)
+        Maximum acceptable separation between Sun and target (inclusive).
+        `None` indicates no limit.
     """
 
     def __init__(self, min=None, max=None):
-        """
-        Parameters
-        ----------
-        min : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between Sun and target (inclusive).
-            `None` indicates no limit.
-        max : `~astropy.units.Quantity` or `None` (optional)
-            Maximum acceptable separation between Sun and target (inclusive).
-            `None` indicates no limit.
-        """
         self.min = min
         self.max = max
 
@@ -570,23 +563,22 @@ class SunSeparationConstraint(Constraint):
 class MoonSeparationConstraint(Constraint):
     """
     Constrain the distance between the Earth's moon and some targets.
+
+    Parameters
+    ----------
+    min : `~astropy.units.Quantity` or `None` (optional)
+        Minimum acceptable separation between moon and target (inclusive).
+        `None` indicates no limit.
+    max : `~astropy.units.Quantity` or `None` (optional)
+        Maximum acceptable separation between moon and target (inclusive).
+        `None` indicates no limit.
+    ephemeris : str, optional
+        Ephemeris to use.  If not given, use the one set with
+        ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+        set to 'builtin' by default).
     """
 
     def __init__(self, min=None, max=None, ephemeris=None):
-        """
-        Parameters
-        ----------
-        min : `~astropy.units.Quantity` or `None` (optional)
-            Minimum acceptable separation between moon and target (inclusive).
-            `None` indicates no limit.
-        max : `~astropy.units.Quantity` or `None` (optional)
-            Maximum acceptable separation between moon and target (inclusive).
-            `None` indicates no limit.
-        ephemeris : str, optional
-            Ephemeris to use.  If not given, use the one set with
-            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
-            set to 'builtin' by default).
-        """
         self.min = min
         self.max = max
         self.ephemeris = ephemeris
@@ -616,25 +608,23 @@ class MoonSeparationConstraint(Constraint):
 class MoonIlluminationConstraint(Constraint):
     """
     Constrain the fractional illumination of the Earth's moon.
-
     Constraint is also satisfied if the Moon has set.
+
+    Parameters
+    ----------
+    min : float or `None` (optional)
+        Minimum acceptable fractional illumination (inclusive). `None`
+        indicates no limit.
+    max : float or `None` (optional)
+        Maximum acceptable fractional illumination (inclusive). `None`
+        indicates no limit.
+    ephemeris : str, optional
+        Ephemeris to use.  If not given, use the one set with
+        `~astropy.coordinates.solar_system_ephemeris` (which is
+        set to 'builtin' by default).
     """
 
     def __init__(self, min=None, max=None, ephemeris=None):
-        """
-        Parameters
-        ----------
-        min : float or `None` (optional)
-            Minimum acceptable fractional illumination (inclusive). `None`
-            indicates no limit.
-        max : float or `None` (optional)
-            Maximum acceptable fractional illumination (inclusive). `None`
-            indicates no limit.
-        ephemeris : str, optional
-            Ephemeris to use.  If not given, use the one set with
-            `~astropy.coordinates.solar_system_ephemeris` (which is
-            set to 'builtin' by default).
-        """
         self.min = min
         self.max = max
         self.ephemeris = ephemeris
@@ -642,8 +632,8 @@ class MoonIlluminationConstraint(Constraint):
     @classmethod
     def dark(cls, min=None, max=0.25, **kwargs):
         """
-        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
-        with defaults of no minimum and a maximum of 0.25
+        Initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of no minimum and a maximum of 0.25.
 
         Parameters
         ----------
@@ -659,8 +649,8 @@ class MoonIlluminationConstraint(Constraint):
     @classmethod
     def grey(cls, min=0.25, max=0.65, **kwargs):
         """
-        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
-        with defaults of a minimum of 0.25 and a maximum of 0.65
+        Initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of a minimum of 0.25 and a maximum of 0.65.
 
         Parameters
         ----------
@@ -676,8 +666,8 @@ class MoonIlluminationConstraint(Constraint):
     @classmethod
     def bright(cls, min=0.65, max=None, **kwargs):
         """
-        initialize a `~astroplan.constraints.MoonIlluminationConstraint`
-        with defaults of a minimum of 0.65 and no maximum
+        Initialize a `~astroplan.constraints.MoonIlluminationConstraint`
+        with defaults of a minimum of 0.65 and no maximum.
 
         Parameters
         ----------
@@ -715,31 +705,26 @@ class MoonIlluminationConstraint(Constraint):
 class LocalTimeConstraint(Constraint):
     """
     Constrain the observable hours.
+
+    Parameters
+    ----------
+    min : `~datetime.time`
+        Earliest local time (inclusive). `None` indicates no limit.
+
+    max : `~datetime.time`
+        Latest local time (inclusive). `None` indicates no limit.
+
+    Examples
+    --------
+    Constrain the observations to targets that are observable between
+    23:50 and 04:08 local time:
+
+    >>> import datetime as dt
+    >>> from astroplan.constraints import LocalTimeConstraint
+    >>> constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     """
 
     def __init__(self, min=None, max=None):
-        """
-        Parameters
-        ----------
-        min : `~datetime.time`
-            Earliest local time (inclusive). `None` indicates no limit.
-
-        max : `~datetime.time`
-            Latest local time (inclusive). `None` indicates no limit.
-
-        Examples
-        --------
-        Constrain the observations to targets that are observable between
-        23:50 and 04:08 local time:
-
-        >>> from astroplan import Observer
-        >>> from astroplan.constraints import LocalTimeConstraint
-        >>> import datetime as dt
-        >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
-        >>> # bound times between 23:50 and 04:08 local Hawaiian time
-        >>> constraint = LocalTimeConstraint(min=dt.time(23,50), max=dt.time(4,8))
-        """
-
         self.min = min
         self.max = max
 
@@ -803,30 +788,28 @@ class TimeConstraint(Constraint):
     time range with a specific observing block. This can be useful if not
     all observing blocks are valid over the time limits used in calls
     to `is_observable` or `is_always_observable`.
+
+    Parameters
+    ----------
+    min : `~astropy.time.Time`
+        Earliest time (inclusive). `None` indicates no limit.
+
+    max : `~astropy.time.Time`
+        Latest time (inclusive). `None` indicates no limit.
+
+    Examples
+    --------
+    Constrain the observations to targets that are observable between
+    2016-03-28 and 2016-03-30:
+
+    >>> from astropy.time import Time
+    >>> from astroplan.constraints import TimeConstraint
+    >>> t1 = Time("2016-03-28T12:00:00")
+    >>> t2 = Time("2016-03-30T12:00:00")
+    >>> constraint = TimeConstraint(t1, t2)
     """
 
     def __init__(self, min=None, max=None):
-        """
-        Parameters
-        ----------
-        min : `~astropy.time.Time`
-            Earliest time (inclusive). `None` indicates no limit.
-
-        max : `~astropy.time.Time`
-            Latest time (inclusive). `None` indicates no limit.
-
-        Examples
-        --------
-        Constrain the observations to targets that are observable between
-        2016-03-28 and 2016-03-30:
-
-        >>> from astroplan import Observer
-        >>> from astropy.time import Time
-        >>> subaru = Observer.at_site("Subaru")
-        >>> t1 = Time("2016-03-28T12:00:00")
-        >>> t2 = Time("2016-03-30T12:00:00")
-        >>> constraint = TimeConstraint(t1,t2)
-        """
         self.min = min
         self.max = max
 
@@ -856,15 +839,14 @@ class TimeConstraint(Constraint):
 class PrimaryEclipseConstraint(Constraint):
     """
     Constrain observations to times during primary eclipse.
+
+    Parameters
+    ----------
+    eclipsing_system : `~astroplan.periodic.EclipsingSystem`
+        System which must be in primary eclipse.
     """
 
     def __init__(self, eclipsing_system):
-        """
-        Parameters
-        ----------
-        eclipsing_system : `~astroplan.periodic.EclipsingSystem`
-            System which must be in primary eclipse.
-        """
         self.eclipsing_system = eclipsing_system
 
     def compute_constraint(self, times, observer=None, targets=None):
@@ -895,33 +877,37 @@ class PhaseConstraint(Constraint):
     """
     Constrain observations to times in some range of phases for a periodic event
     (e.g.~transiting exoplanets, eclipsing binaries).
+
+    Parameters
+    ----------
+    periodic_event : `~astroplan.periodic.PeriodicEvent` or subclass
+        System on which to compute the phase. For example, the system
+        could be an eclipsing or non-eclipsing binary, or exoplanet system.
+    min : float (optional)
+        Minimum phase (inclusive) on interval [0, 1). Default is zero.
+    max : float (optional)
+        Maximum phase (inclusive) on interval [0, 1). Default is one.
+
+    Examples
+    --------
+    To constrain observations on orbital phases between 0.4 and 0.6:
+
+    >>> from astroplan import PeriodicEvent
+    >>> from astropy.time import Time
+    >>> import astropy.units as u
+    >>> binary = PeriodicEvent(epoch=Time('2017-01-01 02:00'), period=1*u.day)
+    >>> constraint = PhaseConstraint(binary, min=0.4, max=0.6)
+
+    The minimum and maximum phase must be described on the interval [0, 1).
+    To constrain observations on orbital phases between 0.6 and 1.2, for
+    example, you should subtract one from the second number:
+
+    >>> constraint = PhaseConstraint(binary, min=0.6, max=0.2)
     """
 
     def __init__(self, periodic_event, min=None, max=None):
         """
-        Parameters
-        ----------
-        periodic_event : `~astroplan.periodic.PeriodicEvent` or subclass
-            System on which to compute the phase. For example, the system
-            could be an eclipsing or non-eclipsing binary, or exoplanet system.
-        min : float (optional)
-            Minimum phase (inclusive) on interval [0, 1). Default is zero.
-        max : float (optional)
-            Maximum phase (inclusive) on interval [0, 1). Default is one.
 
-        Examples
-        --------
-        To constrain observations on orbital phases between 0.4 and 0.6,
-        >>> from astroplan import PeriodicEvent
-        >>> from astropy.time import Time
-        >>> import astropy.units as u
-        >>> binary = PeriodicEvent(epoch=Time('2017-01-01 02:00'), period=1*u.day)
-        >>> constraint = PhaseConstraint(binary, min=0.4, max=0.6)
-
-        The minimum and maximum phase must be described on the interval [0, 1).
-        To constrain observations on orbital phases between 0.6 and 1.2, for
-        example, you should subtract one from the second number:
-        >>> constraint = PhaseConstraint(binary, min=0.6, max=0.2)
         """
         self.periodic_event = periodic_event
         if (min < 0) or (min > 1) or (max < 0) or (max > 1):

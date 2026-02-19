@@ -3,9 +3,6 @@
 This version of the `moon` module calculates lunar phase angle for a geocentric
 """
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 # Third-party
 import numpy as np
 from astropy.coordinates import get_sun, get_body

@@ -1,20 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-from six import string_types
 
 # Standard library
 import sys
 import datetime
 import warnings
+
 # Third-party
-from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_body, Angle, Longitude)
+
 import astropy.units as u
-from astropy.time import Time
-from astropy.utils.exceptions import AstropyDeprecationWarning
 import numpy as np
 import pytz
+from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
+                                 get_body, Angle, Longitude)
+from astropy.time import Time
+from astropy.utils.exceptions import AstropyDeprecationWarning
 
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
@@ -32,7 +31,7 @@ def deprecation_wrap_module(mod, deprecated):
     """Return a wrapped object that warns about deprecated accesses"""
     deprecated = set(deprecated)
 
-    class DeprecateWrapper(object):
+    class DeprecateWrapper:
         def __getattr__(self, attr):
             if attr in deprecated:
                 warnmsg = ("`MAGIC_TIME` will be deprecated in future versions "
@@ -111,7 +110,7 @@ def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     return t0 + time_grid
 
 
-class Observer(object):
+class Observer:
 
     """
     A container class for information about an observer's location and
@@ -216,7 +215,7 @@ class Observer(object):
         # Accept various timezone inputs, default to UTC
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
-        elif isinstance(timezone, string_types):
+        elif isinstance(timezone, str):
             self.timezone = pytz.timezone(timezone)
         else:
             raise TypeError('timezone keyword should be a string, or an '
