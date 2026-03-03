@@ -811,6 +811,8 @@ class PriorityScheduler(Scheduler):
             good = np.all(_strided_scores > 1e-5, axis=1)
             sum_scores = np.zeros(len(_strided_scores))
             sum_scores[good] = np.sum(_strided_scores[good], axis=1)
+            # Treat scores equal within 6 decimal places
+            score_key = np.round(sum_scores, 6)
 
             if np.all(constraint_scores == 0) or np.all(~good):
                 # No further calculation if no times meet the constraints
@@ -820,7 +822,7 @@ class PriorityScheduler(Scheduler):
                 # does not prevent us from fitting it in.
                 # loop over valid times and see if it fits
                 # TODO: speed up by searching multiples of time resolution?
-                for idx in np.argsort(-sum_scores, kind='mergesort'):
+                for idx in np.argsort(-score_key, kind="mergesort"):
                     if sum_scores[idx] <= 0.0:
                         # we've run through all optimal blocks
                         _is_scheduled = False
