@@ -55,6 +55,19 @@ class Target:
         raise NotImplementedError()
 
     @property
+    def is_time_dependent(self):
+        """
+        Whether this target requires evaluation at a specific time.
+
+        Returns
+        -------
+        is_time_dependent : bool
+            `True` for targets whose coordinates depend on ``obstime``,
+            otherwise `False`.
+        """
+        return False
+
+    @property
     def ra(self):
         """
         Right ascension.
@@ -201,6 +214,13 @@ class AltAzTarget(Target):
     >>> t = AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location, name="Pointing")
     """
 
+    @property
+    def is_time_dependent(self):
+        """
+        Whether this target requires evaluation at a specific time.
+        """
+        return True
+
     @u.quantity_input(alt=u.deg, az=u.deg)
     def __init__(
         self,
@@ -208,7 +228,7 @@ class AltAzTarget(Target):
         az,
         location,
         name=None,
-        pressure=None,
+        pressure=0 * u.hPa,
         temperature=None,
         relative_humidity=None,
         obswl=None,
@@ -391,7 +411,7 @@ def get_skycoord(targets, times=None):
         times = Time(times)
 
     def _is_time_dependent(obj):
-        return callable(getattr(obj, "get_skycoord", None)) and not hasattr(obj, "coord")
+        return isinstance(obj, Target) and obj.is_time_dependent
 
     def _as_coord(obj):
         if hasattr(obj, "coord"):

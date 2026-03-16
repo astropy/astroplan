@@ -73,7 +73,13 @@ def test_schedule_to_table():
     end = Time("2026-02-05T00:20:00", scale="utc")
 
     fixed = FixedTarget(SkyCoord(ra=10*u.deg, dec=20*u.deg), name="fixed")
-    horiz = AltAzTarget(alt=50*u.deg, az=200*u.deg, location=location, name="horiz")
+    horiz = AltAzTarget(
+        alt=50 * u.deg,
+        az=200 * u.deg,
+        location=location,
+        name="horiz",
+        pressure=1000.0 * u.hPa,
+    )
     block_fixed = ObservingBlock(
         fixed, 600 * u.second, priority=1, constraints=[AirmassConstraint(max=4)]
     )
@@ -95,11 +101,22 @@ def test_schedule_to_table():
     info = tab["target info"][0]
     assert "00h40m00s +20d00m00s" in info.lower()
 
+    def _as_quantity(value):
+        if isinstance(value, u.Quantity):
+            return value
+        return float(value) * u.deg
+
+    assert _as_quantity(tab["ra"][0]) == 10.0 * u.deg
+    assert _as_quantity(tab["dec"][0]) == 20.0 * u.deg
+
     assert tab["target"][1] == "horiz"
     assert tab["target type"][1] == "AltAzTarget"
     info = tab["target info"][1]
     assert "alt=50" in info.lower()
     assert "az=200" in info.lower()
+    assert "pressure=1000.000 hPa" in info
+    assert tab["ra"][1] == ""
+    assert tab["dec"][1] == ""
 
 
 def test_schedule_insert_slot():
