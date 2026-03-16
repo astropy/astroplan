@@ -61,6 +61,19 @@ class Target:
         raise NotImplementedError()
 
     @property
+    def is_time_dependent(self):
+        """
+        Whether this target requires evaluation at a specific time.
+
+        Returns
+        -------
+        is_time_dependent : bool
+            `True` for targets whose coordinates depend on ``obstime``,
+            otherwise `False`.
+        """
+        return False
+
+    @property
     def ra(self):
         """
         Right ascension.
@@ -181,6 +194,14 @@ class TLETarget(Target):
     """
     A target defined by TLE (Two-Line Element set) for satellites.
     """
+
+    @property
+    def is_time_dependent(self):
+        """
+        Whether this target requires evaluation at a specific time.
+        """
+        return True
+
     def __init__(self, line1, line2, name=None, observer=None, skip_tle_check=False):
         """
         Parameters
@@ -387,7 +408,7 @@ def get_skycoord(targets, times=None):
         times = Time(times)
 
     def _is_time_dependent(obj):
-        return callable(getattr(obj, "get_skycoord", None)) and not hasattr(obj, "coord")
+        return isinstance(obj, Target) and obj.is_time_dependent
 
     def _as_coord(obj):
         if hasattr(obj, "coord"):
