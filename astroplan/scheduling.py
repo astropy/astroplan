@@ -148,7 +148,7 @@ class Scorer:
                     applied_score = constraint(self.observer, block.target,
                                                times=times)
                     score_array[i] *= applied_score
-        targets = get_skycoord(self.targets, times=times)
+        targets = get_skycoord(self.targets, times=times, observer=self.observer)
         for constraint in self.global_constraints:
             score_array *= constraint(self.observer, targets, times,
                                       grid_times_targets=True)
@@ -1064,7 +1064,11 @@ class Transitioner:
             # to observer
             from .constraints import _get_altaz
             if oldblock.target != newblock.target:
-                targets = get_skycoord([oldblock.target, newblock.target], times=start_time)
+                targets = get_skycoord(
+                    [oldblock.target, newblock.target],
+                    times=start_time,
+                    observer=observer
+                )
                 aaz = _get_altaz(start_time, observer, targets)['altaz']
                 sep = aaz[0].separation(aaz[1])
                 if sep/self.slew_rate > 1 * u.second:

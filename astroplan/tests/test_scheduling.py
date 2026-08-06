@@ -14,6 +14,7 @@ from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_al
 from astroplan.periodic import EclipsingSystem
 from astroplan.scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                                   Transitioner, TransitionBlock, Schedule, Slot, Scorer)
+from astroplan.tests.test_target import ObserverDependentTarget
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -181,6 +182,10 @@ def test_transitioner():
     # to test the default transition
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
+
+    observer_dependent = ObservingBlock(ObserverDependentTarget(), 10 * u.minute, 0)
+    transition = trans(blocks[0], observer_dependent, start_time, apo)
+    assert isinstance(transition, TransitionBlock)
 
 
 default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
@@ -381,6 +386,13 @@ def test_scorer():
     scores = scorer.create_score_array(time_resolution=20 * u.minute)
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
+
+    observer_dependent = ObservingBlock(ObserverDependentTarget(), 1 * u.hour, 0)
+    scorer = Scorer.from_start_end(
+        [observer_dependent], apo, Time("2016-02-06 00:00"), Time("2016-02-06 01:00")
+    )
+    scores = scorer.create_score_array(time_resolution=20 * u.minute)
+    assert scores.shape == (1, 3)
 
 
 def test_scorer_mixed_targets():

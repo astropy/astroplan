@@ -8,8 +8,34 @@ from astropy.coordinates import SkyCoord, GCRS, ICRS, EarthLocation
 from astropy.time import Time
 
 # Package
-from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
+from astroplan.target import Target, FixedTarget, AltAzTarget, get_skycoord
 from astroplan.observer import Observer
+
+
+class ObserverDependentTarget(Target):
+    """Minimal target that requires observer context when evaluated."""
+
+    def __init__(self, name="observer-dependent"):
+        self.name = name
+
+    @property
+    def is_time_dependent(self):
+        return True
+
+    def get_skycoord(self, times, observer=None):
+        if observer is None:
+            raise ValueError("`observer` is required.")
+
+        ra = np.broadcast_to(
+            observer.location.lon.to_value(u.deg),
+            times.shape
+        ) * u.deg
+        dec = np.broadcast_to(
+            observer.location.lat.to_value(u.deg),
+            times.shape,
+        ) * u.deg
+
+        return SkyCoord(ra=ra, dec=dec)
 
 
 @pytest.mark.remote_data
@@ -286,3 +312,33 @@ def test_get_skycoord_mixed_distances_with_time_dependent_target_fills_unitspher
     assert np.allclose(coo.distance[2].to_value(u.kpc), 100.0)
     # Preserved distance for the distance-bearing target
     assert np.allclose(coo.distance[1].to_value(u.kpc), 780.0)
+
+
+def test_get_skycoord_forwards_observer():
+    location = EarthLocation.from_geodetic(
+        lon=10 * u.deg,
+        lat=45 * u.deg,
+        height=100 * u.m,
+    )
+    observer = Observer(location=location)
+    target = ObserverDependentTarget()
+    times = Time(["2026-02-05T00:00:00", "2026-02-05T01:00:00"], scale="utc")
+
+    with pytest.raises(ValueError, match="observer"):
+        get_skycoord(target, times=times)
+
+    coord = get_skycoord(target, times=times, observer=observer)
+
+    assert coord.shape == times.shape
+    assert np.allclose(coord.ra.to_value(u.deg), observer.location.lon.to_value(u.deg))
+    assert np.allclose(coord.dec.to_value(u.deg), observer.location.lat.to_value(u.deg))
+
+    combined = get_skycoord(
+        [SkyCoord(ra=0 * u.deg, dec=0 * u.deg), target], times=times, observer=observer
+    )
+
+    assert combined.shape == (2,) + times.shape
+
+    altaz = observer.altaz(times, target)
+
+    assert altaz.shape == times.shape
