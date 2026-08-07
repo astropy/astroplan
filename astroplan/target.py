@@ -192,7 +192,11 @@ class NonFixedTarget(Target):
 
 class TLETarget(Target):
     """
-    A target defined by TLE (Two-Line Element set) for satellites.
+    A time-dependent satellite target defined by a TLE.
+
+    The TLE describes the satellite orbit. The observing location is supplied
+    when the target is evaluated, allowing one target instance to be reused
+    with different observers.
     """
 
     @property
@@ -202,47 +206,32 @@ class TLETarget(Target):
         """
         return True
 
-    def __init__(self, line1, line2, name=None, observer=None, skip_tle_check=False):
+    def __init__(self, line1, line2, name=None, skip_tle_check=False):
         """
         Parameters
         ----------
         line1 : str
-            The first line of the TLE set
+            The first line of the TLE set.
 
         line2 : str
-            The second line of the TLE set
+            The second line of the TLE set.
 
-        name : str (optional)
+        name : str, optional
             Name of the target, used for plotting and representing the target
-            as a string
+            as a string.
 
-        observer : `~astroplan.Observer` (optional)
-            The location of observer.
-            If `None`, the observer is assumed to be at sea level at the equator.
-
-        skip_tle_check : bool (optional)
-            Whether to skip TLE validation
+        skip_tle_check : bool, optional
+            Whether to skip TLE validation.
         """
         if not skyfield_available:
             raise ImportError("Please install the skyfield package to use the TLETarget class.")
 
         if not skip_tle_check:
-            twoline2rv(line1, line2, sgp4_wgs84)    # Raises ValueError if TLE is invalid
+            # Raises ValueError if the TLE is invalid
+            twoline2rv(line1, line2, sgp4_wgs84)
 
         self.name = name
         self.satellite = EarthSatellite(line1, line2, name, load.timescale())
-
-        if observer is None:
-            # Prevent circular import and usually not used
-            from .observer import Observer
-            self.observer = Observer(latitude=0*u.deg, longitude=0*u.deg, elevation=0*u.m)
-        else:
-            self.observer = observer
-
-        longitude, latitude, height = self.observer.location.to_geodetic()
-        self.geographic_position = wgs84.latlon(latitude.to(u.deg).value,
-                                                longitude.to(u.deg).value,
-                                                height.to(u.m).value)
 
     @classmethod
     def from_string(cls, tle_string, name=None, *args, **kwargs):
@@ -272,103 +261,128 @@ class TLETarget(Target):
             line1, line2 = lines
         return cls(line1, line2, name, *args, **kwargs)
 
-    def _compute_topocentric(self, times=None):
+    def _compute_topocentric(self, times=None, observer=None):
         """
         Compute the topocentric coordinates (relative to observer) at a particular time.
 
         Parameters
         ----------
-        times : `~astropy.time.Time` (optional)
-            The time(s) to use in the calculation.
+        times : `~astropy.time.Time`, optional
+            The time(s) to use in the calculation. Defaults to the current
+            time.
+
+        observer : `~astroplan.Observer`
+            Observer from which the satellite is evaluated.
 
         Returns
         -------
         topocentric : `skyfield.positionlib.ICRF`
-            The topocentric object representing the relative coordinates of the target.
+            The satellite position relative to the supplied observer.
         """
+        if observer is None:
+            raise ValueError("`observer` is required to evaluate a TLETarget.")
+
         if times is None:
             times = Time.now()
+
         ts = load.timescale()
         t = ts.from_astropy(times)
 
-        topocentric = (self.satellite - self.geographic_position).at(t)
+        longitude, latitude, height = observer.location.to_geodetic()
+        geographic_position = wgs84.latlon(
+            latitude.to_value(u.deg),
+            longitude.to_value(u.deg),
+            height.to_value(u.m),
+        )
 
-        # Check for invalid TLE data. A non-None usually message means the computation went beyond
+        topocentric = (self.satellite - geographic_position).at(t)
+
+        # Check for invalid TLE data. A non-None message usually means the computation went beyond
         # the physically sensible point. Details:
         # https://rhodesmill.org/skyfield/earth-satellites.html#detecting-propagation-errors
         message = topocentric.message
-        if (
-            (message is not None and not isinstance(message, list)) or
-            (isinstance(message, list) and not all(x is None for x in message))
+        if (message is not None and not isinstance(message, list)) or (
+            isinstance(message, list) and not all(x is None for x in message)
         ):
             warnings.warn(f"Invalid TLE Data: {message}", InvalidTLEDataWarning)
 
         return topocentric
 
-    def get_skycoord(self, times=None):
+    def get_skycoord(self, times=None, observer=None):
         """
-        Get the coordinates of the target at a particular time.
+        Get the observer-relative sky coordinates at particular times.
 
         Parameters
         ----------
-        times : `~astropy.time.Time` (optional)
-            The time(s) to use in the calculation.
+        times : `~astropy.time.Time`, optional
+            The time(s) to use in the calculation. Defaults to the current
+            time.
+
+        observer : `~astroplan.Observer`
+            Observer from which the satellite is evaluated.
 
         Returns
         -------
         coord : `~astropy.coordinates.SkyCoord`
-            A single SkyCoord object, which may be non-scalar, representing the target's
-            RA/Dec coordinates at the specified time(s). Might return np.nan and output a
-            warning for times where the elements stop making physical sense.
+            ICRS sky direction at the specified time(s). May contain NaN
+            values, accompanied by a warning, where the elements no longer
+            produce a physically meaningful result.
         """
-        topocentric = self._compute_topocentric(times)
+        topocentric = self._compute_topocentric(times, observer=observer)
         ra, dec, distance = topocentric.radec()
         # No distance, in SkyCoord, distance is from frame origin, but here, it's from observer.
         return SkyCoord(
-            ra.hours*u.hourangle,
-            dec.degrees*u.deg,
+            ra.hours * u.hourangle,
+            dec.degrees * u.deg,
             obstime=times,
-            frame='icrs',
-            location=self.observer.location,
+            frame="icrs",
+            location=observer.location,
         )
 
-    def altaz(self, times=None):
+    def altaz(self, times=None, observer=None):
         """
-        Get the altitude and azimuth of the target at a particular time.
+        Get altitude and azimuth for an observer at particular times.
 
         Parameters
         ----------
-        times : `~astropy.time.Time` (optional)
-            The time(s) to use in the calculation.
+        times : `~astropy.time.Time`, optional
+            The time(s) to use in the calculation. Defaults to the current
+            time.
+
+        observer : `~astroplan.Observer`
+            Observer from which the satellite is evaluated.
 
         Returns
         -------
         altaz_coord : `~astropy.coordinates.SkyCoord`
-            SkyCoord object representing the target's altitude and azimuth at the specified time(s)
+            Satellite altitude and azimuth at the specified time(s).
         """
-        topocentric = self._compute_topocentric(times)
+        topocentric = self._compute_topocentric(times, observer=observer)
 
         temperature_C = None
         pressure_mbar = None
-        if self.observer.temperature is not None:
-            temperature_C = self.observer.temperature.to_value(u.deg_C)
-        if self.observer.pressure is not None:
-            pressure_mbar = self.observer.pressure.to_value(u.mbar)
+
+        if observer.temperature is not None:
+            temperature_C = observer.temperature.to_value(u.deg_C)
+        if observer.pressure is not None:
+            pressure_mbar = observer.pressure.to_value(u.mbar)
 
         alt, az, distance = topocentric.altaz(
-            temperature_C=temperature_C,
-            pressure_mbar=pressure_mbar,
+            temperature_C=temperature_C, pressure_mbar=pressure_mbar
         )
 
-        # 'relative_humidity' and 'obswl' were not used in coordinate calculation
+        # `relative_humidity` and `obswl` are not used by Skyfield's
+        # atmospheric-refraction calculation.
         altaz_frame = AltAz(
-            location=self.observer.location,
+            location=observer.location,
             obstime=times,
-            pressure=self.observer.pressure,
-            temperature=self.observer.temperature,
+            pressure=observer.pressure,
+            temperature=observer.temperature,
         )
 
-        return SkyCoord(alt=alt.degrees*u.deg, az=az.degrees*u.deg, frame=altaz_frame)
+        return SkyCoord(
+            alt=alt.degrees * u.deg, az=az.degrees * u.deg, frame=altaz_frame
+        )
 
     def __repr__(self):
         return f'<{self.__class__.__name__} "{self.name}">'
@@ -377,7 +391,7 @@ class TLETarget(Target):
         return self.name
 
 
-def get_skycoord(targets, times=None):
+def get_skycoord(targets, times=None, observer=None):
     """
     Return an `~astropy.coordinates.SkyCoord` object.
 
@@ -397,6 +411,11 @@ def get_skycoord(targets, times=None):
         Times at which to evaluate time-dependent targets. Required if any
         target in ``targets`` needs evaluation at a time.
 
+    observer : `~astroplan.Observer`, optional
+        Observer to use when evaluating targets whose apparent sky position
+        depends on the observing location. Ignored for coordinates and targets
+        that do not require observer context.
+
     Returns
     -------
     coord : `~astropy.coordinates.SkyCoord`
@@ -414,7 +433,7 @@ def get_skycoord(targets, times=None):
         if hasattr(obj, "coord"):
             return obj.coord
         if callable(getattr(obj, "get_skycoord", None)):
-            return obj.get_skycoord(times)
+            return obj.get_skycoord(times, observer=observer)
         return obj
 
     # Ignore non-scalar SkyCoords targets here

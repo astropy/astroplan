@@ -530,7 +530,7 @@ class Observer:
         is_single_time_dependent_target = (not is_multiple_targets) and is_target_time_dependent
 
         # convert any kind of target argument to non-scalar SkyCoord
-        target = get_skycoord(target, times=time)
+        target = get_skycoord(target, times=time, observer=self)
 
         if grid_times_targets:
             # Only ambiguous case: a single time-dependent target produces shape == time.shape

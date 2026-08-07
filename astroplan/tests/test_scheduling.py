@@ -19,6 +19,7 @@ from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_al
 from astroplan.periodic import EclipsingSystem
 from astroplan.scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                                   Transitioner, TransitionBlock, Schedule, Slot, Scorer)
+from astroplan.tests.test_target import ObserverDependentTarget
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -134,6 +135,10 @@ def test_transitioner():
     # to test the default transition
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
+
+    observer_dependent = ObservingBlock(ObserverDependentTarget(), 10 * u.minute, 0)
+    transition = trans(blocks[0], observer_dependent, start_time, apo)
+    assert isinstance(transition, TransitionBlock)
 
 
 default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
@@ -335,12 +340,19 @@ def test_scorer():
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
 
+    observer_dependent = ObservingBlock(ObserverDependentTarget(), 1 * u.hour, 0)
+    scorer = Scorer.from_start_end(
+        [observer_dependent], apo, Time("2016-02-06 00:00"), Time("2016-02-06 01:00")
+    )
+    scores = scorer.create_score_array(time_resolution=20 * u.minute)
+    assert scores.shape == (1, 3)
 
-@pytest.mark.skipif('not HAS_SKYFIELD')
+
+@pytest.mark.skipif(not HAS_SKYFIELD, reason="skyfield is not installed")
 def test_priority_scheduler_TLETarget():
     line1 = "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990"
     line2 = "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092"
-    iss = TLETarget(name="ISS (ZARYA)", line1=line1, line2=line2, observer=apo)
+    iss = TLETarget(name="ISS (ZARYA)", line1=line1, line2=line2)
     constraints = [AirmassConstraint(3, boolean_constraint=False)]
     blocks = [ObservingBlock(t, 5*u.minute, i) for i, t in enumerate(targets)]
     blocks.append(ObservingBlock(iss, 0.5*u.minute, 4))
