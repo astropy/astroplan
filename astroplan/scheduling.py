@@ -15,7 +15,7 @@ from astropy.coordinates import ConvertError
 
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
-from .target import get_skycoord
+from .target import SGP4SatelliteTarget, get_skycoord
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',
@@ -287,10 +287,10 @@ class Schedule:
                         if p_hpa != 0.0:
                             parts.append("pressure={:.3f} hPa".format(p_hpa))
                 return ", ".join(parts)
-            if hasattr(target, "satellite"):
+            if isinstance(target, SGP4SatelliteTarget):
                 return (
-                    f"#{target.satellite.model.satnum} "
-                    f"epoch {target.satellite.epoch.utc_strftime(format='%Y-%m-%d %H:%M:%S')}"
+                    f"#{target.catalog_number} "
+                    f"epoch {target.epoch.utc.strftime('%Y-%m-%d %H:%M:%S')}"
                 )
             return ""
 

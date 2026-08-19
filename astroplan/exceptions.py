@@ -42,6 +42,6 @@ class MissingConstraintWarning(AstroplanWarning):
     pass
 
 
-class InvalidTLEDataWarning(AstroplanWarning):
-    """TLE data invalid for the requested time"""
+class SatellitePropagationWarning(AstroplanWarning):
+    """SGP4 propagation failed for one or more requested times"""
     pass

@@ -34,8 +34,8 @@ dependencies = [
 [project.optional-dependencies]
 all = [
     "matplotlib>=3.7.3",
-    "astroquery>=0.4.7"
-    "skyfield"
+    "astroquery>=0.4.7",
+    "sgp4>=2.25"
 ]
 test = [
     "pytest>=7.4.0",
@@ -55,8 +55,8 @@ dev = [
     "tox>=4",
     "tox-uv>=1.35"
 ]
-tle = [
-    "skyfield"
+satellite = [
+    "sgp4>=2.25"
 ]
 
 [project.readme]
