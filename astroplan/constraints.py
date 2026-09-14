@@ -909,11 +909,13 @@ class PhaseConstraint(Constraint):
 
         """
         self.periodic_event = periodic_event
+        
+        self.min = min if min is not None else 0.0
+        self.max = max if max is not None else 1.0
+
         if (min < 0) or (min > 1) or (max < 0) or (max > 1):
             raise ValueError('The minimum of the PhaseConstraint must be within'
                              ' the interval [0, 1).')
-        self.min = min if min is not None else 0.0
-        self.max = max if max is not None else 1.0
 
     def compute_constraint(self, times, observer=None, targets=None):
         phase = self.periodic_event.phase(times)
