@@ -11,6 +11,7 @@ import numpy as np
 from astropy import units as u
 from astropy.time import Time
 from astropy.table import Table
+from astropy.coordinates import ConvertError
 
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
@@ -118,7 +119,7 @@ class Scorer:
         self.observer = observer
         self.schedule = schedule
         self.global_constraints = global_constraints
-        self.targets = get_skycoord([block.target for block in self.blocks])
+        self.targets = [block.target for block in self.blocks]
 
     def create_score_array(self, time_resolution=1*u.minute):
         """
@@ -147,8 +148,9 @@ class Scorer:
                     applied_score = constraint(self.observer, block.target,
                                                times=times)
                     score_array[i] *= applied_score
+        targets = get_skycoord(self.targets, times=times, observer=self.observer)
         for constraint in self.global_constraints:
-            score_array *= constraint(self.observer, self.targets, times,
+            score_array *= constraint(self.observer, targets, times,
                                       grid_times_targets=True)
         return score_array
 
@@ -265,45 +267,108 @@ class Schedule:
         return [slot for slot in self.slots if not slot.occupied]
 
     def to_table(self, show_transitions=True, show_unused=False):
-        # TODO: allow different coordinate types
+        def _format_target_info(target):
+            if hasattr(target, "coord"):
+                try:
+                    return target.coord.icrs.to_string("hmsdms")
+                except ConvertError:
+                    return repr(target.coord)
+            if hasattr(target, "alt") and hasattr(target, "az"):
+                parts = [
+                    "alt={:.6f} deg".format(u.Quantity(target.alt).to_value(u.deg)),
+                    "az={:.6f} deg".format(u.Quantity(target.az).to_value(u.deg)),
+                ]
+                if hasattr(target, "pressure"):
+                    try:
+                        p_hpa = u.Quantity(target.pressure).to_value(u.hPa)
+                    except (TypeError, ValueError, u.UnitConversionError):
+                        pass
+                    else:
+                        if p_hpa != 0.0:
+                            parts.append("pressure={:.3f} hPa".format(p_hpa))
+                return ", ".join(parts)
+            if hasattr(target, "satellite"):
+                return (
+                    f"#{target.satellite.model.satnum} "
+                    f"epoch {target.satellite.epoch.utc_strftime(format='%Y-%m-%d %H:%M:%S')}"
+                )
+            return ""
+
         target_names = []
         start_times = []
         end_times = []
         durations = []
+        target_types = []
+        target_info = []
         ra = []
         dec = []
         config = []
+
         for slot in self.slots:
-            if hasattr(slot.block, 'target'):
+            if hasattr(slot.block, "target"):
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
                 durations.append(slot.duration.to(u.minute).value)
                 target_names.append(slot.block.target.name)
-                ra.append(u.Quantity(slot.block.target.ra))
-                dec.append(u.Quantity(slot.block.target.dec))
+                target_types.append(slot.block.target.__class__.__name__)
+                try:
+                    ra.append(u.Quantity(slot.block.target.ra))
+                except (AttributeError, NotImplementedError):
+                    ra.append("")
+                try:
+                    dec.append(u.Quantity(slot.block.target.dec))
+                except (AttributeError, NotImplementedError):
+                    dec.append("")
+                target_info.append(_format_target_info(slot.block.target))
                 config.append(slot.block.configuration)
             elif show_transitions and slot.block:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
                 durations.append(slot.duration.to(u.minute).value)
-                target_names.append('TransitionBlock')
-                ra.append('')
-                dec.append('')
+                target_names.append("TransitionBlock")
+                target_types.append("TransitionBlock")
+                ra.append("")
+                dec.append("")
+                target_info.append("")
                 changes = list(slot.block.components.keys())
-                if 'slew_time' in changes:
-                    changes.remove('slew_time')
+                if "slew_time" in changes:
+                    changes.remove("slew_time")
                 config.append(changes)
             elif slot.block is None and show_unused:
                 start_times.append(slot.start.iso)
                 end_times.append(slot.end.iso)
                 durations.append(slot.duration.to(u.minute).value)
-                target_names.append('Unused Time')
-                ra.append('')
-                dec.append('')
-                config.append('')
-        return Table([target_names, start_times, end_times, durations, ra, dec, config],
-                     names=('target', 'start time (UTC)', 'end time (UTC)',
-                            'duration (minutes)', 'ra', 'dec', 'configuration'))
+                target_names.append("Unused Time")
+                target_types.append("")
+                ra.append("")
+                dec.append("")
+                target_info.append("")
+                config.append("")
+
+        return Table(
+            [
+                target_names,
+                start_times,
+                end_times,
+                durations,
+                ra,
+                dec,
+                target_types,
+                target_info,
+                config,
+            ],
+            names=(
+                "target",
+                "start time (UTC)",
+                "end time (UTC)",
+                "duration (minutes)",
+                "ra",
+                "dec",
+                "target type",
+                "target info",
+                "configuration",
+            ),
+        )
 
     def new_slots(self, slot_index, start_time, end_time):
         """
@@ -774,6 +839,8 @@ class PriorityScheduler(Scheduler):
             good = np.all(_strided_scores > 1e-5, axis=1)
             sum_scores = np.zeros(len(_strided_scores))
             sum_scores[good] = np.sum(_strided_scores[good], axis=1)
+            # Treat scores equal within 6 decimal places
+            score_key = np.round(sum_scores, 6)
 
             if np.all(constraint_scores == 0) or np.all(~good):
                 # No further calculation if no times meet the constraints
@@ -783,7 +850,7 @@ class PriorityScheduler(Scheduler):
                 # does not prevent us from fitting it in.
                 # loop over valid times and see if it fits
                 # TODO: speed up by searching multiples of time resolution?
-                for idx in np.argsort(-sum_scores, kind='mergesort'):
+                for idx in np.argsort(-score_key, kind="mergesort"):
                     if sum_scores[idx] <= 0.0:
                         # we've run through all optimal blocks
                         _is_scheduled = False
@@ -996,9 +1063,12 @@ class Transitioner:
             # use the constraints cache for now, but should move that machinery
             # to observer
             from .constraints import _get_altaz
-            from .target import get_skycoord
             if oldblock.target != newblock.target:
-                targets = get_skycoord([oldblock.target, newblock.target])
+                targets = get_skycoord(
+                    [oldblock.target, newblock.target],
+                    times=start_time,
+                    observer=observer
+                )
                 aaz = _get_altaz(start_time, observer, targets)['altaz']
                 sep = aaz[0].separation(aaz[1])
                 if sep/self.slew_rate > 1 * u.second:

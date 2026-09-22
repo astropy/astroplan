@@ -507,22 +507,44 @@ class Observer:
             the shapes together using standard numpy rules. Useful for grid
             searches for rise/set times etc.
         """
-        # make sure we have a non-scalar time
         if not isinstance(time, Time):
             time = Time(time)
+
+        # In grid mode, scalar time should still behave like a length-1 time axis
+        if grid_times_targets and time.isscalar:
+            time = time[None]  # shape (1,)
 
         if target is None:
             return time, None
 
+        # Remember whether target is a single time-dependent target
+        is_multiple_targets = isinstance(target, (list, tuple))
+        is_target_time_dependent = (
+            callable(getattr(target, "get_skycoord", None)) and not
+            hasattr(target, "coord")
+        )
+        is_single_time_dependent_target = (not is_multiple_targets) and is_target_time_dependent
+
         # convert any kind of target argument to non-scalar SkyCoord
-        target = get_skycoord(target)
+        target = get_skycoord(target, times=time, observer=self)
+
         if grid_times_targets:
+            # Only ambiguous case: a single time-dependent target produces shape == time.shape
+            # but grid mode requires a leading target axis (1, ...).
+            if (
+                is_single_time_dependent_target
+                and (not target.isscalar)
+                and (target.shape == time.shape)
+            ):
+                target = target[np.newaxis, ...]
+
+            # Ensure at least one targets axis for scalar targets
             if target.isscalar:
-                # ensure we have a (1, 1) shape coord
-                target = SkyCoord(np.tile(target, 1))[:, np.newaxis]
-            else:
-                while target.ndim <= time.ndim:
-                    target = target[:, np.newaxis]
+                target = SkyCoord(np.tile(target, 1))  # shape (1,)
+
+            # Make target have one more dim than time (first targets axis, then time axes)
+            while target.ndim < 1 + time.ndim:
+                target = target[..., np.newaxis]
 
         elif not self._is_broadcastable(target.shape, time.shape):
             raise ValueError('Time and Target arguments cannot be broadcast '

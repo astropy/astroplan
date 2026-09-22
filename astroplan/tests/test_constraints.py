@@ -3,7 +3,7 @@ import datetime as dt
 import astropy.units as u
 import numpy as np
 import pytest
-from astropy.coordinates import Galactic, SkyCoord, get_sun, get_body
+from astropy.coordinates import Galactic, SkyCoord, EarthLocation, get_sun, get_body
 from astropy.time import Time
 
 from astroplan.constraints import (
@@ -20,7 +20,7 @@ from astroplan.constraints import (
 from astroplan.exceptions import MissingConstraintWarning
 from astroplan.observer import Observer
 from astroplan.periodic import EclipsingSystem
-from astroplan.target import FixedTarget, get_skycoord
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -105,6 +105,41 @@ def test_altitude_constraint():
     results = constraint(subaru, vega, times=time_grid_from_range(time_range))
     # Check if below min and above max values are 0
     assert np.all([results != 0][0] == [False, False, True,  True,  False, False])
+
+
+def test_altitude_constraint_accepts_altaztarget():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location)
+    target = AltAzTarget(alt=60*u.deg, az=180*u.deg, location=location, name="horiz")
+    c = AltitudeConstraint(min=30*u.deg)
+
+    # Scalar Time
+    t = Time("2026-02-05T00:00:00", scale="utc")
+    result = c(observer, target, times=t)
+    assert result.shape == ()
+    assert np.all(result)
+
+    # Vector time, no grid
+    t0 = Time("2026-01-01T00:00:00", scale="utc")
+    times = t0 + np.arange(5) * u.hour
+    result = c(observer, target, times=times, grid_times_targets=False)
+    assert result.shape == times.shape
+    assert np.all(result)
+
+    # Vector time, grid
+    result = c(observer, target, times=times, grid_times_targets=True)
+    assert result.shape == (1, len(times))
+    assert np.all(result)
+
+    # Vector time, grid, multiple targets
+    targets = [
+        AltAzTarget(alt=60*u.deg, az=180*u.deg, location=location, name="h1"),
+        AltAzTarget(alt=40*u.deg, az=90*u.deg, location=location, name="h2"),
+    ]
+    result = c(observer, targets, times=times, grid_times_targets=True)
+    assert result.shape == (len(targets), len(times))
+    assert np.all(result[0, :])
+    assert np.all(result[1, :])
 
 
 @pytest.mark.remote_data
