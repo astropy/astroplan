@@ -5,7 +5,7 @@ build:
   apt_packages:
     - graphviz
   tools:
-    python: "3.11"
+    python: "3.14"
 
 sphinx:
   builder: html

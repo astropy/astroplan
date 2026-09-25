@@ -24,21 +24,22 @@ keywords = [
 dynamic = [
     "version"
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
-    "numpy>=1.23.2",
+    "numpy>=1.26.0",
     "astropy>=6.0",
-    "pytz"
+    "tzdata>=2023.3"
 ]
 
 [project.optional-dependencies]
 all = [
-    "matplotlib>=3.6.0",
-    "astroquery"
+    "matplotlib>=3.7.3",
+    "astroquery>=0.4.7"
 ]
 test = [
-    "pytest-astropy",
-    "pytest-mpl"
+    "pytest>=7.4.0",
+    "pytest-astropy>=0.11.0",
+    "pytest-mpl>=0.16.1"
 ]
 docs = [
     "astroplan[all]",
@@ -47,6 +48,11 @@ docs = [
 ]
 plotting = [
     "astroplan[all]"
+]
+dev = [
+    "astroplan[all,test]",
+    "tox>=4",
+    "tox-uv>=1.35"
 ]
 
 [project.readme]
@@ -78,7 +84,7 @@ requires = ["setuptools>=77.0.1",
 build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "7.4"
 testpaths = [
     "astroplan",
     "docs",

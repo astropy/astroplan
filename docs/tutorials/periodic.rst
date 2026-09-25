@@ -173,7 +173,7 @@ and the time of observations (`~astroplan.LocalTimeConstraint` and
 
 .. code-block:: python
 
-    >>> from astroplan import (PrimaryEclipseConstraint, is_event_observable
+    >>> from astroplan import (PrimaryEclipseConstraint, is_event_observable,
     ...                        AtNightConstraint, AltitudeConstraint, LocalTimeConstraint)
     >>> import datetime as dt
     >>> import astropy.units as u
@@ -184,7 +184,9 @@ and the time of observations (`~astroplan.LocalTimeConstraint` and
     ...                LocalTimeConstraint(min=min_local_time, max=max_local_time)]
 
     >>> is_event_observable(constraints, apo, target, times=midtransit_times)
-    array([[ True, False,  True, ...,  True, False,  True, False]], dtype=bool)
+    array([[False, False, False, ..., False,  True, False, False]])
+
+Seven of the 100 mid-transit times satisfy all three constraints.
 
 In the above example, we only checked that the star is observable at the
 mid-transit time. If you were planning to do transit photometry of HD 209458 b,
@@ -195,7 +197,9 @@ for only completely observable transits:
 
     >>> ing_egr = hd209458.next_primary_ingress_egress_time(observing_time, n_eclipses=n_transits)
     >>> is_event_observable(constraints, apo, target, times_ingress_egress=ing_egr)
-    array([[False, False, False, ...,  True, False, False, False]], dtype=bool)
+    array([[False, False, False, ..., False, False, False, False]])
+
+Only two of these 100 transits are observable from ingress to egress.
 
 Note that several of the transits that were observable at their mid-transit time
 are not observable at both the ingress and egress times, and therefore are

@@ -25,6 +25,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Job names are required status checks on main, so they describe roles
+  # ("oldest"/"current"/"latest" Python) rather than versions. When bumping
+  # Python versions, change the tox envs below and default_python, not the names.
+  # "current" is default_python; "latest" (devdeps) moves to a new Python first;
+  # "threaded" is the free-threaded build of the current Python.
+  #
   # Github Actions supports ubuntu, windows, and macos virtual environments:
   # https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
   ci_tests:
@@ -34,6 +40,7 @@ jobs:
     with:
       submodules: false
       coverage: ''
+      default_python: '3.14'
       envs: |
         - name: Code style checks
           linux: codestyle
@@ -41,29 +48,41 @@ jobs:
         - name: Link checks
           linux: linkcheck
 
-        - name: OS X - Python 3.13 with minimal dependencies
-          macos: py313-test
-          runs-on: macos-latest
+        - name: Linux - oldest Python, base dependencies
+          linux: py312-test
 
-        - name: Windows - Python 3.11 with all optional dependencies
-          windows: py311-test-alldeps
-          toxargs: -v
+        - name: Linux - intermediate Python, base dependencies
+          linux: py313-test
 
-        - name: Python 3.12 with remote data, all dependencies, and coverage
-          linux: py312-test-alldeps-cov
+        - name: Linux - oldest Python, oldest dependencies
+          linux: py312-test-oldestdeps
+
+        - name: Linux - threaded Python, base dependencies
+          linux: py314t-test
+
+        - name: macOS - current Python, base dependencies
+          macos: py314-test
+
+        - name: Windows - current Python, base dependencies
+          windows: py314-test
+
+        - name: Linux - current Python, all dependencies, remote data, coverage
+          linux: py314-test-alldeps-cov
           toxargs: -v
           posargs: --remote-data=any
           coverage: codecov
 
-        - name: Python 3.11 with oldest version of key dependencies
-          linux: py311-test-oldestdeps
+        - name: Linux - current Python, image comparison tests
+          linux: py314-test-image
+          artifact-path: results/
 
   allowed_failures:
     uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@22ddf09dfabb443adddfb9f861b7d41a787d6b1a  # v3.0.3
     with:
       submodules: false
       coverage: ''
+      default_python: '3.14'
       envs: |
-        - name: (Allowed Failure) Python 3.13 with latest dev versions of key dependencies
-          linux: py313-test-devdeps
-          posargs: --verbose
+        - name: (Allowed Failure) Linux - latest Python, dev dependencies, remote data
+          linux: py315-test-devdeps
+          posargs: --remote-data=any --verbose

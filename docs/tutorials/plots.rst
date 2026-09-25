@@ -100,7 +100,7 @@ time and issue the plotting command.
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -117,7 +117,7 @@ time and issue the plotting command.
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -147,7 +147,7 @@ altitude of the targets:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -164,7 +164,7 @@ altitude of the targets:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -184,7 +184,7 @@ You can make altitude the primary y-axis rather than airmass by using
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -201,7 +201,7 @@ You can make altitude the primary y-axis rather than airmass by using
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -250,7 +250,7 @@ To center your window at some instance in time:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -268,7 +268,7 @@ To center your window at some instance in time:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -307,7 +307,7 @@ If you know the start and end times of your observation run, you can use a
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -325,7 +325,7 @@ If you know the start and end times of your observation run, you can use a
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -367,7 +367,7 @@ many targets on the plot as you wish::
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -384,7 +384,7 @@ many targets on the plot as you wish::
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -440,7 +440,7 @@ The default line for time-dependent plots is solid and the default label
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -457,7 +457,7 @@ The default line for time-dependent plots is solid and the default label
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('06h45m08.9173s', '-16d42m58.017s', frame='icrs')
@@ -634,7 +634,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -652,7 +652,7 @@ Altair, Vega and Deneb. To plot a map of the sky:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
@@ -716,7 +716,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -734,7 +734,7 @@ Say I want to know how Altair moves in the sky over a 9-hour period:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('19h50m47.6s', '+08d52m12.0s', frame='icrs')
@@ -821,7 +821,7 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -839,7 +839,7 @@ direction in which azimuth increases via the *north_to_east_ccw* option:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
@@ -894,7 +894,7 @@ A positive offset is in the same direction as azimuth increase (see the
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -912,7 +912,7 @@ A positive offset is in the same direction as azimuth increase (see the
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
@@ -973,7 +973,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -991,7 +991,7 @@ You can turn off the grid lines by setting the *grid* option to *False*:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
@@ -1102,7 +1102,7 @@ make multiple plots:
     import matplotlib.pyplot as plt
     import astropy.units as u
     from astropy.coordinates import EarthLocation, SkyCoord
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astropy.time import Time
 
     from astroplan import Observer
@@ -1120,7 +1120,7 @@ make multiple plots:
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
     coordinates = SkyCoord('02h31m49.09s', '+89d15m50.8s', frame='icrs')
