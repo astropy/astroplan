@@ -40,3 +40,8 @@ class PlotBelowHorizonWarning(PlotWarning):
 class MissingConstraintWarning(AstroplanWarning):
     """Triggered when a constraint is expected but not supplied"""
     pass
+
+
+class SatellitePropagationWarning(AstroplanWarning):
+    """SGP4 propagation failed for one or more requested times"""
+    pass

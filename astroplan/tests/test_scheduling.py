@@ -3,17 +3,23 @@
 import astropy.units as u
 import numpy as np
 import pytest
-from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.coordinates import EarthLocation, ITRS, SkyCoord
 from astropy.time import Time
+try:
+    import sgp4  # noqa: F401
+    HAS_SGP4 = True
+except ImportError:
+    HAS_SGP4 = False
 
 from astroplan.utils import time_grid_from_range
 from astroplan.observer import Observer
-from astroplan.target import FixedTarget, get_skycoord
+from astroplan.target import FixedTarget, SGP4SatelliteTarget, get_skycoord
 from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
                                    MoonIlluminationConstraint, PhaseConstraint)
 from astroplan.periodic import EclipsingSystem
 from astroplan.scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                                   Transitioner, TransitionBlock, Schedule, Slot, Scorer)
+from astroplan.tests.test_target import ObserverDependentTarget
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -129,6 +135,10 @@ def test_transitioner():
     # to test the default transition
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
+
+    observer_dependent = ObservingBlock(ObserverDependentTarget(), 10 * u.minute, 0)
+    transition = trans(blocks[0], observer_dependent, start_time, apo)
+    assert isinstance(transition, TransitionBlock)
 
 
 default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
@@ -329,3 +339,54 @@ def test_scorer():
     scores = scorer.create_score_array(time_resolution=20 * u.minute)
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
+
+    observer_dependent = ObservingBlock(ObserverDependentTarget(), 1 * u.hour, 0)
+    scorer = Scorer.from_start_end(
+        [observer_dependent], apo, Time("2016-02-06 00:00"), Time("2016-02-06 01:00")
+    )
+    scores = scorer.create_score_array(time_resolution=20 * u.minute)
+    assert scores.shape == (1, 3)
+
+
+@pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
+def test_priority_scheduler_SGP4SatelliteTarget():
+    iss = SGP4SatelliteTarget(tle=(
+        "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990",
+        "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092",
+    ), name="ISS (ZARYA)")
+    start_time = iss.epoch
+
+    satellite_itrs = iss.get_teme(start_time).transform_to(ITRS(obstime=start_time))
+    satellite_location = EarthLocation.from_geocentric(*satellite_itrs.cartesian.xyz)
+    lon, lat, _ = satellite_location.to_geodetic()
+    observer = Observer(location=EarthLocation.from_geodetic(lon, lat, 0*u.m),
+                        pressure=0*u.bar)
+
+    block = ObservingBlock(iss, 30*u.second, 0)
+    scheduler = PriorityScheduler(
+        transitioner=default_transitioner,
+        constraints=[AirmassConstraint(max=10)],
+        observer=observer,
+        time_resolution=10*u.second,
+    )
+    schedule = Schedule(start_time, start_time + 5*u.minute)
+    scheduler([block], schedule)
+    assert len(schedule.observing_blocks) == 1
+
+    table = schedule.to_table()
+    row = table[table["target type"] == "SGP4SatelliteTarget"][0]
+    assert row["target info"].startswith("#25544 epoch 2023-08-03 06:32:29")
+
+    # Transitioner
+    transition = default_transitioner(ObservingBlock(vega, 30*u.second, 0), block,
+                                      start_time, observer)
+    assert isinstance(transition, TransitionBlock)
+
+    # Scorer with mixed blocks
+    blocks = [ObservingBlock(vega, 30*u.second, 0), block]
+    scorer = Scorer.from_start_end(
+        blocks, observer, start_time, start_time + 5*u.minute,
+        [AirmassConstraint(max=10)]
+    )
+    scores = scorer.create_score_array(time_resolution=10*u.second)
+    assert scores.shape[0] == 2

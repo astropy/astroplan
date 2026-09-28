@@ -20,7 +20,13 @@ from astroplan.constraints import (
 from astroplan.exceptions import MissingConstraintWarning
 from astroplan.observer import Observer
 from astroplan.periodic import EclipsingSystem
-from astroplan.target import FixedTarget, get_skycoord
+from astroplan.target import FixedTarget, SGP4SatelliteTarget, get_skycoord
+
+try:
+    import sgp4  # noqa: F401
+    HAS_SGP4 = True
+except ImportError:
+    HAS_SGP4 = False
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479*u.deg, dec=38.78368896*u.deg),
                    name="Vega")
@@ -149,6 +155,19 @@ def test_compare_airmass_constraint_and_observer():
         always_from_constraint = is_always_observable(
             AirmassConstraint(max_airmass), subaru, targets, time_range=time_range)
         assert all(always_from_observer == always_from_constraint)
+
+
+@pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
+def test_satellite_constraint():
+    target = SGP4SatelliteTarget(tle=(
+        "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990",
+        "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092",
+    ))
+    observer = Observer(longitude=-155.476111*u.deg, latitude=19.825555*u.deg,
+                        elevation=4139*u.m)
+    times = Time(["2023-08-03T06:32:29", "2023-08-03T06:33:29"])
+
+    assert AirmassConstraint(max=10)(observer, target, times=times).shape == times.shape
 
 
 @pytest.mark.remote_data
