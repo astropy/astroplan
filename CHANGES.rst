@@ -3,6 +3,9 @@
 
 - Minimum Python version is now 3.11. Also bumped minversion
   of dependencies. [#605]
+- Fix ``block already occupied`` error in ``PriorityScheduler`` by adjusting
+  the condition for filled slots in ``_get_filled_indices()``. This was primarily
+  an issue for blocks with ``duration`` <= ``time_resolution``. [#550]
 
 - Fix CI: bump the pinned ``OpenAstronomy/github-actions-workflows`` reusable
   workflow to v3.0.3 (fixes a Python-3.12-patch-version matching bug that was
