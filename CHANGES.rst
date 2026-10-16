@@ -32,7 +32,7 @@
 - Fix rise/set times always being returned as masked ``Time`` objects, even
   when no times are masked. Newer astropy keeps such ``Time`` objects masked,
   which broke coordinate transforms that use them (e.g. ``Observer.tonight``).
-  [#PRNUM]
+  [#643]
 
 - Add a ``dev`` extra that installs the ``all`` and ``test`` extras plus
   ``tox`` and ``tox-uv``, for running the test environments locally. [#641]
