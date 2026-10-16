@@ -47,6 +47,9 @@
   fix a dead documentation link, and ignore ADS's bot-blocking 405 responses
   in the linkcheck.
 
+- Fix ``PhaseConstraint`` raising a ``TypeError`` when ``min`` or ``max`` is
+  not given, instead of defaulting to the full phase range. [#639]
+
 0.10.1 (2024-08-13)
 -------------------
 
