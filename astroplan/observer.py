@@ -57,6 +57,11 @@ def _process_nans_in_jds(jds):
     not_finite = ~np.isfinite(jds)
     masked_jds = np.ma.masked_array(jds.to(u.day).value if hasattr(jds, 'unit') else jds.copy())
     masked_jds[not_finite] = np.ma.masked
+    # Only return a masked array when something is masked: newer astropy keeps
+    # a Time masked even if no elements are, and masked coordinates can't be
+    # transformed.
+    if not np.ma.is_masked(masked_jds):
+        return np.ma.getdata(masked_jds)
     return masked_jds
 
 

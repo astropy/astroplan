@@ -29,6 +29,11 @@
   added minimum versions for astroquery (0.4.7), pytest-astropy (0.11.0) and
   pytest-mpl (0.16.1). [#631]
 
+- Fix rise/set times always being returned as masked ``Time`` objects, even
+  when no times are masked. Newer astropy keeps such ``Time`` objects masked,
+  which broke coordinate transforms that use them (e.g. ``Observer.tonight``).
+  [#643]
+
 - Add a ``dev`` extra that installs the ``all`` and ``test`` extras plus
   ``tox`` and ``tox-uv``, for running the test environments locally. [#641]
 

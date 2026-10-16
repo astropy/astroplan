@@ -46,7 +46,7 @@ What are IERS Bulletins A and B?
 ================================
 
 The `International Earth Rotation and Reference Systems Service (IERS)
-<http://www.iers.org/>`_ is responsible for measuring the Earth's orientation as
+<https://www.iers.org/>`_ is responsible for measuring the Earth's orientation as
 a function of time, and making predictions for the Earth's orientation in the
 near future (accounting for scheduled leap seconds). The data products released
 by the IERS used by astroplan are the IERS Bulletins A and B.
