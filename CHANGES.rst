@@ -29,6 +29,16 @@
   added minimum versions for astroquery (0.4.7), pytest-astropy (0.11.0) and
   pytest-mpl (0.16.1). [#631]
 
+- ``Observer.parallactic_angle`` and ``Observer.target_hour_angle`` now
+  transform the target to the apparent topocentric ``HADec`` frame before
+  computing the hour angle, instead of subtracting the target's input-frame
+  (e.g. ICRS) right ascension from the local sidereal time. This accounts for
+  precession, nutation, aberration and topocentric parallax, so results
+  change by ~0.1-0.4 deg for typical targets at current epochs, and by more
+  close to the pole or zenith. ``parallactic_angle`` now also accepts
+  ``MoonFlag`` and ``SunFlag`` targets. Its ``kind`` and ``model`` arguments
+  are deprecated and ignored. [#633]
+
 - Fix rise/set times always being returned as masked ``Time`` objects, even
   when no times are masked. Newer astropy keeps such ``Time`` objects masked,
   which broke coordinate transforms that use them (e.g. ``Observer.tonight``).
