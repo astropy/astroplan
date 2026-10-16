@@ -110,6 +110,10 @@ github_issues_url = 'https://github.com/astropy/astroplan/issues/'
 linkcheck_retry = 5
 linkcheck_ignore = [
     r'https://github\.com/astropy/astroplan/(?:issues|pull)/\d+',
+    # ADS fronts its pages with a bot-blocking WAF that returns 405 to any
+    # scripted request (including a browser User-Agent), even though the
+    # pages are reachable fine in an actual browser.
+    r'https://ui\.adsabs\.harvard\.edu/abs/.*',
 ]
 linkcheck_timeout = 180
 linkcheck_anchors = False
