@@ -37,7 +37,7 @@
   change by ~0.1-0.4 deg for typical targets at current epochs, and by more
   close to the pole or zenith. ``parallactic_angle`` now also accepts
   ``MoonFlag`` and ``SunFlag`` targets. Its ``kind`` and ``model`` arguments
-  are deprecated and ignored. [#633]
+  are deprecated and ignored. [#644]
 
 - Fix rise/set times always being returned as masked ``Time`` objects, even
   when no times are masked. Newer astropy keeps such ``Time`` objects masked,
