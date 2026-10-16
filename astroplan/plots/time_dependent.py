@@ -6,7 +6,7 @@ import astropy.units as u
 from astropy.time import Time
 from collections.abc import Sequence
 import warnings
-import pytz
+import datetime
 
 from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
@@ -218,7 +218,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         ]
 
         # add 'UTC' to each datetime object created above
-        twilights = [(t[0].datetime.replace(tzinfo=pytz.utc), t[1])
+        twilights = [(t[0].datetime.replace(tzinfo=datetime.timezone.utc), t[1])
                      for t in twilights]
 
         twilights.sort(key=operator.itemgetter(0))

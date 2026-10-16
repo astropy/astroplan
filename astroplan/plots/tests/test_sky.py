@@ -17,7 +17,7 @@ except ImportError:
 # https://github.com/astropy/astroplan/issues/65
 # https://github.com/astropy/astroplan/issues/74
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(baseline_dir='baseline_images')
 def test_image_example():
     import matplotlib.pyplot as plt
 
@@ -28,25 +28,31 @@ def test_image_example():
     return fig
 
 
-@pytest.mark.remote_data
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(baseline_dir='baseline_images')
 def test_timezone():
     import datetime
+    import zoneinfo
 
-    import pytz
-    from astropy import coordinates
-    from astropy import units as u
+    import matplotlib.pyplot as plt
 
     from astroplan import Observer
     from astroplan.plots.time_dependent import plot_airmass
 
-    betelgeuse = coordinates.SkyCoord(88.79293899*u.deg, 7.407064*u.deg, frame='icrs')
-    observer = Observer(coordinates.EarthLocation.of_site('subaru'))
+    betelgeuse = SkyCoord(88.79293899*u.deg, 7.407064*u.deg, frame='icrs')
+    subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
+                                         19.825555555555564*u.deg, 4139*u.m)
+    observer = Observer(subaru)
     # Eastern time... because you're remote-operating Subaru from home...?
-    now_ET = pytz.timezone('US/Eastern').localize(datetime.datetime.now())
+    # Use a fixed time so the image is reproducible.
+    time_ET = datetime.datetime(2020, 1, 15, 20, 0,
+                                tzinfo=zoneinfo.ZoneInfo('US/Eastern'))
 
-    plot_airmass(betelgeuse, observer, now_ET, use_local_tz=True)
+    fig, ax = plt.subplots()
+    plot_airmass(betelgeuse, observer, time_ET, ax=ax, use_local_tz=True)
+    fig.tight_layout()
+
+    return fig
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
