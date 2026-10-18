@@ -390,6 +390,12 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     if time_ut.isscalar:
         time_ut = time_ut + np.linspace(-12, 12, 100) * u.hour
     elif len(time_ut) == 1:
+       warnings.warn(
+        'You used a Time array of length 1. You probably meant '
+        'to use a scalar. (Or maybe a list with length > 1?).',
+        PlotWarning
+    )
+    elif len(time_ut) == 1:
         warnings.warn('You used a Time array of length 1.  You probably meant '
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
