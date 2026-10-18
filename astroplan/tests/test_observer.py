@@ -814,6 +814,49 @@ def test_solar_transit_convenience_methods():
             datetime.timedelta(minutes=threshold_minutes))
 
 
+def test_midnight_and_noon_at_the_event_itself():
+    """Solar midnight or noon queried at that instant is that instant.
+
+    The search samples the derivative of altitude. A zero that lands on the
+    query used to fall outside every bracket, so one of next/previous came
+    back masked and ``which='nearest'`` kept the mask
+    (`issue 618 <https://github.com/astropy/astroplan/issues/618>`_).
+    """
+    apo = Observer.at_site('APO', timezone='US/Mountain')
+    day = Time('2026-01-15 12:00:00')
+
+    def check(method, tol):
+        event = method(day)
+        again = method(event)
+        assert not np.ma.is_masked(again.jd)
+        assert abs(again - event) < tol
+        assert abs(method(event, which='next') - event) < tol
+        previous = method(event, which='previous')
+        assert not np.ma.is_masked(previous.jd)
+        assert previous <= event + 1 * u.s
+
+        just_after = event + 10 * u.min
+        assert method(just_after, which='next') > event + 1 * u.hour
+        assert abs(method(just_after, which='previous') - event) < 15 * u.min
+
+        just_before = event - 10 * u.min
+        assert method(just_before, which='previous') < just_before
+        assert abs(method(just_before, which='next') - event) < 5 * u.min
+
+        earlier = event - 30 * u.min
+        assert abs(method(earlier, which='next') - event) < 5 * u.min
+
+    check(apo.midnight, 1 * u.min)
+    check(apo.noon, 1 * u.min)
+
+    equator = Observer(location=EarthLocation.from_geodetic(
+        0 * u.deg, 0 * u.deg, 0 * u.m))
+    noon = equator.noon(day)
+    again = equator.noon(noon)
+    assert not np.ma.is_masked(again.jd)
+    assert abs(again - noon) < 5 * u.min
+
+
 def print_pyephem_solar_transit_noon():
     """
     Calculate next sunrise and sunset with PyEphem for an observer
