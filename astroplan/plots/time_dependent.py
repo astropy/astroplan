@@ -385,20 +385,17 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         tzname = 'UTC'
         tzinfo = None
 
+
     # Populate time window if needed.
     time_ut = Time(time)
     if time_ut.isscalar:
         time_ut = time_ut + np.linspace(-12, 12, 100) * u.hour
     elif len(time_ut) == 1:
-       warnings.warn(
-        'You used a Time array of length 1. You probably meant '
-        'to use a scalar. (Or maybe a list with length > 1?).',
-        PlotWarning
-    )
-    elif len(time_ut) == 1:
-        warnings.warn('You used a Time array of length 1.  You probably meant '
-                      'to use a scalar. (Or maybe a list with length > 1?).',
-                      PlotWarning)
+        warnings.warn(
+            'You used a Time array of length 1. You probably meant '
+            'to use a scalar. (Or maybe a list with length > 1?).',
+            PlotWarning
+        )
 
     # Use the actual times for astronomy and shifted times only for plotting.
     timetoplot = time_ut + tzoffset
