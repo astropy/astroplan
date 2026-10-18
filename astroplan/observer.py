@@ -97,10 +97,16 @@ def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     """
 
     if for_deriv:
-        time_grid = np.concatenate([[start - 1 / (n_grid_points - 1)],
-                                    np.linspace(start, end,
-                                                n_grid_points)[1:-1],
-                                    [end + 1 / (n_grid_points - 1)]]) * u.day
+        # Pad by two steps. One step puts samples just outside [start, end],
+        # so a zero that lands on the query is the first or last sample and
+        # has no bracket. The second step supplies that bracket. The window
+        # is then long enough to also see the event one day away; transit
+        # search keeps the crossing that belongs to this query.
+        pad = 1 / (n_grid_points - 1)
+        interior = np.linspace(start, end, n_grid_points)[1:-1]
+        time_grid = np.concatenate([[start - 2 * pad, start - pad],
+                                    interior,
+                                    [end + pad, end + 2 * pad]]) * u.day
     else:
         time_grid = np.linspace(start, end, n_grid_points) * u.day
 
@@ -113,6 +119,54 @@ def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     if time_grid.ndim == 1:
         time_grid = time_grid[:, np.newaxis]
     return t0 + time_grid
+
+
+def _select_crossings(condition, alt, t, horizon, output_shape,
+                      finesse_time_indexes, min_jd, max_jd, keep):
+    """Drop horizon crossings outside a JD window, then optionally keep the first.
+
+    ``min_jd`` and ``max_jd`` are Julian dates, scalars or arrays that
+    broadcast to ``output_shape``. ``keep='first'`` retains the earliest
+    remaining crossing along the grid. ``keep='last'`` leaves the later
+    overwrite in ``_horiz_cross`` as it was.
+    """
+    condition = np.array(condition, dtype=bool, copy=True)
+    if min_jd is not None or max_jd is not None:
+        hits = np.nonzero(condition)
+        if hits[0].size:
+            before = np.array(hits)
+            after = before.copy()
+            after[1, :] += 1
+            al1 = np.asarray(alt[tuple(before)].to_value(u.deg), dtype=float)
+            al2 = np.asarray(alt[tuple(after)].to_value(u.deg), dtype=float)
+            horizon_deg = horizon.to_value(u.deg)
+            before_time = np.delete(before, 0, 0)
+            after_time = np.delete(after, 0, 0)
+            if finesse_time_indexes:
+                before_time = np.array(before_time, copy=True)
+                after_time = np.array(after_time, copy=True)
+                before_time[1:] = 0
+                after_time[1:] = 0
+            jd1 = np.asarray(t[tuple(before_time)].utc.jd, dtype=float)
+            jd2 = np.asarray(t[tuple(after_time)].utc.jd, dtype=float)
+            denom = al2 - al1
+            crossing = jd2 - (al2 - horizon_deg) * (jd2 - jd1) / denom
+            out_idx = tuple(np.delete(before, 1, 0))
+            reject = np.zeros(crossing.shape, dtype=bool)
+            if min_jd is not None:
+                lower = np.broadcast_to(np.asarray(min_jd, dtype=float),
+                                        output_shape)
+                reject |= crossing < lower[out_idx]
+            if max_jd is not None:
+                upper = np.broadcast_to(np.asarray(max_jd, dtype=float),
+                                        output_shape)
+                reject |= crossing > upper[out_idx]
+            if np.any(reject):
+                condition[tuple(before[:, reject])] = False
+    if keep == 'first':
+        seen = np.cumsum(condition, axis=1)
+        condition &= seen == 1
+    return condition
 
 
 class Observer:
@@ -667,7 +721,8 @@ class Observer:
 
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
-    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree):
+    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree,
+                     min_crossing_jd=None, max_crossing_jd=None, keep='last'):
         """
         Find time ``t`` when values in array ``a`` go from
         negative to positive or positive to negative (exclude endpoints)
@@ -689,6 +744,13 @@ class Observer:
             Number of degrees above/below actual horizon to use
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
+        min_crossing_jd : float or array, optional
+            Drop crossings whose interpolated JD is earlier than this.
+        max_crossing_jd : float or array, optional
+            Drop crossings whose interpolated JD is later than this.
+        keep : {'last', 'first'}
+            Which crossing to keep when the grid contains more than one.
+            ``'last'`` is the historical behavior.
 
         Returns
         -------
@@ -726,6 +788,12 @@ class Observer:
             # Find index where altitude goes from above to below horizon
             condition = ((alt[:, :-1, ...] > horizon) *
                          (alt[:, 1:, ...] < horizon))
+
+        if (min_crossing_jd is not None or max_crossing_jd is not None
+                or keep == 'first'):
+            condition = _select_crossings(
+                condition, alt, t, horizon, output_shape,
+                finesse_time_indexes, min_crossing_jd, max_crossing_jd, keep)
 
         noncrossing_indices = np.sum(condition, axis=1, dtype=np.intp) < 1
         alt_lims1 = u.Quantity(np.zeros(output_shape), unit=u.deg)
@@ -987,8 +1055,19 @@ class Observer:
         dt = Time((times.jd[1:] + times.jd[:-1])/2, format='jd')
 
         horizon = 0*u.degree  # Find when derivative passes through zero
+        # The second grid pad brackets a zero on the query and also the
+        # event one day away. Keep the crossing on this side of the query.
+        # One second covers floating-point noise; the other transit is
+        # minutes away at this spacing.
+        slack = 1.0 / 86400.0
+        query_jd = np.asarray(time.utc.jd, dtype=float)
+        if prev_next == 'next':
+            cross_limit = dict(min_crossing_jd=query_jd - slack, keep='first')
+        else:
+            cross_limit = dict(max_crossing_jd=query_jd + slack)
         al1, al2, jd1, jd2 = self._horiz_cross(dt, d_altitudes,
-                                               rise_set, horizon)
+                                               rise_set, horizon,
+                                               **cross_limit)
         return self._two_point_interp(jd1, jd2, al1, al2,
                                       horizon=horizon)
 
