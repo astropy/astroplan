@@ -276,7 +276,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
                   style_sheet=None, brightness_shading=False,
                   airmass_yaxis=False, min_altitude=0, min_region=None,
-                  max_altitude=90, max_region=None):
+                  max_altitude=90, max_region=None, use_local_tz=False):
     r"""
     Plots altitude as a function of time for a given target.
 
@@ -348,6 +348,10 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         If set, defines an interval between ``max_altitude`` and ``max_region``
         that will be shaded. Default is `None`.
 
+    use_local_tz : bool
+        If ``True`` and ``time`` is a timezone-aware Python datetime, plot the
+        time axis in that datetime's local timezone. Defaults to ``False``.
+
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
@@ -371,22 +375,35 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     if 'lw' not in style_kwargs:
         style_kwargs.setdefault('linewidth', 1.5)
 
+    # Preserve timezone information before converting to Astropy Time.
+    if hasattr(time, 'utcoffset') and use_local_tz:
+        tzoffset = time.utcoffset()
+        tzname = time.tzname()
+        tzinfo = time.tzinfo
+    else:
+        tzoffset = 0 * u.hour
+        tzname = 'UTC'
+        tzinfo = None
+
     # Populate time window if needed.
-    time = Time(time)
-    if time.isscalar:
-        time = time + np.linspace(-12, 12, 100)*u.hour
-    elif len(time) == 1:
+    time_ut = Time(time)
+    if time_ut.isscalar:
+        time_ut = time_ut + np.linspace(-12, 12, 100) * u.hour
+    elif len(time_ut) == 1:
         warnings.warn('You used a Time array of length 1.  You probably meant '
                       'to use a scalar. (Or maybe a list with length > 1?).',
                       PlotWarning)
+
+    # Use the actual times for astronomy and shifted times only for plotting.
+    timetoplot = time_ut + tzoffset
 
     if not isinstance(targets, Sequence):
         targets = [targets]
 
     for target in targets:
-        # Calculate airmass
-        altitude = observer.altaz(time, target).alt
-        # Mask out nonsense airmasses
+        # Calculate altitude using the actual observation times.
+        altitude = observer.altaz(time_ut, target).alt
+        # Mask out nonsensical altitudes.
         masked_altitude = np.ma.array(altitude, mask=altitude < 0)
 
         # Some checks & info for labels.
@@ -395,28 +412,30 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         except AttributeError:
             target_name = ''
 
-        # Plot data
-        ax.plot(time.plot_date, masked_altitude, label=target_name, **style_kwargs)
+        # Plot data using the requested timezone.
+        ax.plot(timetoplot.plot_date, masked_altitude,
+                label=target_name, **style_kwargs)
 
-    # Format the time axis
+    # Format the time axis.
+    xlo, xhi = timetoplot[0], timetoplot[-1]
     ax.xaxis_date()
-    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
+    ax.set_xlim([xlo.plot_date, xhi.plot_date])
     date_formatter = dates.DateFormatter('%H:%M')
     ax.xaxis.set_major_formatter(date_formatter)
     plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
-    # Shade background during night time
+    # Shade background during night time.
     if brightness_shading:
-        _shade_nights(ax, observer, time.min(), time.max())
+        _shade_nights(
+            ax, observer, time_ut.min(), time_ut.max(),
+            tzoffset=tzoffset
+        )
 
-    # Invert y-axis and set limits.
-    # y_lim = ax.get_ylim()
-    # if y_lim[1] > y_lim[0]:
-    #     ax.invert_yaxis()
+    # Set altitude limits.
     ax.set_ylim([min_altitude, max_altitude])
 
-    # Draw lo/hi limit regions, if present
-    ymax, ymin = ax.get_ylim()       # should be (hi_limit, lo_limit)
+    # Draw lo/hi limit regions, if present.
+    ymax, ymin = ax.get_ylim()
 
     if max_region is not None:
         ax.axhspan(ymax, max_region, facecolor='#F9EB4E', alpha=0.10)
@@ -425,7 +444,11 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
 
     # Set labels.
     ax.set_ylabel("Altitude")
-    ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
+    ax.set_xlabel(
+        "Time from {0} [{1}]".format(
+            min(timetoplot).datetime.date(), tzname
+        )
+    )
 
     if airmass_yaxis and not _has_twin(ax):
         # altitude_ticks = np.array([90, 60, 50, 40, 30, 20])
@@ -441,12 +464,12 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         ax2.set_ylim(ax.get_ylim())
         ax2.set_ylabel('Airmass')
 
+
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
 
     # Output.
     return ax
-
 
 def plot_schedule_airmass(schedule, show_night=False):
     """

@@ -76,6 +76,46 @@ def test_plot_altitude():
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_altitude_local_timezone():
+    import datetime
+    import zoneinfo
+
+    import matplotlib.pyplot as plt
+
+    from astroplan import Observer
+    from astroplan.target import FixedTarget
+    from astroplan.plots.time_dependent import plot_altitude
+
+    location = EarthLocation.from_geodetic(
+        lon=0*u.deg, lat=51*u.deg, height=0*u.m
+    )
+    observer = Observer(location=location)
+    target = FixedTarget(
+        coord=SkyCoord(ra=10*u.deg, dec=45*u.deg),
+        name='test'
+    )
+
+    time = datetime.datetime(
+        2020, 1, 15, 20, 0,
+        tzinfo=zoneinfo.ZoneInfo('US/Eastern')
+    )
+
+    fig, ax = plt.subplots()
+    try:
+        result = plot_altitude(
+    target,
+    observer,
+    time,
+    ax=ax,
+    use_local_tz=True,
+    brightness_shading=True
+)
+        assert result is ax
+        assert ax.get_xlabel().endswith('[EST]')
+    finally:
+        plt.close(fig)
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_plot_parallactic():
     import matplotlib.pyplot as plt
 
