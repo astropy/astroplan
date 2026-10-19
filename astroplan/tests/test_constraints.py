@@ -539,6 +539,20 @@ def test_eclipses():
     times = Time(['2016-01-01 00:00', '2016-01-02 12:00', '2016-01-02 14:00'])
     assert np.all(np.array([False, True, False]) == pc(subaru, None, times))
 
+    # min and max default to the full phase range
+    for kwargs in [{}, {'min': 0.2}, {'max': 0.5}]:
+        pc = PhaseConstraint(eclipsing_system, **kwargs)
+        expected = ((pc.min <= eclipsing_system.phase(times)) &
+                    (eclipsing_system.phase(times) <= pc.max))
+        assert np.all(expected == pc(subaru, None, times))
+    pc = PhaseConstraint(eclipsing_system)
+    assert (pc.min, pc.max) == (0.0, 1.0)
+    assert np.all(pc(subaru, None, times))
+
+    for kwargs in [{'min': -0.1}, {'max': 1.1}, {'min': 2, 'max': 0.5}]:
+        with pytest.raises(ValueError, match='within the interval'):
+            PhaseConstraint(eclipsing_system, **kwargs)
+
 
 @pytest.mark.remote_data
 def test_event_observable():
