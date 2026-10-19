@@ -114,6 +114,9 @@ linkcheck_ignore = [
     # scripted request (including a browser User-Agent), even though the
     # pages are reachable fine in an actual browser.
     r'https://ui\.adsabs\.harvard\.edu/abs/.*',
+    # iers.org frequently drops connections from CI runners (SSL EOF errors)
+    # even though the site is up.
+    r'https://www\.iers\.org/.*',
 ]
 linkcheck_timeout = 180
 linkcheck_anchors = False
