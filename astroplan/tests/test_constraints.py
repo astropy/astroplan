@@ -17,7 +17,7 @@ from astroplan.constraints import (
     TimeConstraint, LocalTimeConstraint, months_observable,
     max_best_rescale, min_best_rescale, PhaseConstraint,
     PrimaryEclipseConstraint, SecondaryEclipseConstraint,
-    is_event_observable)
+    is_event_observable, MeridianSeparationConstraint)
 from astroplan.exceptions import MissingConstraintWarning
 from astroplan.observer import Observer
 from astroplan.periodic import EclipsingSystem
@@ -199,6 +199,18 @@ def test_sun_separation():
     is_constraint_met = constraint(apo, [one_deg_away, five_deg_away,
                                          twenty_deg_away], times=time)
     assert np.all(is_constraint_met == [False, True, True])
+
+
+def test_meridian_separation():
+    time_range = Time(["2024-10-08 21:00", "2024-10-08 23:00"])
+    target = FixedTarget(coord=SkyCoord(ra=19.75*u.hour, dec=-22.50*u.deg), name="name")
+
+    # Pico dos Dias Observatory (Brazil)
+    opd = Observer(location=EarthLocation(lat=-22.53, lon=-45.58, height=1864))
+    constraint = MeridianSeparationConstraint(min=3*u.deg, max=35*u.deg)
+
+    results = constraint(opd, target, times=time_grid_from_range(time_range))
+    assert np.all(results == [True, False, True, True, True])
 
 
 @pytest.mark.remote_data
@@ -478,6 +490,7 @@ constraint_tests = [
     AtNightConstraint(),
     SunSeparationConstraint(min=90*u.deg),
     MoonSeparationConstraint(min=20*u.deg),
+    MeridianSeparationConstraint(min=3*u.deg),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
     TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
 ]
