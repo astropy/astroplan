@@ -5,19 +5,19 @@ import datetime
 
 # Third-party
 import astropy.units as u
-from astropy.time import Time
-import pytest
 import numpy as np
-from numpy.testing import assert_allclose
-import pytz
+import pytest
+import zoneinfo
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, Angle)
 from astropy.tests.helper import assert_quantity_allclose
+from astropy.time import Time
+from numpy.testing import assert_allclose
 
 # Package
-from ..observer import Observer
-from ..target import FixedTarget
-from ..exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
+from astroplan.observer import Observer
+from astroplan.target import FixedTarget
+from astroplan.exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 
 def test_Observer_constructor_location():
@@ -226,13 +226,13 @@ def test_Observer_timezone_parser():
     location = EarthLocation.from_geodetic(lon, lat, elevation)
 
     obs1 = Observer(name='Observatory', location=location,
-                    timezone=pytz.timezone('UTC'))
+                    timezone=zoneinfo.ZoneInfo('UTC'))
     obs2 = Observer(name='Observatory', location=location, timezone='UTC')
     obs3 = Observer(name='Observatory', location=location)
 
     assert obs1.timezone == obs2.timezone, ('Accept both strings to pass to '
-                                            'the pytz.timezone() constructor '
-                                            'and instances of pytz.timezone')
+                                            'the zoneinfo.ZoneInfo() constructor '
+                                            'and instances of zoneinfo.ZoneInfo')
 
     assert obs2.timezone == obs3.timezone, ('Default timezone should be UTC')
 
@@ -1063,9 +1063,19 @@ def test_mixed_rise_and_dont_rise():
     assert issubclass(w.category, TargetAlwaysUpWarning)
 
 
-def test_timezone_convenience_methods():
+@pytest.mark.parametrize('timezone', [
+    pytest.param('US/Eastern', id='str'),
+    pytest.param(zoneinfo.ZoneInfo('US/Eastern'), id='zoneinfo'),
+    # pytz timezones are no longer created by astroplan, but user-supplied
+    # ones must still be localized correctly.
+    pytest.param('pytz', id='pytz'),
+])
+def test_timezone_convenience_methods(timezone):
+    if timezone == 'pytz':
+        pytz = pytest.importorskip('pytz')
+        timezone = pytz.timezone('US/Eastern')
     location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
-    obs = Observer(location=location, timezone=pytz.timezone('US/Eastern'))
+    obs = Observer(location=location, timezone=timezone)
     t = Time(57100.3, format='mjd')
     assert (obs.astropy_time_to_datetime(t).hour == 3)
 
