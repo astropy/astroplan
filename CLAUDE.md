@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-astroplan is an Astropy-affiliated observation-planning package (rise/set times, observability constraints, scheduling, plotting). Python >= 3.12; core deps are numpy, astropy (>= 6.0), and tzdata (timezones use stdlib `zoneinfo`; pytz was dropped, but user-supplied pytz tzinfos must keep working). matplotlib and astroquery are optional (`[all]` extra).
+astroplan is an Astropy-affiliated observation-planning package (rise/set times, observability constraints, scheduling, plotting). Python >= 3.12; core deps are numpy, astropy (>= 6.1), and tzdata (timezones use stdlib `zoneinfo`; pytz was dropped, but user-supplied pytz tzinfos must keep working). matplotlib and astroquery are optional (`[all]` extra).
 
 ## Commands
 
