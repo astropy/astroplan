@@ -1,9 +1,10 @@
 import datetime as dt
+import zoneinfo
 
 import astropy.units as u
 import numpy as np
 import pytest
-from astropy.coordinates import Galactic, SkyCoord, get_sun, get_body
+from astropy.coordinates import EarthLocation, Galactic, SkyCoord, get_sun, get_body
 from astropy.time import Time
 
 from astroplan.constraints import (
@@ -300,8 +301,10 @@ def test_local_time_constraint_utc():
 
 @pytest.mark.remote_data
 def test_local_time_constraint_hawaii_tz():
-    # Define timezone in Observer.timezone
-    time = Time('2001-02-03 04:05:06')
+    # Define timezone in Observer.timezone. 14:05:06 UTC is 04:05:06 in
+    # Hawaii (UTC-10), so the results match test_local_time_constraint_utc
+    # only if times are converted to local time.
+    time = Time('2001-02-03 14:05:06')
     subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
     constraint = LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8))
     is_constraint_met = constraint(subaru, None, times=time)
@@ -314,6 +317,56 @@ def test_local_time_constraint_hawaii_tz():
     constraint = LocalTimeConstraint(min=dt.time(3, 8), max=dt.time(5, 35))
     is_constraint_met = constraint(subaru, None, times=time)
     assert is_constraint_met is np.bool_(True)
+
+
+def test_local_time_constraint_uses_local_timezone():
+    # Regression test for https://github.com/astropy/astroplan/issues/466
+    location = EarthLocation.from_geodetic(13.0118*u.deg, 46.4692*u.deg, 750*u.m)
+    rome = zoneinfo.ZoneInfo('Europe/Rome')
+    observer = Observer(location=location, timezone=rome)
+    # 21:05 and 22:05 local time (CEST, UTC+2)
+    times = Time(['2020-04-10 19:05', '2020-04-10 20:05'])
+    constraint = LocalTimeConstraint(min=dt.time(21, 0), max=dt.time(21, 30))
+    np.testing.assert_array_equal(constraint(observer, None, times=times),
+                                  [True, False])
+
+    # Scalar times give a scalar result
+    assert constraint(observer, None, times=times[0]) is np.bool_(True)
+
+    # Multidimensional time grids keep their shape
+    np.testing.assert_array_equal(
+        constraint(observer, None, times=times.reshape(2, 1)), [[True], [False]])
+
+    # Window straddling local midnight: 23:30 and 00:30 local are inside,
+    # 22:30 local is outside
+    midnight = LocalTimeConstraint(min=dt.time(23, 0), max=dt.time(1, 0))
+    np.testing.assert_array_equal(
+        midnight(observer, None,
+                 times=Time(['2020-04-10 21:30', '2020-04-10 22:30', '2020-04-10 20:30'])),
+        [True, True, False])
+
+    # A tzinfo on the limits overrides the observer's timezone
+    utc_observer = Observer(location=location)
+    rome_limits = LocalTimeConstraint(min=dt.time(21, 0, tzinfo=rome),
+                                      max=dt.time(21, 30, tzinfo=rome))
+    np.testing.assert_array_equal(rome_limits(utc_observer, None, times=times),
+                                  [True, False])
+
+    # Only a max limit; min must not be overwritten when computing
+    max_only = LocalTimeConstraint(max=dt.time(21, 30))
+    np.testing.assert_array_equal(max_only(observer, None, times=times),
+                                  [True, False])
+    assert max_only.min is None
+
+
+def test_local_time_constraint_pytz_timezone():
+    pytz = pytest.importorskip('pytz')
+    location = EarthLocation.from_geodetic(13.0118*u.deg, 46.4692*u.deg, 750*u.m)
+    observer = Observer(location=location, timezone=pytz.timezone('Europe/Rome'))
+    times = Time(['2020-04-10 19:05', '2020-04-10 20:05'])
+    constraint = LocalTimeConstraint(min=dt.time(21, 0), max=dt.time(21, 30))
+    np.testing.assert_array_equal(constraint(observer, None, times=times),
+                                  [True, False])
 
 
 @pytest.mark.remote_data
@@ -495,6 +548,20 @@ def test_eclipses():
     pc = PhaseConstraint(eclipsing_system, min=0.2, max=0.5)
     times = Time(['2016-01-01 00:00', '2016-01-02 12:00', '2016-01-02 14:00'])
     assert np.all(np.array([False, True, False]) == pc(subaru, None, times))
+
+    # min and max default to the full phase range
+    for kwargs in [{}, {'min': 0.2}, {'max': 0.5}]:
+        pc = PhaseConstraint(eclipsing_system, **kwargs)
+        expected = ((pc.min <= eclipsing_system.phase(times)) &
+                    (eclipsing_system.phase(times) <= pc.max))
+        assert np.all(expected == pc(subaru, None, times))
+    pc = PhaseConstraint(eclipsing_system)
+    assert (pc.min, pc.max) == (0.0, 1.0)
+    assert np.all(pc(subaru, None, times))
+
+    for kwargs in [{'min': -0.1}, {'max': 1.1}, {'min': 2, 'max': 0.5}]:
+        with pytest.raises(ValueError, match='within the interval'):
+            PhaseConstraint(eclipsing_system, **kwargs)
 
 
 @pytest.mark.remote_data

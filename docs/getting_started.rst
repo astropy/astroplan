@@ -41,7 +41,7 @@ Or you can specify your own location parameters::
 
     import astropy.units as u
     from astropy.coordinates import EarthLocation
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astroplan import Observer
 
     longitude = '-155d28m48.900s'
@@ -54,7 +54,7 @@ Or you can specify your own location parameters::
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
 `astroplan` makes heavy use of certain `astropy <https://astropy.org>`__ machinery, including the

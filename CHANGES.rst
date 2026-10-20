@@ -1,8 +1,59 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``hours_value`` option to ``plot_sky`` to annotate each plotted
+  position with a label (e.g. the hour). A per-point ``c`` array in
+  ``style_kwargs`` is now masked along with below-horizon positions so
+  colormaps stay matched to the plotted points. [#617]
+
+- Fix ``LocalTimeConstraint`` comparing its limits against UTC instead of the
+  observer's local time (or the timezone attached to ``min``/``max``). Results
+  now change for any observer not in UTC. The constraint also now works on
+  multidimensional time grids and no longer overwrites ``min`` when only
+  ``max`` is given. [#466]
+
+- Replace ``pytz`` with the standard library's ``zoneinfo``. ``pytz`` is no
+  longer a dependency; ``tzdata`` is required instead so timezone data is
+  available on all platforms. ``Observer`` now creates ``zoneinfo.ZoneInfo``
+  objects when ``timezone`` is given as a string, so ``Observer.timezone`` no
+  longer has pytz-specific methods such as ``localize``. Timezones created with
+  ``pytz`` are still accepted. [#601]
+
 - Minimum Python version is now 3.11. Also bumped minversion
   of dependencies. [#605]
+
+- Minimum Python version is now 3.12, and Python 3.14 is now tested. Minimum
+  versions of numpy (1.26.0) and matplotlib (3.7.3) were bumped to the oldest
+  releases available for Python 3.12.
+
+- The ``oldestdeps`` test environment now uses ``tox-uv`` with uv's ``lowest``
+  resolution strategy, so it tests the lower bounds declared in
+  ``pyproject.toml`` (plus lower bounds for transitive dependencies in
+  ``oldestdeps-constraints.txt``) instead of hand-maintained pins. This
+  raised the minimum version of pytest (7.4.0), and
+  added minimum versions for astroquery (0.4.7), pytest-astropy (0.11.0) and
+  pytest-mpl (0.16.1). [#631]
+
+- Fix rise/set times always being returned as masked ``Time`` objects, even
+  when no times are masked. Newer astropy keeps such ``Time`` objects masked,
+  which broke coordinate transforms that use them (e.g. ``Observer.tonight``).
+  [#643]
+
+- Add a ``dev`` extra that installs the ``all`` and ``test`` extras plus
+  ``tox`` and ``tox-uv``, for running the test environments locally. [#641]
+
+- Fix CI: bump the pinned ``OpenAstronomy/github-actions-workflows`` reusable
+  workflow to v3.0.3 (fixes a Python-3.12-patch-version matching bug that was
+  intermittently breaking the "Load tox environments" and wheel-building
+  steps), ensure the coverage data file lands where the new Codecov upload
+  step expects it, fix stale ``matplotlib.pyplot.plot_date`` docstring
+  references left over from the switch to ``matplotlib.pyplot.plot``, fix the
+  now fully-removed ``Axes.plot_date`` call in the IERS FAQ's example plot,
+  fix a dead documentation link, and ignore ADS's bot-blocking 405 responses
+  in the linkcheck.
+
+- Fix ``PhaseConstraint`` raising a ``TypeError`` when ``min`` or ``max`` is
+  not given, instead of defaulting to the full phase range. [#639]
 
 0.10.1 (2024-08-13)
 -------------------

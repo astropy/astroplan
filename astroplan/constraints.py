@@ -753,32 +753,30 @@ class LocalTimeConstraint(Constraint):
         if timezone is None:
             timezone = observer.timezone
 
+        # Compare wall-clock times: any tzinfo on the limits only selects
+        # the timezone that ``times`` are converted to.
         if self.min is not None:
-            min_time = self.min
+            min_time = self.min.replace(tzinfo=None)
         else:
-            min_time = self.min = datetime.time(0, 0, 0)
+            min_time = datetime.time(0, 0, 0)
 
         if self.max is not None:
-            max_time = self.max
+            max_time = self.max.replace(tzinfo=None)
         else:
             max_time = datetime.time(23, 59, 59)
 
-        # If time limits occur on same day:
-        if min_time < max_time:
-            try:
-                mask = np.array([min_time <= t.time() <= max_time for t in times.datetime])
-            except BaseException:                # use np.bool so shape queries don't cause problems
-                mask = np.bool_(min_time <= times.datetime.time() <= max_time)
+        def in_window(local_datetime):
+            local_time = local_datetime.time()
+            # If time limits occur on same day:
+            if min_time < max_time:
+                return min_time <= local_time <= max_time
+            # If time boundaries straddle midnight:
+            return local_time >= min_time or local_time <= max_time
 
-        # If time boundaries straddle midnight:
-        else:
-            try:
-                mask = np.array([(t.time() >= min_time) or
-                                (t.time() <= max_time) for t in times.datetime])
-            except BaseException:
-                mask = np.bool_((times.datetime.time() >= min_time) or
-                                (times.datetime.time() <= max_time))
-        return mask
+        local_datetimes = times.to_datetime(timezone=timezone)
+        mask = np.vectorize(in_window, otypes=[bool])(local_datetimes)
+        # use np.bool_ for scalars so shape queries don't cause problems
+        return mask[()] if mask.ndim == 0 else mask
 
 
 class TimeConstraint(Constraint):
@@ -910,11 +908,12 @@ class PhaseConstraint(Constraint):
 
         """
         self.periodic_event = periodic_event
-        if (min < 0) or (min > 1) or (max < 0) or (max > 1):
-            raise ValueError('The minimum of the PhaseConstraint must be within'
-                             ' the interval [0, 1).')
         self.min = min if min is not None else 0.0
         self.max = max if max is not None else 1.0
+
+        if not (0 <= self.min <= 1) or not (0 <= self.max <= 1):
+            raise ValueError('The minimum and maximum of the PhaseConstraint must '
+                             'be within the interval [0, 1].')
 
     def compute_constraint(self, times, observer=None, targets=None):
         phase = self.periodic_event.phase(times)
