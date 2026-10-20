@@ -419,8 +419,8 @@ class SGP4SatelliteTarget(Target):
     fast-moving satellites requires a time resolution appropriate to the
     orbit; for a LEO target ``time_resolution=10*u.s`` can be appropriate.
     The default arguments for rise, set, and meridian-transit searches,
-    such as `n_grid_points` in `target_rise_time`, might not be precise enough
-    for finding LEO passes.
+    such as ``n_grid_points`` in `~astroplan.Observer.target_rise_time`, might
+    not be precise enough for finding LEO passes.
 
     The propagated TEME position is observer-independent. `get_skycoord`
     returns a topocentric ICRS direction for the provided observer without
@@ -950,19 +950,23 @@ class SGP4SatelliteTarget(Target):
             times = Time(times)
         times = times.utc
 
-        # Intermediate topocentric ITRS step to avoid change in stellar aberration
-        geocentric_itrs = self.get_teme(times).transform_to(ITRS(obstime=times))
-        observer_itrs = observer.location.get_itrs(obstime=times)
-        topocentric_position = (
-            geocentric_itrs.cartesian.without_differentials() - observer_itrs.cartesian
-        )
-        topocentric_itrs = ITRS(
-            topocentric_position, obstime=times, location=observer.location
-        )
-        topocentric_direction = topocentric_itrs.realize_frame(
-            topocentric_itrs.represent_as(UnitSphericalRepresentation)
-        )
-        return SkyCoord(topocentric_direction).icrs
+        teme = self.get_teme(times)
+        # Times where SGP4 propagation failed have NaN positions (get_teme has
+        # already warned about them); don't let the transforms warn again.
+        with np.errstate(invalid="ignore"):
+            # Intermediate topocentric ITRS step to avoid change in stellar aberration
+            geocentric_itrs = teme.transform_to(ITRS(obstime=times))
+            observer_itrs = observer.location.get_itrs(obstime=times)
+            topocentric_position = (
+                geocentric_itrs.cartesian.without_differentials() - observer_itrs.cartesian
+            )
+            topocentric_itrs = ITRS(
+                topocentric_position, obstime=times, location=observer.location
+            )
+            topocentric_direction = topocentric_itrs.realize_frame(
+                topocentric_itrs.represent_as(UnitSphericalRepresentation)
+            )
+            return SkyCoord(topocentric_direction).icrs
 
     def __repr__(self):
         return (
