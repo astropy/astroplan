@@ -209,6 +209,11 @@ class SGP4SatelliteTarget(Target):
     The default arguments for rise, set, and meridian-transit searches,
     such as `n_grid_points` in `target_rise_time`, might not be precise enough
     for finding LEO passes.
+
+    The propagated TEME position is observer-independent. `get_skycoord`
+    returns a topocentric ICRS direction for the provided observer without
+    atmospheric refraction. `~astroplan.Observer.altaz` uses the observer's
+    atmospheric parameters when transforming this direction.
     """
 
     _OMM_FORMATS: ClassVar[set[str]] = {"kvn", "xml", "json", "csv"}

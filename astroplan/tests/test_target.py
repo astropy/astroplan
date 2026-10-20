@@ -21,35 +21,9 @@ except ImportError:
 
 # Package
 from astroplan.exceptions import SatellitePropagationWarning
-from astroplan.target import Target, FixedTarget, SGP4SatelliteTarget, get_skycoord
+from astroplan.target import FixedTarget, SGP4SatelliteTarget, get_skycoord
 from astroplan.observer import Observer
 from astroplan.utils import time_grid_from_range
-
-
-class ObserverDependentTarget(Target):
-    """Minimal target that requires observer context when evaluated."""
-
-    def __init__(self, name="observer-dependent"):
-        self.name = name
-
-    @property
-    def is_time_dependent(self):
-        return True
-
-    def get_skycoord(self, times, observer=None):
-        if observer is None:
-            raise ValueError("`observer` is required.")
-
-        ra = np.broadcast_to(
-            observer.location.lon.to_value(u.deg),
-            times.shape
-        ) * u.deg
-        dec = np.broadcast_to(
-            observer.location.lat.to_value(u.deg),
-            times.shape,
-        ) * u.deg
-
-        return SkyCoord(ra=ra, dec=dec)
 
 
 ISS_TLE = (
@@ -366,6 +340,21 @@ def test_SGP4SatelliteTarget():
     assert combined.is_equivalent_frame(ICRS())
     assert combined.shape == (2, 2)
 
+    assert observer.altaz(
+        times[0], target, grid_times_targets=True
+    ).shape == (1, 1)
+    assert observer.altaz(
+        times[0], [fixed, target], grid_times_targets=True
+    ).shape == (2, 1)
+    assert observer.altaz(
+        times, [fixed, target], grid_times_targets=True
+    ).shape == (2, 2)
+
+    with pytest.raises(ValueError, match="`times` is required"):
+        target.get_teme(None)
+    with pytest.raises(ValueError, match="`times` is required"):
+        target.get_skycoord(None, observer=observer)
+
 
 @pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
 def test_SGP4SatelliteTarget_accuracy():
@@ -597,14 +586,14 @@ def test_get_skycoord_does_not_broadcast_when_all_targets_are_fixed():
     assert coo.shape == (2,)
 
 
-def test_get_skycoord_forwards_observer():
+def test_get_skycoord_forwards_observer(observer_dependent_target):
     location = EarthLocation.from_geodetic(
         lon=10 * u.deg,
         lat=45 * u.deg,
         height=100 * u.m,
     )
     observer = Observer(location=location)
-    target = ObserverDependentTarget()
+    target = observer_dependent_target
     times = Time(["2026-02-05T00:00:00", "2026-02-05T01:00:00"], scale="utc")
 
     with pytest.raises(ValueError, match="observer"):

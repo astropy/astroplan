@@ -55,6 +55,12 @@
 - Fix ``PhaseConstraint`` raising a ``TypeError`` when ``min`` or ``max`` is
   not given, instead of defaulting to the full phase range. [#639]
 
+- Add ``SGP4SatelliteTarget`` for satellites propagated from TLE or OMM
+  elements using the optional ``sgp4`` dependency. Satellite targets can be
+  used with observer calculations, constraints and scheduling, and
+  ``Schedule.to_table()`` displays their catalog number and element epoch.
+  [#566]
+
 0.10.1 (2024-08-13)
 -------------------
 

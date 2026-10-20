@@ -273,20 +273,6 @@ class Schedule:
                     return target.coord.icrs.to_string("hmsdms")
                 except ConvertError:
                     return repr(target.coord)
-            if hasattr(target, "alt") and hasattr(target, "az"):
-                parts = [
-                    "alt={:.6f} deg".format(u.Quantity(target.alt).to_value(u.deg)),
-                    "az={:.6f} deg".format(u.Quantity(target.az).to_value(u.deg)),
-                ]
-                if hasattr(target, "pressure"):
-                    try:
-                        p_hpa = u.Quantity(target.pressure).to_value(u.hPa)
-                    except (TypeError, ValueError, u.UnitConversionError):
-                        pass
-                    else:
-                        if p_hpa != 0.0:
-                            parts.append("pressure={:.3f} hPa".format(p_hpa))
-                return ", ".join(parts)
             if isinstance(target, SGP4SatelliteTarget):
                 return (
                     f"#{target.catalog_number} "
