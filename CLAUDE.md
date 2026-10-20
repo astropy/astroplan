@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-astroplan is an Astropy-affiliated observation-planning package (rise/set times, observability constraints, scheduling, plotting). Python >= 3.12; core deps are numpy, astropy (>= 6.0), and tzdata (timezones use stdlib `zoneinfo`; pytz was dropped, but user-supplied pytz tzinfos must keep working). matplotlib and astroquery are optional (`[all]` extra).
+astroplan is an Astropy-affiliated observation-planning package (rise/set times, observability constraints, scheduling, plotting). Python >= 3.12; core deps are numpy, astropy (>= 6.1), and tzdata (timezones use stdlib `zoneinfo`; pytz was dropped, but user-supplied pytz tzinfos must keep working). matplotlib and astroquery are optional (`[all]` extra).
 
 ## Commands
 
@@ -53,4 +53,5 @@ All public names are re-exported flat from `astroplan/__init__.py` via `from .mo
 ## Conventions
 
 - Add an entry to `CHANGES.rst` under the unreleased version for user-facing changes, with the PR number in brackets (e.g. `[#605]`).
+- When reviewing, rebasing, or preparing to merge any PR (including other people's), check that it adds a `CHANGES.rst` entry for user-facing changes, and flag it if missing.
 - Quantities with astropy units (`u.deg`, `u.minute`) and `astropy.time.Time` are used throughout; don't pass bare floats where the API expects Quantities.
