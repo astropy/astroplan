@@ -53,4 +53,5 @@ All public names are re-exported flat from `astroplan/__init__.py` via `from .mo
 ## Conventions
 
 - Add an entry to `CHANGES.rst` under the unreleased version for user-facing changes, with the PR number in brackets (e.g. `[#605]`).
+- When reviewing, rebasing, or preparing to merge any PR (including other people's), check that it adds a `CHANGES.rst` entry for user-facing changes, and flag it if missing.
 - Quantities with astropy units (`u.deg`, `u.minute`) and `astropy.time.Time` are used throughout; don't pass bare floats where the API expects Quantities.

@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``MeridianSeparationConstraint`` to constrain a target's angular
+  separation from the meridian, e.g. to avoid pier flips on German
+  equatorial mounts. [#589]
+
 - ``SunSeparationConstraint`` and ``MoonSeparationConstraint`` no longer emit
   ``NonRotationTransformationWarning``. The minimum required astropy version
   is now 6.1. [#649]
