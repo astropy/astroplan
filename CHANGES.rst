@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- ``SunSeparationConstraint`` and ``MoonSeparationConstraint`` no longer emit
+  ``NonRotationTransformationWarning``. The minimum required astropy version
+  is now 6.1. [#XXX]
+
 - Add ``hours_value`` option to ``plot_sky`` to annotate each plotted
   position with a label (e.g. the hour). A per-point ``c`` array in
   ``style_kwargs`` is now masked along with below-horizon positions so
