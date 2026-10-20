@@ -1,6 +1,11 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``hours_value`` option to ``plot_sky`` to annotate each plotted
+  position with a label (e.g. the hour). A per-point ``c`` array in
+  ``style_kwargs`` is now masked along with below-horizon positions so
+  colormaps stay matched to the plotted points. [#617]
+
 - Fix ``LocalTimeConstraint`` comparing its limits against UTC instead of the
   observer's local time (or the timezone attached to ``min``/``max``). Results
   now change for any observer not in UTC. The constraint also now works on
