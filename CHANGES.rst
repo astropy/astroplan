@@ -1,6 +1,14 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``MeridianSeparationConstraint`` to constrain a target's angular
+  separation from the meridian, e.g. to avoid pier flips on German
+  equatorial mounts. [#589]
+
+- ``SunSeparationConstraint`` and ``MoonSeparationConstraint`` no longer emit
+  ``NonRotationTransformationWarning``. The minimum required astropy version
+  is now 6.1. [#649]
+
 - Add ``hours_value`` option to ``plot_sky`` to annotate each plotted
   position with a label (e.g. the hour). A per-point ``c`` array in
   ``style_kwargs`` is now masked along with below-horizon positions so

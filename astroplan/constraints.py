@@ -31,7 +31,8 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "LocalTimeConstraint", "PrimaryEclipseConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
-           "min_best_rescale", "PhaseConstraint", "is_event_observable"]
+           "min_best_rescale", "PhaseConstraint", "is_event_observable",
+           "MeridianSeparationConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
@@ -543,8 +544,11 @@ class SunSeparationConstraint(Constraint):
         # by the observer.
         # 'get_sun' returns ICRS coords.
         sun = get_body('sun', times, location=observer.location)
+        # The order matters: sun.separation(targets) computes the separation
+        # in the observer-centred GCRS frame of the sun coord. The resulting
+        # origin mismatch with ICRS targets is intended, so don't warn about it.
         targets = get_skycoord(targets)
-        solar_separation = sun.separation(targets)
+        solar_separation = sun.separation(targets, origin_mismatch="ignore")
 
         if self.min is None and self.max is not None:
             mask = self.max >= solar_separation
@@ -587,9 +591,10 @@ class MoonSeparationConstraint(Constraint):
         # note to future editors - the order matters here
         # moon.separation(targets) is NOT the same as targets.separation(moon)
         # the former calculates the separation in the frame of the moon coord
-        # which is GCRS, and that is what we want.
+        # which is GCRS, and that is what we want. The resulting origin
+        # mismatch with ICRS targets is intended, so don't warn about it.
         targets = get_skycoord(targets)
-        moon_separation = moon.separation(targets)
+        moon_separation = moon.separation(targets, origin_mismatch="ignore")
 
         if self.min is None and self.max is not None:
             mask = self.max >= moon_separation
@@ -921,6 +926,52 @@ class PhaseConstraint(Constraint):
                         (phase >= self.min) & (phase <= self.max),
                         (phase >= self.min) | (phase <= self.max))
         return mask
+
+
+class MeridianSeparationConstraint(Constraint):
+    """
+    Constraint on angular separation from the meridian.
+    """
+    def __init__(self, min=None, max=None, boolean_constraint=True):
+        """
+        Parameters
+        ----------
+        min : `~astropy.units.Quantity` or `None`, optional
+            Minimum acceptable angular distance from the meridian.
+            `None` indicates no lower limit.
+
+        max : `~astropy.units.Quantity` or `None`, optional
+            Maximum acceptable angular distance from the meridian.
+            `None` indicates no upper limit.
+
+        boolean_constraint : bool
+
+        Examples
+        --------
+        Constrain observations to targets that are between 3 and 35 degrees
+        away from the meridian.
+        >>> import astropy.units as u
+        >>> constraint = MeridianSeparationConstraint(min=3*u.deg, max=35*u.deg)
+
+        This can be useful for observations using German-Equatorial Mounts, to avoid
+        flipping the side of the pier during exposures.
+        """
+        self.min = min if min is not None else 0*u.deg
+        self.max = max if max is not None else 180*u.deg
+        self.boolean_constraint = boolean_constraint
+
+    def compute_constraint(self, times, observer, targets):
+        lst = observer.local_sidereal_time(times)
+        meridian = SkyCoord(ra=lst, dec=targets.dec)
+
+        meridian_separation = meridian.separation(targets)
+
+        if self.boolean_constraint:
+            mask = (self.min < meridian_separation) & (meridian_separation < self.max)
+            return mask
+        else:
+            rescale = min_best_rescale(meridian_separation, self.min, self.max, less_than_min=0)
+            return rescale
 
 
 def is_always_observable(constraints, observer, targets, times=None,
