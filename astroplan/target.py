@@ -16,8 +16,10 @@ import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import (
+    AltAz,
     CartesianDifferential,
     CartesianRepresentation,
+    EarthLocation,
     ICRS,
     ITRS,
     SkyCoord,
@@ -26,10 +28,10 @@ from astropy.coordinates import (
 )
 
 # Package
-from .exceptions import SatellitePropagationWarning
+from .exceptions import AstroplanWarning, SatellitePropagationWarning
 
 
-__all__ = ["Target", "FixedTarget", "SGP4SatelliteTarget", "NonFixedTarget"]
+__all__ = ["Target", "FixedTarget", "AltAzTarget", "SGP4SatelliteTarget", "NonFixedTarget"]
 
 # Docstring code examples include printed SkyCoords, but the format changed
 # in astropy 1.3. Thus the doctest needs astropy >=1.3 and this is the
@@ -189,6 +191,216 @@ class FixedTarget(Target):
         class_name = self.__class__.__name__
         fmt_coord = repr(self.coord).replace('\n   ', '')[1:-1]
         return '<{} "{}" at {}>'.format(class_name, self.name, fmt_coord)
+
+
+class AltAzTarget(Target):
+    """
+    Coordinates and metadata for a target defined in horizontal coordinates
+    (altitude/azimuth) at a fixed observing location.
+
+    Unlike `~astroplan.FixedTarget`, an `~astroplan.AltAzTarget` is *time-dependent*:
+    the stored AltAz direction is evaluated at requested time(s) by transforming
+    to ICRS, yielding an ICRS coordinate that varies with ``obstime``.
+
+    This class is useful for targets defined by a local pointing direction (e.g.,
+    “look at az=120°, alt=30° from this observatory”), rather than a fixed celestial
+    coordinate.
+
+    Notes
+    -----
+    The stored direction can be interpreted as geometric (vacuum) or apparent
+    (refracted) depending on the atmospheric parameters provided. A pressure of
+    ``0 hPa`` disables refraction.
+
+    Downstream computations that transform the evaluated coordinate back to AltAz
+    use the atmospheric parameters on the `~astroplan.Observer`. To preserve the
+    exact apparent direction implied by this target's atmospheric parameters, use
+    matching atmospheric parameters on the `~astroplan.Observer`.
+
+    Since the target stays at the same altitude and azimuth, it does not
+    rise, set, or cross the meridian like a celestial object. Rise/set
+    calculations may therefore return masked times.
+
+    Examples
+    --------
+    Define a fixed horizontal direction at a given observatory:
+
+    >>> import astropy.units as u
+    >>> from astropy.coordinates import EarthLocation
+    >>> from astroplan import AltAzTarget
+    >>> location = EarthLocation.from_geodetic(-155.4761*u.deg, 19.825*u.deg,
+    ...                                        4139*u.m)
+    >>> t = AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location, name="Pointing")
+    """
+
+    @property
+    def is_time_dependent(self):
+        """
+        Whether this target requires evaluation at a specific time.
+        """
+        return True
+
+    @u.quantity_input(alt=u.deg, az=u.deg)
+    def __init__(
+        self,
+        alt,
+        az,
+        location,
+        name=None,
+        pressure=0 * u.hPa,
+        temperature=None,
+        relative_humidity=None,
+        obswl=None,
+        marker=None,
+    ):
+        """
+        Parameters
+        ----------
+        alt : `~astropy.units.Quantity`
+            Altitude angle. Must have angular units (e.g., ``u.deg``).
+
+        az : `~astropy.units.Quantity`
+            Azimuth angle. Must have angular units (e.g., ``u.deg``). By convention,
+            azimuth is measured East of North.
+
+        location : `~astropy.coordinates.EarthLocation`
+            The observing location to which these AltAz coordinates apply.
+
+        name : str, optional
+            Name of the target, used for plotting and representing the target
+            as a string.
+
+        pressure : `~astropy.units.Quantity`, optional
+            Atmospheric pressure used to interpret the stored AltAz direction.
+            If set to ``0 hPa`` (default), the direction is treated as vacuum
+            (geometric). If non-zero, the direction is treated as apparent
+            (refracted) under the supplied atmospheric conditions.
+
+        temperature : `~astropy.units.Quantity`, optional
+            Ambient temperature for the refraction model (used when ``pressure``
+            is non-zero). Default is ``0 deg_C``.
+
+        relative_humidity : float, optional
+            Relative humidity for the refraction model (used when ``pressure`` is
+            non-zero). Must be in the interval [0, 1]. Default is 0.
+
+        obswl : `~astropy.units.Quantity`, optional
+            Observation wavelength for the refraction model (used when ``pressure``
+            is non-zero). Default is ``1 micron``.
+
+        marker : str, optional
+            User-defined marker to differentiate between different types of targets
+            (e.g., guides, high-priority, etc.).
+        """
+        if not isinstance(location, EarthLocation):
+            raise TypeError("`location` must be an `astropy.coordinates.EarthLocation`.")
+
+        self.name = name
+        self.marker = marker
+
+        self.alt = u.Quantity(alt).to(u.deg)
+        self.az = u.Quantity(az).to(u.deg)
+        self.location = location
+
+        # Store atmosphere parameters for interpreting the stored AltAz direction.
+        self.pressure = pressure
+        self.temperature = temperature
+        self.relative_humidity = relative_humidity
+        self.obswl = obswl
+
+    @classmethod
+    def from_observer(cls, *, alt, az, observer, obswl=None, **kwargs):
+        """
+        Initialize an `~astroplan.AltAzTarget` from an `~astroplan.Observer`.
+
+        This is a convenience constructor that uses the observer's location and
+        atmospheric parameters to interpret the supplied AltAz direction.
+
+        Parameters
+        ----------
+        alt : `~astropy.units.Quantity`
+            Altitude angle.
+
+        az : `~astropy.units.Quantity`
+            Azimuth angle. By convention, azimuth is measured East of North.
+
+        observer : `~astroplan.Observer`
+            Observer that provides the location (and atmospheric parameters if
+            present).
+
+        obswl : `~astropy.units.Quantity`, optional
+            Observation wavelength for the refraction model (used when ``pressure``
+            is non-zero). Default is ``1 micron``.
+
+        **kwargs
+            Additional keywords passed to `~astroplan.AltAzTarget` (e.g., ``name``,
+            ``marker``).
+
+        Returns
+        -------
+        target : `~astroplan.AltAzTarget`
+            The constructed target.
+        """
+        return cls(
+            alt=alt, az=az, location=observer.location,
+            pressure=observer.pressure if observer.pressure is not None else 0 * u.hPa,
+            temperature=observer.temperature,
+            relative_humidity=observer.relative_humidity, obswl=obswl,
+            **kwargs
+        )
+
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        alt = self.alt.to(u.deg).value
+        az = self.az.to(u.deg).value
+        return '<{} "{}" at (alt, az)=({:.6f} deg, {:.6f} deg)>'.format(
+            class_name, self.name, alt, az
+        )
+
+    def get_skycoord(self, times, observer=None):
+        """
+        Evaluate this target to an ICRS `~astropy.coordinates.SkyCoord` at ``times``.
+
+        Parameters
+        ----------
+        times : `~astropy.time.Time` or time-like
+            Times at which to evaluate the target.
+
+        observer : `~astroplan.Observer`, optional
+            Observer supplied through the common `get_skycoord()` interface.
+            This target's AltAz direction is defined by its stored location.
+            A warning is issued if they differ.
+
+        Returns
+        -------
+        coord : `~astropy.coordinates.SkyCoord`
+            ICRS coordinate evaluated at ``times`` (time-dependent).
+        """
+        if times is None:
+            raise ValueError("`times` is required to evaluate an AltAzTarget.")
+        if not isinstance(times, Time):
+            times = Time(times)
+
+        if observer is not None and observer.location != self.location:
+            warnings.warn("The observer is at a different location from this "
+                          "AltAzTarget; results may be misleading.",
+                          AstroplanWarning)
+
+        # Construct the AltAz frame used to interpret the stored alt/az direction.
+        altaz_frame = AltAz(
+            location=self.location,
+            obstime=times,
+            pressure=self.pressure,
+            temperature=self.temperature,
+            relative_humidity=self.relative_humidity,
+            obswl=self.obswl,
+        )
+
+        # The stored alt/az are treated as scalar directions and broadcast to `times`.
+        alt = u.Quantity(np.broadcast_to(self.alt.to_value(u.deg), times.shape), u.deg)
+        az = u.Quantity(np.broadcast_to(self.az.to_value(u.deg), times.shape), u.deg)
+
+        return SkyCoord(az=az, alt=alt, frame=altaz_frame).icrs
 
 
 class NonFixedTarget(Target):

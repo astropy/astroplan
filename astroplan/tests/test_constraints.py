@@ -17,11 +17,11 @@ from astroplan.constraints import (
     TimeConstraint, LocalTimeConstraint, months_observable,
     max_best_rescale, min_best_rescale, PhaseConstraint,
     PrimaryEclipseConstraint, SecondaryEclipseConstraint,
-    is_event_observable)
+    is_event_observable, MeridianSeparationConstraint)
 from astroplan.exceptions import MissingConstraintWarning
 from astroplan.observer import Observer
 from astroplan.periodic import EclipsingSystem
-from astroplan.target import FixedTarget, SGP4SatelliteTarget, get_skycoord
+from astroplan.target import FixedTarget, AltAzTarget, SGP4SatelliteTarget, get_skycoord
 
 try:
     import sgp4  # noqa: F401
@@ -114,6 +114,41 @@ def test_altitude_constraint():
     assert np.all([results != 0][0] == [False, False, True,  True,  False, False])
 
 
+def test_altitude_constraint_accepts_altaztarget():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location)
+    target = AltAzTarget(alt=60*u.deg, az=180*u.deg, location=location, name="horiz")
+    c = AltitudeConstraint(min=30*u.deg)
+
+    # Scalar Time
+    t = Time("2026-02-05T00:00:00", scale="utc")
+    result = c(observer, target, times=t)
+    assert result.shape == ()
+    assert np.all(result)
+
+    # Vector time, no grid
+    t0 = Time("2026-01-01T00:00:00", scale="utc")
+    times = t0 + np.arange(5) * u.hour
+    result = c(observer, target, times=times, grid_times_targets=False)
+    assert result.shape == times.shape
+    assert np.all(result)
+
+    # Vector time, grid
+    result = c(observer, target, times=times, grid_times_targets=True)
+    assert result.shape == (1, len(times))
+    assert np.all(result)
+
+    # Vector time, grid, multiple targets
+    targets = [
+        AltAzTarget(alt=60*u.deg, az=180*u.deg, location=location, name="h1"),
+        AltAzTarget(alt=40*u.deg, az=90*u.deg, location=location, name="h2"),
+    ]
+    result = c(observer, targets, times=times, grid_times_targets=True)
+    assert result.shape == (len(targets), len(times))
+    assert np.all(result[0, :])
+    assert np.all(result[1, :])
+
+
 @pytest.mark.remote_data
 def test_compare_altitude_constraint_and_observer():
     time = Time('2001-02-03 04:05:06')
@@ -196,8 +231,6 @@ def test_galactic_plane_separation():
 
 
 @pytest.mark.remote_data
-# astropy.coordinates.errors.NonRotationTransformationWarning
-@pytest.mark.filterwarnings("ignore")
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -222,9 +255,19 @@ def test_sun_separation():
     assert np.all(is_constraint_met == [False, True, True])
 
 
+def test_meridian_separation():
+    time_range = Time(["2024-10-08 21:00", "2024-10-08 23:00"])
+    target = FixedTarget(coord=SkyCoord(ra=19.75*u.hour, dec=-22.50*u.deg), name="name")
+
+    # Pico dos Dias Observatory (Brazil)
+    opd = Observer(location=EarthLocation(lat=-22.53, lon=-45.58, height=1864))
+    constraint = MeridianSeparationConstraint(min=3*u.deg, max=35*u.deg)
+
+    results = constraint(opd, target, times=time_grid_from_range(time_range))
+    assert np.all(results == [True, False, True, True, True])
+
+
 @pytest.mark.remote_data
-# astropy.coordinates.errors.NonRotationTransformationWarning
-@pytest.mark.filterwarnings("ignore")
 def test_moon_separation():
     time = Time('2003-04-05 06:07:08')
     apo = Observer.at_site("APO")
@@ -501,6 +544,7 @@ constraint_tests = [
     AtNightConstraint(),
     SunSeparationConstraint(min=90*u.deg),
     MoonSeparationConstraint(min=20*u.deg),
+    MeridianSeparationConstraint(min=3*u.deg),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
     TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
 ]
@@ -508,8 +552,6 @@ constraint_tests = [
 
 @pytest.mark.remote_data
 @pytest.mark.parametrize('constraint', constraint_tests)
-# astropy.coordinates.errors.NonRotationTransformationWarning
-@pytest.mark.filterwarnings("ignore")
 def test_regression_shapes(constraint):
     times = Time(["2015-08-28 03:30", "2015-09-05 10:30", "2015-09-15 18:35"])
     targets = get_skycoord([FixedTarget(SkyCoord(350.7*u.deg, 18.4*u.deg)),

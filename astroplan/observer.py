@@ -524,6 +524,7 @@ class Observer:
         # Remember whether target is a single time-dependent target
         is_multiple_targets = isinstance(target, (list, tuple))
         is_target_time_dependent = isinstance(target, Target) and target.is_time_dependent
+
         is_single_time_dependent_target = (not is_multiple_targets) and is_target_time_dependent
 
         # convert any kind of target argument to non-scalar SkyCoord

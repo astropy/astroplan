@@ -66,6 +66,17 @@ these are in the UTC timezone by default)::
     from astropy.time import Time
     time = Time(['2015-06-16 06:00:00'])
 
+You can also define a pointing at a fixed altitude and azimuth using
+`~astroplan.AltAzTarget`. It uses the observer's location and atmospheric
+conditions to define the pointing, while its celestial coordinates change
+with time::
+
+    from astroplan import AltAzTarget
+
+    pointing = AltAzTarget.from_observer(alt=30*u.deg, az=120*u.deg,
+                                        observer=observer)
+    observer.altaz(time, pointing)
+
 You can also represent artificial satellites using
 `~astroplan.SGP4SatelliteTarget`, which propagates TLE or OMM orbital elements
 using SGP4. This requires the optional ``satellite`` dependency, which can be

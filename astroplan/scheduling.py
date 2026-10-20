@@ -270,7 +270,11 @@ class Schedule:
         def _format_target_info(target):
             if hasattr(target, "coord"):
                 try:
-                    return target.coord.icrs.to_string("hmsdms")
+                    # np.errstate silences a spurious RuntimeWarning from
+                    # Angle.to_string() with some CPython builds
+                    # (astropy/astropy#18989).
+                    with np.errstate(invalid="ignore"):
+                        return target.coord.icrs.to_string("hmsdms")
                 except ConvertError:
                     return repr(target.coord)
             if isinstance(target, SGP4SatelliteTarget):
@@ -278,6 +282,20 @@ class Schedule:
                     f"#{target.catalog_number} "
                     f"epoch {target.epoch.utc.strftime('%Y-%m-%d %H:%M:%S')}"
                 )
+            if hasattr(target, "alt") and hasattr(target, "az"):
+                parts = [
+                    "alt={:.6f} deg".format(u.Quantity(target.alt).to_value(u.deg)),
+                    "az={:.6f} deg".format(u.Quantity(target.az).to_value(u.deg)),
+                ]
+                if hasattr(target, "pressure"):
+                    try:
+                        p_hpa = u.Quantity(target.pressure).to_value(u.hPa)
+                    except (TypeError, ValueError, u.UnitConversionError):
+                        pass
+                    else:
+                        if p_hpa != 0.0:
+                            parts.append("pressure={:.3f} hPa".format(p_hpa))
+                return ", ".join(parts)
             return ""
 
         target_names = []
@@ -825,6 +843,8 @@ class PriorityScheduler(Scheduler):
             good = np.all(_strided_scores > 1e-5, axis=1)
             sum_scores = np.zeros(len(_strided_scores))
             sum_scores[good] = np.sum(_strided_scores[good], axis=1)
+            # Treat scores equal within 6 decimal places
+            score_key = np.round(sum_scores, 6)
 
             if np.all(constraint_scores == 0) or np.all(~good):
                 # No further calculation if no times meet the constraints
@@ -834,7 +854,7 @@ class PriorityScheduler(Scheduler):
                 # does not prevent us from fitting it in.
                 # loop over valid times and see if it fits
                 # TODO: speed up by searching multiples of time resolution?
-                for idx in np.argsort(-sum_scores, kind='mergesort'):
+                for idx in np.argsort(-score_key, kind="mergesort"):
                     if sum_scores[idx] <= 0.0:
                         # we've run through all optimal blocks
                         _is_scheduled = False
