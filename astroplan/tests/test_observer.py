@@ -146,6 +146,23 @@ def test_altaz_multiple_targets():
     assert all(ft_vector_alt[2, :] == sirius_alt)
 
 
+def test_altaz_scalar_time_grid_shape():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location)
+    time = Time("2026-02-05T00:00:00", scale="utc")
+    coords = SkyCoord([10, 20]*u.deg, [30, 40]*u.deg)
+    fixed_targets = [FixedTarget(coord=coord) for coord in coords]
+
+    for targets in (fixed_targets, coords):
+        assert observer.altaz(time, targets, grid_times_targets=True).shape == (2, 1)
+
+    horizontal = AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location)
+    assert observer.altaz(time, horizontal, grid_times_targets=True).shape == (1, 1)
+    assert observer.altaz(
+        time, [fixed_targets[0], horizontal], grid_times_targets=True
+    ).shape == (2, 1)
+
+
 def test_altaz_roundtrip_for_altaztarget():
     location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
     observer = Observer(location=location)

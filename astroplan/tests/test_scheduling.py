@@ -14,7 +14,6 @@ from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_al
 from astroplan.periodic import EclipsingSystem
 from astroplan.scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
                                   Transitioner, TransitionBlock, Schedule, Slot, Scorer)
-from astroplan.tests.test_target import ObserverDependentTarget
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -158,7 +157,7 @@ def test_schedule_change_slot_block():
     assert schedule.slots[1].start == schedule.slots[0].end
 
 
-def test_transitioner():
+def test_transitioner(observer_dependent_target):
     blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
     slew_rate = 1 * u.deg / u.second
     trans = Transitioner(slew_rate=slew_rate)
@@ -183,7 +182,7 @@ def test_transitioner():
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
 
-    observer_dependent = ObservingBlock(ObserverDependentTarget(), 10 * u.minute, 0)
+    observer_dependent = ObservingBlock(observer_dependent_target, 10 * u.minute, 0)
     transition = trans(blocks[0], observer_dependent, start_time, apo)
     assert isinstance(transition, TransitionBlock)
 
@@ -356,7 +355,7 @@ def test_schedule_eclipsers():
     assert sblock.end_time > egress
 
 
-def test_scorer():
+def test_scorer(observer_dependent_target):
     constraint = AirmassConstraint(max=4)
     times = time_grid_from_range(Time(['2016-02-06 00:00', '2016-02-06 08:00']),
                                  time_resolution=20*u.minute)
@@ -365,6 +364,7 @@ def test_scorer():
     block2 = ObservingBlock(rigel, 1*u.hour, 0, constraints=[constraint])
     scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
                                    Time('2016-02-06 08:00'))
+    assert scorer.targets == [vega, rigel]
     scores = scorer.create_score_array(time_resolution=20*u.minute)
     assert np.array_equal(c, scores)
 
@@ -387,7 +387,7 @@ def test_scorer():
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
 
-    observer_dependent = ObservingBlock(ObserverDependentTarget(), 1 * u.hour, 0)
+    observer_dependent = ObservingBlock(observer_dependent_target, 1 * u.hour, 0)
     scorer = Scorer.from_start_end(
         [observer_dependent], apo, Time("2016-02-06 00:00"), Time("2016-02-06 01:00")
     )

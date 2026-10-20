@@ -55,6 +55,22 @@
 - Fix ``PhaseConstraint`` raising a ``TypeError`` when ``min`` or ``max`` is
   not given, instead of defaulting to the full phase range. [#639]
 
+- Add ``AltAzTarget`` for targets defined by a fixed altitude and azimuth
+  at a given observing location, with support for time-dependent targets
+  in calculations, constraints and scheduling. ``Schedule.to_table()``
+  now also includes target type and target information. [#634]
+
+- With ``grid_times_targets=True``, a single time and multiple targets
+  now return an (M, 1) array instead of (M,), including when passing a
+  multi-coordinate ``SkyCoord``. [#634]
+
+- ``PriorityScheduler`` now rounds constraint scores to six decimal places
+  when choosing observation times, making scheduling more consistent
+  and preferring earlier slots when scores are nearly equal. [#634]
+
+- ``Scorer.targets`` now stores the original targets as a list instead
+  of combining them into a ``SkyCoord``. [#634]
+
 0.10.1 (2024-08-13)
 -------------------
 

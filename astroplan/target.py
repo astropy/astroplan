@@ -2,6 +2,7 @@
 
 # Standard library
 from abc import ABCMeta
+import warnings
 
 # Third-party
 import numpy as np
@@ -14,6 +15,8 @@ from astropy.coordinates import (
     AltAz,
     EarthLocation,
 )
+from .exceptions import AstroplanWarning
+
 
 __all__ = ["Target", "FixedTarget", "AltAzTarget", "NonFixedTarget"]
 
@@ -202,6 +205,10 @@ class AltAzTarget(Target):
     exact apparent direction implied by this target's atmospheric parameters, use
     matching atmospheric parameters on the `~astroplan.Observer`.
 
+    Since the target stays at the same altitude and azimuth, it does not
+    rise, set, or cross the meridian like a celestial object. Rise/set
+    calculations may therefore return masked times.
+
     Examples
     --------
     Define a fixed horizontal direction at a given observatory:
@@ -233,7 +240,6 @@ class AltAzTarget(Target):
         relative_humidity=None,
         obswl=None,
         marker=None,
-        **kwargs,
     ):
         """
         Parameters
@@ -325,7 +331,8 @@ class AltAzTarget(Target):
         """
         return cls(
             alt=alt, az=az, location=observer.location,
-            pressure=observer.pressure, temperature=observer.temperature,
+            pressure=observer.pressure if observer.pressure is not None else 0 * u.hPa,
+            temperature=observer.temperature,
             relative_humidity=observer.relative_humidity, obswl=obswl,
             **kwargs
         )
@@ -349,8 +356,8 @@ class AltAzTarget(Target):
 
         observer : `~astroplan.Observer`, optional
             Observer supplied through the common `get_skycoord()` interface.
-            This target's AltAz direction is defined by its stored location,
-            so this argument is not used.
+            This target's AltAz direction is defined by its stored location.
+            A warning is issued if they differ.
 
         Returns
         -------
@@ -361,6 +368,11 @@ class AltAzTarget(Target):
             raise ValueError("`times` is required to evaluate an AltAzTarget.")
         if not isinstance(times, Time):
             times = Time(times)
+
+        if observer is not None and observer.location != self.location:
+            warnings.warn("The observer is at a different location from this "
+                          "AltAzTarget; results may be misleading.",
+                          AstroplanWarning)
 
         # Construct the AltAz frame used to interpret the stored alt/az direction.
         altaz_frame = AltAz(

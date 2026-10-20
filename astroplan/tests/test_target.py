@@ -8,34 +8,9 @@ from astropy.coordinates import SkyCoord, GCRS, ICRS, EarthLocation
 from astropy.time import Time
 
 # Package
-from astroplan.target import Target, FixedTarget, AltAzTarget, get_skycoord
+from astroplan.exceptions import AstroplanWarning
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
 from astroplan.observer import Observer
-
-
-class ObserverDependentTarget(Target):
-    """Minimal target that requires observer context when evaluated."""
-
-    def __init__(self, name="observer-dependent"):
-        self.name = name
-
-    @property
-    def is_time_dependent(self):
-        return True
-
-    def get_skycoord(self, times, observer=None):
-        if observer is None:
-            raise ValueError("`observer` is required.")
-
-        ra = np.broadcast_to(
-            observer.location.lon.to_value(u.deg),
-            times.shape
-        ) * u.deg
-        dec = np.broadcast_to(
-            observer.location.lat.to_value(u.deg),
-            times.shape,
-        ) * u.deg
-
-        return SkyCoord(ra=ra, dec=dec)
 
 
 @pytest.mark.remote_data
@@ -84,6 +59,10 @@ def test_AltAzTarget_quantity_validation():
 
     with pytest.raises(TypeError):
         AltAzTarget(alt=30 * u.deg, az=120 * u.deg, location="not a location")
+
+    with pytest.raises(TypeError, match="temprature"):
+        AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location,
+                    temprature=20*u.deg_C)
 
 
 def test_AltAzTarget_get_skycoord_requires_times():
@@ -154,6 +133,22 @@ def test_AltAzTarget_from_observer():
 
     # They should be effectively identical
     assert coord_from_observer.separation(coord_manual).max() < 1e-6 * u.arcsec
+
+    default_observer = Observer(location=location)
+    default_target = AltAzTarget.from_observer(alt=30*u.deg, az=120*u.deg,
+                                               observer=default_observer)
+    assert default_target.pressure == 0*u.hPa
+
+
+def test_AltAzTarget_warns_for_different_observer():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    other_location = EarthLocation.from_geodetic(20*u.deg, 45*u.deg, 0*u.m)
+    target = AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location)
+    observer = Observer(location=other_location)
+    time = Time("2026-02-05T00:00:00", scale="utc")
+
+    with pytest.warns(AstroplanWarning, match="different location"):
+        target.get_skycoord(time, observer=observer)
 
 
 def test_AltAzTarget_get_skycoord_vector_times_shape_and_frame():
@@ -314,14 +309,14 @@ def test_get_skycoord_mixed_distances_with_time_dependent_target_fills_unitspher
     assert np.allclose(coo.distance[1].to_value(u.kpc), 780.0)
 
 
-def test_get_skycoord_forwards_observer():
+def test_get_skycoord_forwards_observer(observer_dependent_target):
     location = EarthLocation.from_geodetic(
         lon=10 * u.deg,
         lat=45 * u.deg,
         height=100 * u.m,
     )
     observer = Observer(location=location)
-    target = ObserverDependentTarget()
+    target = observer_dependent_target
     times = Time(["2026-02-05T00:00:00", "2026-02-05T01:00:00"], scale="utc")
 
     with pytest.raises(ValueError, match="observer"):

@@ -287,11 +287,6 @@ class Schedule:
                         if p_hpa != 0.0:
                             parts.append("pressure={:.3f} hPa".format(p_hpa))
                 return ", ".join(parts)
-            if hasattr(target, "satellite"):
-                return (
-                    f"#{target.satellite.model.satnum} "
-                    f"epoch {target.satellite.epoch.utc_strftime(format='%Y-%m-%d %H:%M:%S')}"
-                )
             return ""
 
         target_names = []
