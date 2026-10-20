@@ -13,7 +13,7 @@ __all__ = ['plot_sky', 'plot_sky_24hr']
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
              north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
-             warn_below_horizon=False, style_sheet=None, hours_value=np.array([])):
+             warn_below_horizon=False, style_sheet=None, hours_value=None):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -53,7 +53,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     style_kwargs : dict or None, optional.
         A dictionary of keywords passed into `~matplotlib.pyplot.scatter`
-        to set plotting styles.
+        to set plotting styles. A ``c`` array with one value per time (e.g.
+        to color points with a colormap) is masked so that values stay
+        matched to positions when some times are below the horizon.
 
     north_to_east_ccw : bool, optional.
         True by default, meaning that azimuth is shown increasing
@@ -81,10 +83,11 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         astroplan, print *astroplan.plots.available_style_sheets*. Defaults
         to the light theme.
 
-    hours_value : `numpy.ndarray`
-        Array with the labels of the hours to be plotted. The length of
-        this array must be equal to the length of the time array. If
-        passed, the hours will be plotted on the sky map.
+    hours_value : array-like or `None` (optional)
+        Numeric labels (e.g. the hour of each time) to annotate next to each
+        plotted position, formatted with one decimal place. Must have the
+        same length as ``time``. Labels for times when the target is below
+        the horizon are not drawn. If `None` (default), no labels are drawn.
 
     Returns
     -------
@@ -176,35 +179,23 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     if north_to_east_ccw is False:
         ax.set_theta_direction(-1)
 
-    # Hours added to map by F. Herpich 2025-05-19
-    if isinstance(hours_value, (list, tuple)):
-        hours_value = np.array(hours_value)
-    if not isinstance(hours_value, np.ndarray):
-        raise TypeError("hours_value must be a numpy array, list or tuple")
+    above_horizon = altitude <= 91.0
 
-    if len(hours_value) != len(time):
-        raise ValueError("hours_value must have the same length as the time array")
+    if hours_value is not None:
+        hours_value = np.atleast_1d(np.asarray(hours_value))
+        if len(hours_value) != len(time):
+            raise ValueError("hours_value must have the same length as time")
+        for label, az, alt in zip(hours_value[above_horizon], az_plot, alt_plot):
+            ax.annotate(f"{label:.1f}", (az, alt), fontsize=8)
 
-    if hours_value.size > 0:
-        hoursvalue = hours_value[altitude <= 91.0]
-        if len(hoursvalue) > 1:
-            hoursname = ["%.1f" % i for i in hoursvalue]
-            for i, txt in enumerate(hoursname):
-                ax.annotate(txt, (az_plot[i], alt_plot[i]),
-                            fontsize=8)
-        elif len(hoursvalue) == 1:
-            hoursname = ["%.1f" % hoursvalue[0]]
-            ax.annotate(hoursname[0], (az_plot[0], alt_plot[0]),
-                        fontsize=8)
-        else:
-            pass
+    # Mask per-point colors so they stay matched to the plotted positions.
+    if 'c' in style_kwargs:
+        c = style_kwargs['c']
+        if not isinstance(c, str) and np.ndim(c) > 0 and len(c) == len(time):
+            style_kwargs['c'] = np.asarray(c)[above_horizon]
 
-    # Plot target coordinates. Modified by F. Herpich 2025-05-19
-    if 'c' in style_kwargs.keys():
-        colorformap = style_kwargs.pop('c')[altitude <= 91.0]
-        ax.scatter(az_plot, alt_plot, c=colorformap, **style_kwargs)
-    else:
-        ax.scatter(az_plot, alt_plot, **style_kwargs)
+    # Plot target coordinates.
+    ax.scatter(az_plot, alt_plot, **style_kwargs)
 
     # Set radial limits.
     ax.set_rlim(1, 91)
