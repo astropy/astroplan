@@ -270,7 +270,11 @@ class Schedule:
         def _format_target_info(target):
             if hasattr(target, "coord"):
                 try:
-                    return target.coord.icrs.to_string("hmsdms")
+                    # np.errstate silences a spurious RuntimeWarning from
+                    # Angle.to_string() with some CPython builds
+                    # (astropy/astropy#18989).
+                    with np.errstate(invalid="ignore"):
+                        return target.coord.icrs.to_string("hmsdms")
                 except ConvertError:
                     return repr(target.coord)
             if hasattr(target, "alt") and hasattr(target, "az"):
