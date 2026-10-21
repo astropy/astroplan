@@ -41,7 +41,7 @@ Or you can specify your own location parameters::
 
     import astropy.units as u
     from astropy.coordinates import EarthLocation
-    from pytz import timezone
+    from zoneinfo import ZoneInfo
     from astroplan import Observer
 
     longitude = '-155d28m48.900s'
@@ -54,7 +54,7 @@ Or you can specify your own location parameters::
                    pressure=0.615 * u.bar,
                    relative_humidity=0.11,
                    temperature=0 * u.deg_C,
-                   timezone=timezone('US/Hawaii'),
+                   timezone=ZoneInfo('US/Hawaii'),
                    description="Subaru Telescope on Maunakea, Hawaii")
 
 `astroplan` makes heavy use of certain `astropy <https://astropy.org>`__ machinery, including the
@@ -66,6 +66,16 @@ these are in the UTC timezone by default)::
     from astropy.time import Time
     time = Time(['2015-06-16 06:00:00'])
 
+You can also define a pointing at a fixed altitude and azimuth using
+`~astroplan.AltAzTarget`. It uses the observer's location and atmospheric
+conditions to define the pointing, while its celestial coordinates change
+with time::
+
+    from astroplan import AltAzTarget
+
+    pointing = AltAzTarget.from_observer(alt=30*u.deg, az=120*u.deg,
+                                        observer=observer)
+    observer.altaz(time, pointing)
 
 Doing More
 ==========

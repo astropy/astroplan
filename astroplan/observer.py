@@ -4,12 +4,12 @@
 import sys
 import datetime
 import warnings
+import zoneinfo
 
 # Third-party
 
 import astropy.units as u
 import numpy as np
-import pytz
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
                                  get_body, Angle, Longitude)
 from astropy.time import Time
@@ -18,7 +18,7 @@ from astropy.utils.exceptions import AstropyDeprecationWarning
 # Package
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
-from .target import get_skycoord, SunFlag, MoonFlag
+from .target import get_skycoord, SunFlag, MoonFlag, Target
 
 
 __all__ = ["Observer"]
@@ -57,6 +57,11 @@ def _process_nans_in_jds(jds):
     not_finite = ~np.isfinite(jds)
     masked_jds = np.ma.masked_array(jds.to(u.day).value if hasattr(jds, 'unit') else jds.copy())
     masked_jds[not_finite] = np.ma.masked
+    # Only return a masked array when something is masked: newer astropy keeps
+    # a Time masked even if no elements are, and masked coordinates can't be
+    # transformed.
+    if not np.ma.is_masked(masked_jds):
+        return np.ma.getdata(masked_jds)
     return masked_jds
 
 
@@ -158,7 +163,7 @@ class Observer:
 
         timezone : str or `datetime.tzinfo` (optional)
             The local timezone to assume. If a string, it will be passed
-            through ``pytz.timezone()`` to produce the timezone object.
+            through `zoneinfo.ZoneInfo` to produce the timezone object.
 
         name : str
             A short name for the telescope, observatory or location.
@@ -216,7 +221,7 @@ class Observer:
         if isinstance(timezone, datetime.tzinfo):
             self.timezone = timezone
         elif isinstance(timezone, str):
-            self.timezone = pytz.timezone(timezone)
+            self.timezone = zoneinfo.ZoneInfo(timezone)
         else:
             raise TypeError('timezone keyword should be a string, or an '
                             'instance of datetime.tzinfo')
@@ -248,7 +253,7 @@ class Observer:
         >>> print(keck)                                    # doctest: +FLOAT_CMP
         <Observer: name='Keck',
             location (lon, lat, el)=(-155.478333333 deg, 19.8283333333 deg, 4160.0 m),
-            timezone=<DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>>
+            timezone=zoneinfo.ZoneInfo(key='US/Hawaii')>
         """
         class_name = self.__class__.__name__
         attr_names = ['name', 'location', 'timezone', 'pressure', 'temperature',
@@ -391,10 +396,6 @@ class Observer:
         Convert the `~astropy.time.Time` object ``astropy_time`` to a
         localized `~datetime.datetime` object.
 
-        Timezones localized with `pytz`_.
-
-        .. _pytz: https://pypi.python.org/pypi/pytz/
-
         Parameters
         ----------
         astropy_time : `~astropy.time.Time`
@@ -423,18 +424,18 @@ class Observer:
             return [self.astropy_time_to_datetime(t) for t in astropy_time]
 
         # Convert astropy.time.Time to a UTC localized datetime (aware)
-        utc_datetime = pytz.utc.localize(astropy_time.utc.datetime)
+        utc_datetime = astropy_time.utc.datetime.replace(tzinfo=datetime.timezone.utc)
 
         # Convert UTC to local timezone
-        return self.timezone.normalize(utc_datetime)
+        return utc_datetime.astimezone(self.timezone)
 
     def datetime_to_astropy_time(self, date_time):
         """
         Convert the `~datetime.datetime` object ``date_time`` to a
         `~astropy.time.Time` object.
 
-        Timezones localized with `pytz`_. If the ``date_time`` is naive, the
-        implied timezone is the ``timezone`` structure of ``self``.
+        If the ``date_time`` is naive, the implied timezone is the
+        ``timezone`` structure of ``self``.
 
         Parameters
         ----------
@@ -453,13 +454,12 @@ class Observer:
 
         >>> from astroplan import Observer
         >>> import datetime
-        >>> import pytz
         >>> subaru = Observer.at_site("Subaru", timezone="US/Hawaii")
         >>> hi_date_time = datetime.datetime(2005, 6, 21, 20, 0, 0, 0)
         >>> subaru.datetime_to_astropy_time(hi_date_time)
         <Time object: scale='utc' format='datetime' value=2005-06-22 06:00:00>
         >>> utc_date_time = datetime.datetime(2005, 6, 22, 6, 0, 0, 0,
-        ...                                   tzinfo=pytz.timezone("UTC"))
+        ...                                   tzinfo=datetime.timezone.utc)
         >>> subaru.datetime_to_astropy_time(utc_date_time)
         <Time object: scale='utc' format='datetime' value=2005-06-22 06:00:00>
         """
@@ -467,9 +467,13 @@ class Observer:
         if hasattr(date_time, '__iter__'):
             return Time([self.datetime_to_astropy_time(t) for t in date_time])
 
-        # For timezone-naive datetimes, assign local timezone
+        # For timezone-naive datetimes, assign local timezone. pytz timezones
+        # must be attached with localize() to get the correct UTC offset.
         if date_time.tzinfo is None:
-            date_time = self.timezone.localize(date_time)
+            if hasattr(self.timezone, 'localize'):
+                date_time = self.timezone.localize(date_time)
+            else:
+                date_time = date_time.replace(tzinfo=self.timezone)
 
         return Time(date_time, location=self.location)
 
@@ -507,22 +511,42 @@ class Observer:
             the shapes together using standard numpy rules. Useful for grid
             searches for rise/set times etc.
         """
-        # make sure we have a non-scalar time
         if not isinstance(time, Time):
             time = Time(time)
+
+        # In grid mode, scalar time should still behave like a length-1 time axis
+        if grid_times_targets and time.isscalar:
+            time = time[None]  # shape (1,)
 
         if target is None:
             return time, None
 
+        # Remember whether target is a single time-dependent target
+        is_multiple_targets = isinstance(target, (list, tuple))
+        is_target_time_dependent = isinstance(target, Target) and target.is_time_dependent
+
+        is_single_time_dependent_target = (not is_multiple_targets) and is_target_time_dependent
+
         # convert any kind of target argument to non-scalar SkyCoord
-        target = get_skycoord(target)
+        target = get_skycoord(target, times=time, observer=self)
+
         if grid_times_targets:
+            # Only ambiguous case: a single time-dependent target produces shape == time.shape
+            # but grid mode requires a leading target axis (1, ...).
+            if (
+                is_single_time_dependent_target
+                and (not target.isscalar)
+                and (target.shape == time.shape)
+            ):
+                target = target[np.newaxis, ...]
+
+            # Ensure at least one targets axis for scalar targets
             if target.isscalar:
-                # ensure we have a (1, 1) shape coord
-                target = SkyCoord(np.tile(target, 1))[:, np.newaxis]
-            else:
-                while target.ndim <= time.ndim:
-                    target = target[:, np.newaxis]
+                target = SkyCoord(np.tile(target, 1))  # shape (1,)
+
+            # Make target have one more dim than time (first targets axis, then time axes)
+            while target.ndim < 1 + time.ndim:
+                target = target[..., np.newaxis]
 
         elif not self._is_broadcastable(target.shape, time.shape):
             raise ValueError('Time and Target arguments cannot be broadcast '

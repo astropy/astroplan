@@ -7,7 +7,7 @@ import datetime
 import astropy.units as u
 import numpy as np
 import pytest
-import pytz
+import zoneinfo
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
                                  AltAz, Angle)
 from astropy.tests.helper import assert_quantity_allclose
@@ -16,7 +16,7 @@ from numpy.testing import assert_allclose
 
 # Package
 from astroplan.observer import Observer
-from astroplan.target import FixedTarget
+from astroplan.target import FixedTarget, AltAzTarget
 from astroplan.exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 
@@ -146,6 +146,78 @@ def test_altaz_multiple_targets():
     assert all(ft_vector_alt[2, :] == sirius_alt)
 
 
+def test_altaz_scalar_time_grid_shape():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location)
+    time = Time("2026-02-05T00:00:00", scale="utc")
+    coords = SkyCoord([10, 20]*u.deg, [30, 40]*u.deg)
+    fixed_targets = [FixedTarget(coord=coord) for coord in coords]
+
+    for targets in (fixed_targets, coords):
+        assert observer.altaz(time, targets, grid_times_targets=True).shape == (2, 1)
+
+    horizontal = AltAzTarget(alt=30*u.deg, az=120*u.deg, location=location)
+    assert observer.altaz(time, horizontal, grid_times_targets=True).shape == (1, 1)
+    assert observer.altaz(
+        time, [fixed_targets[0], horizontal], grid_times_targets=True
+    ).shape == (2, 1)
+
+
+def test_altaz_roundtrip_for_altaztarget():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location)
+
+    t = Time("2026-01-01T00:00:00", scale="utc")
+    alt = 42*u.deg
+    az = 123*u.deg
+
+    target = AltAzTarget(alt=alt, az=az, location=location, name="horiz")
+
+    # If AltAzTarget evaluates to ICRS at time t, transforming back to AltAz at t
+    # should recover the original horizontal direction (within numerical tolerance).
+    a = observer.altaz(t, target)
+
+    assert np.allclose(a.alt.to_value(u.deg), alt.to_value(u.deg), atol=1e-10)
+    assert np.allclose(a.az.wrap_at(360*u.deg).to_value(u.deg),
+                       az.to_value(u.deg), atol=1e-10)
+
+
+def test_altaz_accepts_altaztarget():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    obs = Observer(location=location)
+    target = AltAzTarget(alt=60*u.deg, az=180*u.deg, location=location, name="horiz")
+
+    # Vector time, no grid
+    t0 = Time("2026-02-05T00:00:00", scale="utc")
+    times = t0 + np.arange(5) * u.hour
+    altaz = obs.altaz(times, target)
+    assert altaz.alt.shape == times.shape
+    assert altaz.az.shape == times.shape
+    # AltAzTarget evaluates to ICRS at time t, transforming back to AltAz at t
+    # should recover the original horizontal direction (within numerical tolerance).
+    assert np.allclose(altaz.alt.to_value(u.deg), 60.0)
+    assert np.allclose(altaz.az.to_value(u.deg), 180.0)
+
+    # Vector time, grid
+    altaz_grid = obs.altaz(times, target, grid_times_targets=True)
+    assert altaz_grid.alt.shape == (1, len(times))
+    assert altaz_grid.az.shape == (1, len(times))
+    assert np.allclose(altaz_grid.alt[0].to_value(u.deg), 60.0)
+    assert np.allclose(altaz_grid.az[0].to_value(u.deg), 180.0)
+
+    # Vector time, grid, multiple targets
+    targets = [
+        AltAzTarget(alt=60*u.deg, az=180*u.deg, location=location, name="h1"),
+        AltAzTarget(alt=45*u.deg, az=90*u.deg, location=location, name="h2"),
+        AltAzTarget(alt=35*u.deg, az=10*u.deg, location=location, name="h3"),
+    ]
+    altaz_grid = obs.altaz(times, targets, grid_times_targets=True)
+    assert altaz_grid.alt.shape == (len(targets), len(times))
+    assert np.allclose(altaz_grid.alt[0].to_value(u.deg), 60.0)
+    assert np.allclose(altaz_grid.alt[1].to_value(u.deg), 45.0)
+    assert np.allclose(altaz_grid.alt[2].to_value(u.deg), 35.0)
+
+
 def test_rise_set_transit_nearest_vector():
     vega = SkyCoord(279.23473479*u.deg, 38.78368896*u.deg)
     mira = SkyCoord(34.83663376*u.deg, -2.97763767*u.deg)
@@ -226,13 +298,13 @@ def test_Observer_timezone_parser():
     location = EarthLocation.from_geodetic(lon, lat, elevation)
 
     obs1 = Observer(name='Observatory', location=location,
-                    timezone=pytz.timezone('UTC'))
+                    timezone=zoneinfo.ZoneInfo('UTC'))
     obs2 = Observer(name='Observatory', location=location, timezone='UTC')
     obs3 = Observer(name='Observatory', location=location)
 
     assert obs1.timezone == obs2.timezone, ('Accept both strings to pass to '
-                                            'the pytz.timezone() constructor '
-                                            'and instances of pytz.timezone')
+                                            'the zoneinfo.ZoneInfo() constructor '
+                                            'and instances of zoneinfo.ZoneInfo')
 
     assert obs2.timezone == obs3.timezone, ('Default timezone should be UTC')
 
@@ -1063,9 +1135,19 @@ def test_mixed_rise_and_dont_rise():
     assert issubclass(w.category, TargetAlwaysUpWarning)
 
 
-def test_timezone_convenience_methods():
+@pytest.mark.parametrize('timezone', [
+    pytest.param('US/Eastern', id='str'),
+    pytest.param(zoneinfo.ZoneInfo('US/Eastern'), id='zoneinfo'),
+    # pytz timezones are no longer created by astroplan, but user-supplied
+    # ones must still be localized correctly.
+    pytest.param('pytz', id='pytz'),
+])
+def test_timezone_convenience_methods(timezone):
+    if timezone == 'pytz':
+        pytz = pytest.importorskip('pytz')
+        timezone = pytz.timezone('US/Eastern')
     location = EarthLocation(-74.0*u.deg, 40.7*u.deg, 0*u.m)
-    obs = Observer(location=location, timezone=pytz.timezone('US/Eastern'))
+    obs = Observer(location=location, timezone=timezone)
     t = Time(57100.3, format='mjd')
     assert (obs.astropy_time_to_datetime(t).hour == 3)
 
