@@ -687,10 +687,15 @@ class Observer:
 
     # Sun-related methods.
     @u.quantity_input(horizon=u.deg)
-    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree):
+    def _horiz_cross(self, t, alt, rise_set, horizon=0*u.degree,
+                     prev_next='next'):
         """
         Find time ``t`` when values in array ``a`` go from
         negative to positive or positive to negative (exclude endpoints)
+
+        If the grid contains more than one crossing (possible since the
+        grid can span slightly more than one sidereal day), the first one is
+        used when ``prev_next='next'`` and the last one otherwise.
 
         ``return_limits`` will return nearest times to zero-crossing.
 
@@ -709,6 +714,10 @@ class Observer:
             Number of degrees above/below actual horizon to use
             for calculating rise/set times (i.e.,
             -6 deg horizon = civil twilight, etc.)
+        prev_next : {"next", "previous"}
+            Whether the grid runs forward to the next crossing or backward to
+            the previous one, which determines which crossing is used when
+            there is more than one.
 
         Returns
         -------
@@ -746,6 +755,24 @@ class Observer:
             # Find index where altitude goes from above to below horizon
             condition = ((alt[:, :-1, ...] > horizon) *
                          (alt[:, 1:, ...] < horizon))
+        else:
+            raise ValueError('"rise_set" must be "rising" or "setting", '
+                             'got {!r}.'.format(rise_set))
+
+        # Keep only the crossing nearest the reference time: the first one
+        # along the grid axis for "next", the last one for "previous"
+        if prev_next == 'next':
+            crossing_index = np.argmax(condition, axis=1)
+        elif prev_next == 'previous':
+            crossing_index = (condition.shape[1] - 1 -
+                              np.argmax(condition[:, ::-1, ...], axis=1))
+        else:
+            raise ValueError('"prev_next" must be "next" or "previous", '
+                             'got {!r}.'.format(prev_next))
+        nearest_crossing = np.zeros_like(condition)
+        np.put_along_axis(nearest_crossing,
+                          np.expand_dims(crossing_index, axis=1), True, axis=1)
+        condition &= nearest_crossing
 
         noncrossing_indices = np.sum(condition, axis=1, dtype=np.intp) < 1
         alt_lims1 = u.Quantity(np.zeros(output_shape), unit=u.deg)
@@ -932,7 +959,7 @@ class Observer:
         altitudes = altaz.alt
 
         al1, al2, jd1, jd2 = self._horiz_cross(times, altitudes, rise_set,
-                                               horizon)
+                                               horizon, prev_next=prev_next)
         return self._two_point_interp(jd1, jd2, al1, al2,
                                       horizon=horizon)
 
@@ -1008,7 +1035,8 @@ class Observer:
 
         horizon = 0*u.degree  # Find when derivative passes through zero
         al1, al2, jd1, jd2 = self._horiz_cross(dt, d_altitudes,
-                                               rise_set, horizon)
+                                               rise_set, horizon,
+                                               prev_next=prev_next)
         return self._two_point_interp(jd1, jd2, al1, al2,
                                       horizon=horizon)
 
