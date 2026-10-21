@@ -21,9 +21,8 @@ from numpy.lib.stride_tricks import as_strided
 # Package
 from .exceptions import MissingConstraintWarning
 from .moon import moon_illumination
-from .observer import _make_cache_key
 from .target import get_skycoord
-from .utils import time_grid_from_range
+from .utils import time_grid_from_range, _make_cache_key
 
 __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "is_observable", "is_always_observable", "time_grid_from_range",

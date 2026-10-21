@@ -17,6 +17,15 @@
   ``'nearest'``) skipping an event shortly after the reference time and
   returning the same event one sidereal day later instead. [#651]
 
+- Add ``Observer.get_body``, a cached wrapper around
+  ``astropy.coordinates.get_body`` for the observer's location, and use it for
+  all Sun and Moon positions in ``Observer`` and the constraints. The Sun
+  helpers (``sun_rise_time``, ``sun_set_time``, ``noon``, ``midnight``,
+  ``sun_altaz``, ``is_night`` and ``altaz`` with the Sun) now start from
+  ``get_body('sun', ...)`` instead of ``get_sun``; because the AltAz transform
+  already applied the topocentric correction, computed altitudes change by
+  less than 0.03 arcsec and rise/set times by about a millisecond. [#578]
+
 - Add ``MeridianSeparationConstraint`` to constrain a target's angular
   separation from the meridian, e.g. to avoid pier flips on German
   equatorial mounts. [#589]

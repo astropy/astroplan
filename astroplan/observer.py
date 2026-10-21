@@ -5,6 +5,7 @@ import sys
 import datetime
 import warnings
 import zoneinfo
+from collections import OrderedDict
 
 # Third-party
 
@@ -19,6 +20,7 @@ from astropy.utils.exceptions import AstropyDeprecationWarning
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
 from .target import get_skycoord, SunFlag, MoonFlag, Target
+from .utils import _make_cache_key
 
 
 __all__ = ["Observer"]
@@ -29,47 +31,6 @@ MAGIC_TIME = Time(-999, format='jd')
 # ``approx_sidereal_drift``, if any), so that an event recurring slightly more
 # than a day later, or falling right at the reference time, is still found.
 _SEARCH_MARGIN = 1 * u.hour
-
-
-def _make_cache_key(times, targets):
-    """
-    Make a unique key to reference this combination of ``times`` and ``targets``.
-
-    Often, we wish to store expensive calculations for a combination of
-    ``targets`` and ``times`` in a cache on an ``observer``` object. This
-    routine will provide an appropriate, hashable, key to store these
-    calculations in a dictionary.
-
-    Parameters
-    ----------
-    times : `~astropy.time.Time`
-        Array of times on which to test the constraint.
-    targets : `~astropy.coordinates.SkyCoord`
-        Target or list of targets.
-
-    Returns
-    -------
-    cache_key : tuple
-        A hashable tuple for use as a cache key
-    """
-    # make a tuple from times
-    try:
-        timekey = tuple(times.ravel().jd) + times.shape
-    except BaseException:        # must be scalar
-        timekey = (times.jd,)
-    # make hashable thing from targets coords
-    try:
-        if hasattr(targets, 'frame'):
-            # treat as a SkyCoord object. Accessing the longitude
-            # attribute of the frame data should be unique and is
-            # quicker than accessing the ra attribute.
-            targkey = tuple(targets.frame.data.lon.value.ravel()) + targets.shape
-        else:
-            # assume targets is a string.
-            targkey = (targets,)
-    except BaseException:
-        targkey = (targets.frame.data.lon,)
-    return timekey + targkey
 
 
 # Handle deprecated MAGIC_TIME variable
@@ -230,6 +191,9 @@ class Observer:
     ...                   elevation=0*u.m, name="Subaru", timezone="US/Hawaii")
 
     """
+    #: Maximum number of entries kept by `~astroplan.Observer.get_body`
+    body_cache_size = 32
+
     @u.quantity_input(elevation=u.m)
     def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
                  longitude=None, elevation=0*u.m, pressure=None,
@@ -274,6 +238,7 @@ class Observer:
         """
 
         self.name = name
+        self._body_cache = OrderedDict()
         self.pressure = pressure
         self.temperature = temperature
         self.relative_humidity = relative_humidity
@@ -637,7 +602,8 @@ class Observer:
         """
         Get a solar system body from `~astropy.coordinates.get_body` for the
         current observer location. Results are cached to speed up multiple
-        calls for the same body and time.
+        calls for the same body and time. The cache holds at most
+        ``body_cache_size`` entries (oldest entries are dropped first).
 
         Parameters
         ----------
@@ -673,15 +639,19 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        _cache_key = _make_cache_key(time, body)
+        # The positions are topocentric and ephemeris-dependent, so both the
+        # location and the ephemeris must be part of the key.
+        location_key = tuple(c.to_value(u.m) for c in self.location.geocentric)
+        _cache_key = _make_cache_key(time, body) + (ephemeris, location_key)
 
-        if not hasattr(self, "_body_cache"):
-            self._body_cache = {}
-
-        if _cache_key not in self._body_cache:
+        if _cache_key in self._body_cache:
+            self._body_cache.move_to_end(_cache_key)
+        else:
             self._body_cache[_cache_key] = get_body(
                 body, time, location=self.location, ephemeris=ephemeris
             )
+            while len(self._body_cache) > self.body_cache_size:
+                self._body_cache.popitem(last=False)
 
         return self._body_cache[_cache_key]
 
