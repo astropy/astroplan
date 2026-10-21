@@ -120,6 +120,7 @@ def test_plot_altitude_local_timezone():
     finally:
         plt.close(fig)
 
+
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_plot_altitude_single_time_array_warning():
     import matplotlib.pyplot as plt

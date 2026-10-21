@@ -385,7 +385,6 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         tzname = 'UTC'
         tzinfo = None
 
-
     # Populate time window if needed.
     time_ut = Time(time)
     if time_ut.isscalar:
@@ -467,12 +466,12 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         ax2.set_ylim(ax.get_ylim())
         ax2.set_ylabel('Airmass')
 
-
     # Redraw figure for interactive sessions.
     ax.figure.canvas.draw()
 
     # Output.
     return ax
+
 
 def plot_schedule_airmass(schedule, show_night=False):
     """
