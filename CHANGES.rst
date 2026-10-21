@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
+  within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
+  angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]
+
 - Fix rise, set and meridian transit times with ``which='next'`` (or
   ``'nearest'``) skipping an event shortly after the reference time and
   returning the same event one sidereal day later instead. [#651]

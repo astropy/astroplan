@@ -15,7 +15,7 @@ import astropy.units as u
 import numpy as np
 from astropy import table
 from astropy.time import Time
-from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
+from astropy.coordinates import Angle, get_body, get_sun, Galactic, SkyCoord
 from numpy.lib.stride_tricks import as_strided
 
 # Package
@@ -975,74 +975,54 @@ class HourAngleConstraint(Constraint):
     """
     Constrain the hour angle of a target.
 
+    The hour angle is measured west from the meridian on the interval
+    [-12h, 12h), so it is negative before transit and positive after.
+    `~astroplan.MeridianSeparationConstraint` instead limits the angular
+    distance on the sky from the meridian, which does not distinguish east
+    from west and, at a given hour angle, shrinks toward the poles. This
+    constraint limits the hour angle itself, like the hour angle limits of an
+    equatorial mount.
+
     Parameters
     ----------
-    min : float or `None`
-        Minimum hour angle of the target. `None` indicates no limit.
-    max : float or `None`
-        Maximum hour angle of the target. `None` indicates no limit.
-    use_astropy : boolean
-        Use Astropy for hour angle calculation
-    sidereal_model : str
-        Sidereal time model.
-        See astropy.time.Time.sidereal_time docs for options.
+    min : `~astropy.units.Quantity` or `None`, optional
+        Minimum hour angle (inclusive), between -12h and 12h, in any angular
+        unit. `None` indicates no lower limit. Default is -5.5h.
+    max : `~astropy.units.Quantity` or `None`, optional
+        Maximum hour angle (inclusive), between -12h and 12h, in any angular
+        unit. `None` indicates no upper limit. Default is 5.5h.
+
+    Examples
+    --------
+    To constrain observations to within three hours of the meridian:
+
+    >>> import astropy.units as u
+    >>> constraint = HourAngleConstraint(min=-3*u.hourangle, max=3*u.hourangle)
+
+    If ``min`` is greater than ``max``, the window wraps through 12h, e.g. to
+    observe circumpolar targets near lower culmination:
+
+    >>> constraint = HourAngleConstraint(min=150*u.deg, max=-150*u.deg)
     """
 
-    def __init__(self, min=-5.5, max=5.5, use_astropy=True,
-                 sidereal_model=None):
-        self.min = min
-        self.max = max
-        self.use_astropy = use_astropy
-        self.sidereal_model = sidereal_model
+    def __init__(self, min=-5.5*u.hourangle, max=5.5*u.hourangle):
+        if min is None and max is None:
+            raise ValueError("HourAngleConstraint requires at least one of "
+                             "min or max.")
+        self.min = Angle(min if min is not None else -12*u.hourangle).to(u.hourangle)
+        self.max = Angle(max if max is not None else 12*u.hourangle).to(u.hourangle)
+
+        for limit in (self.min, self.max):
+            if not -12*u.hourangle <= limit <= 12*u.hourangle:
+                raise ValueError("The minimum and maximum of the HourAngleConstraint "
+                                 "must be between -12h and 12h.")
 
     def compute_constraint(self, times, observer, targets):
+        ha = Angle(observer.target_hour_angle(times, targets)).wrap_at(12*u.hourangle)
 
-        if self.use_astropy:
-            lst = times.sidereal_time('mean',
-                                      longitude='tio',
-                                      model=self.sidereal_model) + \
-                                              observer.location.lon
-            has = np.mod([(lst - target.ra).hour for target in targets], 24)
-        else:
-            if times.isscalar:
-                jds = np.array([times.jd])
-            else:
-                jds = np.array([t.jd for t in times])
-            GMST = 18.697374558 + 24.06570982441908 * (jds - 2451545)
-            GMST = np.mod(GMST, 24)
-
-            lon = observer.location.lon.value / 15
-            if targets.size == 1:
-                lst = np.mod(GMST + lon, 24)
-                ras = np.tile([targets.ra.hour], len(jds))
-            else:
-                if len(jds) == 1:
-                    lst = np.array([np.mod(GMST + lon, 24)] * len(targets)).flatten()
-                    ras = np.array([target.ra.hour for target in targets]).flatten()
-                else:
-                    lst = np.tile(np.mod(GMST + lon, 24), (len(targets), 1))
-                    ras = np.tile(
-                        np.array([target.ra.hour for target in targets]).flatten(),
-                        (len(jds), 1),
-                    ).T
-            has = np.mod(lst - ras, 24)
-
-        # ensures no extra dimensions
-        has = np.squeeze(has)
-        # Use hours from -12 to 12
-        idx = np.where(has > 12)[0]
-        has[idx] = has[idx] - 24
-
-        if self.min is None and self.max is not None:
-            mask = has <= self.max
-        elif self.max is None and self.min is not None:
-            mask = self.min <= has
-        elif self.min is not None and self.max is not None:
-            mask = (self.min <= has) & (has <= self.max)
-        else:
-            raise ValueError("No max and/or min specified in " "HourAngleConstraint.")
-
-        return np.squeeze(mask)
+        if self.min <= self.max:
+            return (self.min <= ha) & (ha <= self.max)
+        return (self.min <= ha) | (ha <= self.max)
 
 
 def is_always_observable(constraints, observer, targets, times=None,

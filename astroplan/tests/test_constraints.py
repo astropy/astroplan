@@ -227,6 +227,111 @@ def test_hour_angle_constraint():
     assert np.all(is_constraint_met == [True, True, True])
 
 
+def _hour_angle_grid():
+    # Targets placed relative to the LST at t0, so their hour angles at t0 are
+    # -4.5h, -1.5h, 1.5h and -10.5h, and grow by ~2.005h per step. Every value
+    # is at least 0.45h from the +/-3h limits used below.
+    apo = Observer.at_site("APO")
+    t0 = Time('2026-10-21 06:00')
+    times = t0 + [0, 2, 4, 6]*u.hour
+    hour_angles_t0 = [-4.5, -1.5, 1.5, -10.5]*u.hourangle
+    coords = SkyCoord(ra=apo.local_sidereal_time(t0) - hour_angles_t0,
+                      dec=[0, 30, -30, 60]*u.deg)
+    targets = [FixedTarget(coord=coord, name=str(i)) for i, coord in enumerate(coords)]
+    expected = np.array([[False, True, True, True],
+                         [True, True, True, False],
+                         [True, False, False, False],
+                         [False, False, False, False]])
+    return apo, targets, times, expected
+
+
+def test_hour_angle_constraint_grid():
+    apo, targets, times, expected = _hour_angle_grid()
+    constraint = HourAngleConstraint(min=-3*u.hourangle, max=3*u.hourangle)
+
+    result = constraint(apo, targets, times=times, grid_times_targets=True)
+    np.testing.assert_array_equal(result, expected)
+
+    table = observability_table(constraint, apo, targets, times=times)
+    np.testing.assert_allclose(table['fraction of time observable'],
+                               expected.mean(axis=1))
+
+
+def test_hour_angle_constraint_shapes():
+    apo, targets, times, expected = _hour_angle_grid()
+    constraint = HourAngleConstraint(min=-3*u.hourangle, max=3*u.hourangle)
+
+    # single target at a single time
+    result = constraint(apo, targets[1], times=times[0])
+    assert np.shape(result) == ()
+    assert result
+    np.testing.assert_array_equal(constraint(apo, [targets[1]], times=times[0]), [True])
+
+    # scalar SkyCoord with an array of times
+    result = constraint(apo, targets[0].coord, times=times)
+    np.testing.assert_array_equal(result, expected[0])
+
+    # N targets and N times without gridding are paired elementwise
+    result = constraint(apo, targets, times=times)
+    np.testing.assert_array_equal(result, np.diag(expected))
+
+
+def test_hour_angle_constraint_wrapped_window():
+    apo, _, times, _ = _hour_angle_grid()
+    # hour angles of 9h, 11.0h, -11.0h and -9.0h at the four times
+    target = SkyCoord(ra=apo.local_sidereal_time(times[0]) - 9*u.hourangle, dec=80*u.deg)
+
+    constraint = HourAngleConstraint(min=150*u.deg, max=-150*u.deg)
+    np.testing.assert_array_equal(constraint(apo, target, times=times),
+                                  [False, True, True, False])
+
+
+@pytest.mark.parametrize('limits', [
+    dict(),
+    dict(min=-45*u.deg, max=2*u.hourangle),
+    dict(min=None, max=-1*u.hourangle),
+    dict(min=4*u.hourangle, max=None),
+    dict(min=10*u.hourangle, max=-10*u.hourangle),
+])
+def test_hour_angle_constraint_matches_target_hour_angle(limits):
+    apo = Observer.at_site("APO")
+    rng = np.random.default_rng(560)
+    targets = SkyCoord(ra=rng.uniform(0, 360, 20)*u.deg,
+                       dec=rng.uniform(-30, 90, 20)*u.deg)
+    times = Time('2026-10-21 00:00') + np.linspace(0, 24, 49)*u.hour
+
+    constraint = HourAngleConstraint(**limits)
+    result = constraint(apo, targets, times=times, grid_times_targets=True)
+
+    ha = apo.target_hour_angle(times, targets,
+                               grid_times_targets=True).wrap_at(12*u.hourangle)
+    if constraint.min <= constraint.max:
+        expected = (constraint.min <= ha) & (ha <= constraint.max)
+    else:
+        expected = (constraint.min <= ha) | (ha <= constraint.max)
+    assert result.shape == (20, 49)
+    np.testing.assert_array_equal(result, expected)
+    assert 0 < result.sum() < result.size
+
+
+def test_hour_angle_constraint_limits():
+    constraint = HourAngleConstraint(min=30*u.deg)
+    assert constraint.min.unit == u.hourangle
+    assert u.isclose(constraint.min, 2*u.hourangle)
+    assert u.isclose(constraint.max, 5.5*u.hourangle)
+
+    constraint = HourAngleConstraint(min=None, max=1*u.hourangle)
+    assert u.isclose(constraint.min, -12*u.hourangle)
+
+    with pytest.raises(ValueError, match='at least one of min or max'):
+        HourAngleConstraint(min=None, max=None)
+    with pytest.raises(u.UnitTypeError):
+        HourAngleConstraint(min=-3, max=3)
+    for kwargs in [{'min': -13*u.hourangle}, {'max': 200*u.deg}]:
+        with pytest.raises(ValueError, match='between -12h and 12h'):
+            HourAngleConstraint(**kwargs)
+
+
 @pytest.mark.remote_data
 def test_sun_separation():
     time = Time('2003-04-05 06:07:08')
@@ -542,6 +647,7 @@ constraint_tests = [
     SunSeparationConstraint(min=90*u.deg),
     MoonSeparationConstraint(min=20*u.deg),
     MeridianSeparationConstraint(min=3*u.deg),
+    HourAngleConstraint(),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
     TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
 ]
