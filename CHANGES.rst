@@ -29,9 +29,10 @@
 
 - Minimum Python version is now 3.11. Also bumped minversion
   of dependencies. [#605]
-- Fix ``block already occupied`` error in ``PriorityScheduler`` by adjusting
-  the condition for filled slots in ``_get_filled_indices()``. This was primarily
-  an issue for blocks with ``duration`` <= ``time_resolution``. [#550]
+
+- Fix ``PriorityScheduler`` raising ``block already occupied`` for observing
+  blocks with durations at or below ``time_resolution``. Block durations are
+  now rounded up to the scheduler's time grid. [#550]
 
 - Minimum Python version is now 3.12, and Python 3.14 is now tested. Minimum
   versions of numpy (1.26.0) and matplotlib (3.7.3) were bumped to the oldest
