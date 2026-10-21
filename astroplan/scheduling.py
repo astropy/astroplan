@@ -15,7 +15,8 @@ from astropy.coordinates import ConvertError
 
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
-from .target import SGP4SatelliteTarget, get_skycoord
+from .target import get_skycoord
+from .satellite import SGP4SatelliteTarget
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',

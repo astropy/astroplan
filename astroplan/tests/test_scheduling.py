@@ -13,7 +13,8 @@ except ImportError:
 
 from astroplan.utils import time_grid_from_range
 from astroplan.observer import Observer
-from astroplan.target import FixedTarget, AltAzTarget, SGP4SatelliteTarget, get_skycoord
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
+from astroplan.satellite import SGP4SatelliteTarget
 from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
                                    MoonIlluminationConstraint, PhaseConstraint)
 from astroplan.periodic import EclipsingSystem

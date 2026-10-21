@@ -21,7 +21,8 @@ from astroplan.constraints import (
 from astroplan.exceptions import MissingConstraintWarning
 from astroplan.observer import Observer
 from astroplan.periodic import EclipsingSystem
-from astroplan.target import FixedTarget, AltAzTarget, SGP4SatelliteTarget, get_skycoord
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
+from astroplan.satellite import SGP4SatelliteTarget
 
 try:
     import sgp4  # noqa: F401

@@ -21,7 +21,8 @@ except ImportError:
 
 # Package
 from astroplan.exceptions import AstroplanWarning, SatellitePropagationWarning
-from astroplan.target import FixedTarget, AltAzTarget, SGP4SatelliteTarget, get_skycoord
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
+from astroplan.satellite import SGP4SatelliteTarget
 from astroplan.observer import Observer
 from astroplan.utils import time_grid_from_range
 
@@ -645,6 +646,23 @@ def test_SGP4SatelliteTarget_propagation_warning():
     time_invalid = Time("2025-08-02 10:00", scale="utc")
     with pytest.warns(SatellitePropagationWarning, match="SGP4 propagation failed"):
         assert np.isnan(target.get_skycoord(time_invalid, observer=observer).ra)
+
+
+@pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
+def test_SGP4SatelliteTarget_epoch_warning():
+    target = SGP4SatelliteTarget(tle=ISS_TLE)
+
+    target.get_teme(target.epoch + 1 * u.day)
+
+    with pytest.warns(AstroplanWarning, match="more than 14 days"):
+        target.get_teme(target.epoch + 15 * u.day)
+
+    with pytest.warns(AstroplanWarning, match="more than 14 days"):
+        target.get_teme(target.epoch - 15 * u.day)
+
+    times = Time([target.epoch, target.epoch + 15 * u.day])
+    with pytest.warns(AstroplanWarning, match="more than 14 days"):
+        assert target.get_teme(times).shape == (2,)
 
 
 @pytest.mark.remote_data
