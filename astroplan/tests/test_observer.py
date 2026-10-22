@@ -1441,6 +1441,73 @@ def test_next_event_just_after_reference_time(event):
                              0*u.s, atol=1*u.s)
 
 
+lasilla = EarthLocation.from_geodetic(-70.73*u.deg, -29.256667*u.deg, 2347*u.m)
+soar = EarthLocation.from_geodetic('-70d44m01.11s', '-30d14m16.41s', 2748*u.m)
+madrid = EarthLocation.from_geodetic(-3.7*u.deg, 40.41*u.deg, 650*u.m)
+
+
+@pytest.mark.parametrize('location, method, time, which, expected', [
+    # #533: the previous twilight was 4 s before the reference time, and the
+    # next one is a day and a minute later
+    (lasilla, 'twilight_evening_nautical', '2022-11-03', 'next',
+     '2022-11-04 00:00:51'),
+    # #608: the next twilight is a day and a few seconds later
+    (soar, 'twilight_morning_astronomical', '2024-12-09T07:58:00.468', 'next',
+     '2024-12-10 07:58:03'),
+    (soar, 'twilight_morning_astronomical', '2024-12-09T07:58:00.468', 'nearest',
+     '2024-12-09 07:57:59'),
+    (soar, 'twilight_evening_astronomical', '2024-12-09T01:13:07.968', 'nearest',
+     '2024-12-09 01:12:33'),
+    # #612: the Moon transits again more than a day later
+    (madrid, 'moon_transit_time', '2025-06-11 00:14:21.664266', 'next',
+     '2025-06-12 00:49:53'),
+    (madrid, 'moon_transit_time', '2025-06-11 00:14:21.664266', 'nearest',
+     '2025-06-10 23:55:01'),
+])
+def test_event_more_than_a_day_away(location, method, time, which, expected):
+    """
+    Regression test for #533, #608 and #612: events that recur slightly more
+    than a day apart must be found, and ``which='nearest'`` must not return a
+    masked time because the event on the other side is missing.
+    """
+    observer = Observer(location=location)
+    if method == 'moon_transit_time':
+        from astroplan.target import MoonFlag
+        result = observer.target_meridian_transit_time(Time(time), MoonFlag,
+                                                       which=which)
+    else:
+        result = getattr(observer, method)(Time(time), which=which)
+    assert not result.masked
+    assert abs(result - Time(expected)) < 2*u.s
+
+
+def test_midnight_at_midnight():
+    """
+    Regression test for #618: asking for the next or nearest midnight at
+    exactly a midnight returns that midnight.
+    """
+    apo = Observer(location=EarthLocation.from_geodetic(-105.82*u.deg, 32.78*u.deg,
+                                                        2798*u.m))
+    midnight = apo.midnight(Time('2025-06-09 12:00'))
+    for which in ['nearest', 'next']:
+        assert abs(apo.midnight(midnight, which=which) - midnight) < 1*u.s
+
+
+def test_nearest_with_only_previous_event():
+    """
+    Before polar night, ``which='nearest'`` returns the last sunset without
+    warning, and warns only once neither side has a sunset.
+    """
+    tromso = Observer(location=EarthLocation.from_geodetic(18.96*u.deg, 69.65*u.deg))
+    time = Time('2025-11-23 12:00')
+    with pytest.warns(TargetNeverUpWarning):
+        assert tromso.sun_set_time(time, which='next').mask
+    result = tromso.sun_set_time(time, which='nearest')
+    assert abs(result - Time('2025-11-22 10:55:23')) < 2*u.s
+    with pytest.warns(TargetNeverUpWarning):
+        assert tromso.sun_set_time(time + 1*u.day, which='nearest').mask
+
+
 @pytest.mark.parametrize('kwargs', [dict(rise_set='rise'),
                                     dict(rise_set='rising', prev_next='nearest')])
 def test_horiz_cross_invalid_strings(kwargs):
