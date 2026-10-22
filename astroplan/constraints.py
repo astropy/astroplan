@@ -986,10 +986,10 @@ class HourAngleConstraint(Constraint):
     Parameters
     ----------
     min : `~astropy.units.Quantity` or `None`, optional
-        Minimum hour angle (inclusive), between -12h and 12h, in any angular
+        Minimum hour angle (inclusive), in [-12h, 12h) and in any angular
         unit. `None` indicates no lower limit. Default is -5.5h.
     max : `~astropy.units.Quantity` or `None`, optional
-        Maximum hour angle (inclusive), between -12h and 12h, in any angular
+        Maximum hour angle (inclusive), in (-12h, 12h] and in any angular
         unit. `None` indicates no upper limit. Default is 5.5h.
 
     Examples
@@ -1012,10 +1012,15 @@ class HourAngleConstraint(Constraint):
         self.min = Angle(min if min is not None else -12*u.hourangle).to(u.hourangle)
         self.max = Angle(max if max is not None else 12*u.hourangle).to(u.hourangle)
 
-        for limit in (self.min, self.max):
-            if not -12*u.hourangle <= limit <= 12*u.hourangle:
-                raise ValueError("The minimum and maximum of the HourAngleConstraint "
-                                 "must be between -12h and 12h.")
+        if not (self.min.isscalar and self.max.isscalar):
+            raise ValueError("The minimum and maximum of the HourAngleConstraint "
+                             "must be scalars.")
+        # 12h and -12h are the same hour angle, so min=12h, max=-12h would
+        # select only that one point rather than every hour angle.
+        if not (-12*u.hourangle <= self.min < 12*u.hourangle
+                and -12*u.hourangle < self.max <= 12*u.hourangle):
+            raise ValueError("The minimum of the HourAngleConstraint must be in "
+                             "[-12h, 12h) and the maximum in (-12h, 12h].")
 
     def compute_constraint(self, times, observer, targets):
         ha = Angle(observer.target_hour_angle(times, targets)).wrap_at(12*u.hourangle)

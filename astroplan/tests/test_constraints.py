@@ -4,7 +4,8 @@ import zoneinfo
 import astropy.units as u
 import numpy as np
 import pytest
-from astropy.coordinates import EarthLocation, Galactic, SkyCoord, get_sun, get_body
+from astropy.coordinates import (Angle, EarthLocation, Galactic, HADec, SkyCoord,
+                                 get_sun, get_body)
 from astropy.time import Time
 
 from astroplan.constraints import (
@@ -286,32 +287,35 @@ def test_hour_angle_constraint_wrapped_window():
                                   [False, True, True, False])
 
 
-@pytest.mark.parametrize('limits', [
-    dict(),
-    dict(min=-45*u.deg, max=2*u.hourangle),
-    dict(min=None, max=-1*u.hourangle),
-    dict(min=4*u.hourangle, max=None),
-    dict(min=10*u.hourangle, max=-10*u.hourangle),
+@pytest.mark.parametrize('limits, in_window', [
+    (dict(), lambda ha: abs(ha) <= 5.5),
+    (dict(min=-45*u.deg, max=2*u.hourangle), lambda ha: (-3 <= ha) & (ha <= 2)),
+    (dict(min=None, max=-1*u.hourangle), lambda ha: ha <= -1),
+    (dict(min=4*u.hourangle, max=None), lambda ha: ha >= 4),
+    (dict(min=10*u.hourangle, max=-10*u.hourangle), lambda ha: abs(ha) >= 10),
 ])
-def test_hour_angle_constraint_matches_target_hour_angle(limits):
+def test_hour_angle_constraint_matches_hadec(limits, in_window):
     apo = Observer.at_site("APO")
     rng = np.random.default_rng(560)
     targets = SkyCoord(ra=rng.uniform(0, 360, 20)*u.deg,
-                       dec=rng.uniform(-30, 90, 20)*u.deg)
+                       dec=rng.uniform(-30, 70, 20)*u.deg)
     times = Time('2026-10-21 00:00') + np.linspace(0, 24, 49)*u.hour
 
     constraint = HourAngleConstraint(**limits)
     result = constraint(apo, targets, times=times, grid_times_targets=True)
 
-    ha = apo.target_hour_angle(times, targets,
-                               grid_times_targets=True).wrap_at(12*u.hourangle)
-    if constraint.min <= constraint.max:
-        expected = (constraint.min <= ha) & (ha <= constraint.max)
-    else:
-        expected = (constraint.min <= ha) | (ha <= constraint.max)
+    hadec = targets[:, np.newaxis].transform_to(HADec(obstime=times, location=apo.location))
+    ha = hadec.ha.wrap_at(12*u.hourangle)
+    # Observer.target_hour_angle can differ from the apparent HADec hour angle
+    # by a few minutes, so skip values within 0.1h of a limit or of the 12h wrap.
+    edges = u.Quantity([constraint.min, constraint.max, 12*u.hourangle])
+    distance = Angle(ha[..., np.newaxis] - edges).wrap_at(12*u.hourangle)
+    far = np.all(np.abs(distance) > 0.1*u.hourangle, axis=-1)
+
     assert result.shape == (20, 49)
-    np.testing.assert_array_equal(result, expected)
-    assert 0 < result.sum() < result.size
+    assert far.mean() > 0.9
+    np.testing.assert_array_equal(result[far], in_window(ha.hourangle)[far])
+    assert 0 < result[far].sum() < far.sum()
 
 
 def test_hour_angle_constraint_limits():
@@ -327,9 +331,14 @@ def test_hour_angle_constraint_limits():
         HourAngleConstraint(min=None, max=None)
     with pytest.raises(u.UnitTypeError):
         HourAngleConstraint(min=-3, max=3)
-    for kwargs in [{'min': -13*u.hourangle}, {'max': 200*u.deg}]:
-        with pytest.raises(ValueError, match='between -12h and 12h'):
+    with pytest.raises(ValueError, match='must be scalars'):
+        HourAngleConstraint(min=[-1, 1]*u.hourangle)
+    for kwargs in [{'min': -13*u.hourangle}, {'max': 200*u.deg},
+                   {'min': 12*u.hourangle, 'max': -12*u.hourangle},
+                   {'min': 12*u.hourangle}, {'max': -12*u.hourangle}]:
+        with pytest.raises(ValueError, match=r'\[-12h, 12h\) and the maximum in \(-12h, 12h\]'):
             HourAngleConstraint(**kwargs)
+    HourAngleConstraint(min=-12*u.hourangle, max=12*u.hourangle)
 
 
 @pytest.mark.remote_data
