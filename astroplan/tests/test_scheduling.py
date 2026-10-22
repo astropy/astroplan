@@ -258,7 +258,6 @@ def test_priority_scheduler_short_blocks(duration, expected):
     scheduled = schedule.observing_blocks
     assert len(scheduled) == len(blocks)
     assert all(block.duration == expected for block in scheduled)
-    assert all(block.end_idx > block.start_idx for block in scheduled)
     assert all(a.end_time <= b.start_time for a, b in pairwise(scheduled))
 
 
@@ -284,8 +283,6 @@ def test_priority_scheduler_prefilled_indices(start_offset, duration, resolution
     expected = np.ones(len(times), bool)
     expected[filled] = False
     assert np.array_equal(scheduler._get_filled_indices(times), expected)
-    assert block.start_idx == filled[0]
-    assert block.end_idx == filled[-1] + 1
 
 
 def test_priority_scheduler_single_time():
@@ -303,6 +300,91 @@ def test_priority_scheduler_single_time():
 
     schedule.insert_slot(start, ObservingBlock(polaris, 30*u.second, 0))
     assert scheduler._get_filled_indices(times).tolist() == [False]
+
+
+@pytest.mark.parametrize('resolution', [1*u.minute, 2*u.minute])
+def test_priority_scheduler_reused_block(resolution):
+    start = Time('2016-02-06 03:00:00')
+    first = Schedule(start, start + 30*u.minute)
+    scheduler = PriorityScheduler(constraints=[], observer=apo,
+                                  transitioner=Transitioner(),
+                                  time_resolution=2*u.minute)
+    scheduler([ObservingBlock(polaris, 2*u.minute, 0)], first)
+
+    # Reuse a scheduled block at a different position and resolution.
+    block = first.observing_blocks[0]
+    second = Schedule(start, start + 30*u.minute)
+    second.insert_slot(start + 10*u.minute, block)
+    scheduler = PriorityScheduler(constraints=[], observer=apo,
+                                  transitioner=Transitioner(),
+                                  time_resolution=resolution)
+    blocks = [ObservingBlock(polaris, resolution, i) for i in range(12)]
+    scheduler(blocks, second)
+
+    scheduled = second.observing_blocks
+    assert len(scheduled) == len(blocks) + 1
+    assert block.start_time == start + 10*u.minute
+    assert all(a.end_time <= b.start_time for a, b in pairwise(scheduled))
+    assert not hasattr(block, 'start_idx')
+    assert not hasattr(block, 'end_idx')
+
+
+def test_priority_scheduler_partial_window(capsys):
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 31*u.minute)
+    blocks = [ObservingBlock(polaris, 1*u.minute, i) for i in range(16)]
+    scheduler = PriorityScheduler(constraints=[], observer=apo,
+                                  transitioner=Transitioner(),
+                                  time_resolution=2*u.minute)
+    scheduler(blocks, schedule)
+
+    assert len(schedule.observing_blocks) == 15
+    assert all(block.end_time <= schedule.end_time
+               for block in schedule.observing_blocks)
+    assert capsys.readouterr().out == ''
+
+
+@pytest.mark.parametrize(('duration', 'resolution', 'steps'), [
+    (2.1*u.second, 0.3*u.second, 7),
+    (1.1*u.minute, 6.6*u.second, 10),
+])
+def test_priority_scheduler_rounding_precision(duration, resolution, steps):
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 12*resolution)
+    scheduler = PriorityScheduler(constraints=[], observer=apo,
+                                  transitioner=Transitioner(),
+                                  time_resolution=resolution)
+    scheduler([ObservingBlock(polaris, duration, 0)], schedule)
+
+    assert len(schedule.observing_blocks) == 1
+    assert schedule.observing_blocks[0].duration == steps*resolution
+    assert scheduler._n_grid_steps(duration) == steps
+
+
+@pytest.mark.parametrize('start_offset', [0, 10])
+def test_priority_scheduler_prefilled_transition(start_offset):
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 30*u.minute)
+    schedule.insert_slot(start + start_offset*u.minute,
+                         ObservingBlock(polaris, 2*u.minute, 0))
+
+    scheduler = PriorityScheduler(constraints=[], observer=apo,
+                                  transitioner=Transitioner(slew_rate=1*u.deg/u.second),
+                                  time_resolution=2*u.minute)
+    scheduler([ObservingBlock(rigel, 2*u.minute, 1)], schedule)
+
+    blocks = schedule.scheduled_blocks
+    assert len(schedule.observing_blocks) == 2
+    assert len(blocks) == 3
+    assert blocks[0].target == (polaris if start_offset == 0 else rigel)
+    assert isinstance(blocks[1], TransitionBlock)
+    assert blocks[0].end_time <= blocks[1].start_time
+    assert blocks[1].end_time <= blocks[2].start_time
+    assert blocks[1].duration >= 2*u.minute
+    assert (
+        blocks[1].duration
+        == scheduler._n_grid_steps(blocks[1].duration) * scheduler.time_resolution
+    )
 
 
 def test_sequential_scheduler():

@@ -36,7 +36,8 @@
 
 - Fix ``PriorityScheduler`` raising ``block already occupied`` for observing
   blocks with durations at or below ``time_resolution``. Block durations are
-  now rounded up to the scheduler's time grid. [#550]
+  now rounded up to the scheduler's time grid; for example, a 55-minute block
+  with 2-minute resolution now lasts 56 minutes instead of 54. [#550]
 
 - Minimum Python version is now 3.12, and Python 3.14 is now tested. Minimum
   versions of numpy (1.26.0) and matplotlib (3.7.3) were bumped to the oldest

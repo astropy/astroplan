@@ -764,28 +764,33 @@ class PriorityScheduler(Scheduler):
         """
         super(PriorityScheduler, self).__init__(*args, **kwargs)
 
+    def _n_grid_steps(self, duration):
+        steps = np.asarray(duration.to_value(u.second) /
+                           self.time_resolution.to_value(u.second))
+        # Allow for Julian-date rounding errors, up to 0.1% of a grid step
+        tolerance = min(1e-3, (np.spacing(self.schedule.start_time.jd) * u.day /
+                               self.time_resolution).decompose().value)
+        rounded = np.rint(steps)
+        steps = np.where(np.isclose(steps, rounded, rtol=0, atol=tolerance), rounded, steps)
+        return np.ceil(steps).astype(int)
+
+    def _block_grid_bounds(self, block):
+        # Round the start down and the end up to cover overlapping intervals
+        offsets = u.Quantity([
+            (self.schedule.start_time - block.start_time).to_value(u.second),
+            (block.end_time - self.schedule.start_time).to_value(u.second)
+        ], u.second)
+        start_idx, end_idx = self._n_grid_steps(offsets)
+        return -start_idx, end_idx
+
     def _get_filled_indices(self, times):
         is_open_time = np.ones(len(times), bool)
         # close times that are already filled
         for block in self.schedule.scheduled_blocks:
             if not isinstance(block, ObservingBlock):
                 continue
-            if hasattr(block, 'start_idx') and hasattr(block, 'end_idx'):
-                start_idx, end_idx = block.start_idx, block.end_idx
-            else:
-                offsets = np.array([
-                    (block.start_time - self.schedule.start_time).to_value(u.second),
-                    (block.end_time - self.schedule.start_time).to_value(u.second)
-                ]) / self.time_resolution.to_value(u.second)
-                # Account for floating-point errors at grid boundaries
-                rounded = np.rint(offsets)
-                offsets = np.where(np.isclose(offsets, rounded, rtol=0, atol=1e-10),
-                                   rounded, offsets)
-                start_idx, end_idx = int(np.floor(offsets[0])), int(np.ceil(offsets[1]))
-                block.start_idx, block.end_idx = start_idx, end_idx
-            start = max(0, start_idx)
-            end = min(len(times), max(0, end_idx, start_idx + 1))
-            is_open_time[start:end] = False
+            start_idx, end_idx = self._block_grid_bounds(block)
+            is_open_time[max(0, start_idx):min(len(times), max(end_idx, start_idx + 1))] = False
         return is_open_time
 
     def _make_schedule(self, blocks):
@@ -814,6 +819,11 @@ class PriorityScheduler(Scheduler):
         times = time_grid_from_range([self.schedule.start_time, self.schedule.end_time],
                                      time_resolution=time_resolution)
 
+        is_open_time = self._get_filled_indices(times)
+        # Exclude grid points without a full interval before the schedule ends
+        n_full_steps = -self._n_grid_steps(self.schedule.start_time - self.schedule.end_time)
+        is_open_time[n_full_steps:] = False
+
         # generate the score arrays for all of the blocks
         scorer = Scorer(blocks, self.observer, self.schedule,
                         global_constraints=self.constraints)
@@ -832,13 +842,15 @@ class PriorityScheduler(Scheduler):
 
             # Add up the applied constraints to prioritize the best blocks
             # And then remove any times that are already scheduled
-            is_open_time = self._get_filled_indices(times)
             constraint_scores[~is_open_time] = 0
 
             # Select the most optimal time
 
             # calculate the number of time slots needed for this exposure
-            _stride_by = int(np.ceil(float(b.duration / time_resolution)))
+            _stride_by = self._n_grid_steps(b.duration)
+            if _stride_by > min(n_full_steps, len(times)):
+                unscheduled_blocks.append(b)
+                continue
 
             # Stride the score arrays by that number
             _strided_scores = stride_array(constraint_scores, _stride_by)
@@ -869,7 +881,9 @@ class PriorityScheduler(Scheduler):
                         start_time_idx = idx
                         new_start_time = times[start_time_idx]
                         # attempt to schedule block
-                        _is_scheduled = self.attempt_insert_block(b, new_start_time, start_time_idx)
+                        _is_scheduled = self.attempt_insert_block(
+                            b, new_start_time, start_time_idx, _stride_by
+                        )
                         if _is_scheduled:
                             break
                     except IndexError:
@@ -877,15 +891,21 @@ class PriorityScheduler(Scheduler):
                         _is_scheduled = False
                         break
 
-            if not _is_scheduled:
+            if _is_scheduled:
+                # Recalculate because insert_slot() might change start time and duration
+                start_idx, end_idx = self._block_grid_bounds(b)
+                is_open_time[
+                    max(0, start_idx):min(len(times), max(end_idx, start_idx + 1))
+                ] = False
+            else:
                 unscheduled_blocks.append(b)
 
         return self.schedule
 
-    def attempt_insert_block(self, b, new_start_time, start_time_idx):
+    def attempt_insert_block(self, b, new_start_time, start_time_idx, duration_indices=None):
         # set duration to be exact multiple of time resolution
-        duration_indices = int(np.ceil(
-            float(b.duration / self.time_resolution)))
+        if duration_indices is None:
+            duration_indices = self._n_grid_steps(b.duration)
         b.duration = duration_indices * self.time_resolution
 
         # add 1 second to the start time to allow for scheduling at the start of a slot
@@ -905,8 +925,6 @@ class PriorityScheduler(Scheduler):
 
         # no slots yet, so we should be fine to just shove this in
         if not (slots_before or slots_after):
-            b.end_idx = start_time_idx + duration_indices
-            b.start_idx = start_time_idx
             if b.constraints is None:
                 b.constraints = self.constraints
             elif self.constraints is not None:
@@ -951,9 +969,7 @@ class PriorityScheduler(Scheduler):
         # tweak durations to exact multiple of time resolution
         for block in (tb_before, tb_after):
             if block is not None:
-                block.duration = self.time_resolution * int(
-                    np.ceil(float(block.duration / self.time_resolution))
-                )
+                block.duration = self.time_resolution * self._n_grid_steps(block.duration)
 
         # if we want to shift the OBs to minimise gaps, here is
         # where we should do it.
@@ -967,12 +983,11 @@ class PriorityScheduler(Scheduler):
             # is less than or equal to `start_time_idx`
             ob_offset = 2 if tb_before_already_exists else 1
             previous_ob = self.schedule.slots[slot_index - ob_offset]
-            if tb_before:
-                transition_indices = int(tb_before.duration / self.time_resolution)
-            else:
-                transition_indices = 0
-
-            if start_time_idx < previous_ob.block.end_idx + transition_indices:
+            transition_indices = self._n_grid_steps(tb_before.duration) if tb_before else 0
+            previous_end_idx = self._n_grid_steps(
+                previous_ob.block.end_time - self.schedule.start_time
+            )
+            if start_time_idx < previous_end_idx + transition_indices:
                 # cannot schedule
                 return False
 
@@ -983,8 +998,9 @@ class PriorityScheduler(Scheduler):
             next_ob = self.schedule.slots[slot_index + slot_offset].block
             end_idx = start_time_idx + duration_indices
             if tb_after:
-                end_idx += int(tb_after.duration / self.time_resolution)
-                if end_idx >= next_ob.start_idx:
+                end_idx += self._n_grid_steps(tb_after.duration)
+                next_start_idx = -self._n_grid_steps(self.schedule.start_time - next_ob.start_time)
+                if end_idx >= next_start_idx:
                     # cannot schedule
                     return False
 
@@ -1001,8 +1017,6 @@ class PriorityScheduler(Scheduler):
                 # we already have a TB here, but we no longer need it!
                 self.schedule.change_slot_block(slot_index-1, new_block=None)
 
-            b.end_idx = start_time_idx + duration_indices
-            b.start_idx = start_time_idx
             if b.constraints is None:
                 b.constraints = self.constraints
             elif self.constraints is not None:
