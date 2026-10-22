@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
+  within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
+  angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]
+
 - Fix rise, set, transit, twilight and midnight times coming back masked when
   the next or previous event is slightly more than a day away (e.g. the Sun
   when day length is changing, or the Moon's transit) or falls exactly at the
