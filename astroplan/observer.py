@@ -10,8 +10,8 @@ import zoneinfo
 
 import astropy.units as u
 import numpy as np
-from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_body, Angle, Longitude)
+from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, HADec,
+                                 get_sun, get_body, Angle, Longitude)
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
 
@@ -669,8 +669,23 @@ class Observer:
         else:
             return target.transform_to(altaz_frame)
 
+    def _hadec(self, time, target, grid_times_targets=False):
+        """
+        Transform ``target`` to the apparent topocentric
+        `~astropy.coordinates.HADec` frame of this observer at ``time``.
+
+        Refraction is not applied.
+        """
+        if target is MoonFlag:
+            target = get_body("moon", time, location=self.location)
+        elif target is SunFlag:
+            target = get_sun(time)
+
+        time, target = self._preprocess_inputs(time, target, grid_times_targets)
+        return target.transform_to(HADec(location=self.location, obstime=time))
+
     def parallactic_angle(self, time, target, grid_times_targets=False,
-                          kind='mean', model=None):
+                          kind=None, model=None):
         """
         Calculate the parallactic angle.
 
@@ -688,14 +703,14 @@ class Observer:
             return an (M, N) shaped result. Otherwise, we rely on broadcasting
             the shapes together using standard numpy rules.
 
-        kind : str
-            Argument to the `~astropy.time.Time.sidereal_time` function, which may
-            be either ``'mean'`` or ``'apparent'``, i.e., accounting for precession only,
-            or also for nutation.
+        kind : str or None
+            Deprecated and ignored. The hour angle and declination are now
+            computed in the apparent topocentric
+            `~astropy.coordinates.HADec` frame, so a sidereal time
+            definition is no longer needed.
 
-        model : str or None; optional
-            Precession (and nutation) model to use in the call to
-            `~astropy.time.Time.sidereal_time`, see docs for that method for details.
+        model : str or None
+            Deprecated and ignored, see ``kind``.
 
         Returns
         -------
@@ -708,18 +723,30 @@ class Observer:
         intersects a celestial object and the zenith, and the object's hour
         circle [1]_.
 
+        The target is first transformed to the apparent topocentric
+        `~astropy.coordinates.HADec` frame, which accounts for precession,
+        nutation, aberration and (for nearby objects like the Moon)
+        topocentric parallax. The angle is therefore measured from the
+        apparent north celestial pole of date, not from the north pole of the
+        target's input frame (e.g. ICRS). Refraction is not applied.
+
         .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
 
         """
-        time, coordinate = self._preprocess_inputs(time, target, grid_times_targets)
+        if kind is not None or model is not None:
+            warnings.warn("The `kind` and `model` arguments of "
+                          "`Observer.parallactic_angle` are deprecated and "
+                          "ignored; the hour angle is now computed in the "
+                          "apparent HADec frame.", AstropyDeprecationWarning)
+
+        hadec = self._hadec(time, target, grid_times_targets)
+        H = hadec.ha.radian
+        dec = hadec.dec.radian
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        LST = time.sidereal_time(kind, longitude=self.location.lon, model=model)
-        H = (LST - coordinate.ra).radian
         q = np.arctan2(np.sin(H),
-                       (np.tan(self.location.lat.radian) *
-                        np.cos(coordinate.dec.radian) -
-                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
+                       (np.tan(self.location.lat.radian) * np.cos(dec) -
+                        np.sin(dec)*np.cos(H)))*u.rad
 
         return Angle(q)
 
@@ -2097,9 +2124,15 @@ class Observer:
         -------
         hour_angle : `~astropy.coordinates.Angle`
             The hour angle(s) of the target(s) at ``time``
+
+        Notes
+        -----
+        The hour angle is computed in the apparent topocentric
+        `~astropy.coordinates.HADec` frame, which accounts for precession,
+        nutation, aberration and topocentric parallax. Refraction is not
+        applied.
         """
-        time, target = self._preprocess_inputs(time, target, grid_times_targets)
-        return Longitude(self.local_sidereal_time(time) - target.ra)
+        return Longitude(self._hadec(time, target, grid_times_targets).ha)
 
     @u.quantity_input(horizon=u.degree)
     def tonight(self, time=None, horizon=0 * u.degree, obswl=None):

@@ -9,14 +9,15 @@ import numpy as np
 import pytest
 import zoneinfo
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, Angle)
+                                 AltAz, Angle, FK5, HADec, TETE, get_body, get_sun)
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.time import Time
+from astropy.utils.exceptions import AstropyDeprecationWarning
 from numpy.testing import assert_allclose
 
 # Package
 from astroplan.observer import Observer
-from astroplan.target import FixedTarget, AltAzTarget
+from astroplan.target import FixedTarget, AltAzTarget, MoonFlag, SunFlag
 from astroplan.exceptions import TargetAlwaysUpWarning, TargetNeverUpWarning
 
 
@@ -311,72 +312,134 @@ def test_Observer_timezone_parser():
 
 def test_parallactic_angle():
     """
-    Compute parallactic angle for targets at hour angle = {3, 19} for
-    at observer at IRTF using the online SpeX calculator and PyEphem
+    Compare parallactic angles at IRTF with values computed from PyEphem's
+    apparent topocentric hour angle and declination
+    (see ``print_pyephem_parallactic_angle``).
     """
-    # Set up position for IRTF
     lat = 19.826218*u.deg
     lon = -155.471999*u.deg
     elevation = 4160.0 * u.m
     location = EarthLocation.from_geodetic(lon, lat, elevation)
+    obs = Observer(location=location)
+
     time = Time('2015-01-01 00:00:00')
     LST = time.sidereal_time('mean', longitude=lon)
-    desired_HA_1 = 3*u.hourangle
-    desired_HA_2 = 19*u.hourangle  # = -5*u.hourangle
-    target1 = SkyCoord(LST - desired_HA_1, -30*u.degree)
-    target2 = SkyCoord(LST - desired_HA_2, -30*u.degree)
-
-    obs = Observer(location=location)
+    target1 = SkyCoord(LST - 3*u.hourangle, -30*u.degree)
+    target2 = SkyCoord(LST - 19*u.hourangle, -30*u.degree)  # HA = -5h
     q1 = obs.parallactic_angle(time, target1)
     q2 = obs.parallactic_angle(time, target2)
     q12 = obs.parallactic_angle(time, [target1, target2])
 
-    # Get values from PyEphem for comparison from print_pyephem_parallactic_angle()
-    pyephem_q1 = 46.54610060782033*u.deg
-    pyephem_q2 = -65.51818282032019*u.deg
+    time_2026 = Time('2026-10-16 10:00:00')
+    q3 = obs.parallactic_angle(time_2026, SkyCoord(90*u.deg, 80*u.deg))
+    q4 = obs.parallactic_angle(time_2026, SkyCoord(0*u.deg, -30*u.deg))
 
-    assert_quantity_allclose(q1, pyephem_q1, atol=1*u.deg)
-    assert_quantity_allclose(q2, pyephem_q2, atol=1*u.deg)
+    pyephem_q1 = 46.54238596266562*u.deg
+    pyephem_q2 = -65.52085647825521*u.deg
+    pyephem_q3 = -104.51765921139602*u.deg
+    pyephem_q4 = 22.69727617097267*u.deg
 
-    # Get SpeX parallactic angle calculator values for comparison from
-    # http://irtfweb.ifa.hawaii.edu/cgi-bin/spex/parangle.cgi to produce
-
-    SpeX_q1 = 46.7237968*u.deg  # deg
-    SpeX_q2 = -65.428924*u.deg  # deg
-
-    assert_quantity_allclose(q1, SpeX_q1, atol=0.1*u.deg)
-    assert_quantity_allclose(q2, SpeX_q2, atol=0.1*u.deg)
+    # PyEphem ignores UT1-UTC (-0.46 s in 2015), which is a few arcsec here
+    assert_quantity_allclose(q1, pyephem_q1, atol=10*u.arcsec)
+    assert_quantity_allclose(q2, pyephem_q2, atol=10*u.arcsec)
+    assert_quantity_allclose(q3, pyephem_q3, atol=10*u.arcsec)
+    assert_quantity_allclose(q4, pyephem_q4, atol=10*u.arcsec)
 
     assert q1 == q12[0]
     assert q2 == q12[1]
 
 
+def test_parallactic_angle_frames():
+    """
+    The parallactic angle should not depend on the frame the target is given
+    in, and should be consistent with the apparent HADec frame.
+    """
+    obs = Observer.at_site('Subaru')
+    time = Time('2026-10-16 10:00:00')
+    target_icrs = SkyCoord(90*u.deg, 80*u.deg)
+    target_fk5 = target_icrs.transform_to(FK5(equinox='J2030'))
+
+    q_icrs = obs.parallactic_angle(time, target_icrs)
+    q_fk5 = obs.parallactic_angle(time, target_fk5)
+    assert_quantity_allclose(q_icrs, q_fk5, atol=1*u.arcsec)
+
+    hadec = target_icrs.transform_to(HADec(location=obs.location, obstime=time))
+    lat = obs.location.lat
+    expected = np.arctan2(np.sin(hadec.ha),
+                          np.tan(lat)*np.cos(hadec.dec) -
+                          np.sin(hadec.dec)*np.cos(hadec.ha))
+    assert_quantity_allclose(q_icrs, expected, atol=1*u.arcsec)
+
+    # At this date and declination, ignoring precession is wrong by > 1 deg
+    lst = time.sidereal_time('apparent', longitude=obs.location.lon)
+    H = lst - target_icrs.ra
+    naive = np.arctan2(np.sin(H),
+                       np.tan(lat)*np.cos(target_icrs.dec) -
+                       np.sin(target_icrs.dec)*np.cos(H))
+    assert abs(q_icrs - naive) > 1*u.deg
+
+
+def test_parallactic_angle_flags_and_grid():
+    obs = Observer.at_site('Subaru')
+    time = Time('2026-10-16 10:00:00')
+
+    moon = get_body('moon', time, location=obs.location)
+    assert_quantity_allclose(obs.parallactic_angle(time, MoonFlag),
+                             obs.parallactic_angle(time, moon))
+    assert_quantity_allclose(obs.parallactic_angle(time, SunFlag),
+                             obs.parallactic_angle(time, get_sun(time)))
+
+    times = time + np.arange(3)*u.hour
+    targets = [SkyCoord(0*u.deg, -30*u.deg), SkyCoord(90*u.deg, 20*u.deg)]
+    q = obs.parallactic_angle(times, targets, grid_times_targets=True)
+    assert q.shape == (2, 3)
+    assert_quantity_allclose(q[1, 2], obs.parallactic_angle(times[2], targets[1]))
+
+
+def test_parallactic_angle_kind_deprecated():
+    obs = Observer.at_site('Subaru')
+    time = Time('2026-10-16 10:00:00')
+    target = SkyCoord(0*u.deg, -30*u.deg)
+    with pytest.warns(AstropyDeprecationWarning):
+        q = obs.parallactic_angle(time, target, kind='mean')
+    assert q == obs.parallactic_angle(time, target)
+
+
 def print_pyephem_parallactic_angle():
-    # lat = 19.826218*u.deg
+    """
+    Print the PyEphem reference values used in ``test_parallactic_angle``.
+
+    These apply Meeus eqn (14.1) to PyEphem's apparent topocentric ``ha`` and
+    ``dec``. PyEphem's own ``Body.parallactic_angle()`` is not used because it
+    combines the apparent hour angle with the astrometric (J2000)
+    declination, which is off by up to a few arcmin at current epochs.
+    """
+    import ephem
+    lat = 19.826218*u.deg
     lon = -155.471999*u.deg
+    obs = ephem.Observer()
+    obs.lat = str(lat.value)
+    obs.lon = str(lon.value)
+    obs.elevation = 4160.0
+    obs.pressure = 0
+
+    def pyephem_q(time, ra, dec):
+        obs.date = ephem.Date(time.utc.datetime)
+        target = ephem.FixedBody()
+        target._ra = ephem.degrees(ra.to_value(u.rad))
+        target._dec = ephem.degrees(dec.to_value(u.rad))
+        target.compute(obs)
+        H, d = float(target.ha), float(target.dec)
+        return np.arctan2(np.sin(H), np.tan(lat)*np.cos(d) -
+                          np.sin(d)*np.cos(H)).to(u.deg)
+
     time = Time('2015-01-01 00:00:00')
     LST = time.sidereal_time('mean', longitude=lon)
-    desired_HA_1 = 3*u.hourangle
-    desired_HA_2 = 19*u.hourangle  # = -5*u.hourangle
-
-    import ephem
-    obs = ephem.Observer()
-    obs.lat = '19:49:34.3848'
-    obs.lon = '-155:28:19.1964'
-    obs.elevation = 0
-    obs.date = time.datetime
-    pyephem_target1 = ephem.FixedBody()
-    pyephem_target1._ra = ephem.degrees((LST - desired_HA_1).to(u.rad).value)
-    pyephem_target1._dec = ephem.degrees((-30*u.deg).to(u.rad).value)
-    pyephem_target1.compute(obs)
-    pyephem_q1 = (float(pyephem_target1.parallactic_angle())*u.rad).to(u.deg)
-
-    pyephem_target2 = ephem.FixedBody()
-    pyephem_target2._ra = ephem.degrees((LST - desired_HA_2).to(u.rad).value)
-    pyephem_target2._dec = ephem.degrees((-30*u.deg).to(u.rad).value)
-    pyephem_target2.compute(obs)
-    pyephem_q2 = (float(pyephem_target2.parallactic_angle())*u.rad).to(u.deg)
-    print(pyephem_q1, pyephem_q2)
+    time_2026 = Time('2026-10-16 10:00:00')
+    print(pyephem_q(time, LST - 3*u.hourangle, -30*u.deg),
+          pyephem_q(time, LST - 19*u.hourangle, -30*u.deg),
+          pyephem_q(time_2026, 90*u.deg, 80*u.deg),
+          pyephem_q(time_2026, 0*u.deg, -30*u.deg))
 
 
 def test_sunrise_sunset_equator():
@@ -1295,14 +1358,22 @@ def print_pyephem_lst():
 
 
 def test_hour_angle():
-    # TODO: Add tests for different targets/times with tools other than PyEphem
     time = Time('2005-02-03 00:00:00')
     location = EarthLocation.from_geodetic(10*u.deg, 40*u.deg, 0*u.m)
     obs = Observer(location=location)
-    vernal_eq = FixedTarget(SkyCoord(ra=0*u.deg, dec=0*u.deg))
-    hour_angle = obs.target_hour_angle(time, vernal_eq)
-    lst = obs.local_sidereal_time(time)
-    assert_quantity_allclose(hour_angle, lst, atol=0.001*u.deg)
+    target = SkyCoord(ra=0*u.deg, dec=0*u.deg)
+    hour_angle = obs.target_hour_angle(time, FixedTarget(target))
+
+    # Independent route: apparent sidereal time minus the topocentric RA in
+    # the true equator, true equinox of date frame
+    lst = obs.local_sidereal_time(time, kind='apparent')
+    apparent = target.transform_to(TETE(obstime=time, location=location))
+    assert_quantity_allclose(hour_angle, Longitude(lst - apparent.ra),
+                             atol=0.1*u.arcsec)
+
+    # The ICRS RA alone is off by ~4 arcmin of precession at this date
+    assert abs(Longitude(lst - target.ra).wrap_at(180*u.deg) -
+               hour_angle.wrap_at(180*u.deg)) > 2*u.arcmin
 
 
 @pytest.mark.remote_data
