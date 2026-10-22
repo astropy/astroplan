@@ -306,14 +306,14 @@ def test_hour_angle_constraint_matches_hadec(limits, in_window):
 
     hadec = targets[:, np.newaxis].transform_to(HADec(obstime=times, location=apo.location))
     ha = hadec.ha.wrap_at(12*u.hourangle)
-    # Observer.target_hour_angle can differ from the apparent HADec hour angle
-    # by a few minutes, so skip values within 0.1h of a limit or of the 12h wrap.
+    # Observer.target_hour_angle uses the same apparent HADec frame, so only
+    # skip values within rounding distance of a limit or of the 12h wrap.
     edges = u.Quantity([constraint.min, constraint.max, 12*u.hourangle])
     distance = Angle(ha[..., np.newaxis] - edges).wrap_at(12*u.hourangle)
-    far = np.all(np.abs(distance) > 0.1*u.hourangle, axis=-1)
+    far = np.all(np.abs(distance) > 1*u.arcsec, axis=-1)
 
     assert result.shape == (20, 49)
-    assert far.mean() > 0.9
+    assert far.mean() > 0.99
     np.testing.assert_array_equal(result[far], in_window(ha.hourangle)[far])
     assert 0 < result[far].sum() < far.sum()
 
