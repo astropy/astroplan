@@ -6,7 +6,7 @@ from astropy.time import Time
 from collections.abc import Sequence
 import warnings
 
-from ..exceptions import PlotWarning, TargetAlwaysUpWarning, TargetNeverUpWarning
+from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
 
 __all__ = ['plot_airmass', 'plot_schedule_airmass', 'plot_parallactic',
@@ -53,46 +53,31 @@ def _shade_nights(ax, observer, start, end, tzoffset=0*u.hour):
     if end_jd <= start_jd:
         return
 
-    # Search each UTC day independently
-    day_jds = np.arange(np.floor(start_jd) - 1,
-                        np.ceil(end_jd) + 1)
-    days = Time(day_jds, format='jd', scale='utc')
-    boundaries = [start_jd, end_jd]
+    # Sample the Sun's altitude every five minutes.
+    n_intervals = max(1, int(np.ceil((end_jd - start_jd) * 24 * 12)))
+    sample_jds = np.linspace(start_jd, end_jd, n_intervals + 1)
+    times = Time(sample_jds, format='jd', scale='utc')
+    sun_altitudes = observer.sun_altaz(times).alt.to_value(u.deg)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=TargetAlwaysUpWarning)
-        warnings.filterwarnings('ignore', category=TargetNeverUpWarning)
+    horizons = np.array([-18, -12, -6, 0])
+    bands = np.searchsorted(horizons, sun_altitudes)
+    changes = np.flatnonzero(np.diff(bands))
 
-        for horizon in (0, -6, -12, -18) * u.deg:
-            for event in (observer.sun_rise_time, observer.sun_set_time):
-                times = event(days, which='next', horizon=horizon)
-                event_jds = np.asarray(times.utc.jd)
+    # Interpolate the times when the Sun crosses a twilight boundary.
+    crossing_altitudes = horizons[np.minimum(bands[changes], bands[changes + 1])]
+    fractions = ((crossing_altitudes - sun_altitudes[changes]) /
+                 (sun_altitudes[changes + 1] - sun_altitudes[changes]))
+    crossings = (sample_jds[changes] +
+                 fractions * (sample_jds[changes + 1] - sample_jds[changes]))
 
-                valid = ~np.asarray(times.mask) & np.isfinite(event_jds)
-                valid &= (event_jds >= day_jds)
-                valid &= (event_jds < day_jds + 1)
-                valid &= (event_jds > start_jd)
-                valid &= (event_jds < end_jd)
-
-                boundaries.extend(event_jds[valid])
-
-    boundaries = np.unique(boundaries)
-
-    # The Sun's altitude determines the shading even when an event is
-    # missing, for example during polar day or polar night.
-    midpoints = Time((boundaries[:-1] + boundaries[1:]) / 2,
-                     format='jd', scale='utc')
-    sun_altitudes = observer.sun_altaz(midpoints).alt.to_value(u.deg)
-
+    boundaries = np.concatenate(([start_jd], crossings, [end_jd]))
     alphas = np.array([0.4, 0.3, 0.2, 0.1, 0.0])
-    alphas = alphas[np.searchsorted([-18, -12, -6, 0], sun_altitudes)]
-
+    alphas = alphas[np.r_[bands[0], bands[changes + 1]]]
     plot_times = (Time(boundaries, format='jd', scale='utc') + tzoffset).plot_date
 
     for left, right, alpha in zip(plot_times[:-1], plot_times[1:], alphas):
         if alpha > 0:
-            ax.axvspan(left, right, ymin=0, ymax=1,
-                       color='grey', alpha=alpha)
+            ax.axvspan(left, right, ymin=0, ymax=1, color='grey', alpha=alpha, linewidth=0)
 
 
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
@@ -250,7 +235,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        _shade_nights(ax, observer, time_ut[0], time_ut[-1], tzoffset=tzoffset)
+        _shade_nights(ax, observer, time_ut.min(), time_ut.max(), tzoffset=tzoffset)
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
@@ -422,7 +407,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        _shade_nights(ax, observer, time[0], time[-1])
+        _shade_nights(ax, observer, time.min(), time.max())
 
     # Invert y-axis and set limits.
     # y_lim = ax.get_ylim()
@@ -481,6 +466,7 @@ def plot_schedule_airmass(schedule, show_night=False):
         An ``Axes`` object with added airmass and schedule vs. time plot.
     """
     import matplotlib.pyplot as plt
+    from matplotlib import dates
     blocks = copy.copy(schedule.scheduled_blocks)
     sorted_blocks = sorted(schedule.observing_blocks, key=lambda x: x.priority)
     targets = [block.target for block in sorted_blocks]
@@ -495,6 +481,11 @@ def plot_schedule_airmass(schedule, show_night=False):
         _shade_nights(ax, schedule.observer, schedule.start_time, schedule.end_time)
         if not targets:
             ax.set_xlim(schedule.start_time.plot_date, schedule.end_time.plot_date)
+            ax.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
+            plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+            ax.set_ylim([3.0, 1.0])
+            ax.set_ylabel('Airmass')
+            ax.set_xlabel('Time from {0} [UTC]'.format(schedule.start_time.datetime.date()))
 
     # lighter, bluer colors indicate higher priority
     for target, ci in zip(set(targets), color_idx):

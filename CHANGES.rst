@@ -80,9 +80,10 @@
   of combining them into a ``SkyCoord``. [#634]
 
 - Improve performance of night-time shading in ``plot_airmass``,
-  ``plot_altitude``, and ``plot_schedule_airmass`` by vectorizing solar
-  event calculations. Handle missing sunrise and twilight events at
-  high latitudes, and shade empty schedules. The ``show_night`` option
+  ``plot_altitude``, and ``plot_schedule_airmass`` by sampling the Sun's
+  altitude and interpolating twilight boundaries. Handle missing
+  sunrise and twilight events at high latitudes, fix shading across
+  multiple nights, and shade empty schedules. The ``show_night`` option
   now uses the darker, graded twilight shading of ``plot_airmass``.
   [#559]
 
