@@ -150,14 +150,20 @@ class EclipsingSystem(PeriodicEvent):
         ----------
         .. [1] Winn (2010) https://arxiv.org/abs/1001.2010
         """
-        if self.eccentricity < 1e-5:
-            secondary_eclipse_phase = 0.5
-        else:
-            secondary_eclipse_phase = 0.5 * (1 + 4/np.pi * self.eccentricity *
-                                             np.cos(self.argument_of_periapsis))
+        secondary_eclipse_phase = self._secondary_eclipse_phase()
         phases = self.phase(time)
         return ((phases < secondary_eclipse_phase + float(self.duration/self.period)/2) &
                 (phases > secondary_eclipse_phase - float(self.duration/self.period)/2))
+
+    def _secondary_eclipse_phase(self):
+        """
+        Orbital phase of mid-secondary eclipse, to first order in eccentricity
+        (Winn 2010, Equation 33). This is 0.5 for a circular orbit.
+        """
+        if self.eccentricity < 1e-5:
+            return 0.5
+        return 0.5 * (1 + 4/np.pi * self.eccentricity *
+                      np.cos(self.argument_of_periapsis))
 
     def out_of_eclipse(self, time):
         """
@@ -207,6 +213,9 @@ class EclipsingSystem(PeriodicEvent):
         """
         Time of the next secondary eclipse after ``time``.
 
+        For eccentric orbits, the secondary eclipse phase is approximated as in
+        `~astroplan.EclipsingSystem.in_secondary_eclipse`.
+
         .. warning::
             Barycentric offsets are ignored in the current implementation.
 
@@ -224,10 +233,11 @@ class EclipsingSystem(PeriodicEvent):
             Times of the next ``n_eclipses`` secondary eclipses after ``time``
         """
         phase = self.phase(time)
-        if phase >= 0.5:
-            next_eclipse_phase = 1.5
+        secondary_eclipse_phase = self._secondary_eclipse_phase()
+        if phase >= secondary_eclipse_phase:
+            next_eclipse_phase = 1 + secondary_eclipse_phase
         else:
-            next_eclipse_phase = 0.5
+            next_eclipse_phase = secondary_eclipse_phase
         eclipse_times = ((next_eclipse_phase - phase) * self.period + time +
                          np.arange(n_eclipses) * self.period)
         return eclipse_times

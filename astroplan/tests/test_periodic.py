@@ -71,6 +71,34 @@ def test_next_eclipse():
                     atol=PRECISION)
 
 
+def test_next_secondary_eclipse_eccentric():
+    # With e=0.1 and omega=0 the secondary eclipse is at phase
+    # 0.5 * (1 + 4/pi * 0.1) ~ 0.5637, not 0.5.
+    epoch = Time('2016-01-01 00:00')
+    period = 2*u.day
+    duration = 2*u.hour
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period,
+                         duration=duration, eccentricity=0.1,
+                         argument_of_periapsis=0)
+    expected_phase = 0.5 * (1 + 4/np.pi * 0.1)
+
+    # Before the secondary eclipse in the first orbit
+    next_secondary = es.next_secondary_eclipse_time(epoch + 1*u.hour)
+    assert_allclose(es.phase(next_secondary), expected_phase, atol=1e-6)
+    assert np.all(es.in_secondary_eclipse(next_secondary))
+
+    # Between phase 0.5 and the secondary eclipse: still this orbit's eclipse
+    test_time = epoch + 0.53*period
+    next_secondary = es.next_secondary_eclipse_time(test_time, n_eclipses=2)
+    assert_allclose(next_secondary.jd,
+                    (epoch + expected_phase*period + [0, 1]*period).jd,
+                    atol=PRECISION)
+
+    # Ingress and egress bracket the eclipse
+    ing_egr = es.next_secondary_ingress_egress_time(epoch + 1*u.hour)
+    assert np.all(es.in_secondary_eclipse(ing_egr + [1, -1]*u.min))
+
+
 def test_primary_ingress():
     epoch = Time('2016-01-01 00:00')
     period = 3*u.day
