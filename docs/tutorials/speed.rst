@@ -21,12 +21,13 @@ rise/set/transit times are computed in astroplan.
 
 Astroplan computes rise/set times relative to a given reference time by
 computing the altitude of the target on a grid which spans a period of 24 hours
-before/after the reference time. The grid is then searched for
+(plus a margin of an hour or two, so that events recurring slightly more than a
+day apart are found) before/after the reference time. The grid is then searched for
 horizon-crossings, and astroplan interpolates between the two nearest-to-zero
 altitudes to approximate the target rise/set times.
 
-The ``n_grid_points`` keyword argument dictates the number of grid points on
-which to compute the target altitude. The larger the ``n_grid_points``, the
+The ``n_grid_points`` keyword argument dictates the number of grid points per
+24 hours on which to compute the target altitude. The larger the ``n_grid_points``, the
 more precise the rise/set/transit time will be, but the operation also becomes
 more computationally expensive. As a general rule of thumb, if you choose
 ``n_grid_points=150`` your rise/set time precisions will be precise to better
