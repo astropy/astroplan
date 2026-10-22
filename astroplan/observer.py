@@ -10,8 +10,8 @@ import zoneinfo
 
 import astropy.units as u
 import numpy as np
-from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, get_sun,
-                                 get_body, Angle, Longitude)
+from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, HADec,
+                                 get_sun, get_body, Angle, Longitude)
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
 
@@ -24,6 +24,11 @@ from .target import get_skycoord, SunFlag, MoonFlag, Target
 __all__ = ["Observer"]
 
 MAGIC_TIME = Time(-999, format='jd')
+
+# Rise/set/transit searches cover one day plus this margin (and the target's
+# ``approx_sidereal_drift``, if any), so that an event recurring slightly more
+# than a day later, or falling right at the reference time, is still found.
+_SEARCH_MARGIN = 1 * u.hour
 
 
 # Handle deprecated MAGIC_TIME variable
@@ -97,10 +102,11 @@ def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     """
 
     if for_deriv:
-        time_grid = np.concatenate([[start - 1 / (n_grid_points - 1)],
+        step = (end - start) / (n_grid_points - 1)
+        time_grid = np.concatenate([[start - step],
                                     np.linspace(start, end,
                                                 n_grid_points)[1:-1],
-                                    [end + 1 / (n_grid_points - 1)]]) * u.day
+                                    [end + step]]) * u.day
     else:
         time_grid = np.linspace(start, end, n_grid_points) * u.day
 
@@ -113,6 +119,38 @@ def _generate_24hr_grid(t0, start, end, n_grid_points, for_deriv=False):
     if time_grid.ndim == 1:
         time_grid = time_grid[:, np.newaxis]
     return t0 + time_grid
+
+
+def _search_window(target, prev_next, n_grid_points):
+    """
+    Bounds and size of the time grid for a rise/set/transit search.
+
+    The grid covers one day plus ``_SEARCH_MARGIN`` and the target's
+    ``approx_sidereal_drift`` (if any), after the reference time for
+    ``prev_next='next'`` and before it for ``'previous'``. The extra time is
+    covered with the same spacing that ``n_grid_points`` gives over one day,
+    so grid points within one day of the reference time don't move.
+
+    Returns
+    -------
+    start, end : float
+        Days before/after the reference time.
+    n_points : int
+        Number of grid points.
+    """
+    extra = _SEARCH_MARGIN + getattr(target, 'approx_sidereal_drift', 0*u.min)
+    n_extra = int(np.ceil(extra.to_value(u.day) * (n_grid_points - 1)))
+    span = 1 + n_extra / (n_grid_points - 1)
+    if prev_next == 'next':
+        return 0, span, n_grid_points + n_extra
+    return -span, 0, n_grid_points + n_extra
+
+
+def _event_jds(event):
+    """JD(UTC) of a possibly masked ``Time``, with NaN where masked."""
+    jds = event.utc.jd
+    jds = np.ma.getdata(getattr(jds, 'unmasked', jds)).astype(float)
+    return np.where(event.mask, np.nan, jds)
 
 
 class Observer:
@@ -631,8 +669,23 @@ class Observer:
         else:
             return target.transform_to(altaz_frame)
 
+    def _hadec(self, time, target, grid_times_targets=False):
+        """
+        Transform ``target`` to the apparent topocentric
+        `~astropy.coordinates.HADec` frame of this observer at ``time``.
+
+        Refraction is not applied.
+        """
+        if target is MoonFlag:
+            target = get_body("moon", time, location=self.location)
+        elif target is SunFlag:
+            target = get_sun(time)
+
+        time, target = self._preprocess_inputs(time, target, grid_times_targets)
+        return target.transform_to(HADec(location=self.location, obstime=time))
+
     def parallactic_angle(self, time, target, grid_times_targets=False,
-                          kind='mean', model=None):
+                          kind=None, model=None):
         """
         Calculate the parallactic angle.
 
@@ -650,14 +703,14 @@ class Observer:
             return an (M, N) shaped result. Otherwise, we rely on broadcasting
             the shapes together using standard numpy rules.
 
-        kind : str
-            Argument to the `~astropy.time.Time.sidereal_time` function, which may
-            be either ``'mean'`` or ``'apparent'``, i.e., accounting for precession only,
-            or also for nutation.
+        kind : str or None
+            Deprecated and ignored. The hour angle and declination are now
+            computed in the apparent topocentric
+            `~astropy.coordinates.HADec` frame, so a sidereal time
+            definition is no longer needed.
 
-        model : str or None; optional
-            Precession (and nutation) model to use in the call to
-            `~astropy.time.Time.sidereal_time`, see docs for that method for details.
+        model : str or None
+            Deprecated and ignored, see ``kind``.
 
         Returns
         -------
@@ -670,18 +723,30 @@ class Observer:
         intersects a celestial object and the zenith, and the object's hour
         circle [1]_.
 
+        The target is first transformed to the apparent topocentric
+        `~astropy.coordinates.HADec` frame, which accounts for precession,
+        nutation, aberration and (for nearby objects like the Moon)
+        topocentric parallax. The angle is therefore measured from the
+        apparent north celestial pole of date, not from the north pole of the
+        target's input frame (e.g. ICRS). Refraction is not applied.
+
         .. [1] https://en.wikipedia.org/wiki/Parallactic_angle
 
         """
-        time, coordinate = self._preprocess_inputs(time, target, grid_times_targets)
+        if kind is not None or model is not None:
+            warnings.warn("The `kind` and `model` arguments of "
+                          "`Observer.parallactic_angle` are deprecated and "
+                          "ignored; the hour angle is now computed in the "
+                          "apparent HADec frame.", AstropyDeprecationWarning)
+
+        hadec = self._hadec(time, target, grid_times_targets)
+        H = hadec.ha.radian
+        dec = hadec.dec.radian
 
         # Eqn (14.1) of Meeus' Astronomical Algorithms
-        LST = time.sidereal_time(kind, longitude=self.location.lon, model=model)
-        H = (LST - coordinate.ra).radian
         q = np.arctan2(np.sin(H),
-                       (np.tan(self.location.lat.radian) *
-                        np.cos(coordinate.dec.radian) -
-                        np.sin(coordinate.dec.radian)*np.cos(H)))*u.rad
+                       (np.tan(self.location.lat.radian) * np.cos(dec) -
+                        np.sin(dec)*np.cos(H)))*u.rad
 
         return Angle(q)
 
@@ -942,16 +1007,8 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        if prev_next == 'next':
-            start = 0
-            end = (1 + (target.approx_sidereal_drift.to(u.day).value
-                        if hasattr(target, 'approx_sidereal_drift') else 0))
-        else:
-            start = (-1 - (target.approx_sidereal_drift.to(u.day).value
-                           if hasattr(target, 'approx_sidereal_drift') else 0))
-            end = 0
-
-        times = _generate_24hr_grid(time, start, end, n_grid_points)
+        start, end, n_points = _search_window(target, prev_next, n_grid_points)
+        times = _generate_24hr_grid(time, start, end, n_points)
 
         altaz = self.altaz(times, target,
                            grid_times_targets=grid_times_targets)
@@ -1006,12 +1063,8 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        if prev_next == 'next':
-            times = _generate_24hr_grid(time, 0, 1, n_grid_points,
-                                        for_deriv=True)
-        else:
-            times = _generate_24hr_grid(time, -1, 0, n_grid_points,
-                                        for_deriv=True)
+        start, end, n_points = _search_window(target, prev_next, n_grid_points)
+        times = _generate_24hr_grid(time, start, end, n_points, for_deriv=True)
 
         # The derivative of the altitude with respect to time is increasing
         # from negative to positive values at the anti-transit of the meridian
@@ -1073,23 +1126,25 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        if which == 'next' or which == 'nearest':
-            next_event = event_function('next')
-            if which == 'next':
-                return next_event
+        if which == 'next':
+            return event_function('next')
 
-        if which == 'previous' or which == 'nearest':
-            previous_event = event_function('previous')
-            if which == 'previous':
-                return previous_event
+        if which == 'previous':
+            return event_function('previous')
 
         if which == 'nearest':
-            try:
-                mask = abs(time - previous_event) < abs(time - next_event)
-                ma = np.where(mask, previous_event.utc.jd, next_event.utc.jd)
-            except TypeError:
-                # encountered if time is scalar & nan
-                ma = next_event.utc.jd if not next_event.isscalar else [next_event.utc.jd]
+            # Only warn about a missing event if neither side has one
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                next_jd = _event_jds(event_function('next'))
+                previous_jd = _event_jds(event_function('previous'))
+            time_jd = time.utc.jd
+            use_previous = (np.isnan(next_jd) |
+                            (abs(time_jd - previous_jd) < abs(time_jd - next_jd)))
+            ma = np.where(use_previous, previous_jd, next_jd)
+            if np.isnan(ma).any():
+                for w in caught:
+                    warnings.warn_explicit(w.message, w.category, w.filename, w.lineno)
             return Time(_process_nans_in_jds(ma), format='jd', scale='utc')
 
         raise ValueError('"which" kwarg must be "next", "previous" or '
@@ -2069,9 +2124,15 @@ class Observer:
         -------
         hour_angle : `~astropy.coordinates.Angle`
             The hour angle(s) of the target(s) at ``time``
+
+        Notes
+        -----
+        The hour angle is computed in the apparent topocentric
+        `~astropy.coordinates.HADec` frame, which accounts for precession,
+        nutation, aberration and topocentric parallax. Refraction is not
+        applied.
         """
-        time, target = self._preprocess_inputs(time, target, grid_times_targets)
-        return Longitude(self.local_sidereal_time(time) - target.ra)
+        return Longitude(self._hadec(time, target, grid_times_targets).ha)
 
     @u.quantity_input(horizon=u.degree)
     def tonight(self, time=None, horizon=0 * u.degree, obswl=None):

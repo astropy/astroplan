@@ -348,13 +348,13 @@ We can also calculate the parallactic angle directly:
 .. code-block:: python
 
     >>> subaru.parallactic_angle(time, altair) # doctest: +SKIP
-    <Angle -0.6404957821112053 rad>
+    <Angle -0.65221265 rad>
 
     >>> subaru.parallactic_angle(time, vega) # doctest: +SKIP
-    <Angle -0.46542183982024 rad>
+    <Angle 2.68234741 rad>
 
     >>> subaru.parallactic_angle(time, deneb) # doctest: +SKIP
-    <Angle 0.7297067855978494 rad>
+    <Angle -2.40910593 rad>
 
 The `~astropy.coordinates.Angle` objects resulting from the calls to
 ``parallactic_angle()`` are subclasses of the `~astropy.units.Quantity`
