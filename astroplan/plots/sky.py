@@ -1,7 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -16,7 +13,7 @@ __all__ = ['plot_sky', 'plot_sky_24hr']
 @u.quantity_input(az_label_offset=u.deg)
 def plot_sky(target, observer, time, ax=None, style_kwargs=None,
              north_to_east_ccw=True, grid=True, az_label_offset=0.0*u.deg,
-             warn_below_horizon=False, style_sheet=None):
+             warn_below_horizon=False, style_sheet=None, hours_value=None):
     """
     Plots target positions in the sky with respect to the observer's location.
 
@@ -56,7 +53,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
 
     style_kwargs : dict or None, optional.
         A dictionary of keywords passed into `~matplotlib.pyplot.scatter`
-        to set plotting styles.
+        to set plotting styles. A ``c`` array with one value per time (e.g.
+        to color points with a colormap) is masked so that values stay
+        matched to positions when some times are below the horizon.
 
     north_to_east_ccw : bool, optional.
         True by default, meaning that azimuth is shown increasing
@@ -83,6 +82,12 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         matplotlib style sheet to use. To see available style sheets in
         astroplan, print *astroplan.plots.available_style_sheets*. Defaults
         to the light theme.
+
+    hours_value : array-like or `None` (optional)
+        Numeric labels (e.g. the hour of each time) to annotate next to each
+        plotted position, formatted with one decimal place. Must have the
+        same length as ``time``. Labels for times when the target is below
+        the horizon are not drawn. If `None` (default), no labels are drawn.
 
     Returns
     -------
@@ -120,7 +125,9 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
         if isinstance(plt.gca(), plt.PolarAxes):
             ax = plt.gca()
         else:
-            ax = plt.axes(polar=True)
+            plt.close()
+            fig = plt.gcf()
+            ax = fig.add_subplot(projection='polar')
 
     if style_kwargs is None:
         style_kwargs = {}
@@ -171,6 +178,21 @@ def plot_sky(target, observer, time, ax=None, style_kwargs=None,
     # Direction of azimuth increase. Clockwise is -1
     if north_to_east_ccw is False:
         ax.set_theta_direction(-1)
+
+    above_horizon = altitude <= 91.0
+
+    if hours_value is not None:
+        hours_value = np.atleast_1d(np.asarray(hours_value))
+        if len(hours_value) != len(time):
+            raise ValueError("hours_value must have the same length as time")
+        for label, az, alt in zip(hours_value[above_horizon], az_plot, alt_plot):
+            ax.annotate(f"{label:.1f}", (az, alt), fontsize=8)
+
+    # Mask per-point colors so they stay matched to the plotted positions.
+    if 'c' in style_kwargs:
+        c = style_kwargs['c']
+        if not isinstance(c, str) and np.ndim(c) > 0 and len(c) == len(time):
+            style_kwargs['c'] = np.asarray(c)[above_horizon]
 
     # Plot target coordinates.
     ax.scatter(az_plot, alt_plot, **style_kwargs)

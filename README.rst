@@ -1,19 +1,10 @@
 astroplan
 =========
 
-Observation planning package for astronomers
+.. image:: https://readthedocs.org/projects/astroplan/badge/?version=latest
+    :target: https://astroplan.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
-* Code: https://github.com/astropy/astroplan
-* Docs: https://astroplan.readthedocs.io/
-* License: BSD-3
-
-.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
-    :target: http://www.astropy.org/
-
-.. image:: http://img.shields.io/pypi/v/astroplan.svg?text=version
-    :target: https://pypi.python.org/pypi/astroplan/
-    :alt: Latest release
-    
 .. image:: http://img.shields.io/badge/arXiv-1709.03913-red.svg?style=flat
     :target: https://arxiv.org/abs/1712.09631
     :alt: arXiv paper
@@ -21,10 +12,31 @@ Observation planning package for astronomers
 .. image:: https://github.com/astropy/astroplan/workflows/CI%20Tests/badge.svg
     :target: https://github.com/astropy/astroplan/actions
 
+.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat
+    :target: http://www.astropy.org/
+
+.. image:: http://img.shields.io/pypi/v/astroplan.svg?text=version
+    :target: https://pypi.python.org/pypi/astroplan/
+    :alt: Latest release
+
+* Code: https://github.com/astropy/astroplan
+* Docs: https://astroplan.readthedocs.io/
+* License: BSD-3 Clause
+
+**astroplan** is an open-source observation planning package for
+astronomers that can help you plan for everything but the clouds.
+
+It is an `Astropy <http://www.astropy.org>`__
+`affiliated package <http://www.astropy.org/affiliated/index.html>`__ that
+seeks to make your life as an observational astronomer a little less
+infuriating.
+
+Contributions welcome!
+
 Attribution
 +++++++++++
 
-If you use astroplan in your work, please cite `Morris et al. 2018 <https://ui.adsabs.harvard.edu/abs/2018AJ....155..128M/abstract>`_: 
+If you use astroplan in your work, please cite `Morris et al. 2018 <https://ui.adsabs.harvard.edu/abs/2018AJ....155..128M/abstract>`_:
 
 .. code :: bibtex
 

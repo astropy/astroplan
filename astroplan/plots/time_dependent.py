@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 import copy
 from xmlrpc.client import boolean
 import numpy as np
@@ -9,7 +7,7 @@ import astropy.units as u
 from astropy.time import Time
 from collections.abc import Sequence
 import warnings
-import pytz
+import datetime
 
 from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
@@ -95,7 +93,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         If None, uses the current ``Axes``.
 
     style_kwargs : dict or None, optional.
-        A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
+        A dictionary of keywords passed into `~matplotlib.pyplot.plot`
         to set plotting styles.
 
     style_sheet : dict or `None` (optional)
@@ -159,15 +157,18 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
-    style_kwargs.setdefault('linewidth', 1.5)
-    style_kwargs.setdefault('fmt', '-')
+
+    if 'lw' not in style_kwargs:
+        style_kwargs.setdefault('linewidth', 1.5)
+    if 'ls' not in style_kwargs and 'linestyle' not in style_kwargs:
+        style_kwargs.setdefault('linestyle', '-')
 
     if hasattr(time, 'utcoffset') and use_local_tz:
         tzoffset = time.utcoffset()
         tzname = time.tzname()
         tzinfo = time.tzinfo
     else:
-        tzoffset = 0
+        tzoffset = 0 * u.hour
         tzname = 'UTC'
         tzinfo = None
     # Populate time window if needed.
@@ -214,7 +215,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data (against timezone-offset time)
-        ax.plot_date(timetoplot.plot_date, masked_airmass, label=target_name, **style_kwargs)
+        ax.plot(timetoplot.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
         # Plot black curves for where the target is outside constraints
         if constraints:
@@ -229,6 +230,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Format the time axis
     xlo, xhi = (timetoplot[0]), (timetoplot[-1])
+    ax.xaxis_date()
     ax.set_xlim([xlo.plot_date, xhi.plot_date])
     date_formatter = dates.DateFormatter('%H:%M')
     ax.xaxis.set_major_formatter(date_formatter)
@@ -251,7 +253,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         ]
 
         # add 'UTC' to each datetime object created above
-        twilights = [(t[0].datetime.replace(tzinfo=pytz.utc), t[1])
+        twilights = [(t[0].datetime.replace(tzinfo=datetime.timezone.utc), t[1])
                      for t in twilights]
 
         twilights.sort(key=operator.itemgetter(0))
@@ -352,7 +354,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         If None, uses the current ``Axes``.
 
     style_kwargs : dict or None, optional.
-        A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
+        A dictionary of keywords passed into `~matplotlib.pyplot.plot`
         to set plotting styles.
 
     style_sheet : dict or `None` (optional)
@@ -401,9 +403,10 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
-    style_kwargs.setdefault('linestyle', '-')
-    style_kwargs.setdefault('linewidth', 1.5)
-    style_kwargs.setdefault('fmt', '-')
+    if 'ls' not in style_kwargs and 'linestyle' not in style_kwargs:
+        style_kwargs.setdefault('linestyle', '-')
+    if 'lw' not in style_kwargs:
+        style_kwargs.setdefault('linewidth', 1.5)
 
     # Populate time window if needed.
     time = Time(time)
@@ -430,9 +433,10 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data
-        ax.plot_date(time.plot_date, masked_altitude, label=target_name, **style_kwargs)
+        ax.plot(time.plot_date, masked_altitude, label=target_name, **style_kwargs)
 
     # Format the time axis
+    ax.xaxis_date()
     ax.set_xlim([time[0].plot_date, time[-1].plot_date])
     date_formatter = dates.DateFormatter('%H:%M')
     ax.xaxis.set_major_formatter(date_formatter)
@@ -598,7 +602,7 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
         If None, uses the current ``Axes``.
 
     style_kwargs : dict or None, optional.
-        A dictionary of keywords passed into `~matplotlib.pyplot.plot_date`
+        A dictionary of keywords passed into `~matplotlib.pyplot.plot`
         to set plotting styles.
 
     style_sheet : dict or `None` (optional)
@@ -626,8 +630,8 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     if style_kwargs is None:
         style_kwargs = {}
     style_kwargs = dict(style_kwargs)
-    style_kwargs.setdefault('linestyle', '-')
-    style_kwargs.setdefault('fmt', '-')
+    if 'ls' not in style_kwargs and 'linestyle' not in style_kwargs:
+        style_kwargs.setdefault('linestyle', '-')
 
     # Populate time window if needed.
     time = Time(time)
@@ -651,9 +655,10 @@ def plot_parallactic(target, observer, time, ax=None, style_kwargs=None,
     style_kwargs.setdefault('label', target_name)
 
     # Plot data.
-    ax.plot_date(time.plot_date, p_angle, **style_kwargs)
+    ax.plot(time.plot_date, p_angle, **style_kwargs)
 
     # Format the time axis
+    ax.xaxis_date()
     date_formatter = dates.DateFormatter('%H:%M')
     ax.xaxis.set_major_formatter(date_formatter)
     plt.setp(ax.get_xticklabels(), rotation=30, ha='right')

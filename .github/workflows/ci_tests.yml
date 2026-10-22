@@ -5,78 +5,84 @@
 name: CI Tests
 
 on:
+  schedule:
+    # run every Wednesday at 6am UTC
+    - cron: '0 6 * * 3'
   push:
     branches:
       - main
+    tags:
+    - '*'
   pull_request:
      branches: # only build on PRs against 'main' if you need to further limit when CI is run.
       - main
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Job names are required status checks on main, so they describe roles
+  # ("oldest"/"current"/"latest" Python) rather than versions. When bumping
+  # Python versions, change the tox envs below and default_python, not the names.
+  # "current" is default_python; "latest" (devdeps) moves to a new Python first;
+  # "threaded" is the free-threaded build of the current Python.
+  #
   # Github Actions supports ubuntu, windows, and macos virtual environments:
   # https://help.github.com/en/actions/reference/virtual-environments-for-github-hosted-runners
   ci_tests:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - name: Code style checks
-            os: ubuntu-latest
-            python: 3.x
-            toxenv: codestyle
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@8d5ad7efc8e84a051639373f6ea0d10441eafee1  # v3.2.1
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    with:
+      submodules: false
+      coverage: ''
+      default_python: '3.14'
+      envs: |
+        - name: Code style checks
+          linux: codestyle
 
-          - name: Python 3.7 with minimal dependencies
-            os: ubuntu-latest
-            python: 3.7
-            toxenv: py37-test
+        - name: Link checks
+          linux: linkcheck
 
-          - name: OS X - Python 3.9 with minimal dependencies
-            os: macos-latest
-            python: 3.9
-            toxenv: py39-test
+        - name: Linux - oldest Python, base dependencies
+          linux: py312-test
 
-          - name: Windows - Python 3.11 with all optional dependencies
-            os: windows-latest
-            python: 3.11
-            toxenv: py11-test-alldeps
+        - name: Linux - intermediate Python, base dependencies
+          linux: py313-test
 
-          - name: Python 3.11 with remote data, all dependencies, and coverage
-            os: ubuntu-latest
-            python: 3.11
-            toxenv: py11-test-alldeps-cov
-            toxposargs: --remote-data
+        - name: Linux - oldest Python, oldest dependencies
+          linux: py312-test-oldestdeps
 
-          - name: Python 3.11 with latest dev versions of key dependencies
-            os: ubuntu-latest
-            python: 3.11
-            toxenv: py11-test-devdeps
+        - name: Linux - threaded Python, base dependencies
+          linux: py314t-test
 
-          - name: Test building of Sphinx docs
-            os: ubuntu-latest
-            python: 3.x
-            toxenv: build_docs
+        - name: macOS - current Python, base dependencies
+          macos: py314-test
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v1
-      with:
-        fetch-depth: 0
-    - name: Set up python ${{ matrix.python }} on ${{ matrix.os }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Install base dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install tox codecov
-    - name: Install graphviz dependency
-      if: ${{ contains(matrix.toxenv, 'build_docs') }}
-      run: sudo apt-get -y install graphviz
-    - name: Test with tox
-      run: |
-        tox -e ${{ matrix.toxenv }}
+        - name: Windows - current Python, base dependencies
+          windows: py314-test
+
+        - name: Linux - current Python, all dependencies, remote data, coverage
+          linux: py314-test-alldeps-cov
+          toxargs: -v
+          posargs: --remote-data=any
+          coverage: codecov
+
+        - name: Linux - current Python, image comparison tests
+          linux: py314-test-image
+          artifact-path: results/
+
+  allowed_failures:
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@8d5ad7efc8e84a051639373f6ea0d10441eafee1  # v3.2.1
+    with:
+      submodules: false
+      coverage: ''
+      default_python: '3.14'
+      envs: |
+        - name: (Allowed Failure) Linux - latest Python, dev dependencies, remote data
+          linux: py315-test-devdeps
+          posargs: --remote-data=any --verbose
