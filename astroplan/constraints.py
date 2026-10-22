@@ -15,7 +15,7 @@ import astropy.units as u
 import numpy as np
 from astropy import table
 from astropy.time import Time
-from astropy.coordinates import get_body, get_sun, Galactic, SkyCoord
+from astropy.coordinates import Angle, get_body, get_sun, Galactic, SkyCoord
 from numpy.lib.stride_tricks import as_strided
 
 # Package
@@ -32,7 +32,7 @@ __all__ = ["AltitudeConstraint", "AirmassConstraint", "AtNightConstraint",
            "SecondaryEclipseConstraint", "Constraint", "TimeConstraint",
            "observability_table", "months_observable", "max_best_rescale",
            "min_best_rescale", "PhaseConstraint", "is_event_observable",
-           "MeridianSeparationConstraint"]
+           "MeridianSeparationConstraint", "HourAngleConstraint"]
 
 _current_year = time.localtime().tm_year  # needed for backward compatibility
 _current_year_time_range = Time(  # needed for backward compatibility
@@ -969,6 +969,65 @@ class MeridianSeparationConstraint(Constraint):
         else:
             rescale = min_best_rescale(meridian_separation, self.min, self.max, less_than_min=0)
             return rescale
+
+
+class HourAngleConstraint(Constraint):
+    """
+    Constrain the hour angle of a target.
+
+    The hour angle is measured west from the meridian on the interval
+    [-12h, 12h), so it is negative before transit and positive after.
+    `~astroplan.MeridianSeparationConstraint` instead limits the angular
+    distance on the sky from the meridian, which does not distinguish east
+    from west and, at a given hour angle, shrinks toward the poles. This
+    constraint limits the hour angle itself, like the hour angle limits of an
+    equatorial mount.
+
+    Parameters
+    ----------
+    min : `~astropy.units.Quantity` or `None`, optional
+        Minimum hour angle (inclusive), in [-12h, 12h) and in any angular
+        unit. `None` indicates no lower limit. Default is -5.5h.
+    max : `~astropy.units.Quantity` or `None`, optional
+        Maximum hour angle (inclusive), in (-12h, 12h] and in any angular
+        unit. `None` indicates no upper limit. Default is 5.5h.
+
+    Examples
+    --------
+    To constrain observations to within three hours of the meridian:
+
+    >>> import astropy.units as u
+    >>> constraint = HourAngleConstraint(min=-3*u.hourangle, max=3*u.hourangle)
+
+    If ``min`` is greater than ``max``, the window wraps through 12h, e.g. to
+    observe circumpolar targets near lower culmination:
+
+    >>> constraint = HourAngleConstraint(min=150*u.deg, max=-150*u.deg)
+    """
+
+    def __init__(self, min=-5.5*u.hourangle, max=5.5*u.hourangle):
+        if min is None and max is None:
+            raise ValueError("HourAngleConstraint requires at least one of "
+                             "min or max.")
+        self.min = Angle(min if min is not None else -12*u.hourangle).to(u.hourangle)
+        self.max = Angle(max if max is not None else 12*u.hourangle).to(u.hourangle)
+
+        if not (self.min.isscalar and self.max.isscalar):
+            raise ValueError("The minimum and maximum of the HourAngleConstraint "
+                             "must be scalars.")
+        # 12h and -12h are the same hour angle, so min=12h, max=-12h would
+        # select only that one point rather than every hour angle.
+        if not (-12*u.hourangle <= self.min < 12*u.hourangle
+                and -12*u.hourangle < self.max <= 12*u.hourangle):
+            raise ValueError("The minimum of the HourAngleConstraint must be in "
+                             "[-12h, 12h) and the maximum in (-12h, 12h].")
+
+    def compute_constraint(self, times, observer, targets):
+        ha = Angle(observer.target_hour_angle(times, targets)).wrap_at(12*u.hourangle)
+
+        if self.min <= self.max:
+            return (self.min <= ha) & (ha <= self.max)
+        return (self.min <= ha) | (ha <= self.max)
 
 
 def is_always_observable(constraints, observer, targets, times=None,
