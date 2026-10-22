@@ -1,6 +1,18 @@
 0.11 (unreleased)
 -----------------
 
+- Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
+  within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
+  angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]
+
+- Fix rise, set, transit, twilight and midnight times coming back masked when
+  the next or previous event is slightly more than a day away (e.g. the Sun
+  when day length is changing, or the Moon's transit) or falls exactly at the
+  reference time. The search now covers one day plus a margin. Also,
+  ``which='nearest'`` now returns the event on the other side of the reference
+  time instead of a masked time when only one side has an event, and only
+  warns when neither side does. [#656]
+
 - Fix rise, set and meridian transit times with ``which='next'`` (or
   ``'nearest'``) skipping an event shortly after the reference time and
   returning the same event one sidereal day later instead. [#651]
@@ -46,6 +58,16 @@
   added minimum versions for astroquery (0.4.7), pytest-astropy (0.11.0) and
   pytest-mpl (0.16.1). [#631]
 
+- ``Observer.parallactic_angle`` and ``Observer.target_hour_angle`` now
+  transform the target to the apparent topocentric ``HADec`` frame before
+  computing the hour angle, instead of subtracting the target's input-frame
+  (e.g. ICRS) right ascension from the local sidereal time. This accounts for
+  precession, nutation, aberration and topocentric parallax, so results
+  change by ~0.1-0.4 deg for typical targets at current epochs, and by more
+  close to the pole or zenith. ``parallactic_angle`` now also accepts
+  ``MoonFlag`` and ``SunFlag`` targets. Its ``kind`` and ``model`` arguments
+  are deprecated and ignored. [#644]
+
 - Fix rise/set times always being returned as masked ``Time`` objects, even
   when no times are masked. Newer astropy keeps such ``Time`` objects masked,
   which broke coordinate transforms that use them (e.g. ``Observer.tonight``).
@@ -88,6 +110,14 @@
   used with observer calculations, constraints and scheduling, and
   ``Schedule.to_table()`` displays their catalog number and element epoch.
   [#566]
+
+- Improve performance of night-time shading in ``plot_airmass``,
+  ``plot_altitude``, and ``plot_schedule_airmass`` by sampling the Sun's
+  altitude and interpolating twilight boundaries. Handle missing
+  sunrise and twilight events at high latitudes, fix shading across
+  multiple nights, and shade empty schedules. The ``show_night`` option
+  now uses the darker, graded twilight shading of ``plot_airmass``.
+  [#559]
 
 0.10.1 (2024-08-13)
 -------------------

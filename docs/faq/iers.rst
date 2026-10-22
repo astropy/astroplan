@@ -78,16 +78,14 @@ astropy's IERS machinery:
     import numpy as np
     import astropy.units as u
     from astropy.time import Time
-    from urllib.error import HTTPError
 
-    # Download and cache the IERS Bulletins A and B  using astropy's machinery
-    # (reminder: astroplan has its own function for this: `download_IERS_A`)
-    from astropy.utils.iers import (IERS_A, IERS_A_URL, IERS_B, IERS_B_URL,
-                                    FROM_IERS_B, IERS_Auto)
-    from astropy.utils.data import download_file
-    # Workaround until astropy/astropy#5194 is solved
+    # Load IERS Bulletin A (downloaded and cached by astropy, falling back to
+    # Bulletin B if the download fails) and the Bulletin B table bundled with
+    # astropy (reminder: astroplan has its own function for downloading
+    # Bulletin A: `download_IERS_A`)
+    from astropy.utils.iers import IERS_B, FROM_IERS_B, IERS_Auto
     iers_a = IERS_Auto.open()
-    iers_b = IERS_B.open(download_file(IERS_B_URL, cache=True))
+    iers_b = IERS_B.open()
 
     # Get a range of times to plot from 1990-2022
     time_range = Time("1990-01-01") + np.arange(0, 30, 0.2)*u.year
