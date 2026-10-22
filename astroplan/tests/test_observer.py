@@ -1414,6 +1414,43 @@ mmto_sunsets = [
 ]
 
 
+@pytest.mark.parametrize('event', ['target_rise_time', 'target_set_time'])
+def test_next_event_just_after_reference_time(event):
+    """
+    Regression test for #464: an event shortly after the reference time must
+    not be skipped in favour of the same event one sidereal day later, which
+    also falls within the 24 hour search grid.
+    """
+    observer = Observer(location=EarthLocation.from_geodetic(-110*u.deg, 32*u.deg,
+                                                             2000*u.m))
+    targets = [FixedTarget(SkyCoord(15*u.deg, -26*u.deg)),
+               FixedTarget(SkyCoord(200*u.deg, 10*u.deg))]
+    func = getattr(observer, event)
+    event_times = func(Time('2026-01-30 00:00'), targets, which='next')
+
+    for target, event_time in zip(targets, event_times):
+        for which, offset in [('next', -2*u.min), ('previous', 2*u.min),
+                              ('nearest', -2*u.min), ('nearest', 2*u.min)]:
+            result = func(event_time + offset, target, which=which)
+            assert abs(result - event_time) < 1*u.s
+
+    # also with several targets at once on a times x targets grid
+    results = func(event_times - 2*u.min, targets, which='next',
+                   grid_times_targets=True)
+    assert_quantity_allclose((results.diagonal() - event_times).to(u.s),
+                             0*u.s, atol=1*u.s)
+
+
+@pytest.mark.parametrize('kwargs', [dict(rise_set='rise'),
+                                    dict(rise_set='rising', prev_next='nearest')])
+def test_horiz_cross_invalid_strings(kwargs):
+    observer = Observer(location=EarthLocation.from_geodetic(0*u.deg, 0*u.deg))
+    times = Time('2026-01-30') + np.linspace(0, 1, 10)[:, np.newaxis]*u.day
+    altitudes = np.linspace(-10, 10, 10)[:, np.newaxis]*u.deg
+    with pytest.raises(ValueError, match='must be'):
+        observer._horiz_cross(times, altitudes, **kwargs)
+
+
 @pytest.mark.parametrize('mmto_sunset', mmto_sunsets)
 def test_sun_set_vs_mmto_almanac(mmto_sunset):
     """
