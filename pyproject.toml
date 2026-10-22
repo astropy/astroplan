@@ -106,6 +106,11 @@ filterwarnings = [
     "error",
     "ignore:numpy\\.ufunc size changed:RuntimeWarning",
     "ignore:numpy\\.ndarray size changed:RuntimeWarning",
+    # astropy < 7 downloads IERS-A on first use and warns for each URL that
+    # fails before trying the next (and leaks the failed connection); let it
+    # fall through to the mirror.
+    "ignore:failed to download:astropy.utils.iers.IERSWarning",
+    "ignore:unclosed <ssl.SSLSocket:ResourceWarning",
 ]
 
 [tool.coverage.run]

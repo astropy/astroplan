@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- Fix rise, set and meridian transit times with ``which='next'`` (or
+  ``'nearest'``) skipping an event shortly after the reference time and
+  returning the same event one sidereal day later instead. [#651]
+
 - Add ``MeridianSeparationConstraint`` to constrain a target's angular
   separation from the meridian, e.g. to avoid pier flips on German
   equatorial mounts. [#589]
