@@ -1,6 +1,14 @@
 0.11 (unreleased)
 -----------------
 
+- Fix rise, set, transit, twilight and midnight times coming back masked when
+  the next or previous event is slightly more than a day away (e.g. the Sun
+  when day length is changing, or the Moon's transit) or falls exactly at the
+  reference time. The search now covers one day plus a margin. Also,
+  ``which='nearest'`` now returns the event on the other side of the reference
+  time instead of a masked time when only one side has an event, and only
+  warns when neither side does. [#656]
+
 - Fix rise, set and meridian transit times with ``which='next'`` (or
   ``'nearest'``) skipping an event shortly after the reference time and
   returning the same event one sidereal day later instead. [#651]
