@@ -184,9 +184,9 @@ the positions of the targets throughout the time range:
                       style_kwargs=dict(color=cmap(float(i)/len(targets)),
                                         label=target.name))
 
-    legend = ax.legend(loc='lower center')
-    legend.get_frame().set_facecolor('w')
-    plt.show()
+        legend = ax.legend(loc='lower center')
+        legend.get_frame().set_facecolor('w')
+        plt.show()
 
 We can see that Vega is in the sweet spot in altitude and azimuth for this
 time range and is always observable. Albireo is not always observable given
@@ -258,9 +258,6 @@ below. Dark squares represent times when the observing constraint is not
 satisfied.
 
 .. plot::
-
-    from __future__ import (absolute_import, division, print_function,
-                            unicode_literals)
 
     from astroplan import (FixedTarget, Observer, AltitudeConstraint,
                            AtNightConstraint, MoonSeparationConstraint)

@@ -46,7 +46,7 @@ What are IERS Bulletins A and B?
 ================================
 
 The `International Earth Rotation and Reference Systems Service (IERS)
-<http://www.iers.org/>`_ is responsible for measuring the Earth's orientation as
+<https://www.iers.org/>`_ is responsible for measuring the Earth's orientation as
 a function of time, and making predictions for the Earth's orientation in the
 near future (accounting for scheduled leap seconds). The data products released
 by the IERS used by astroplan are the IERS Bulletins A and B.
@@ -78,7 +78,7 @@ astropy's IERS machinery:
     import numpy as np
     import astropy.units as u
     from astropy.time import Time
-    from six.moves.urllib.error import HTTPError
+    from urllib.error import HTTPError
 
     # Download and cache the IERS Bulletins A and B  using astropy's machinery
     # (reminder: astroplan has its own function for this: `download_IERS_A`)
@@ -107,10 +107,11 @@ astropy's IERS machinery:
     fig, ax = plt.subplots(figsize=(10,8))
     ax.axhline(0, color='gray', ls='--', lw=2)
 
-    ax.plot_date(time_range.plot_date,
-                 DUT1_a, '-', lw=2, label='IERS Bulletin A + extrapolation')
-    ax.plot_date(time_range.plot_date[measurements_from_b],
-                 DUT1_b[measurements_from_b], 'r--', lw=2, label='IERS Bulletin B')
+    ax.plot(time_range.plot_date,
+            DUT1_a, '-', lw=2, label='IERS Bulletin A + extrapolation')
+    ax.plot(time_range.plot_date[measurements_from_b],
+            DUT1_b[measurements_from_b], 'r--', lw=2, label='IERS Bulletin B')
+    ax.xaxis_date()
     ax.set(xlabel='Year', ylabel='UT1-UTC [seconds]')
     ax.legend(loc='upper right')
     plt.show()

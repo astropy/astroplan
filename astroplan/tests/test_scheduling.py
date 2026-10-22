@@ -1,20 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 
-import numpy as np
-from astropy.time import Time
 import astropy.units as u
+import numpy as np
+import pytest
 from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.time import Time
 
-from ..utils import time_grid_from_range
-from ..observer import Observer
-from ..target import FixedTarget, get_skycoord
-from ..constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
-                           MoonIlluminationConstraint, PhaseConstraint)
-from ..periodic import EclipsingSystem
-from ..scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
-                          Transitioner, TransitionBlock, Schedule, Slot, Scorer)
+from astroplan.utils import time_grid_from_range
+from astroplan.observer import Observer
+from astroplan.target import FixedTarget, AltAzTarget, get_skycoord
+from astroplan.constraints import (AirmassConstraint, AtNightConstraint, _get_altaz,
+                                   MoonIlluminationConstraint, PhaseConstraint)
+from astroplan.periodic import EclipsingSystem
+from astroplan.scheduling import (ObservingBlock, PriorityScheduler, SequentialScheduler,
+                                  Transitioner, TransitionBlock, Schedule, Slot, Scorer)
 
 vega = FixedTarget(coord=SkyCoord(ra=279.23473479 * u.deg, dec=38.78368896 * u.deg),
                    name="Vega")
@@ -23,7 +22,8 @@ rigel = FixedTarget(coord=SkyCoord(ra=78.63446707 * u.deg, dec=8.20163837 * u.de
 polaris = FixedTarget(coord=SkyCoord(ra=37.95456067 * u.deg,
                                      dec=89.26410897 * u.deg), name="Polaris")
 
-apo = Observer(EarthLocation.of_site('apo'), name='APO')
+apo = Observer(EarthLocation(-1463969.30185172, -5166673.34223433, 3434985.71204565, unit='m'),
+               name='APO')
 targets = [vega, polaris, rigel]
 default_time = Time('2016-02-06 03:00:00')
 only_at_night = [AtNightConstraint()]
@@ -67,6 +67,58 @@ def test_schedule():
     assert np.abs(new_slots[2].duration - 20*u.hour) < 1*u.second
 
 
+def test_schedule_to_table():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    start = Time("2026-02-05T00:00:00", scale="utc")
+    end = Time("2026-02-05T00:20:00", scale="utc")
+
+    fixed = FixedTarget(SkyCoord(ra=10*u.deg, dec=20*u.deg), name="fixed")
+    horiz = AltAzTarget(
+        alt=50 * u.deg,
+        az=200 * u.deg,
+        location=location,
+        name="horiz",
+        pressure=1000.0 * u.hPa,
+    )
+    block_fixed = ObservingBlock(
+        fixed, 600 * u.second, priority=1, constraints=[AirmassConstraint(max=4)]
+    )
+    block_horiz = ObservingBlock(
+        horiz, 600 * u.second, priority=1, constraints=[AirmassConstraint(max=4)]
+    )
+
+    schedule = Schedule(start, end)
+    schedule.insert_slot(start, block_fixed)
+    schedule.insert_slot(start + 600*u.second, block_horiz)
+
+    tab = schedule.to_table(show_transitions=False, show_unused=False)
+
+    assert "target type" in tab.colnames
+    assert "target info" in tab.colnames
+
+    assert tab["target"][0] == "fixed"
+    assert tab["target type"][0] == "FixedTarget"
+    info = tab["target info"][0]
+    assert "00h40m00s +20d00m00s" in info.lower()
+
+    def _as_quantity(value):
+        if isinstance(value, u.Quantity):
+            return value
+        return float(value) * u.deg
+
+    assert _as_quantity(tab["ra"][0]) == 10.0 * u.deg
+    assert _as_quantity(tab["dec"][0]) == 20.0 * u.deg
+
+    assert tab["target"][1] == "horiz"
+    assert tab["target type"][1] == "AltAzTarget"
+    info = tab["target info"][1]
+    assert "alt=50" in info.lower()
+    assert "az=200" in info.lower()
+    assert "pressure=1000.000 hPa" in info
+    assert tab["ra"][1] == ""
+    assert tab["dec"][1] == ""
+
+
 def test_schedule_insert_slot():
     start = Time('2016-02-06 03:00:00')
     schedule = Schedule(start, start + 5*u.hour)
@@ -105,7 +157,7 @@ def test_schedule_change_slot_block():
     assert schedule.slots[1].start == schedule.slots[0].end
 
 
-def test_transitioner():
+def test_transitioner(observer_dependent_target):
     blocks = [ObservingBlock(t, 55 * u.minute, i) for i, t in enumerate(targets)]
     slew_rate = 1 * u.deg / u.second
     trans = Transitioner(slew_rate=slew_rate)
@@ -129,6 +181,10 @@ def test_transitioner():
     # to test the default transition
     assert np.abs(transition3.duration - 5*u.minute) < 1*u.second
     assert transition1.components is not None
+
+    observer_dependent = ObservingBlock(observer_dependent_target, 10 * u.minute, 0)
+    transition = trans(blocks[0], observer_dependent, start_time, apo)
+    assert isinstance(transition, TransitionBlock)
 
 
 default_transitioner = Transitioner(slew_rate=1 * u.deg / u.second)
@@ -158,6 +214,30 @@ def test_priority_scheduler():
     scheduler(blocks, schedule)
     scheduler(blocks, schedule)
 
+    # Check if the order of equal values is respected:
+    # 1. For equal priorities in blocks
+    # 2. For equal scores (boolean_constraint)
+    constraints = [AirmassConstraint(3, boolean_constraint=True)]
+    scheduler.constraints = constraints
+    # Any resolution coarser than this may result in gaps between the blocks
+    scheduler.time_resolution = 20*u.second
+    # This only happens with more than 16 items or so
+    targets_18 = [polaris, polaris, polaris, polaris, polaris, polaris,
+                  polaris, polaris, polaris, polaris, polaris, polaris,
+                  polaris, polaris, polaris, polaris, polaris, polaris]
+    blocks = [ObservingBlock(t, 4*u.minute, 5, name=i) for i, t in enumerate(targets_18)]
+
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
+
+    for i, t in enumerate(targets_18):
+        # Order of blocks
+        block = schedule.observing_blocks[i]
+        assert block.name == i
+        if i < len(targets_18) - 1:
+            # Same score for all timeslots, should be filled from the start without gaps
+            assert block.end_time.isclose(schedule.observing_blocks[i+1].start_time)
+
 
 def test_sequential_scheduler():
     constraints = [AirmassConstraint(2.5, boolean_constraint=False)]
@@ -183,6 +263,7 @@ def test_sequential_scheduler():
     scheduler(blocks, schedule)
 
 
+@pytest.mark.remote_data
 def test_scheduling_target_down():
     lco = Observer.at_site('lco')
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
@@ -200,6 +281,7 @@ def test_scheduling_target_down():
     assert len(schedule2.observing_blocks) == 0
 
 
+@pytest.mark.remote_data
 def test_scheduling_during_day():
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 1 * u.min, 0)]
     day = Time('2016-02-06 03:00:00')
@@ -218,6 +300,7 @@ def test_scheduling_during_day():
 # bring this back when MoonIlluminationConstraint is working properly
 
 
+@pytest.mark.remote_data
 def test_scheduling_moon_up():
     block = [ObservingBlock(FixedTarget.from_name('polaris'), 30 * u.min, 0)]
     # on february 23 the moon was up between the start/end times defined below
@@ -272,7 +355,7 @@ def test_schedule_eclipsers():
     assert sblock.end_time > egress
 
 
-def test_scorer():
+def test_scorer(observer_dependent_target):
     constraint = AirmassConstraint(max=4)
     times = time_grid_from_range(Time(['2016-02-06 00:00', '2016-02-06 08:00']),
                                  time_resolution=20*u.minute)
@@ -281,6 +364,7 @@ def test_scorer():
     block2 = ObservingBlock(rigel, 1*u.hour, 0, constraints=[constraint])
     scorer = Scorer.from_start_end([block, block2], apo, Time('2016-02-06 00:00'),
                                    Time('2016-02-06 08:00'))
+    assert scorer.targets == [vega, rigel]
     scores = scorer.create_score_array(time_resolution=20*u.minute)
     assert np.array_equal(c, scores)
 
@@ -302,3 +386,34 @@ def test_scorer():
     scores = scorer.create_score_array(time_resolution=20 * u.minute)
     # the ``global_constraint``: constraint2 should have applied to the blocks
     assert np.array_equal(c2, scores)
+
+    observer_dependent = ObservingBlock(observer_dependent_target, 1 * u.hour, 0)
+    scorer = Scorer.from_start_end(
+        [observer_dependent], apo, Time("2016-02-06 00:00"), Time("2016-02-06 01:00")
+    )
+    scores = scorer.create_score_array(time_resolution=20 * u.minute)
+    assert scores.shape == (1, 3)
+
+
+def test_scorer_mixed_targets():
+    location = EarthLocation.from_geodetic(10*u.deg, 45*u.deg, 0*u.m)
+    observer = Observer(location=location, pressure=0*u.bar, temperature=0*u.deg_C,
+                        relative_humidity=0.0, timezone="UTC")
+
+    start = Time("2026-02-05T00:00:00", scale="utc")
+    end = Time("2026-02-05T01:00:00", scale="utc")
+
+    fixed = FixedTarget(SkyCoord(ra=10*u.deg, dec=20*u.deg), name="fixed")
+    horiz = AltAzTarget(alt=50*u.deg, az=200*u.deg, location=location, name="horiz")
+
+    blocks = [
+        ObservingBlock(fixed, 300*u.second, priority=1, constraints=[AirmassConstraint(max=4)]),
+        ObservingBlock(horiz, 300*u.second, priority=1, constraints=[AirmassConstraint(min=4)]),
+    ]
+
+    schedule = Schedule(start, end)
+    scorer = Scorer(blocks, observer, schedule, global_constraints=[AirmassConstraint(max=4)])
+
+    score = scorer.create_score_array(time_resolution=10*u.minute)
+
+    assert score.shape == (len(blocks), 6)  # 1 hour / 10 min

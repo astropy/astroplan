@@ -1,7 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+import numpy as np
 import pytest
+
+from astropy.coordinates import EarthLocation, SkyCoord
+from astropy import units as u
+from astropy.time import Time
 
 try:
     import matplotlib  # noqa
@@ -15,28 +18,186 @@ except ImportError:
 # https://github.com/astropy/astroplan/issues/65
 # https://github.com/astropy/astroplan/issues/74
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(baseline_dir='baseline_images')
 def test_image_example():
     import matplotlib.pyplot as plt
+
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.plot([1, 2, 3])
+
     return fig
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(baseline_dir='baseline_images')
 def test_timezone():
-    from astropy import coordinates
-    from astropy import units as u
-    from ..time_dependent import plot_airmass
-    from ... import Observer
     import datetime
-    import pytz
+    import zoneinfo
 
-    betelgeuse = coordinates.SkyCoord(88.79293899*u.deg, 7.407064*u.deg, frame='icrs')
-    observer = Observer(coordinates.EarthLocation.of_site('subaru'))
+    import matplotlib.pyplot as plt
+
+    from astroplan import Observer
+    from astroplan.plots.time_dependent import plot_airmass
+
+    betelgeuse = SkyCoord(88.79293899*u.deg, 7.407064*u.deg, frame='icrs')
+    subaru = EarthLocation.from_geodetic(-155.4761111111111*u.deg,
+                                         19.825555555555564*u.deg, 4139*u.m)
+    observer = Observer(subaru)
     # Eastern time... because you're remote-operating Subaru from home...?
-    now_ET = pytz.timezone('US/Eastern').localize(datetime.datetime.now())
+    # Use a fixed time so the image is reproducible.
+    time_ET = datetime.datetime(2020, 1, 15, 20, 0,
+                                tzinfo=zoneinfo.ZoneInfo('US/Eastern'))
 
-    plot_airmass(betelgeuse, observer, now_ET, use_local_tz=True)
+    fig, ax = plt.subplots()
+    plot_airmass(betelgeuse, observer, time_ET, ax=ax, use_local_tz=True)
+    fig.tight_layout()
+
+    return fig
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_altitude():
+    import matplotlib.pyplot as plt
+
+    from astroplan import Observer
+    from astroplan.target import FixedTarget
+    from astroplan.plots.time_dependent import plot_altitude
+
+    location = EarthLocation.from_geodetic(lon=0*u.deg, lat=51*u.deg, height=0*u.m)
+    observer = Observer(location=location)
+    target = FixedTarget(coord=SkyCoord(ra=10*u.deg, dec=45*u.deg), name='test')
+    time = Time('2024-01-01 00:00:00')
+
+    fig, ax = plt.subplots()
+    result = plot_altitude(target, observer, time, ax=ax)
+    assert result is ax
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_parallactic():
+    import matplotlib.pyplot as plt
+
+    from astroplan import Observer
+    from astroplan.target import FixedTarget
+    from astroplan.plots.time_dependent import plot_parallactic
+
+    location = EarthLocation.from_geodetic(lon=0*u.deg, lat=51*u.deg, height=0*u.m)
+    observer = Observer(location=location)
+    target = FixedTarget(coord=SkyCoord(ra=10*u.deg, dec=45*u.deg), name='test')
+    time = Time('2024-01-01 00:00:00')
+
+    fig, ax = plt.subplots()
+    result = plot_parallactic(target, observer, time, ax=ax)
+    assert result is ax
+    plt.close(fig)
+
+
+def _plot_sky_setup():
+    from astroplan import Observer
+    from astroplan.target import FixedTarget
+
+    location = EarthLocation.from_geodetic(lon=0*u.deg, lat=51*u.deg, height=0*u.m)
+    observer = Observer(location=location)
+    # Circumpolar-ish target that dips below the horizon for part of the day
+    target = FixedTarget(coord=SkyCoord(ra=10*u.deg, dec=20*u.deg), name='test')
+    time = Time('2024-01-01 00:00:00') + np.arange(24)*u.hour
+    above = observer.altaz(time, target).alt >= 0*u.deg
+    # Make sure the test exercises masking of below-horizon points
+    assert 0 < above.sum() < len(time)
+    return observer, target, time, above
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_sky_defaults():
+    import matplotlib.pyplot as plt
+
+    from astroplan.plots import plot_sky
+
+    observer, target, time, above = _plot_sky_setup()
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='polar')
+    result = plot_sky(target, observer, time, ax=ax)
+    assert result is ax
+    assert len(ax.texts) == 0
+    assert len(ax.collections[0].get_offsets()) == above.sum()
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_sky_hours_value():
+    import matplotlib.pyplot as plt
+
+    from astroplan.plots import plot_sky
+
+    observer, target, time, above = _plot_sky_setup()
+    hours = np.arange(len(time)) + 0.25
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='polar')
+    plot_sky(target, observer, time, ax=ax, hours_value=list(hours))
+
+    offsets = ax.collections[0].get_offsets()
+    assert [t.get_text() for t in ax.texts] == [f"{h:.1f}" for h in hours[above]]
+    np.testing.assert_allclose([t.xy for t in ax.texts], offsets)
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_sky_hours_value_scalar_time():
+    import matplotlib.pyplot as plt
+
+    from astroplan.plots import plot_sky
+
+    observer, target, time, above = _plot_sky_setup()
+    t = time[above][0]
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='polar')
+    plot_sky(target, observer, t, ax=ax, hours_value=3)
+    assert [t.get_text() for t in ax.texts] == ["3.0"]
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_sky_hours_value_wrong_length():
+    import matplotlib.pyplot as plt
+
+    from astroplan.plots import plot_sky
+
+    observer, target, time, _ = _plot_sky_setup()
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='polar')
+    with pytest.raises(ValueError, match="same length"):
+        plot_sky(target, observer, time, ax=ax, hours_value=[1, 2])
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_sky_color_array_masked():
+    import matplotlib.pyplot as plt
+
+    from astroplan.plots import plot_sky
+
+    observer, target, time, above = _plot_sky_setup()
+    values = np.arange(len(time), dtype=float)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='polar')
+    plot_sky(target, observer, time, ax=ax,
+             style_kwargs={'c': values, 'cmap': 'viridis'})
+    np.testing.assert_array_equal(ax.collections[0].get_array(), values[above])
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_sky_single_color():
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import to_rgba
+
+    from astroplan.plots import plot_sky
+
+    observer, target, time, above = _plot_sky_setup()
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='polar')
+    plot_sky(target, observer, time, ax=ax, style_kwargs={'c': 'red'})
+    np.testing.assert_allclose(ax.collections[0].get_facecolor()[0], to_rgba('red'))
+    plt.close(fig)

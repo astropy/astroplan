@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -8,7 +6,7 @@ from astropy.time import Time
 __all__ = ['PeriodicEvent', 'EclipsingSystem']
 
 
-class PeriodicEvent(object):
+class PeriodicEvent:
     """
     A periodic event defined by an epoch and period.
     """
