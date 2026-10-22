@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- Fix ``EclipsingSystem.next_secondary_eclipse_time`` (and
+  ``next_secondary_ingress_egress_time``) ignoring the orbital eccentricity,
+  so it now agrees with ``in_secondary_eclipse`` for eccentric orbits. [#657]
+
 - Fix rise, set and meridian transit times with ``which='next'`` (or
   ``'nearest'``) skipping an event shortly after the reference time and
   returning the same event one sidereal day later instead. [#651]
