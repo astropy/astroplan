@@ -2,12 +2,10 @@
 import copy
 from xmlrpc.client import boolean
 import numpy as np
-import operator
 import astropy.units as u
 from astropy.time import Time
 from collections.abc import Sequence
 import warnings
-import datetime
 
 from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
@@ -46,6 +44,42 @@ def _has_twin(ax):
         if other_ax.bbox.bounds == ax.bbox.bounds:
             return True
     return False
+
+
+def _shade_nights(ax, observer, start, end, tzoffset=0*u.hour):
+    """
+    Shade the time between sunset and sunrise, including twilight.
+    """
+    start_jd = start.utc.jd
+    end_jd = end.utc.jd
+    if end_jd <= start_jd:
+        return
+
+    # Sample the Sun's altitude every five minutes.
+    n_intervals = max(1, int(np.ceil((end_jd - start_jd) * 24 * 12)))
+    sample_jds = np.linspace(start_jd, end_jd, n_intervals + 1)
+    times = Time(sample_jds, format='jd', scale='utc')
+    sun_altitudes = observer.sun_altaz(times).alt.to_value(u.deg)
+
+    horizons = np.array([-18, -12, -6, 0])
+    bands = np.searchsorted(horizons, sun_altitudes)
+    changes = np.flatnonzero(np.diff(bands))
+
+    # Interpolate the times when the Sun crosses a twilight boundary.
+    crossing_altitudes = horizons[np.minimum(bands[changes], bands[changes + 1])]
+    fractions = ((crossing_altitudes - sun_altitudes[changes]) /
+                 (sun_altitudes[changes + 1] - sun_altitudes[changes]))
+    crossings = (sample_jds[changes] +
+                 fractions * (sample_jds[changes + 1] - sample_jds[changes]))
+
+    boundaries = np.concatenate(([start_jd], crossings, [end_jd]))
+    alphas = np.array([0.4, 0.3, 0.2, 0.1, 0.0])
+    alphas = alphas[np.r_[bands[0], bands[changes + 1]]]
+    plot_times = (Time(boundaries, format='jd', scale='utc') + tzoffset).plot_date
+
+    for left, right, alpha in zip(plot_times[:-1], plot_times[1:], alphas):
+        if alpha > 0:
+            ax.axvspan(left, right, ymin=0, ymax=1, color='grey', alpha=alpha, linewidth=0)
 
 
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
@@ -166,11 +200,9 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if hasattr(time, 'utcoffset') and use_local_tz:
         tzoffset = time.utcoffset()
         tzname = time.tzname()
-        tzinfo = time.tzinfo
     else:
         tzoffset = 0 * u.hour
         tzname = 'UTC'
-        tzinfo = None
     # Populate time window if needed.
     # (plot against local time if that's requested)
     time_ut = Time(time)
@@ -238,41 +270,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        start = time_ut[0]
-
-        # Calculate and order twilights and set plotting alpha for each
-        twilights = [
-            (observer.sun_set_time(start, which='next'), 0.0),
-            (observer.twilight_evening_civil(start, which='next'), 0.1),
-            (observer.twilight_evening_nautical(start, which='next'), 0.2),
-            (observer.twilight_evening_astronomical(start, which='next'), 0.3),
-            (observer.twilight_morning_astronomical(start, which='next'), 0.4),
-            (observer.twilight_morning_nautical(start, which='next'), 0.3),
-            (observer.twilight_morning_civil(start, which='next'), 0.2),
-            (observer.sun_rise_time(start, which='next'), 0.1),
-        ]
-
-        # add 'UTC' to each datetime object created above
-        twilights = [(t[0].datetime.replace(tzinfo=datetime.timezone.utc), t[1])
-                     for t in twilights]
-
-        twilights.sort(key=operator.itemgetter(0))
-
-        # add in left & right edges, so that if the airmass plot is requested
-        # during the day, night is properly shaded
-        left_edges = [(xlo.datetime.replace(tzinfo=tzinfo), twilights[0][1])] + twilights
-        right_edges = twilights + [(xhi.datetime.replace(tzinfo=tzinfo), twilights[0][1])]
-
-        for tw_left, tw_right in zip(left_edges, right_edges):
-            left = tw_left[0]
-            right = tw_right[0]
-            if tzinfo is not None:
-                # convert to local time zone (which is plotted), then hack away the tzinfo
-                # so that matplotlib doesn't try to double down on the conversion
-                left = left.astimezone(tzinfo).replace(tzinfo=None)
-                right = right.astimezone(tzinfo).replace(tzinfo=None)
-            ax.axvspan(left, right,
-                       ymin=0, ymax=1, color='grey', alpha=tw_right[1])
+        _shade_nights(ax, observer, time_ut.min(), time_ut.max(), tzoffset=tzoffset)
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
@@ -444,24 +442,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
 
     # Shade background during night time
     if brightness_shading:
-        start = time[0].datetime
-
-        # Calculate and order twilights and set plotting alpha for each
-        twilights = [
-            (observer.sun_set_time(Time(start), which='next').datetime, 0.0),
-            (observer.twilight_evening_civil(Time(start), which='next').datetime, 0.1),
-            (observer.twilight_evening_nautical(Time(start), which='next').datetime, 0.2),
-            (observer.twilight_evening_astronomical(Time(start), which='next').datetime, 0.3),
-            (observer.twilight_morning_astronomical(Time(start), which='next').datetime, 0.4),
-            (observer.twilight_morning_nautical(Time(start), which='next').datetime, 0.3),
-            (observer.twilight_morning_civil(Time(start), which='next').datetime, 0.2),
-            (observer.sun_rise_time(Time(start), which='next').datetime, 0.1),
-        ]
-
-        twilights.sort(key=operator.itemgetter(0))
-        for i, twi in enumerate(twilights[1:], 1):
-            ax.axvspan(twilights[i - 1][0], twilights[i][0],
-                       ymin=0, ymax=1, color='grey', alpha=twi[1])
+        _shade_nights(ax, observer, time.min(), time.max())
 
     # Invert y-axis and set limits.
     # y_lim = ax.get_ylim()
@@ -520,6 +501,7 @@ def plot_schedule_airmass(schedule, show_night=False):
         An ``Axes`` object with added airmass and schedule vs. time plot.
     """
     import matplotlib.pyplot as plt
+    from matplotlib import dates
     blocks = copy.copy(schedule.scheduled_blocks)
     sorted_blocks = sorted(schedule.observing_blocks, key=lambda x: x.priority)
     targets = [block.target for block in sorted_blocks]
@@ -527,28 +509,24 @@ def plot_schedule_airmass(schedule, show_night=False):
           np.linspace(0, (schedule.end_time - schedule.start_time).value, 100) * u.day)
     targ_to_color = {}
     color_idx = np.linspace(0, 1, len(targets))
+
+    if show_night:
+        ax = plt.gca()
+        ax.xaxis_date()
+        _shade_nights(ax, schedule.observer, schedule.start_time, schedule.end_time)
+        if not targets:
+            ax.set_xlim(schedule.start_time.plot_date, schedule.end_time.plot_date)
+            ax.xaxis.set_major_formatter(dates.DateFormatter('%H:%M'))
+            plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
+            ax.set_ylim([3.0, 1.0])
+            ax.set_ylabel('Airmass')
+            ax.set_xlabel('Time from {0} [UTC]'.format(schedule.start_time.datetime.date()))
+
     # lighter, bluer colors indicate higher priority
     for target, ci in zip(set(targets), color_idx):
-        plot_airmass(target, schedule.observer, ts, style_kwargs=dict(color=plt.cm.cool(ci)))
+        plot_airmass(target, schedule.observer, ts,
+                     style_kwargs=dict(color=plt.cm.cool(ci)))
         targ_to_color[target.name] = plt.cm.cool(ci)
-    if show_night:
-        # I'm pretty sure this overlaps a lot, creating darker bands
-        for test_time in ts:
-            midnight = schedule.observer.midnight(test_time)
-            previous_sunset = schedule.observer.sun_set_time(
-                midnight, which='previous')
-            next_sunrise = schedule.observer.sun_rise_time(
-                midnight, which='next')
-
-            previous_twilight = schedule.observer.twilight_evening_astronomical(
-                midnight, which='previous')
-            next_twilight = schedule.observer.twilight_morning_astronomical(
-                midnight, which='next')
-
-            plt.axvspan(previous_sunset.plot_date, next_sunrise.plot_date,
-                        facecolor='lightgrey', alpha=0.05)
-            plt.axvspan(previous_twilight.plot_date, next_twilight.plot_date,
-                        facecolor='lightgrey', alpha=0.05)
 
     for block in blocks:
         if hasattr(block, 'target'):
