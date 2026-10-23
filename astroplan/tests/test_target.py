@@ -325,8 +325,18 @@ def test_SGP4SatelliteTarget():
     assert str(target) == "ISS"
     assert repr(target) == '<SGP4SatelliteTarget "ISS" catalog #25544>'
     assert SGP4SatelliteTarget(tle=tle_string).catalog_number == 25544
+    indented_tle = "    " + "\n    ".join(ISS_TLE)
+    assert SGP4SatelliteTarget(tle=indented_tle).catalog_number == 25544
+    assert SGP4SatelliteTarget(
+        tle=tuple("    " + line for line in ISS_TLE)
+    ).catalog_number == 25544
     assert SGP4SatelliteTarget(tle=three_line_tle).name == "ISS (ZARYA)"
     assert SGP4SatelliteTarget(tle=three_line_tle, name="ISS").name == "ISS"
+    prefixed_three_line_tle = "0 ISS (ZARYA)\n" + tle_string
+    target_3le = SGP4SatelliteTarget(tle=prefixed_three_line_tle)
+    assert target_3le.name == "ISS (ZARYA)"
+    assert target_3le.to_omm()["OBJECT_NAME"] == "ISS (ZARYA)"
+    assert SGP4SatelliteTarget(tle=prefixed_three_line_tle, name="ISS").name == "ISS"
     SGP4SatelliteTarget(tle=ISS_TLE, validate=False)
     for model in ("wgs72", "wgs72old", "wgs84"):
         SGP4SatelliteTarget(tle=ISS_TLE, gravity_model=model)
@@ -632,6 +642,7 @@ def test_SGP4SatelliteTarget_propagation_warning():
             return errors, np.ones((count, 3)), np.ones((count, 3))
 
     target = SGP4SatelliteTarget(tle=ISS_TLE)
+    _ = target.epoch
     observer = Observer(
         longitude=-155.476111 * u.deg, latitude=19.825555 * u.deg, elevation=4139 * u.m
     )
@@ -649,19 +660,69 @@ def test_SGP4SatelliteTarget_propagation_warning():
 
 
 @pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
+def test_SGP4SatelliteTarget_omm_epoch_formats():
+    expected = Time("2024-01-01T12:00:00", scale="utc")
+
+    for epoch in (
+        "2024-01-01T12:00:00.000000",
+        "2024-01-01T12:00:00Z",
+        "2024-01-01T12:00:00.00000000",
+        "2024-001T12:00:00.000",
+    ):
+        fields = dict(ISS_OMM_GP, EPOCH=epoch)
+        target = SGP4SatelliteTarget(omm=fields)
+        assert abs(target.epoch - expected) < 1 * u.us
+
+    with pytest.raises(ValueError, match="Unsupported OMM"):
+        SGP4SatelliteTarget(omm=dict(ISS_OMM_GP, EPOCH="invalid"))
+
+    with pytest.raises(ValueError, match="Unsupported OMM"):
+        SGP4SatelliteTarget(omm=dict(ISS_OMM_GP, EPOCH="2023-366T12:00:00"))
+
+
+@pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
+def test_SGP4SatelliteTarget_propagation_warning_summary():
+    class FakeSatrec:
+        def sgp4_array(self, jd, fraction):
+            count = len(jd)
+            errors = np.array([6, 0, 6, 1, 1, 6])
+            return errors, np.ones((count, 3)), np.ones((count, 3))
+
+    target = SGP4SatelliteTarget(tle=ISS_TLE)
+    times = target.epoch + np.arange(6).reshape(2, 3) * u.minute
+    target._satrec = FakeSatrec()
+
+    with pytest.warns(SatellitePropagationWarning, match="5 of 6 times") as record:
+        teme = target.get_teme(times)
+
+    message = str(record[0].message)
+    assert "5 of 6 times" in message
+    assert "code 6" in message
+    assert "code 1" in message
+    assert "3 times between" in message
+    assert "2 times between" in message
+    assert times[0, 0].isot in message
+    assert times[1, 2].isot in message
+    assert len(message) < 500
+    assert teme.shape == (2, 3)
+    assert np.all(np.isnan(teme.cartesian.xyz[:, 0, 0]))
+    assert np.all(np.isfinite(teme.cartesian.xyz[:, 0, 1]))
+
+
+@pytest.mark.skipif(not HAS_SGP4, reason="sgp4 is not installed")
 def test_SGP4SatelliteTarget_epoch_warning():
     target = SGP4SatelliteTarget(tle=ISS_TLE)
 
     target.get_teme(target.epoch + 1 * u.day)
 
-    with pytest.warns(AstroplanWarning, match="more than 14 days"):
+    with pytest.warns(SatellitePropagationWarning, match="more than 14 days"):
         target.get_teme(target.epoch + 15 * u.day)
 
-    with pytest.warns(AstroplanWarning, match="more than 14 days"):
+    with pytest.warns(SatellitePropagationWarning, match="more than 14 days"):
         target.get_teme(target.epoch - 15 * u.day)
 
     times = Time([target.epoch, target.epoch + 15 * u.day])
-    with pytest.warns(AstroplanWarning, match="more than 14 days"):
+    with pytest.warns(SatellitePropagationWarning, match="more than 14 days"):
         assert target.get_teme(times).shape == (2,)
 
 

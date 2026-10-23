@@ -2,7 +2,8 @@
 
 # Standard library
 from collections.abc import Mapping
-from datetime import datetime, UTC
+from datetime import datetime
+from functools import cached_property
 import csv
 import io
 import json
@@ -24,7 +25,7 @@ from astropy.coordinates import (
 )
 
 # Package
-from .exceptions import AstroplanWarning, SatellitePropagationWarning
+from .exceptions import SatellitePropagationWarning
 from .target import Target
 
 
@@ -157,8 +158,6 @@ class SGP4SatelliteTarget(Target):
             self._source_format = "omm"
             element_name = fields.get("OBJECT_NAME")
 
-        self._element_epoch = self.epoch
-
         if name is not None:
             self.name = str(name)
         elif element_name:
@@ -191,13 +190,13 @@ class SGP4SatelliteTarget(Target):
         """Normalize TLE input to two element lines and an optional name"""
         name = None
         if isinstance(tle, str):
-            lines = [line for line in tle.splitlines() if line.strip()]
+            lines = [line.strip() for line in tle.splitlines() if line.strip()]
             if len(lines) not in (2, 3):
                 raise ValueError(
                     f"Expected TLE string to contain 2 or 3 lines, got {len(lines)}."
                 )
             if len(lines) == 3:
-                name, lines = lines[0].strip(), lines[1:]
+                name, lines = lines[0].removeprefix("0 ").strip(), lines[1:]
         else:
             try:
                 lines = list(tle)
@@ -207,6 +206,7 @@ class SGP4SatelliteTarget(Target):
                 ) from None
             if len(lines) != 2 or not all(isinstance(line, str) for line in lines):
                 raise ValueError("TLE sequences must contain exactly two strings.")
+            lines = [line.strip() for line in lines]
         line1, line2 = lines
         if not line1.startswith("1 ") or not line2.startswith("2 "):
             raise ValueError("TLE element lines must begin with '1 ' and '2 '.")
@@ -333,15 +333,22 @@ class SGP4SatelliteTarget(Target):
     def _normalize_epoch(epoch):
         """Normalize an OMM epoch to the format expected by python-sgp4."""
         value = str(epoch).strip().removesuffix("Z")
-        for format_ in ("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
+        # OMM may use YYYY-DDDTHH:MM:SS, while Astropy's yday format uses YYYY:DDD:HH:MM:SS
+        match = re.fullmatch(r"(\d{4}-\d{3})(T.+)", value)
+        if match:
             try:
-                parsed = datetime.strptime(value, format_).replace(tzinfo=UTC)
+                date = datetime.strptime(match.group(1), "%Y-%j")
+                # Leap-year check
+                if date.year != int(match.group(1)[:4]):
+                    raise ValueError
             except ValueError:
-                continue
-            return parsed.strftime("%Y-%m-%dT%H:%M:%S.%f")
-        raise ValueError(
-            "Unsupported OMM `EPOCH`; expected YYYY-MM-DDTHH:MM:SS[.ffffff]."
-        )
+                raise ValueError("Unsupported OMM `EPOCH`.") from None
+            value = date.strftime("%Y-%m-%d") + match.group(2)
+
+        try:
+            return Time(value, scale="utc", precision=6).isot
+        except ValueError:
+            raise ValueError("Unsupported OMM `EPOCH`.") from None
 
     @classmethod
     def _normalize_omm_fields(cls, fields, omm_format):
@@ -456,7 +463,7 @@ class SGP4SatelliteTarget(Target):
         check_satrec(satrec)
         return satrec
 
-    @property
+    @cached_property
     def epoch(self):
         """Element epoch as an Astropy `~astropy.time.Time`."""
         return Time(
@@ -523,12 +530,12 @@ class SGP4SatelliteTarget(Target):
         errors = np.asarray(errors)
         failed = errors != 0
 
-        age_days = np.abs((utc - self._element_epoch).to_value(u.day))
+        age_days = np.abs((utc - self.epoch).to_value(u.day))
         if np.any((age_days > 14) & ~failed.reshape(shape)):
             warnings.warn(
                 "SGP4 elements are more than 14 days from their epoch; "
                 "propagated positions may be inaccurate.",
-                AstroplanWarning,
+                SatellitePropagationWarning,
             )
 
         if np.any(failed):
@@ -543,10 +550,16 @@ class SGP4SatelliteTarget(Target):
                 )
             else:
                 details = []
+                flat_times = utc.ravel()
                 for code in np.unique(errors[failed]):
-                    indices = ", ".join(str(i) for i in np.flatnonzero(errors == code))
+                    code_times = flat_times[errors == code]
+                    first = code_times[np.argmin(code_times.jd)].isot
+                    last = code_times[np.argmax(code_times.jd)].isot
                     message = SGP4_ERRORS.get(int(code), "unknown error")
-                    details.append(f"code {code} ({message}): indices {indices}")
+                    details.append(
+                        f"code {code} ({message}): {code_times.size} times "
+                        f"between {first} and {last}"
+                    )
                 warnings.warn(
                     f"SGP4 propagation failed for {failed.sum()} of {errors.size} times:\n"
                     + "\n".join(details),
@@ -595,10 +608,12 @@ class SGP4SatelliteTarget(Target):
         # already warned about them); don't let the transforms warn again.
         with np.errstate(invalid="ignore"):
             # Intermediate topocentric ITRS step to avoid change in stellar aberration
-            geocentric_itrs = teme.transform_to(ITRS(obstime=times))
+            geocentric_itrs = teme.realize_frame(
+                teme.cartesian.without_differentials()
+            ).transform_to(ITRS(obstime=times))
             observer_itrs = observer.location.get_itrs(obstime=times)
             topocentric_position = (
-                geocentric_itrs.cartesian.without_differentials() - observer_itrs.cartesian
+                geocentric_itrs.cartesian - observer_itrs.cartesian
             )
             topocentric_itrs = ITRS(
                 topocentric_position, obstime=times, location=observer.location
