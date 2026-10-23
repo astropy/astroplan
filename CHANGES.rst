@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- ``TimeConstraint`` accepts 1-D ``Time`` arrays for ``min`` and ``max`` to
+  define several time windows; a time passes if it falls in any of them.
+  [#665]
+
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
   angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]
