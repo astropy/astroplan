@@ -553,6 +553,49 @@ def test_local_time_constraint_pytz_timezone():
                                   [True, False])
 
 
+def test_time_constraint_windows():
+    observer = Observer(location=EarthLocation.from_geodetic(0*u.deg, 0*u.deg))
+    starts = Time(['2020-04-10 02:00', '2020-04-11 02:00'])
+    ends = Time(['2020-04-10 07:00', '2020-04-11 07:00'])
+    constraint = TimeConstraint(starts, ends)
+    # in the first window, between the windows, in the second, after both
+    times = Time(['2020-04-10 03:00', '2020-04-10 12:00',
+                  '2020-04-11 06:00', '2020-04-11 08:00'])
+    expected = [True, False, True, False]
+    np.testing.assert_array_equal(constraint(observer, None, times=times), expected)
+
+    # Scalar times give a scalar result
+    assert constraint(observer, None, times=times[0]) is np.bool_(True)
+    assert constraint(observer, None, times=times[1]) is np.bool_(False)
+
+    # Gridded over targets, every target gets the same mask
+    targets = [vega, rigel]
+    np.testing.assert_array_equal(
+        constraint(observer, targets, times=times, grid_times_targets=True),
+        [expected, expected])
+
+    # One side open: windows with only a max pass anything before the last max
+    max_only = TimeConstraint(max=ends)
+    np.testing.assert_array_equal(max_only(observer, None, times=times),
+                                  [True, True, True, False])
+
+    # A single window in a length-1 array matches the scalar form
+    np.testing.assert_array_equal(
+        TimeConstraint(starts[:1], ends[:1])(observer, None, times=times),
+        TimeConstraint(starts[0], ends[0])(observer, None, times=times))
+
+
+def test_time_constraint_windows_invalid():
+    starts = Time(['2020-04-10 02:00', '2020-04-11 02:00'])
+    ends = Time(['2020-04-10 07:00', '2020-04-11 07:00', '2020-04-12 07:00'])
+    with pytest.raises(ValueError, match='same length'):
+        TimeConstraint(starts, ends)
+    with pytest.raises(ValueError, match='1-D'):
+        TimeConstraint(starts.reshape(2, 1), ends[:2].reshape(2, 1))
+    with pytest.raises(TypeError, match='astropy.time.Time'):
+        TimeConstraint(['2020-04-10 02:00'], ends[:1])
+
+
 @pytest.mark.remote_data
 def test_docs_example():
     # Test the example in astroplan/docs/tutorials/constraints.rst
@@ -678,7 +721,9 @@ constraint_tests = [
     MeridianSeparationConstraint(min=3*u.deg),
     HourAngleConstraint(),
     LocalTimeConstraint(min=dt.time(23, 50), max=dt.time(4, 8)),
-    TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"]))
+    TimeConstraint(*Time(["2015-08-28 03:30", "2015-09-05 10:30"])),
+    TimeConstraint(Time(["2015-08-28 03:00", "2015-09-15 18:00"]),
+                   Time(["2015-08-28 04:00", "2015-09-15 19:00"])),
 ]
 
 
