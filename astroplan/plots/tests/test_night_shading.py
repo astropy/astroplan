@@ -139,14 +139,14 @@ def test_night_shading_local_timezone():
     plot_airmass(_target(), observer, time, ax=ax_local,
                  brightness_shading=True, use_local_tz=True)
 
-    offset = 2 / 24
-
+    # Both plots retain the same underlying UTC coordinates.
     np.testing.assert_allclose(
         ax_local.lines[0].get_xdata(),
-        ax_utc.lines[0].get_xdata() + offset,
+        ax_utc.lines[0].get_xdata(),
         rtol=0, atol=1e-8
     )
 
+    # Night shading must use the same UTC coordinates as the plotted data.
     assert ax_utc.patches
     assert len(ax_local.patches) == len(ax_utc.patches)
 
@@ -157,11 +157,136 @@ def test_night_shading_local_timezone():
             local_patch.get_patch_transform()).vertices[:, 0]
 
         np.testing.assert_allclose(
-            local_x, utc_x + offset, rtol=0, atol=1e-8
+            local_x, utc_x, rtol=0, atol=1e-8
         )
         assert local_patch.get_alpha() == utc_patch.get_alpha()
 
+    # 18:00 UTC should display as 20:00 in the requested UTC+02:00 timezone.
+    formatter = ax_local.xaxis.get_major_formatter()
+    utc_time = datetime(2020, 6, 19, 18, tzinfo=timezone.utc)
+    assert formatter(Time(utc_time).plot_date) == "20:00"
+
     plt.close(fig)
+
+
+@pytest.mark.parametrize("plot_function", [plot_airmass, plot_altitude])
+def test_local_timezone_naive_datetime(plot_function):
+    from astroplan.exceptions import PlotWarning
+
+    observer = _observer(35)
+    time = datetime(2020, 6, 19, 20)
+    fig, (ax_utc, ax_local) = plt.subplots(2, 1)
+
+    try:
+        plot_function(_target(), observer, time, ax=ax_utc)
+
+        with pytest.warns(PlotWarning, match="timezone-naive"):
+            plot_function(
+                _target(), observer, time, ax=ax_local,
+                use_local_tz=True
+            )
+
+        np.testing.assert_allclose(
+            ax_local.lines[0].get_xdata(),
+            ax_utc.lines[0].get_xdata(),
+            rtol=0, atol=1e-8
+        )
+        assert ax_local.get_xlabel().endswith("[UTC]")
+    finally:
+        plt.close(fig)
+
+
+@pytest.mark.parametrize("plot_function", [plot_airmass, plot_altitude])
+def test_local_timezone_datetime_list(plot_function):
+    offset = timezone(timedelta(hours=2))
+    local_times = [
+        datetime(2020, 6, 19, 20, tzinfo=offset),
+        datetime(2020, 6, 19, 21, tzinfo=offset),
+    ]
+    expected_utc = [
+        item.astimezone(timezone.utc) for item in local_times
+    ]
+
+    observer = _observer(35)
+    fig, ax = plt.subplots()
+
+    try:
+        plot_function(
+            _target(), observer, local_times, ax=ax,
+            use_local_tz=True
+        )
+
+        np.testing.assert_allclose(
+            ax.lines[0].get_xdata(),
+            Time(expected_utc).plot_date,
+            rtol=0, atol=1e-8
+        )
+
+        formatter = ax.xaxis.get_major_formatter()
+        assert formatter(Time(expected_utc[0]).plot_date) == "20:00"
+    finally:
+        plt.close(fig)
+
+
+@pytest.mark.parametrize("plot_function", [plot_airmass, plot_altitude])
+def test_local_timezone_dst_transition(plot_function):
+    from zoneinfo import ZoneInfo
+
+    observer = _observer(35)
+    time = datetime(
+        2020, 3, 8, 0,
+        tzinfo=ZoneInfo("US/Eastern")
+    )
+    fig, (ax_utc, ax_local) = plt.subplots(2, 1)
+
+    try:
+        plot_function(
+            _target(), observer, time, ax=ax_utc,
+            brightness_shading=True
+        )
+        plot_function(
+            _target(), observer, time, ax=ax_local,
+            brightness_shading=True, use_local_tz=True
+        )
+
+        # Both plots represent the same actual instants in UTC.
+        np.testing.assert_allclose(
+            ax_local.lines[0].get_xdata(),
+            ax_utc.lines[0].get_xdata(),
+            rtol=0, atol=1e-8
+        )
+
+        # The twilight shading must also remain aligned.
+        assert len(ax_local.patches) == len(ax_utc.patches)
+
+        for utc_patch, local_patch in zip(
+            ax_utc.patches, ax_local.patches
+        ):
+            utc_x = utc_patch.get_path().transformed(
+                utc_patch.get_patch_transform()
+            ).vertices[:, 0]
+            local_x = local_patch.get_path().transformed(
+                local_patch.get_patch_transform()
+            ).vertices[:, 0]
+
+            np.testing.assert_allclose(
+                local_x, utc_x, rtol=0, atol=1e-8
+            )
+            assert local_patch.get_alpha() == utc_patch.get_alpha()
+
+        # US/Eastern jumps from 01:59 to 03:00 on this date.
+        formatter = ax_local.xaxis.get_major_formatter()
+        before_dst = Time(
+            datetime(2020, 3, 8, 6, 30, tzinfo=timezone.utc)
+        )
+        after_dst = Time(
+            datetime(2020, 3, 8, 7, 30, tzinfo=timezone.utc)
+        )
+
+        assert formatter(before_dst.plot_date) == "01:30"
+        assert formatter(after_dst.plot_date) == "03:30"
+    finally:
+        plt.close(fig)
 
 
 @pytest.mark.parametrize("plot_function", [plot_airmass, plot_altitude])
