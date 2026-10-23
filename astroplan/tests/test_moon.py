@@ -43,3 +43,22 @@ def print_pyephem_illumination():
         moon.compute(pe_obs)
         illuminations.append(moon.moon_phase)
     print(illuminations)
+
+
+def test_illumination_from_observer_cache():
+    import numpy as np
+    from astroplan.moon import moon_illumination, moon_phase_angle
+
+    obs = Observer.at_site("APO")
+    times = Time("2020-01-01 00:00") + np.linspace(0, 60, 50) * u.day
+
+    # the observer path uses cached topocentric positions shifted back to the
+    # geocentre; it must reproduce the direct geocentric computation
+    assert_allclose(moon_illumination(times, observer=obs), moon_illumination(times), atol=1e-5)
+    dphase = abs(moon_phase_angle(times, observer=obs) - moon_phase_angle(times))
+    assert (dphase < 2 * u.arcsec).all()
+
+    # and it must come from the cache: both bodies for these times are now cached
+    assert len(obs._body_cache) == 2
+    assert obs.moon_illumination(times) is not None
+    assert len(obs._body_cache) == 2

@@ -1909,7 +1909,7 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        return moon_illumination(time)
+        return moon_illumination(time, observer=self)
 
     def moon_phase(self, time=None):
         """
@@ -1946,7 +1946,7 @@ class Observer:
         if time is not None and not isinstance(time, Time):
             time = Time(time)
 
-        return moon_phase_angle(time)
+        return moon_phase_angle(time, observer=self)
 
     def moon_altaz(self, time, ephemeris=None):
         """
