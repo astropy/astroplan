@@ -9,7 +9,8 @@ import numpy as np
 import pytest
 import zoneinfo
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, Angle, FK5, HADec, TETE, get_body, get_sun)
+                                 AltAz, Angle, FK5, HADec, TETE, get_body,
+                                 solar_system_ephemeris)
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
@@ -386,8 +387,10 @@ def test_parallactic_angle_flags_and_grid():
     moon = get_body('moon', time, location=obs.location)
     assert_quantity_allclose(obs.parallactic_angle(time, MoonFlag),
                              obs.parallactic_angle(time, moon))
+    # SunFlag resolves to the topocentric sun (``get_body``), not ``get_sun``
+    sun = get_body('sun', time, location=obs.location)
     assert_quantity_allclose(obs.parallactic_angle(time, SunFlag),
-                             obs.parallactic_angle(time, get_sun(time)))
+                             obs.parallactic_angle(time, sun))
 
     times = time + np.arange(3)*u.hour
     targets = [SkyCoord(0*u.deg, -30*u.deg), SkyCoord(90*u.deg, 20*u.deg)]
@@ -1250,6 +1253,79 @@ def test_is_night():
     time2 = Time('2015-07-28 02:00:00')
     nights2 = [observer.is_night(time2) for observer in [lco, aao, vbo]]
     assert np.all(nights2 == [True, False, False])
+
+
+def test_get_body_matches_uncached():
+    obs = Observer.at_site('APO')
+    times = Time('2020-01-01 00:00') + np.arange(5) * u.hour
+    cached = obs.get_body('moon', times)
+    direct = get_body('moon', times, location=obs.location)
+    assert_quantity_allclose(cached.separation(direct), 0 * u.deg, atol=1e-9 * u.deg)
+    # second call for the same inputs comes from the cache
+    assert obs.get_body('moon', times) is cached
+
+
+def test_get_body_cache_key_ephemeris():
+    obs = Observer.at_site('APO')
+    time = Time('2020-01-01 00:00')
+    moon = obs.get_body('moon', time)
+    assert obs.get_body('moon', time) is moon
+    # ``None`` is keyed on the ephemeris in effect, so it shares the entry
+    # with an explicit 'builtin'
+    assert obs.get_body('moon', time, ephemeris='builtin') is moon
+    assert len(obs._body_cache) == 1
+
+
+def test_get_body_cache_can_be_disabled():
+    obs = Observer.at_site('APO')
+    obs.body_cache_size = 0
+    time = Time('2020-01-01 00:00')
+    sun = obs.get_body('sun', time)
+    assert len(obs._body_cache) == 0
+    assert_quantity_allclose(sun.separation(get_body('sun', time, location=obs.location)),
+                             0 * u.deg, atol=1e-9 * u.deg)
+
+
+@pytest.mark.remote_data
+def test_get_body_ephemeris_changes_result():
+    pytest.importorskip('jplephem')
+    obs = Observer.at_site('APO')
+    time = Time('2020-01-01 00:00')
+    moon_builtin = obs.get_body('moon', time, ephemeris='builtin')
+    moon_jpl = obs.get_body('moon', time, ephemeris='de432s')
+    assert moon_builtin.separation(moon_jpl, origin_mismatch="ignore") > 0.1 * u.arcsec
+    # switching the default ephemeris must not return the cached 'builtin' Moon
+    with solar_system_ephemeris.set('de432s'):
+        assert obs.get_body('moon', time) is moon_jpl
+
+
+def test_get_body_cache_key_time_scale():
+    obs = Observer.at_site('APO')
+    jd = 2458849.5
+    moon_utc = obs.get_body('moon', Time(jd, format='jd', scale='utc'))
+    moon_tt = obs.get_body('moon', Time(jd, format='jd', scale='tt'))
+    assert moon_utc is not moon_tt
+    assert moon_utc.separation(moon_tt, origin_mismatch="ignore") > 1 * u.arcsec
+
+
+def test_get_body_cache_key_location():
+    obs = Observer.at_site('APO')
+    time = Time('2020-01-01 00:00')
+    moon_apo = obs.get_body('moon', time)
+    obs.location = EarthLocation.of_site('Keck')
+    moon_keck = obs.get_body('moon', time)
+    assert moon_apo is not moon_keck
+    # compare the raw topocentric coordinates (separation() would transform
+    # between the two observer-centred frames and hide the parallax)
+    assert abs(moon_apo.ra - moon_keck.ra) > 10 * u.arcmin
+
+
+def test_get_body_cache_is_bounded():
+    obs = Observer.at_site('APO')
+    times = Time('2020-01-01 00:00') + np.arange(obs.body_cache_size + 5) * u.day
+    for time in times:
+        obs.get_body('sun', time)
+    assert len(obs._body_cache) == obs.body_cache_size
 
 
 def test_moon_altaz():

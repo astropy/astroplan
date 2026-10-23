@@ -5,13 +5,15 @@ import sys
 import datetime
 import warnings
 import zoneinfo
+from collections import OrderedDict
 
 # Third-party
 
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, HADec,
-                                 get_sun, get_body, Angle, Longitude)
+                                 get_body, Angle, Longitude,
+                                 solar_system_ephemeris)
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
 
@@ -19,6 +21,7 @@ from astropy.utils.exceptions import AstropyDeprecationWarning
 from .exceptions import TargetNeverUpWarning, TargetAlwaysUpWarning
 from .moon import moon_illumination, moon_phase_angle
 from .target import get_skycoord, SunFlag, MoonFlag, Target
+from .utils import _make_cache_key
 
 
 __all__ = ["Observer"]
@@ -189,6 +192,9 @@ class Observer:
     ...                   elevation=0*u.m, name="Subaru", timezone="US/Hawaii")
 
     """
+    #: Maximum number of entries kept by `~astroplan.Observer.get_body`
+    body_cache_size = 32
+
     @u.quantity_input(elevation=u.m)
     def __init__(self, location=None, timezone='UTC', name=None, latitude=None,
                  longitude=None, elevation=0*u.m, pressure=None,
@@ -592,6 +598,68 @@ class Observer:
                              .format(time.shape, target.shape))
         return time, target
 
+    def get_body(self, body, time, ephemeris=None):
+        """
+        Get a solar system body from `~astropy.coordinates.get_body` for the
+        current observer location. Results are cached to speed up multiple
+        calls for the same body and time. The cache holds at most
+        ``body_cache_size`` entries (oldest entries are dropped first).
+
+        Parameters
+        ----------
+        body : str
+            Name of solar system body.
+
+        time : `~astropy.time.Time` or other (see below)
+            The time at which the observation is taking place. Will be used as
+            the ``obstime`` attribute in the resulting frame or coordinate. This
+            will be passed in as the first argument to the `~astropy.time.Time`
+            initializer, so it can be anything that `~astropy.time.Time` will
+            accept (including a `~astropy.time.Time` object)
+
+        ephemeris : str, optional
+            Ephemeris to use.  If not given, use the one set with
+            ``astropy.coordinates.solar_system_ephemeris.set`` (which is
+            set to 'builtin' by default).
+
+        Returns
+        -------
+        `~astropy.coordinates.SkyCoord`
+            The position of the solar system body at the requested time.
+
+        Examples
+        --------
+        >>> from astroplan import Observer
+        >>> from astropy.time import Time
+        >>> from astropy.coordinates import SkyCoord
+        >>> apo = Observer.at_site("APO")
+        >>> time = Time('2001-02-03 04:05:06')
+        >>> target = apo.get_body("sun", time)
+        """
+        if not isinstance(time, Time):
+            time = Time(time)
+
+        # The positions are topocentric and ephemeris-dependent, so both the
+        # location and the ephemeris must be part of the key. ``ephemeris=None``
+        # means "whatever is currently set", so key on the ephemeris in effect.
+        location_key = tuple(c.to_value(u.m) for c in self.location.geocentric)
+        _cache_key = (_make_cache_key(time, body)
+                      + (ephemeris or solar_system_ephemeris.get(), location_key))
+
+        if not hasattr(self, '_body_cache'):
+            self._body_cache = OrderedDict()
+
+        if _cache_key in self._body_cache:
+            self._body_cache.move_to_end(_cache_key)
+            return self._body_cache[_cache_key]
+
+        result = get_body(body, time, location=self.location, ephemeris=ephemeris)
+        self._body_cache[_cache_key] = result
+        while len(self._body_cache) > self.body_cache_size:
+            self._body_cache.popitem(last=False)
+
+        return result
+
     def altaz(self, time, target=None, obswl=None, grid_times_targets=False):
         """
         Get an `~astropy.coordinates.AltAz` frame or coordinate.
@@ -653,9 +721,9 @@ class Observer:
         """
         if target is not None:
             if target is MoonFlag:
-                target = get_body("moon", time, location=self.location)
+                target = self.get_body("moon", time)
             elif target is SunFlag:
-                target = get_sun(time)
+                target = self.get_body("sun", time)
 
             time, target = self._preprocess_inputs(time, target, grid_times_targets)
 
@@ -677,9 +745,9 @@ class Observer:
         Refraction is not applied.
         """
         if target is MoonFlag:
-            target = get_body("moon", time, location=self.location)
+            target = self.get_body("moon", time)
         elif target is SunFlag:
-            target = get_sun(time)
+            target = self.get_body("sun", time)
 
         time, target = self._preprocess_inputs(time, target, grid_times_targets)
         return target.transform_to(HADec(location=self.location, obstime=time))
@@ -1453,7 +1521,7 @@ class Observer:
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_rise)) # doctest: +SKIP
         ISO: 2001-02-02 14:02:50.554, JD: 2451943.08531
         """
-        return self.target_rise_time(time, get_sun(time), which, horizon,
+        return self.target_rise_time(time, self.get_body("sun", time), which, horizon,
                                      n_grid_points=n_grid_points)
 
     @u.quantity_input(horizon=u.deg)
@@ -1504,7 +1572,7 @@ class Observer:
         >>> print("ISO: {0.iso}, JD: {0.jd}".format(sun_set)) # doctest: +SKIP
         ISO: 2001-02-04 00:35:42.102, JD: 2451944.52479
         """
-        return self.target_set_time(time, get_sun(time), which, horizon,
+        return self.target_set_time(time, self.get_body("sun", time), which, horizon,
                                     n_grid_points=n_grid_points)
 
     def noon(self, time, which='nearest', n_grid_points=150):
@@ -1533,7 +1601,7 @@ class Observer:
         `~astropy.time.Time`
             Time at solar noon
         """
-        return self.target_meridian_transit_time(time, get_sun(time), which,
+        return self.target_meridian_transit_time(time, self.get_body("sun", time), which,
                                                  n_grid_points=n_grid_points)
 
     def midnight(self, time, which='nearest', n_grid_points=150):
@@ -1562,7 +1630,7 @@ class Observer:
         `~astropy.time.Time`
             Time at solar midnight
         """
-        return self.target_meridian_antitransit_time(time, get_sun(time), which,
+        return self.target_meridian_antitransit_time(time, self.get_body("sun", time), which,
                                                      n_grid_points=n_grid_points)
 
     # Twilight convenience functions
@@ -1919,7 +1987,7 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        moon = get_body("moon", time, location=self.location, ephemeris=ephemeris)
+        moon = self.get_body("moon", time, ephemeris=ephemeris)
         return self.altaz(time, moon)
 
     def sun_altaz(self, time):
@@ -1948,7 +2016,7 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        sun = get_sun(time)
+        sun = self.get_body("sun", time)
         return self.altaz(time, sun)
 
     @u.quantity_input(horizon=u.deg)
@@ -2058,7 +2126,7 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        solar_altitude = self.altaz(time, target=get_sun(time), obswl=obswl).alt
+        solar_altitude = self.altaz(time, target=self.get_body("sun", time), obswl=obswl).alt
 
         if solar_altitude.isscalar:
             return bool(solar_altitude < horizon)
