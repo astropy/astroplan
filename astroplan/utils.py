@@ -14,7 +14,7 @@ from .exceptions import OldEarthOrientationDataWarning
 
 __all__ = ["download_IERS_A",
            "time_grid_from_range", "_set_mpl_style_sheet",
-           "stride_array", "_make_cache_key"]
+           "stride_array"]
 
 IERS_A_WARNING = ("For best precision (on the order of arcseconds), you must "
                   "download an up-to-date IERS Bulletin A table. To do so, run:"

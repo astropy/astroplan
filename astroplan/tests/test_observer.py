@@ -9,7 +9,8 @@ import numpy as np
 import pytest
 import zoneinfo
 from astropy.coordinates import (EarthLocation, Latitude, Longitude, SkyCoord,
-                                 AltAz, Angle, FK5, HADec, TETE, get_body)
+                                 AltAz, Angle, FK5, HADec, TETE, get_body,
+                                 solar_system_ephemeris)
 from astropy.tests.helper import assert_quantity_allclose
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
@@ -1269,9 +1270,20 @@ def test_get_body_cache_key_ephemeris():
     time = Time('2020-01-01 00:00')
     moon = obs.get_body('moon', time)
     assert obs.get_body('moon', time) is moon
-    # a different ephemeris must not reuse the cached entry
-    assert obs.get_body('moon', time, ephemeris='builtin') is not moon
-    assert len(obs._body_cache) == 2
+    # ``None`` is keyed on the ephemeris in effect, so it shares the entry
+    # with an explicit 'builtin'
+    assert obs.get_body('moon', time, ephemeris='builtin') is moon
+    assert len(obs._body_cache) == 1
+
+
+def test_get_body_cache_can_be_disabled():
+    obs = Observer.at_site('APO')
+    obs.body_cache_size = 0
+    time = Time('2020-01-01 00:00')
+    sun = obs.get_body('sun', time)
+    assert len(obs._body_cache) == 0
+    assert_quantity_allclose(sun.separation(get_body('sun', time, location=obs.location)),
+                             0 * u.deg, atol=1e-9 * u.deg)
 
 
 @pytest.mark.remote_data
@@ -1282,6 +1294,9 @@ def test_get_body_ephemeris_changes_result():
     moon_builtin = obs.get_body('moon', time, ephemeris='builtin')
     moon_jpl = obs.get_body('moon', time, ephemeris='de432s')
     assert moon_builtin.separation(moon_jpl, origin_mismatch="ignore") > 0.1 * u.arcsec
+    # switching the default ephemeris must not return the cached 'builtin' Moon
+    with solar_system_ephemeris.set('de432s'):
+        assert obs.get_body('moon', time) is moon_jpl
 
 
 def test_get_body_cache_key_time_scale():

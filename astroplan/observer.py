@@ -12,7 +12,8 @@ from collections import OrderedDict
 import astropy.units as u
 import numpy as np
 from astropy.coordinates import (EarthLocation, SkyCoord, AltAz, HADec,
-                                 get_body, Angle, Longitude)
+                                 get_body, Angle, Longitude,
+                                 solar_system_ephemeris)
 from astropy.time import Time
 from astropy.utils.exceptions import AstropyDeprecationWarning
 
@@ -238,7 +239,6 @@ class Observer:
         """
 
         self.name = name
-        self._body_cache = OrderedDict()
         self.pressure = pressure
         self.temperature = temperature
         self.relative_humidity = relative_humidity
@@ -640,20 +640,25 @@ class Observer:
             time = Time(time)
 
         # The positions are topocentric and ephemeris-dependent, so both the
-        # location and the ephemeris must be part of the key.
+        # location and the ephemeris must be part of the key. ``ephemeris=None``
+        # means "whatever is currently set", so key on the ephemeris in effect.
         location_key = tuple(c.to_value(u.m) for c in self.location.geocentric)
-        _cache_key = _make_cache_key(time, body) + (ephemeris, location_key)
+        _cache_key = (_make_cache_key(time, body)
+                      + (ephemeris or solar_system_ephemeris.get(), location_key))
+
+        if not hasattr(self, '_body_cache'):
+            self._body_cache = OrderedDict()
 
         if _cache_key in self._body_cache:
             self._body_cache.move_to_end(_cache_key)
-        else:
-            self._body_cache[_cache_key] = get_body(
-                body, time, location=self.location, ephemeris=ephemeris
-            )
-            while len(self._body_cache) > self.body_cache_size:
-                self._body_cache.popitem(last=False)
+            return self._body_cache[_cache_key]
 
-        return self._body_cache[_cache_key]
+        result = get_body(body, time, location=self.location, ephemeris=ephemeris)
+        self._body_cache[_cache_key] = result
+        while len(self._body_cache) > self.body_cache_size:
+            self._body_cache.popitem(last=False)
+
+        return result
 
     def altaz(self, time, target=None, obswl=None, grid_times_targets=False):
         """
