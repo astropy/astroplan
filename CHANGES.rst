@@ -110,6 +110,12 @@
 - ``Scorer.targets`` now stores the original targets as a list instead
   of combining them into a ``SkyCoord``. [#634]
 
+- Add ``SGP4SatelliteTarget`` for satellites propagated from TLE or OMM
+  elements using the optional ``sgp4`` dependency. Satellite targets can be
+  used with observer calculations, constraints and scheduling, and
+  ``Schedule.to_table()`` displays their catalog number and element epoch.
+  [#566]
+
 - Improve performance of night-time shading in ``plot_airmass``,
   ``plot_altitude``, and ``plot_schedule_airmass`` by sampling the Sun's
   altitude and interpolating twilight boundaries. Handle missing

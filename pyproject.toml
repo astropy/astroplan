@@ -34,7 +34,8 @@ dependencies = [
 [project.optional-dependencies]
 all = [
     "matplotlib>=3.7.3",
-    "astroquery>=0.4.7"
+    "astroquery>=0.4.7",
+    "sgp4>=2.25"
 ]
 test = [
     "pytest>=7.4.0",
@@ -53,6 +54,9 @@ dev = [
     "astroplan[all,test]",
     "tox>=4",
     "tox-uv>=1.35"
+]
+satellite = [
+    "sgp4>=2.25"
 ]
 
 [project.readme]

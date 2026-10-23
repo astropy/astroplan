@@ -16,6 +16,7 @@ from astropy.coordinates import ConvertError
 from .utils import time_grid_from_range, stride_array
 from .constraints import AltitudeConstraint
 from .target import get_skycoord
+from .satellite import SGP4SatelliteTarget
 
 __all__ = ['ObservingBlock', 'TransitionBlock', 'Schedule', 'Slot',
            'Scheduler', 'SequentialScheduler', 'PriorityScheduler',
@@ -277,6 +278,11 @@ class Schedule:
                         return target.coord.icrs.to_string("hmsdms")
                 except ConvertError:
                     return repr(target.coord)
+            if isinstance(target, SGP4SatelliteTarget):
+                return (
+                    f"#{target.catalog_number} "
+                    f"epoch {target.epoch.utc.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
             if hasattr(target, "alt") and hasattr(target, "az"):
                 parts = [
                     "alt={:.6f} deg".format(u.Quantity(target.alt).to_value(u.deg)),
