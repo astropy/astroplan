@@ -149,6 +149,14 @@ def test_schedule_insert_slot():
     assert schedule.slots[0].start.jd == start.jd
 
 
+def test_schedule_insert_slot_outside_schedule():
+    start = Time('2016-02-06 03:00:00')
+    schedule = Schedule(start, start + 5*u.hour)
+    block = TransitionBlock.from_duration(10*u.minute)
+    with pytest.raises(ValueError, match='not in any slot'):
+        schedule.insert_slot(start + 6*u.hour, block)
+
+
 def test_schedule_change_slot_block():
     start = Time('2016-02-06 03:00:00')
     schedule = Schedule(start, start + 5 * u.hour)
@@ -415,6 +423,24 @@ def test_sequential_scheduler():
     # filled schedule
     scheduler(blocks, schedule)
     scheduler(blocks, schedule)
+
+
+def test_sequential_scheduler_block_past_end():
+    # The third 70-minute block no longer fits in the 3 hours; it used to be
+    # chosen anyway and insert_slot raised "longer block than slot". It should
+    # be skipped, and the shorter block should fill the remaining time.
+    start_time = Time('2016-02-06 03:00:00')
+    end_time = start_time + 3*u.hour
+    durations = [70, 70, 70, 20] * u.minute
+    blocks = [ObservingBlock(polaris, d, 0) for d in durations]
+    scheduler = SequentialScheduler(constraints=[], observer=apo,
+                                    transitioner=default_transitioner,
+                                    gap_time=5*u.minute)
+    schedule = Schedule(start_time, end_time)
+    scheduler(blocks, schedule)
+    scheduled = schedule.observing_blocks
+    assert [b.duration.to_value(u.minute) for b in scheduled] == pytest.approx([70, 70, 20])
+    assert all(b.end_time <= end_time for b in scheduled)
 
 
 @pytest.mark.remote_data
