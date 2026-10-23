@@ -57,6 +57,11 @@
 - Minimum Python version is now 3.11. Also bumped minversion
   of dependencies. [#605]
 
+- Fix ``PriorityScheduler`` raising ``block already occupied`` for observing
+  blocks with durations at or below ``time_resolution``. Block durations are
+  now rounded up to the scheduler's time grid; for example, a 55-minute block
+  with 2-minute resolution now lasts 56 minutes instead of 54. [#550]
+
 - Minimum Python version is now 3.12, and Python 3.14 is now tested. Minimum
   versions of numpy (1.26.0) and matplotlib (3.7.3) were bumped to the oldest
   releases available for Python 3.12.
@@ -115,6 +120,12 @@
 
 - ``Scorer.targets`` now stores the original targets as a list instead
   of combining them into a ``SkyCoord``. [#634]
+
+- Add ``SGP4SatelliteTarget`` for satellites propagated from TLE or OMM
+  elements using the optional ``sgp4`` dependency. Satellite targets can be
+  used with observer calculations, constraints and scheduling, and
+  ``Schedule.to_table()`` displays their catalog number and element epoch.
+  [#566]
 
 - Improve performance of night-time shading in ``plot_airmass``,
   ``plot_altitude``, and ``plot_schedule_airmass`` by sampling the Sun's

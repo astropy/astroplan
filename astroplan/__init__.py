@@ -8,6 +8,7 @@ except ImportError:
 from .utils import *
 from .observer import *
 from .target import *
+from .satellite import *
 from .exceptions import *
 from .moon import *
 from .constraints import *

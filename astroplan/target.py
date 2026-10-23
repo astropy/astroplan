@@ -9,17 +9,18 @@ import numpy as np
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import (
-    SkyCoord,
-    ICRS,
-    UnitSphericalRepresentation,
     AltAz,
     EarthLocation,
+    ICRS,
+    SkyCoord,
+    UnitSphericalRepresentation,
 )
+
+# Package
 from .exceptions import AstroplanWarning
 
 
 __all__ = ["Target", "FixedTarget", "AltAzTarget", "NonFixedTarget"]
-
 
 # Docstring code examples include printed SkyCoords, but the format changed
 # in astropy 1.3. Thus the doctest needs astropy >=1.3 and this is the

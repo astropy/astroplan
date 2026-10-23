@@ -77,6 +77,24 @@ with time::
                                         observer=observer)
     observer.altaz(time, pointing)
 
+You can also represent artificial satellites using
+`~astroplan.SGP4SatelliteTarget`, which propagates TLE or OMM orbital elements
+using SGP4. This requires the optional ``satellite`` dependency, which can be
+installed with ``pip install astroplan[satellite]``::
+
+    from astroplan import SGP4SatelliteTarget
+
+    iss = SGP4SatelliteTarget(tle=(
+        "1 25544U 98067A   23215.27256123  .00041610  00000-0  73103-3 0  9990",
+        "2 25544  51.6403  95.2411 0000623 157.9606 345.0624 15.50085581409092",
+    ), name="ISS (ZARYA)")
+
+    observer.altaz(Time("2023-08-03T06:32:29", scale="utc"), iss)
+
+Satellite positions depend on the evaluation time and the observer's location.
+TLE and OMM elements should be used near their epoch; rapidly moving
+satellites may require a finer scheduling time resolution.
+
 Doing More
 ==========
 
