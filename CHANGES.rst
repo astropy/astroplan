@@ -1,6 +1,12 @@
 0.11 (unreleased)
 -----------------
 
+- Fix ``SequentialScheduler`` raising ``ValueError: longer block than slot``
+  when the best block would run past the end of the schedule. Such blocks are
+  now skipped, so shorter blocks can still fill the remaining time.
+  ``Schedule.insert_slot`` now raises a ``ValueError`` instead of
+  ``UnboundLocalError`` when the start time is not in any slot. [#664]
+
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
   angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]
