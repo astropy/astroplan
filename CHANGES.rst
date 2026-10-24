@@ -1,6 +1,10 @@
 0.11 (unreleased)
 -----------------
 
+- Add a ``constraints`` keyword to ``plot_airmass`` and ``plot_altitude``
+  that draws each target's curve dashed wherever any of the given constraints
+  is not met, and with a thicker line wherever all of them are met. [#548]
+
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
   angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]
