@@ -80,3 +80,13 @@ def test_moon_phase_default_time():
     # the phase changes by ~2e-6 rad per second
     assert_allclose(phase.to_value(u.rad), obs.moon_phase(now).to_value(u.rad),
                     atol=1e-4)
+
+
+def test_moon_illumination_default_time():
+    # with no time given, moon_illumination uses the current time, like moon_phase
+    obs = Observer.at_site("APO")
+    now = Time.now()
+    illumination = obs.moon_illumination()
+
+    assert np.ndim(illumination) == 0
+    assert_allclose(illumination, obs.moon_illumination(now), atol=1e-4)
