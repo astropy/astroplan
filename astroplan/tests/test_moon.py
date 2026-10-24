@@ -68,3 +68,15 @@ def test_illumination_from_observer_cache():
     obs.get_body("sun", times)
     assert_allclose(obs.moon_illumination(times), illum, atol=1e-5)
     assert len(obs._body_cache) == 2
+
+
+def test_moon_phase_default_time():
+    # with no time given, moon_phase uses the current time (#663)
+    obs = Observer.at_site("APO")
+    now = Time.now()
+    phase = obs.moon_phase()
+
+    assert phase.isscalar
+    # the phase changes by ~2e-6 rad per second
+    assert_allclose(phase.to_value(u.rad), obs.moon_phase(now).to_value(u.rad),
+                    atol=1e-4)
