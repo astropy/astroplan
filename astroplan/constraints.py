@@ -747,13 +747,19 @@ class TimeConstraint(Constraint):
     all observing blocks are valid over the time limits used in calls
     to `is_observable` or `is_always_observable`.
 
+    To allow several time windows, pass 1-D `~astropy.time.Time` arrays of
+    the same length as ``min`` and ``max``: ``min[i]`` and ``max[i]`` bound
+    window ``i``, and a time passes if it falls in any of the windows.
+
     Parameters
     ----------
     min : `~astropy.time.Time`
-        Earliest time (inclusive). `None` indicates no limit.
+        Earliest time (inclusive), or a 1-D array of the earliest time of
+        each window. `None` indicates no limit.
 
     max : `~astropy.time.Time`
-        Latest time (inclusive). `None` indicates no limit.
+        Latest time (inclusive), or a 1-D array of the latest time of
+        each window. `None` indicates no limit.
 
     Examples
     --------
@@ -765,6 +771,12 @@ class TimeConstraint(Constraint):
     >>> t1 = Time("2016-03-28T12:00:00")
     >>> t2 = Time("2016-03-30T12:00:00")
     >>> constraint = TimeConstraint(t1, t2)
+
+    Constrain the observations to the first half of two nights:
+
+    >>> starts = Time(["2016-03-28T02:00:00", "2016-03-29T02:00:00"])
+    >>> ends = Time(["2016-03-28T07:00:00", "2016-03-29T07:00:00"])
+    >>> constraint = TimeConstraint(starts, ends)
     """
 
     def __init__(self, min=None, max=None):
@@ -775,23 +787,31 @@ class TimeConstraint(Constraint):
             raise ValueError("You must at least supply either a minimum or a "
                              "maximum time.")
 
-        if self.min is not None:
-            if not isinstance(self.min, Time):
+        for limit in (self.min, self.max):
+            if limit is None:
+                continue
+            if not isinstance(limit, Time):
                 raise TypeError("Time limits must be specified as "
                                 "astropy.time.Time objects.")
+            if limit.ndim > 1:
+                raise ValueError("Time limits must be scalars or 1-D arrays.")
 
-        if self.max is not None:
-            if not isinstance(self.max, Time):
-                raise TypeError("Time limits must be specified as "
-                                "astropy.time.Time objects.")
+        if (self.min is not None and self.max is not None
+                and self.min.ndim == self.max.ndim == 1
+                and len(self.min) != len(self.max)):
+            raise ValueError("min and max must have the same length when "
+                             "both are arrays of time windows.")
 
     def compute_constraint(self, times, observer, targets):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             min_time = Time("1950-01-01T00:00:00") if self.min is None else self.min
             max_time = Time("2120-01-01T00:00:00") if self.max is None else self.max
-        mask = np.logical_and(times > min_time, times < max_time)
-        return mask
+        if min_time.isscalar and max_time.isscalar:
+            return np.logical_and(times > min_time, times < max_time)
+        # add a trailing axis for the windows and pass if in any of them
+        times = times[..., np.newaxis]
+        return np.any(np.logical_and(times > min_time, times < max_time), axis=-1)
 
 
 class PrimaryEclipseConstraint(Constraint):
