@@ -10,7 +10,11 @@
 # release (2023-10-02), or the latest release for packages with none since.
 # Raise a bound here (never pin exactly) if a transitive dependency breaks
 # the oldestdeps environment.
-astropy-iers-data>=0.2023.10.2.0.30.37
+# Exception: the tests use the IERS-A table bundled in astropy-iers-data (see
+# astroplan/conftest.py), so it must cover the dates used in the tests,
+# including the current date (its predictions run ~1 year past its release).
+# Raise this when it stops doing so.
+astropy-iers-data>=0.2026.3.2.0.47.4
 attrs>=23.2.0
 beautifulsoup4>=4.12.3
 certifi>=2023.11.17
