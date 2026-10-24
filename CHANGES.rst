@@ -2,7 +2,7 @@
 -----------------
 
 - Fix ``Observer.moon_phase`` failing when called without a time. It now
-  uses the current time, like ``Observer.tonight``. [#663]
+  uses the current time, like ``Observer.tonight``. [#666]
 
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
