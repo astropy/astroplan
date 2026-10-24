@@ -6,7 +6,7 @@
   astropy; upgrade ``astropy-iers-data`` to update the bundled tables. The
   ``OldEarthOrientationDataWarning`` it used to issue is also deprecated. The
   IERS FAQ now describes how astropy handles the tables, including caveats
-  for astropy versions before 7.2.3. [#PR]
+  for astropy versions before 7.2.3. [#670]
 
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
