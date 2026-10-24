@@ -1,9 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import astropy.units as u
+import numpy as np
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
 from numpy.testing import assert_allclose
 
+from astroplan.moon import moon_illumination, moon_phase_angle
 from astroplan.observer import Observer
 
 
@@ -43,3 +45,26 @@ def print_pyephem_illumination():
         moon.compute(pe_obs)
         illuminations.append(moon.moon_phase)
     print(illuminations)
+
+
+def test_illumination_from_observer_cache():
+    obs = Observer.at_site("APO")
+    times = Time("2020-01-01 00:00") + np.linspace(0, 60, 50) * u.day
+
+    # the observer path uses the cached topocentric Moon shifted back to the
+    # geocentre; it must reproduce the direct geocentric computation
+    illum = moon_illumination(times, observer=obs)
+    assert_allclose(illum, moon_illumination(times), atol=1e-5)
+    dphase = abs(moon_phase_angle(times, observer=obs) - moon_phase_angle(times))
+    assert (dphase < 2 * u.arcsec).all()
+
+    # only the Moon is cached (the Sun comes from get_sun), and a second call
+    # through the Observer reuses that entry rather than adding to the cache
+    assert len(obs._body_cache) == 1
+    assert_allclose(obs.moon_illumination(times), illum)
+    assert len(obs._body_cache) == 1
+
+    # once the Sun is cached too, it is used instead of get_sun
+    obs.get_body("sun", times)
+    assert_allclose(obs.moon_illumination(times), illum, atol=1e-5)
+    assert len(obs._body_cache) == 2

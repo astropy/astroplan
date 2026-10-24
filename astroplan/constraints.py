@@ -126,7 +126,7 @@ def _get_moon_data(times, observer, force_zero_pressure=False):
                 observer.pressure = 0
 
             altaz = observer.moon_altaz(times)
-            illumination = np.array(moon_illumination(times))
+            illumination = np.array(moon_illumination(times, observer=observer))
             observer._moon_cache[aakey] = dict(times=times,
                                                illum=illumination,
                                                altaz=altaz)
