@@ -24,7 +24,7 @@
   ``moon_phase_angle`` accept an ``observer`` argument to reuse its cached
   positions (shifted back to the geocentre, so results are unchanged);
   ``Observer.moon_illumination``, ``Observer.moon_phase`` and
-  ``MoonIlluminationConstraint`` use it. The Sun
+  ``MoonIlluminationConstraint`` use it [#662]. The Sun
   helpers (``sun_rise_time``, ``sun_set_time``, ``noon``, ``midnight``,
   ``sun_altaz``, ``is_night`` and ``altaz`` with the Sun) now start from
   ``get_body('sun', ...)`` instead of ``get_sun``; because the AltAz transform

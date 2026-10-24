@@ -34,9 +34,10 @@ def moon_phase_angle(time, ephemeris=None, observer=None):
         set to 'builtin' by default).
 
     observer : `~astroplan.Observer`, optional
-        If given, the Sun and Moon positions are taken from the observer's
-        cache (`~astroplan.Observer.get_body`) and shifted to the geocentre,
-        avoiding a recomputation. The phase angle is geocentric either way.
+        If given, the Moon position (and the Sun's, if already cached) is
+        taken from the observer's cache (`~astroplan.Observer.get_body`) and
+        shifted to the geocentre, avoiding a recomputation. The phase angle
+        is geocentric either way.
 
     Returns
     -------
@@ -47,8 +48,9 @@ def moon_phase_angle(time, ephemeris=None, observer=None):
         sun = get_sun(time)
         moon = get_body("moon", time, ephemeris=ephemeris)
     else:
-        sun = _geocentric(observer.get_body("sun", time))
         moon = _geocentric(observer.get_body("moon", time, ephemeris=ephemeris))
+        sun = observer.get_body("sun", time, compute=False)
+        sun = get_sun(time) if sun is None else _geocentric(sun)
     elongation = sun.separation(moon)
     return np.arctan2(sun.distance*np.sin(elongation),
                       moon.distance - sun.distance*np.cos(elongation))
@@ -69,7 +71,7 @@ def moon_illumination(time, ephemeris=None, observer=None):
         set to 'builtin' by default).
 
     observer : `~astroplan.Observer`, optional
-        If given, use the observer's cached Sun and Moon positions (see
+        If given, use the observer's cached positions (see
         `moon_phase_angle`).
 
     Returns
