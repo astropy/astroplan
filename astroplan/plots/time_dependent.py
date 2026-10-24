@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import copy
+import datetime
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -44,7 +45,80 @@ def _has_twin(ax):
     return False
 
 
-def _shade_nights(ax, observer, start, end, tzoffset=0*u.hour):
+def _plot_times(time, use_local_tz):
+    """Return UTC observation times and the requested display timezone."""
+    tzinfo = None
+    tzname = 'UTC'
+
+    if use_local_tz:
+        if isinstance(time, datetime.datetime):
+            if time.tzinfo is not None and time.utcoffset() is not None:
+                tzinfo = time.tzinfo
+                tzname = time.tzname() or str(tzinfo)
+            else:
+                warnings.warn(
+                    'use_local_tz=True was requested with a timezone-naive '
+                    'datetime; using UTC.',
+                    PlotWarning
+                )
+
+        elif (
+            isinstance(time, (list, tuple))
+            and len(time) > 0
+            and all(isinstance(item, datetime.datetime) for item in time)
+        ):
+            if all(
+                item.tzinfo is not None and item.utcoffset() is not None
+                for item in time
+            ):
+                tzinfo = time[0].tzinfo
+
+                def timezone_key(value):
+                    return (
+                        getattr(value, 'key', None)
+                        or getattr(value, 'zone', None)
+                        or str(value)
+                    )
+
+                if any(
+                    timezone_key(item.tzinfo) != timezone_key(tzinfo)
+                    for item in time[1:]
+                ):
+                    raise ValueError(
+                        'All datetimes must use the same timezone when '
+                        'use_local_tz=True.'
+                    )
+
+                tzname = time[0].tzname() or str(tzinfo)
+            else:
+                warnings.warn(
+                    'use_local_tz=True requires timezone-aware datetimes; '
+                    'using UTC.',
+                    PlotWarning
+                )
+        else:
+            warnings.warn(
+                'use_local_tz=True cannot infer a timezone from this input. '
+                'Pass a timezone-aware Python datetime or list of them; '
+                'using UTC.',
+                PlotWarning
+            )
+
+    time_ut = Time(time)
+
+    if time_ut.isscalar:
+        time_ut = time_ut + np.linspace(-12, 12, 100) * u.hour
+    elif len(time_ut) == 1:
+        warnings.warn(
+            'You used a Time array of length 1. You probably meant '
+            'to use a scalar. (Or maybe a list with length > 1?).',
+            PlotWarning
+        )
+
+    return time_ut, tzinfo, tzname
+
+
+def _shade_nights(ax, observer, start, end):
     """
     Shade the time between sunset and sunrise, including twilight.
     """
@@ -73,7 +147,7 @@ def _shade_nights(ax, observer, start, end, tzoffset=0*u.hour):
     boundaries = np.concatenate(([start_jd], crossings, [end_jd]))
     alphas = np.array([0.4, 0.3, 0.2, 0.1, 0.0])
     alphas = alphas[np.r_[bands[0], bands[changes + 1]]]
-    plot_times = (Time(boundaries, format='jd', scale='utc') + tzoffset).plot_date
+    plot_times = Time(boundaries, format='jd', scale='utc').plot_date
 
     for left, right, alpha in zip(plot_times[:-1], plot_times[1:], alphas):
         if alpha > 0:
@@ -190,22 +264,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     if 'ls' not in style_kwargs and 'linestyle' not in style_kwargs:
         style_kwargs.setdefault('linestyle', '-')
 
-    if hasattr(time, 'utcoffset') and use_local_tz:
-        tzoffset = time.utcoffset()
-        tzname = time.tzname()
-    else:
-        tzoffset = 0 * u.hour
-        tzname = 'UTC'
-    # Populate time window if needed.
-    # (plot against local time if that's requested)
-    time_ut = Time(time)
-    if time_ut.isscalar:
-        time_ut = time_ut + np.linspace(-12, 12, 100)*u.hour
-    elif len(time_ut) == 1:
-        warnings.warn('You used a Time array of length 1.  You probably meant '
-                      'to use a scalar. (Or maybe a list with length > 1?).',
-                      PlotWarning)
-    timetoplot = time_ut + tzoffset
+    time_ut, tzinfo, tzname = _plot_times(time, use_local_tz)
+    display_tz = tzinfo or datetime.timezone.utc
 
     if not isinstance(targets, Sequence):
         targets = [targets]
@@ -223,19 +283,20 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data (against timezone-offset time)
-        ax.plot(timetoplot.plot_date, masked_airmass, label=target_name, **style_kwargs)
+        ax.plot(time_ut.plot_date, masked_airmass, label=target_name, **style_kwargs)
 
     # Format the time axis
-    xlo, xhi = (timetoplot[0]), (timetoplot[-1])
+    xlo, xhi = (time_ut[0]), (time_ut[-1])
     ax.xaxis_date()
     ax.set_xlim([xlo.plot_date, xhi.plot_date])
-    date_formatter = dates.DateFormatter('%H:%M')
+    ax.xaxis.set_major_locator(dates.AutoDateLocator(tz=display_tz))
+    date_formatter = dates.DateFormatter('%H:%M', tz=display_tz)
     ax.xaxis.set_major_formatter(date_formatter)
     plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
     # Shade background during night time
     if brightness_shading:
-        _shade_nights(ax, observer, time_ut.min(), time_ut.max(), tzoffset=tzoffset)
+        _shade_nights(ax, observer, time_ut.min(), time_ut.max())
 
     # Invert y-axis and set limits.
     y_lim = ax.get_ylim()
@@ -253,7 +314,10 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     # Set labels.
     ax.set_ylabel("Airmass")
-    ax.set_xlabel("Time from {0} [{1}]".format(min(timetoplot).datetime.date(), tzname))
+    local_date = min(time_ut).datetime.replace(
+        tzinfo=datetime.timezone.utc
+    ).astimezone(display_tz).date()
+    ax.set_xlabel("Time from {0} [{1}]".format(local_date, tzname))
 
     if altitude_yaxis and not _has_twin(ax):
         altitude_ticks = np.array([90, 60, 50, 40, 30, 20])
@@ -276,7 +340,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
                   style_sheet=None, brightness_shading=False,
                   airmass_yaxis=False, min_altitude=0, min_region=None,
-                  max_altitude=90, max_region=None):
+                  max_altitude=90, max_region=None, use_local_tz=False):
     r"""
     Plots altitude as a function of time for a given target.
 
@@ -348,6 +412,10 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         If set, defines an interval between ``max_altitude`` and ``max_region``
         that will be shaded. Default is `None`.
 
+    use_local_tz : bool
+        If ``True`` and ``time`` is a timezone-aware Python datetime, plot the
+        time axis in that datetime's local timezone. Defaults to ``False``.
+
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
@@ -371,22 +439,16 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     if 'lw' not in style_kwargs:
         style_kwargs.setdefault('linewidth', 1.5)
 
-    # Populate time window if needed.
-    time = Time(time)
-    if time.isscalar:
-        time = time + np.linspace(-12, 12, 100)*u.hour
-    elif len(time) == 1:
-        warnings.warn('You used a Time array of length 1.  You probably meant '
-                      'to use a scalar. (Or maybe a list with length > 1?).',
-                      PlotWarning)
+    time_ut, tzinfo, tzname = _plot_times(time, use_local_tz)
+    display_tz = tzinfo or datetime.timezone.utc
 
     if not isinstance(targets, Sequence):
         targets = [targets]
 
     for target in targets:
-        # Calculate airmass
-        altitude = observer.altaz(time, target).alt
-        # Mask out nonsense airmasses
+        # Calculate altitude using the actual observation times.
+        altitude = observer.altaz(time_ut, target).alt
+        # Mask out nonsensical altitudes.
         masked_altitude = np.ma.array(altitude, mask=altitude < 0)
 
         # Some checks & info for labels.
@@ -395,28 +457,30 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         except AttributeError:
             target_name = ''
 
-        # Plot data
-        ax.plot(time.plot_date, masked_altitude, label=target_name, **style_kwargs)
+        # Plot data using the requested timezone.
+        ax.plot(time_ut.plot_date, masked_altitude,
+                label=target_name, **style_kwargs)
 
-    # Format the time axis
+    # Format the time axis.
+    xlo, xhi = time_ut[0], time_ut[-1]
     ax.xaxis_date()
-    ax.set_xlim([time[0].plot_date, time[-1].plot_date])
-    date_formatter = dates.DateFormatter('%H:%M')
+    ax.set_xlim([xlo.plot_date, xhi.plot_date])
+    ax.xaxis.set_major_locator(dates.AutoDateLocator(tz=display_tz))
+    date_formatter = dates.DateFormatter('%H:%M', tz=display_tz)
     ax.xaxis.set_major_formatter(date_formatter)
     plt.setp(ax.get_xticklabels(), rotation=30, ha='right')
 
-    # Shade background during night time
+    # Shade background during night time.
     if brightness_shading:
-        _shade_nights(ax, observer, time.min(), time.max())
+        _shade_nights(
+            ax, observer, time_ut.min(), time_ut.max()
+        )
 
-    # Invert y-axis and set limits.
-    # y_lim = ax.get_ylim()
-    # if y_lim[1] > y_lim[0]:
-    #     ax.invert_yaxis()
+    # Set altitude limits.
     ax.set_ylim([min_altitude, max_altitude])
 
-    # Draw lo/hi limit regions, if present
-    ymax, ymin = ax.get_ylim()       # should be (hi_limit, lo_limit)
+    # Draw lo/hi limit regions, if present.
+    ymax, ymin = ax.get_ylim()
 
     if max_region is not None:
         ax.axhspan(ymax, max_region, facecolor='#F9EB4E', alpha=0.10)
@@ -425,7 +489,14 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
 
     # Set labels.
     ax.set_ylabel("Altitude")
-    ax.set_xlabel("Time from {0} [UTC]".format(min(time).datetime.date()))
+    local_date = min(time_ut).datetime.replace(
+        tzinfo=datetime.timezone.utc
+    ).astimezone(display_tz).date()
+    ax.set_xlabel(
+        "Time from {0} [{1}]".format(
+            local_date, tzname
+        )
+    )
 
     if airmass_yaxis and not _has_twin(ax):
         # altitude_ticks = np.array([90, 60, 50, 40, 30, 20])

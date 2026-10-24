@@ -1,5 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import warnings
 import numpy as np
+from astroplan.exceptions import PlotWarning
 import pytest
 
 from astropy.coordinates import EarthLocation, SkyCoord
@@ -76,6 +78,90 @@ def test_plot_altitude():
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_altitude_local_timezone():
+    import datetime
+    import zoneinfo
+
+    import matplotlib.pyplot as plt
+
+    from astroplan import Observer
+    from astroplan.target import FixedTarget
+    from astroplan.plots.time_dependent import plot_altitude
+
+    location = EarthLocation.from_geodetic(
+        lon=0 * u.deg,
+        lat=51 * u.deg,
+        height=0 * u.m
+    )
+    observer = Observer(location=location)
+    target = FixedTarget(
+        coord=SkyCoord(ra=10 * u.deg, dec=45 * u.deg),
+        name='test'
+    )
+
+    time = datetime.datetime(
+        2020, 1, 15, 20, 0,
+        tzinfo=zoneinfo.ZoneInfo('US/Eastern')
+    )
+
+    fig, ax = plt.subplots()
+    try:
+        result = plot_altitude(
+            target,
+            observer,
+            time,
+            ax=ax,
+            use_local_tz=True,
+            brightness_shading=True
+        )
+
+        assert result is ax
+        assert ax.get_xlabel().endswith('[EST]')
+    finally:
+        plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
+def test_plot_altitude_single_time_array_warning():
+    import matplotlib.pyplot as plt
+
+    from astroplan import Observer
+    from astroplan.target import FixedTarget
+    from astroplan.plots.time_dependent import plot_altitude
+
+    location = EarthLocation.from_geodetic(
+        lon=0 * u.deg, lat=51 * u.deg, height=0 * u.m
+    )
+    observer = Observer(location=location)
+    target = FixedTarget(
+        coord=SkyCoord(ra=10 * u.deg, dec=45 * u.deg),
+        name='test'
+    )
+    time = Time(['2024-01-01 00:00:00'])
+
+    fig, ax = plt.subplots()
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                message='Attempting to set identical low and high xlims',
+                category=UserWarning
+            )
+
+            with pytest.warns(
+                PlotWarning,
+                match='Time array of length 1'
+            ):
+                result = plot_altitude(
+                    target, observer, time, ax=ax
+                )
+
+        assert result is ax
+    finally:
+        plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_plot_parallactic():
     import matplotlib.pyplot as plt
 
@@ -83,15 +169,22 @@ def test_plot_parallactic():
     from astroplan.target import FixedTarget
     from astroplan.plots.time_dependent import plot_parallactic
 
-    location = EarthLocation.from_geodetic(lon=0*u.deg, lat=51*u.deg, height=0*u.m)
+    location = EarthLocation.from_geodetic(
+        lon=0 * u.deg, lat=51 * u.deg, height=0 * u.m
+    )
     observer = Observer(location=location)
-    target = FixedTarget(coord=SkyCoord(ra=10*u.deg, dec=45*u.deg), name='test')
+    target = FixedTarget(
+        coord=SkyCoord(ra=10 * u.deg, dec=45 * u.deg),
+        name='test'
+    )
     time = Time('2024-01-01 00:00:00')
 
     fig, ax = plt.subplots()
-    result = plot_parallactic(target, observer, time, ax=ax)
-    assert result is ax
-    plt.close(fig)
+    try:
+        result = plot_parallactic(target, observer, time, ax=ax)
+        assert result is ax
+    finally:
+        plt.close(fig)
 
 
 def _plot_sky_setup():
