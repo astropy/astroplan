@@ -1,6 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import copy
-from xmlrpc.client import boolean
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
@@ -9,7 +8,6 @@ import warnings
 
 from ..exceptions import PlotWarning
 from ..utils import _set_mpl_style_sheet
-from ..constraints import Constraint
 
 __all__ = ['plot_airmass', 'plot_schedule_airmass', 'plot_parallactic',
            'plot_altitude']
@@ -80,6 +78,65 @@ def _shade_nights(ax, observer, start, end, tzoffset=0*u.hour):
     for left, right, alpha in zip(plot_times[:-1], plot_times[1:], alphas):
         if alpha > 0:
             ax.axvspan(left, right, ymin=0, ymax=1, color='grey', alpha=alpha, linewidth=0)
+
+
+# Line width factor for the part of a curve where constraints are met
+_MET_LINEWIDTH_FACTOR = 2
+
+
+def _constraint_violations(constraints, observer, targets, times):
+    """
+    Evaluate ``constraints`` once for all ``targets`` and return a boolean
+    array of shape (n_targets, n_times), True where any constraint is not met.
+
+    Score constraints (``boolean_constraint=False``) count as met wherever
+    their score is non-zero.
+    """
+    if not hasattr(constraints, '__len__'):
+        constraints = [constraints]
+
+    met = np.logical_and.reduce([
+        np.asarray(constraint(observer, targets, times=times, grid_times_targets=True)) > 0
+        for constraint in constraints
+    ])
+    return ~met
+
+
+def _plot_curve(ax, plot_times, y_values, label, style_kwargs, violated=None):
+    """
+    Plot one target's curve. If ``violated`` (a boolean array, True where a
+    constraint is not met) is given, the curve is drawn with a thicker line
+    where all constraints are met, and with a dashed line of the normal width,
+    in the same color, where they are not.
+
+    The dashed part extends one sample into the neighbouring samples, so it
+    joins the solid curve and a violation of a single sample is still visible.
+    """
+    if violated is None:
+        return ax.plot(plot_times, y_values, label=label, **style_kwargs)
+
+    import matplotlib as mpl
+
+    y_values = np.ma.asarray(y_values)
+    y = u.Quantity(np.ma.getdata(y_values)).value.astype(float)
+    y[np.ma.getmaskarray(y_values)] = np.nan
+
+    violated = np.asarray(violated, dtype=bool)
+    dashed = violated.copy()
+    dashed[1:] |= violated[:-1]
+    dashed[:-1] |= violated[1:]
+
+    default_linewidth = mpl.rcParams['lines.linewidth']
+    linewidth = style_kwargs.get('linewidth', style_kwargs.get('lw', default_linewidth))
+    met_kwargs = {key: val for key, val in style_kwargs.items() if key not in ('lw', 'linewidth')}
+    met_kwargs['linewidth'] = _MET_LINEWIDTH_FACTOR * linewidth
+    line, = ax.plot(plot_times, np.where(violated, np.nan, y), label=label, **met_kwargs)
+
+    dashed_kwargs = {key: val for key, val in style_kwargs.items()
+                     if key not in ('c', 'color', 'ls', 'linestyle')}
+    ax.plot(plot_times, np.where(dashed, y, np.nan), color=line.get_color(), linestyle='--',
+            label='_nolegend_', **dashed_kwargs)
+    return line
 
 
 def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
@@ -161,10 +218,12 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
     use_local_tz : bool
         If the time is specified in a local timezone, the time will be plotted
         in that timezone.
-    
-    constraints : Constraint or list of Constraint objects (optional)
-        If a list of boolean constraints is provided, the objects will have
-        blackened curves outside the constraints.
+
+    constraints : `~astroplan.Constraint` or list of `~astroplan.Constraint` (optional)
+        Constraint(s) to show on the curves. Each target's curve is drawn
+        dashed wherever any  constraint is not met, and with a thicker line
+        wherever all are met. Constraints that return a score instead of a
+        boolean count as met wherever the score is non-zero.
 
     Returns
     -------
@@ -216,25 +275,12 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     if not isinstance(targets, Sequence):
         targets = [targets]
-    
-    # Firstly, check that the constraints are valid if any.
+
+    # Evaluate every constraint once for all targets (targets x times mask)
     if constraints is not None:
-        if isinstance(constraints, Constraint):
-            constraints = [constraints]
-    
-        assert isinstance(constraints, (list, tuple, np.ndarray)), "constraints must be an array-like object or a single Constraint instance."
-        for cons in constraints:
-            assert isinstance(cons, Constraint), "All constraint objects must be Constraints"
+        violated = _constraint_violations(constraints, observer, targets, time_ut)
 
-            # Make sure they're boolean
-            assert hasattr(cons, 'boolean_constraint'), "Each constraints element must have the 'boolean_constraint attribute."
-            assert cons.boolean_constraint, "Cannot work with non-boolean constraints."
-            # Then make sure they're not some weird user-generated constraint. 
-            assert hasattr(cons, 'compute_constraint'), "Constraints must have a 'compute_constraint' method."
-            
-
-
-    for target in targets:
+    for i, target in enumerate(targets):
         # Calculate airmass
         airmass = observer.altaz(time_ut, target).secz
         # Mask out nonsense airmasses
@@ -247,29 +293,8 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data (against timezone-offset time)
-        ax.plot(timetoplot.plot_date, masked_airmass, label=target_name, **style_kwargs)
-
-        # Plot black curves for where the target is outside constraints
-        if constraints:
-            cons_mask = np.ones(len(airmass), dtype=bool)
-            for cons in constraints:
-                cons_mask &= cons(observer, target, time_ut)
-
-            # Handle discontinuous curves:
-            time_vals = np.where((~cons_mask)&(airmass>1),timetoplot.plot_date, np.nan)
-            am_vals = np.where((~cons_mask)&(airmass>1), airmass, np.nan)
-            ax.plot_date(time_vals, am_vals, "k", lw=3)
-
-        # Plot black curves for where the target is outside constraints
-        if constraints:
-            cons_mask = np.ones(len(airmass), dtype=bool)
-            for cons in constraints:
-                cons_mask &= cons(observer, target, time_ut)
-
-            # Handle discontinuous curves:
-            time_vals = np.where((~cons_mask)&(airmass>1),timetoplot.plot_date, np.nan)
-            am_vals = np.where((~cons_mask)&(airmass>1), airmass, np.nan)
-            ax.plot_date(time_vals, am_vals, "k", lw=3)
+        _plot_curve(ax, timetoplot.plot_date, masked_airmass, target_name, style_kwargs,
+                    violated=violated[i] if constraints is not None else None)
 
     # Format the time axis
     xlo, xhi = (timetoplot[0]), (timetoplot[-1])
@@ -322,7 +347,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
                   style_sheet=None, brightness_shading=False,
                   airmass_yaxis=False, min_altitude=0, min_region=None,
-                  max_altitude=90, max_region=None):
+                  max_altitude=90, max_region=None, constraints=None):
     r"""
     Plots altitude as a function of time for a given target.
 
@@ -394,6 +419,12 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         If set, defines an interval between ``max_altitude`` and ``max_region``
         that will be shaded. Default is `None`.
 
+    constraints : `~astroplan.Constraint` or list of `~astroplan.Constraint` (optional)
+            Constraint(s) to show on the curves. Each target's curve is drawn
+            dashed wherever any  constraint is not met, and with a thicker line
+            wherever all are met. Constraints that return a score instead of a
+            boolean count as met wherever the score is non-zero.
+
     Returns
     -------
     ax : `~matplotlib.axes.Axes`
@@ -429,7 +460,11 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
     if not isinstance(targets, Sequence):
         targets = [targets]
 
-    for target in targets:
+    # Evaluate every constraint once for all targets (targets x times mask)
+    if constraints is not None:
+        violated = _constraint_violations(constraints, observer, targets, time)
+
+    for i, target in enumerate(targets):
         # Calculate airmass
         altitude = observer.altaz(time, target).alt
         # Mask out nonsense airmasses
@@ -442,7 +477,8 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
             target_name = ''
 
         # Plot data
-        ax.plot(time.plot_date, masked_altitude, label=target_name, **style_kwargs)
+        _plot_curve(ax, time.plot_date, masked_altitude, target_name, style_kwargs,
+                    violated=violated[i] if constraints is not None else None)
 
     # Format the time axis
     ax.xaxis_date()
