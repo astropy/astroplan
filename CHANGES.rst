@@ -24,8 +24,11 @@
 - Add ``Observer.get_body``, a cached wrapper around
   ``astropy.coordinates.get_body`` for the observer's location, and use it for
   the Sun and Moon positions in ``Observer`` and in the Sun/Moon separation and
-  ``AtNightConstraint`` constraints (``moon_illumination`` and
-  ``moon_phase_angle`` are not yet cached). The Sun
+  ``AtNightConstraint`` constraints. ``moon_illumination`` and
+  ``moon_phase_angle`` accept an ``observer`` argument to reuse its cached
+  positions (shifted back to the geocentre, so results are unchanged);
+  ``Observer.moon_illumination``, ``Observer.moon_phase`` and
+  ``MoonIlluminationConstraint`` use it [#662]. The Sun
   helpers (``sun_rise_time``, ``sun_set_time``, ``noon``, ``midnight``,
   ``sun_altaz``, ``is_night`` and ``altaz`` with the Sun) now start from
   ``get_body('sun', ...)`` instead of ``get_sun``; because the AltAz transform

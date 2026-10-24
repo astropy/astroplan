@@ -598,7 +598,7 @@ class Observer:
                              .format(time.shape, target.shape))
         return time, target
 
-    def get_body(self, body, time, ephemeris=None):
+    def get_body(self, body, time, ephemeris=None, compute=True):
         """
         Get a solar system body from `~astropy.coordinates.get_body` for the
         current observer location. Results are cached to speed up multiple
@@ -621,6 +621,10 @@ class Observer:
             Ephemeris to use.  If not given, use the one set with
             ``astropy.coordinates.solar_system_ephemeris.set`` (which is
             set to 'builtin' by default).
+
+        compute : bool, optional
+            If `False`, return `None` instead of computing a position that is
+            not already cached.
 
         Returns
         -------
@@ -652,6 +656,8 @@ class Observer:
         if _cache_key in self._body_cache:
             self._body_cache.move_to_end(_cache_key)
             return self._body_cache[_cache_key]
+        if not compute:
+            return None
 
         result = get_body(body, time, location=self.location, ephemeris=ephemeris)
         self._body_cache[_cache_key] = result
@@ -1909,7 +1915,7 @@ class Observer:
         if not isinstance(time, Time):
             time = Time(time)
 
-        return moon_illumination(time)
+        return moon_illumination(time, observer=self)
 
     def moon_phase(self, time=None):
         """
@@ -1946,7 +1952,7 @@ class Observer:
         if time is not None and not isinstance(time, Time):
             time = Time(time)
 
-        return moon_phase_angle(time)
+        return moon_phase_angle(time, observer=self)
 
     def moon_altaz(self, time, ephemeris=None):
         """
