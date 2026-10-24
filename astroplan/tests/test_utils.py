@@ -2,8 +2,9 @@
 import numpy as np
 import pytest
 from astropy.time import Time
+from astropy.utils.exceptions import AstropyDeprecationWarning
 
-from astroplan.utils import stride_array, time_grid_from_range
+from astroplan.utils import download_IERS_A, stride_array, time_grid_from_range
 
 arr10 = np.arange(10)
 
@@ -30,3 +31,8 @@ def test_time_grid_from_range():
 
     with pytest.raises(ValueError):
         time_grid_from_range(Time(times3))
+
+
+def test_download_IERS_A_deprecated():
+    with pytest.warns(AstropyDeprecationWarning, match="download_IERS_A is deprecated"):
+        download_IERS_A()
