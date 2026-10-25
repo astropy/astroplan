@@ -417,10 +417,14 @@ class Schedule:
         """
         # due to float representation, this will change block start time
         # and duration by up to 1 second in order to fit in a slot
+        slot_index = None
         for j, slot in enumerate(self.slots):
             if ((slot.start < start_time or abs(slot.start-start_time) < 1*u.second)
                     and (slot.end > start_time + 1*u.second)):
                 slot_index = j
+        if slot_index is None:
+            raise ValueError(f'start time {start_time.iso} is not in any slot of the '
+                             f'schedule ({self.start_time.iso} to {self.end_time.iso})')
         if (block.duration - self.slots[slot_index].duration) > 1*u.second:
             raise ValueError('longer block than slot')
         elif self.slots[slot_index].end - block.duration < start_time:
@@ -720,9 +724,11 @@ class SequentialScheduler(Scheduler):
 
                 times = current_time + transition_time + b._duration_offsets
 
-                # make sure it isn't in a pre-filled slot
+                # make sure it isn't in a pre-filled slot and ends before the
+                # schedule does (insert_slot allows 1 second of rounding)
                 if (any((current_time < filled_times) & (filled_times < times[2])) or
-                        any(abs(pre_filled.T[0]-current_time) < 1*u.second)):
+                        any(abs(pre_filled.T[0]-current_time) < 1*u.second) or
+                        times[2] - self.schedule.end_time > 1*u.second):
                     block_constraint_results.append(0)
 
                 else:
