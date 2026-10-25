@@ -1,6 +1,13 @@
 0.11 (unreleased)
 -----------------
 
+- Deprecate ``download_IERS_A``, which no longer did anything useful, and
+  stop calling it on import. astroplan now leaves the IERS tables entirely to
+  astropy; upgrade ``astropy-iers-data`` to update the bundled tables. The
+  ``OldEarthOrientationDataWarning`` it used to issue is also deprecated. The
+  IERS FAQ now describes how astropy handles the tables, including caveats
+  for astropy versions before 7.2.3. [#670]
+
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
   angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]

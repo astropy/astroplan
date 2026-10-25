@@ -12,6 +12,7 @@ Contents
 * :ref:`iers-Background`
 * :ref:`iers-What_are_IERS_Bulletins_A_and_B`
 * :ref:`iers-How_do_I_get_IERS_Bulletin_A_for_astroplan?`
+* :ref:`iers-Older_astropy_versions`
 
 .. _iers-Background:
 
@@ -79,10 +80,9 @@ astropy's IERS machinery:
     import astropy.units as u
     from astropy.time import Time
 
-    # Load IERS Bulletin A (downloaded and cached by astropy, falling back to
-    # Bulletin B if the download fails) and the Bulletin B table bundled with
-    # astropy (reminder: astroplan has its own function for downloading
-    # Bulletin A: `download_IERS_A`)
+    # Load IERS Bulletin A (bundled with astropy in astropy-iers-data, or
+    # downloaded and cached by astropy if that is out of date) and the
+    # Bulletin B table bundled with astropy
     from astropy.utils.iers import IERS_B, FROM_IERS_B, IERS_Auto
     iers_a = IERS_Auto.open()
     iers_b = IERS_B.open()
@@ -120,14 +120,58 @@ astropy's IERS machinery:
 How do I get IERS Bulletin A for astroplan?
 ===========================================
 
-Without downloading IERS Bulletin A, astroplan simply approximates UT1-UTC=0
-always. This will lead to lower precision position and time calculations
-on the order of arcseconds or seconds, and allow you to handle times in the
-far future and distant past.
+You don't need to do anything specific to astroplan: astroplan uses whatever
+IERS tables astropy uses. astropy ships both IERS bulletins in the
+``astropy-iers-data`` package, which is installed with astropy and updated
+often. To get the latest tables, upgrade it::
 
-To download the IERS Bulletin A table for the first time, or to refresh the
-cached version that you already have, simply run::
+    pip install --upgrade astropy-iers-data
 
-    from astroplan import download_IERS_A
-    download_IERS_A()
+or, with conda::
 
+    conda update astropy-iers-data
+
+If a calculation needs Earth orientation predictions and the bundled
+Bulletin A is more than ``astropy.utils.iers.conf.auto_max_age`` days (30 by
+default) old, astropy downloads a newer one from the IERS and caches it. To
+work offline, or to never download the tables, set::
+
+    from astropy.utils import iers
+    iers.conf.auto_download = False
+
+See the astropy documentation on `IERS data access
+<https://docs.astropy.org/en/stable/utils/iers.html>`_ for all the options.
+
+.. note::
+
+    ``astroplan.download_IERS_A`` is deprecated since astroplan 0.11 and
+    does nothing. It was a workaround for limitations of astropy's IERS
+    handling that astropy has since fixed.
+
+.. _iers-Older_astropy_versions:
+
+Older astropy versions
+======================
+
+astropy versions before 7.2.3, and 8.0.0, don't use the bundled Bulletin A
+by default. Instead, they download it from the IERS the first time a
+calculation needs it in each session. If the IERS servers can't be reached,
+these versions:
+
+* try again (and time out again) in every later calculation, which can make
+  astroplan very slow;
+* warn about each failed download;
+* fall back to the bundled Bulletin B (astropy 6.x) or the bundled Bulletin A
+  (astropy 7.x), so results for recent or future times are less precise and
+  come with more warnings.
+
+The best fix is to upgrade astropy. Otherwise, with astropy 7.x, setting
+``iers.conf.auto_download = False`` as above makes astropy use the bundled
+Bulletin A. With astropy 6.x, that falls back to Bulletin B instead, so use
+the bundled Bulletin A directly::
+
+    from astropy.utils import iers
+    iers.earth_orientation_table.set(iers.IERS_A.open(iers.IERS_A_FILE))
+
+Either way, keep ``astropy-iers-data`` up to date, since the bundled tables
+are then the only ones used.

@@ -14,5 +14,3 @@ from .moon import *
 from .constraints import *
 from .scheduling import *
 from .periodic import *
-
-download_IERS_A()

@@ -34,7 +34,7 @@ Test configuration notes (from `pyproject.toml`):
 
 ## Architecture
 
-All public names are re-exported flat from `astroplan/__init__.py` via `from .module import *`, so every module must maintain an accurate `__all__`. Importing `astroplan` calls `download_IERS_A()` as a side effect (falls back with `OldEarthOrientationDataWarning` if offline; see `utils.py` and `docs/faq/iers.rst`).
+All public names are re-exported flat from `astroplan/__init__.py` via `from .module import *`, so every module must maintain an accurate `__all__`. IERS (Earth orientation) tables are left entirely to astropy (`astropy-iers-data` plus astropy's own downloads); `download_IERS_A()` is a deprecated no-op (see `docs/faq/iers.rst`).
 
 - **`observer.py` — `Observer`**: the central object. Wraps an `EarthLocation` plus timezone/weather (pressure, temperature, humidity). Provides `altaz`, `parallactic_angle`, rise/set/transit/twilight times, moon/sun helpers, `is_night`, etc. Rise/set/transit are computed on a grid over 24 h (`_generate_24hr_grid`, `n_grid_points`) and refined by interpolation of horizon crossings (`_horiz_cross`, `_two_point_interp`), with `which='next'|'previous'|'nearest'`. Many methods take `grid_times_targets=True` to broadcast times × targets into a 2D result.
 - **`target.py`**: `FixedTarget` (wraps a `SkyCoord`, `from_name` uses Sesame/network) and `get_skycoord`, which normalizes any mix of `FixedTarget`/`SkyCoord`/lists into a single `SkyCoord` — most APIs accept any of these via this function.

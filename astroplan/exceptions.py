@@ -23,7 +23,13 @@ class TargetNeverUpWarning(AstroplanWarning):
 
 
 class OldEarthOrientationDataWarning(AstroplanWarning):
-    """Using old Earth rotation data from IERS"""
+    """
+    Using old Earth rotation data from IERS.
+
+    .. deprecated:: 0.11
+        astroplan no longer issues this warning, since astropy handles the
+        IERS tables itself. It will be removed in a future version.
+    """
     pass
 
 
