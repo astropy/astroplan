@@ -1883,17 +1883,17 @@ class Observer:
         return self.target_set_time(time, MoonFlag, which, horizon,
                                     n_grid_points=n_grid_points)
 
-    def moon_illumination(self, time):
+    def moon_illumination(self, time=None):
         """
         Calculate the illuminated fraction of the moon.
 
         Parameters
         ----------
-        time : `~astropy.time.Time` or other (see below)
+        time : `~astropy.time.Time` or other (see below), optional
             This will be passed in as the first argument to
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object).
+            object). If `None` (the default), the current time is used.
 
         Returns
         -------
@@ -1912,7 +1912,9 @@ class Observer:
         >>> apo.moon_illumination(time) # doctest: +SKIP
         array([ 0.99972487])
         """
-        if not isinstance(time, Time):
+        if time is None:
+            time = Time.now()
+        elif not isinstance(time, Time):
             time = Time(time)
 
         return moon_illumination(time, observer=self)
@@ -1925,11 +1927,11 @@ class Observer:
 
         Parameters
         ----------
-        time : `~astropy.time.Time` or other (see below)
+        time : `~astropy.time.Time` or other (see below), optional
             This will be passed in as the first argument to
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object).
+            object). If `None` (the default), the current time is used.
 
         Returns
         -------
@@ -1949,7 +1951,9 @@ class Observer:
         >>> apo.moon_phase(time) # doctest: +SKIP
         <Quantity [ 0.03317537] rad>
         """
-        if time is not None and not isinstance(time, Time):
+        if time is None:
+            time = Time.now()
+        elif not isinstance(time, Time):
             time = Time(time)
 
         return moon_phase_angle(time, observer=self)
@@ -2220,9 +2224,11 @@ class Observer:
 
         Parameters
         ----------
-        time : `~astropy.time.Time` (optional), default = `~astropy.time.Time.now`
+        time : `~astropy.time.Time` or other (optional), default = `~astropy.time.Time.now`
             The start time for tonight, which is allowed to be arbitrary.
-            See description above for behavior
+            See description above for behavior. This will be passed in as the
+            first argument to the `~astropy.time.Time` initializer, so it can be
+            anything that `~astropy.time.Time` will accept.
         horizon : `~astropy.units.Quantity` (optional), default = zero degrees
             Degrees above/below actual horizon to use for calculating rise/set
             times (e.g., -6 deg horizon = civil twilight, etc.)
@@ -2234,7 +2240,12 @@ class Observer:
         times : `~astropy.time.Time`
             A tuple of times corresponding to the start and end of current night
         """
-        current_time = Time.now() if time is None else time
+        if time is None:
+            current_time = Time.now()
+        elif not isinstance(time, Time):
+            current_time = Time(time)
+        else:
+            current_time = time
         night_mask = self.is_night(current_time, horizon=horizon, obswl=obswl)
         sun_set_time = self.sun_set_time(current_time, which='next',
                                          horizon=horizon)

@@ -1480,6 +1480,11 @@ def test_tonight():
     assert (abs(sunrise - during_night[1].datetime) <
             datetime.timedelta(minutes=threshold_minutes))
 
+    # anything Time accepts works as the time
+    for time, expected in [(noon, during_day), (midnight, during_night)]:
+        from_str = obs.tonight(time=time.iso, horizon=horizon)
+        assert all(abs(t1 - t2) < 1 * u.s for t1, t2 in zip(expected, from_str))
+
     astro_sunset = Time('2016-08-08 06:13:00')
     horizon = -18 * u.degree
 
