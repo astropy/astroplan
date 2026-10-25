@@ -161,6 +161,19 @@ def test_accepts_any_constraint(plot_function, constraints, observer, times):
 
 
 @pytest.mark.parametrize("plot_function", PLOT_FUNCTIONS)
+@pytest.mark.parametrize("constraints", [[], (), np.array([])])
+def test_empty_constraints_same_as_none(plot_function, constraints, observer, times):
+    fig, ax = plt.subplots()
+    plot_function(_target(0, 'T'), observer, times, ax=ax, constraints=constraints)
+    met, dashed = _curves(ax)
+    assert len(met) == 1 and not dashed
+    np.testing.assert_allclose(_finite_x(met[0]), times.plot_date)
+    # Not thickened, as if no constraints had been given
+    assert met[0].get_linewidth() == 1.5
+    plt.close(fig)
+
+
+@pytest.mark.parametrize("plot_function", PLOT_FUNCTIONS)
 def test_each_target_uses_its_own_constraint_row(plot_function, observer, times):
     # The second target transits 3 h later, so it is high at different times
     # and each target must get its own row of the constraint mask.

@@ -90,10 +90,15 @@ def _constraint_violations(constraints, observer, targets, times):
     array of shape (n_targets, n_times), True where any constraint is not met.
 
     Score constraints (``boolean_constraint=False``) count as met wherever
-    their score is non-zero.
+    their score is non-zero. Returns `None` if there are no constraints
+    (``constraints`` is `None` or empty).
     """
+    if constraints is None:
+        return None
     if not hasattr(constraints, '__len__'):
         constraints = [constraints]
+    if len(constraints) == 0:
+        return None
 
     met = np.logical_and.reduce([
         np.asarray(constraint(observer, targets, times=times, grid_times_targets=True)) > 0
@@ -221,7 +226,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
     constraints : `~astroplan.Constraint` or list of `~astroplan.Constraint` (optional)
         Constraint(s) to show on the curves. Each target's curve is drawn
-        dashed wherever any  constraint is not met, and with a thicker line
+        dashed wherever any constraint is not met, and with a thicker line
         wherever all are met. Constraints that return a score instead of a
         boolean count as met wherever the score is non-zero.
 
@@ -277,8 +282,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
         targets = [targets]
 
     # Evaluate every constraint once for all targets (targets x times mask)
-    if constraints is not None:
-        violated = _constraint_violations(constraints, observer, targets, time_ut)
+    violated = _constraint_violations(constraints, observer, targets, time_ut)
 
     for i, target in enumerate(targets):
         # Calculate airmass
@@ -294,7 +298,7 @@ def plot_airmass(targets, observer, time, ax=None, style_kwargs=None,
 
         # Plot data (against timezone-offset time)
         _plot_curve(ax, timetoplot.plot_date, masked_airmass, target_name, style_kwargs,
-                    violated=violated[i] if constraints is not None else None)
+                    violated=None if violated is None else violated[i])
 
     # Format the time axis
     xlo, xhi = (timetoplot[0]), (timetoplot[-1])
@@ -420,10 +424,10 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         that will be shaded. Default is `None`.
 
     constraints : `~astroplan.Constraint` or list of `~astroplan.Constraint` (optional)
-            Constraint(s) to show on the curves. Each target's curve is drawn
-            dashed wherever any  constraint is not met, and with a thicker line
-            wherever all are met. Constraints that return a score instead of a
-            boolean count as met wherever the score is non-zero.
+        Constraint(s) to show on the curves. Each target's curve is drawn
+        dashed wherever any constraint is not met, and with a thicker line
+        wherever all are met. Constraints that return a score instead of a
+        boolean count as met wherever the score is non-zero.
 
     Returns
     -------
@@ -461,8 +465,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
         targets = [targets]
 
     # Evaluate every constraint once for all targets (targets x times mask)
-    if constraints is not None:
-        violated = _constraint_violations(constraints, observer, targets, time)
+    violated = _constraint_violations(constraints, observer, targets, time)
 
     for i, target in enumerate(targets):
         # Calculate airmass
@@ -478,7 +481,7 @@ def plot_altitude(targets, observer, time, ax=None, style_kwargs=None,
 
         # Plot data
         _plot_curve(ax, time.plot_date, masked_altitude, target_name, style_kwargs,
-                    violated=violated[i] if constraints is not None else None)
+                    violated=None if violated is None else violated[i])
 
     # Format the time axis
     ax.xaxis_date()
