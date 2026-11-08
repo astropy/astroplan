@@ -1,6 +1,12 @@
 0.11 (unreleased)
 -----------------
 
+- Fix ``EclipsingSystem.next_secondary_eclipse_time`` and
+  ``next_secondary_ingress_egress_time`` ignoring ``eccentricity`` and
+  ``argument_of_periapsis``. They always used phase 0.5, so for an eccentric
+  orbit the times they returned did not agree with ``in_secondary_eclipse``.
+  Circular orbits are unchanged. [#672]
+
 - Add ``HourAngleConstraint`` to constrain a target's hour angle, e.g. to stay
   within the hour angle limits of an equatorial mount. ``min`` and ``max`` are
   angles; if ``min`` is greater than ``max``, the window wraps through 12h. [#560]

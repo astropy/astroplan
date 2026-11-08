@@ -92,3 +92,29 @@ def test_primary_ingress():
                     atol=PRECISION)
     assert_allclose(ap_next_ing_egr_1.jd, soln_next_ing_egr_1.jd,
                     atol=PRECISION)
+
+
+def test_next_secondary_eclipse_eccentric():
+    epoch = Time('2016-01-01 00:00')
+    period = 10*u.day
+    duration = 2*u.hour
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period,
+                         duration=duration, eccentricity=0.1,
+                         argument_of_periapsis=0)
+
+    for test_time in [epoch + 1*u.day, epoch + 5.5*u.day, epoch + 8*u.day]:
+        mid = es.next_secondary_eclipse_time(test_time)
+        assert test_time < mid[0] <= test_time + period
+        assert es.in_secondary_eclipse(mid)
+        ing_egr = es.next_secondary_ingress_egress_time(test_time)
+        assert es.in_secondary_eclipse(ing_egr[0, 0] + 1*u.min)
+        assert es.in_secondary_eclipse(ing_egr[0, 1] - 1*u.min)
+
+    # For e*cos(omega) < -pi/4 the first-order phase is negative; the next
+    # eclipse must still come after test_time.
+    es = EclipsingSystem(primary_eclipse_time=epoch, orbital_period=period,
+                         duration=duration, eccentricity=0.95,
+                         argument_of_periapsis=np.pi)
+    test_time = epoch + 9*u.day
+    mid = es.next_secondary_eclipse_time(test_time)
+    assert test_time < mid[0] <= test_time + period
