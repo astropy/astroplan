@@ -150,14 +150,17 @@ class EclipsingSystem(PeriodicEvent):
         ----------
         .. [1] Winn (2010) https://arxiv.org/abs/1001.2010
         """
-        if self.eccentricity < 1e-5:
-            secondary_eclipse_phase = 0.5
-        else:
-            secondary_eclipse_phase = 0.5 * (1 + 4/np.pi * self.eccentricity *
-                                             np.cos(self.argument_of_periapsis))
+        secondary_eclipse_phase = self._secondary_eclipse_phase()
         phases = self.phase(time)
         return ((phases < secondary_eclipse_phase + float(self.duration/self.period)/2) &
                 (phases > secondary_eclipse_phase - float(self.duration/self.period)/2))
+
+    def _secondary_eclipse_phase(self):
+        """Phase of the secondary eclipse, see ``in_secondary_eclipse``."""
+        if self.eccentricity < 1e-5:
+            return 0.5
+        return 0.5 * (1 + 4/np.pi * self.eccentricity *
+                      np.cos(self.argument_of_periapsis))
 
     def out_of_eclipse(self, time):
         """
@@ -224,10 +227,9 @@ class EclipsingSystem(PeriodicEvent):
             Times of the next ``n_eclipses`` secondary eclipses after ``time``
         """
         phase = self.phase(time)
-        if phase >= 0.5:
-            next_eclipse_phase = 1.5
-        else:
-            next_eclipse_phase = 0.5
+        next_eclipse_phase = self._secondary_eclipse_phase() % 1
+        if phase >= next_eclipse_phase:
+            next_eclipse_phase += 1
         eclipse_times = ((next_eclipse_phase - phase) * self.period + time +
                          np.arange(n_eclipses) * self.period)
         return eclipse_times
