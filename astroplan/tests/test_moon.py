@@ -24,6 +24,16 @@ def test_illumination():
     assert_allclose(illumination1, pyephem_illumination, atol=0.05)
 
 
+def test_moon_phase_default_time():
+    # Calling moon_phase() with no time argument should use the current
+    # time instead of crashing (regression test for #663)
+    obs = Observer.at_site("APO")
+    phase = obs.moon_phase()
+    assert phase.isscalar
+    assert phase.unit == u.rad
+    assert 0 <= phase.value <= np.pi
+
+
 def print_pyephem_illumination():
     """
     To run, use:
