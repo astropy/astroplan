@@ -1925,11 +1925,12 @@ class Observer:
 
         Parameters
         ----------
-        time : `~astropy.time.Time` or other (see below)
+        time : `~astropy.time.Time` or other (see below), optional
             This will be passed in as the first argument to
             the `~astropy.time.Time` initializer, so it can be anything that
             `~astropy.time.Time` will accept (including a `~astropy.time.Time`
-            object).
+            object). If not given, it defaults to the current time
+            (``Time.now()``).
 
         Returns
         -------
@@ -1949,7 +1950,9 @@ class Observer:
         >>> apo.moon_phase(time) # doctest: +SKIP
         <Quantity [ 0.03317537] rad>
         """
-        if time is not None and not isinstance(time, Time):
+        if time is None:
+            time = Time.now()
+        elif not isinstance(time, Time):
             time = Time(time)
 
         return moon_phase_angle(time, observer=self)
