@@ -296,7 +296,7 @@ class Observer:
         >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
         >>> print(keck)                                    # doctest: +FLOAT_CMP
         <Observer: name='Keck',
-            location (lon, lat, el)=(-155.478333333 deg, 19.8283333333 deg, 4160.0 m),
+            location (lon, lat, el)=(-155.4744763 deg, 19.82625353 deg, 4159.6 m),
             timezone=zoneinfo.ZoneInfo(key='US/Hawaii')>
         """
         class_name = self.__class__.__name__
@@ -335,10 +335,10 @@ class Observer:
 
         >>> from astroplan import Observer
         >>> keck = Observer.at_site("Keck", timezone="US/Hawaii")
-        >>> keck._key()
-        ('Keck', None, None, None, <Longitude -155.47833333 deg>,
-            <Latitude 19.82833333 deg>, <Quantity 4160. m>,
-            <DstTzInfo 'US/Hawaii' LMT-1 day, 13:29:00 STD>)
+        >>> keck._key()                                   # doctest: +FLOAT_CMP
+        ('Keck', None, None, None, <Longitude -155.4744763 deg>,
+            <Latitude 19.82625353 deg>, <Quantity 4159.6 m>,
+            zoneinfo.ZoneInfo(key='US/Hawaii'))
         """
 
         return (self.name,
